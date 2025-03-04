@@ -94,6 +94,7 @@
     private PushNotificationModel notificationMessage = new PushNotificationModel();
     #endregion
 
+    // Method to handle search key up event
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -102,6 +103,7 @@
         }
     }
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -118,12 +120,14 @@
         }
     }
 
+    // Method to handle changes in the approval status
     async Task ApprovedChanged(bool value)
     {
         IsApproved = value;
         await GetAll(IsApproved, NumberOfRecords);
     }
 
+    // Method to retrieve all sales based on approval status and number of records
     private async Task GetAll(bool val, int numberOfRecords)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -131,6 +135,8 @@
         int brancID = int.Parse(brancIDString);
         int NumberOfRecords = numberOfRecords;
         collection = new List<SaleModel>();
+
+        // Retrieve sales based on approval status
         if (val)
         {
             collection = Iservice.SelectByApproved(branchID, NumberOfRecords, searchTerm, "Asset").ToList();
@@ -141,11 +147,13 @@
         }
     }
 
+    // Method to reload the sales table
     private async Task ReloadTable()
     {
         await GetAll(IsApproved, NumberOfRecords);
     }
 
+    // Property to manage the number of records displayed
     private int NumberOfRecords
     {
         get => numberOfRecords;
@@ -159,11 +167,13 @@
         }
     }
 
+    // Method to verify and refresh the sales list
     private async Task Verified()
     {
         await GetAll(IsApproved, NumberOfRecords);
     }
 
+    // Method to open a dialog for adding or editing a sale
     private async Task OpenDialog(SaleModel saleModel, bool ReadOnly)
     {
         if (_busy)
@@ -177,12 +187,15 @@
         parms.Add("model", saleModel.Clone());
         parms.Add("PageToRedirectLink", "/Sale");
         parms.Add("ReadOnly", ReadOnly);
+
+        // Show the dialog and wait for the result
         var dialog = DialogService.Show<AssetSaleDialog>(saleModel.SID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
         var isCancelled = result.Cancelled;
         if (!isCancelled)
         {
             var ReturnData = (SaleModel)result.Data;
+            // Prepare the notification message
             notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
             notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
             notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
@@ -195,6 +208,8 @@
             notificationMessage.ClaimValue = "Verify 1";
             notificationMessage.DocumentTypeID = SaleDocTypeID;
             notificationMessage.MsgDate = DateTime.Now;
+
+            // Send the notification via SignalR
             await signalRService.Send(notificationMessage);
         }
         await GetAll(IsApproved, NumberOfRecords);
@@ -202,6 +217,7 @@
         _busy = false;
     }
 
+    // Method to delete a sale entry
     private async Task Delete(SaleModel model)
     {
         if (HasPermissionSaleServiceDelete)
@@ -213,7 +229,7 @@
             {
                 var authprov = await auth.GetAuthenticationStateAsync();
                 var user = authprov.User;
-                Iservice.Delete(model.SID, user.Identity.Name);
+                Iservice.Delete(model.SID, user.Identity.Name); // Call the service to delete the sale
                 snackbar.Add("Deleted Successfully", Severity.Success);
                 await GetAll(IsApproved, NumberOfRecords);
             }
@@ -226,10 +242,10 @@
         }
     }
 
+    // Dictionary to hold report parameters
     public Dictionary<string, string> ReportParameters { get; set; } = new();
 
-
-    
+    // Method to print the invoice for a sale
     private void PrintInvoice(int? SID)
     {
         ReportParameters.Clear();

@@ -132,26 +132,36 @@
     public bool HasPermissionAssetTransferServiceReject { get; set; } = false;
     public int AssetTransferDocTypeID = 110;
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
+        // Check user permissions for accepting and rejecting asset transfers
         HasPermissionAssetTransferServiceAccept = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Accept", ctc.Token);
         HasPermissionAssetTransferServiceReject = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Reject", ctc.Token);
 
         branchID = model?.DestinationBranch?.BranchID ?? 0;
+
+        // Check user permissions for accepting and rejecting asset transfers
         Checklist = Iservice.GetCheckList(model.AssetTransferID).ToList();
+
+        // Retrieve the subclass ID for the asset
         SubClassID = Iassetservice.SelectByID(model.Asset.AssetID).SubClass.AssetSubClassID;
+
+        // Get the configuration model for asset subclasses related to trucks
         ConfigModel cModel = config.GetAssetSubclassForTrucks();
         AssetSubClassID = int.Parse(cModel.ValueString);
     }
 
     private int branchID { get; set; } = 0;
 
+    // Method to cancel the dialog
     void Cancel()
     {
         MudDialog.Cancel();
     }
 
+    // Method to accept the asset transfer
     public async Task Accept(List<AssetSettingsModel> context)
     {
         if (_busy)
@@ -168,7 +178,7 @@
 
             if (model != null)
             {
-                model.IsAssetReject = 0;
+                model.IsAssetReject = 0; // Set rejection status to false
                 try
                 {
                     List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
@@ -176,12 +186,12 @@
                     model.AssetTransferEndModel.TransferStatus = true;
                     if (SubClassID == AssetSubClassID)
                     {
-                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
-                        Iservice.UpdateStatus(model, TruckID, RecievedList);
+                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID; // Get the truck ID
+                        Iservice.UpdateStatus(model, TruckID, RecievedList); // Update the status with truck ID
                     }
                     else
-                    {
-                        Iservice.UpdateStatus(model, null, RecievedList);
+                    { 
+                        Iservice.UpdateStatus(model, null, RecievedList); // Update the status without truck ID
                     }
                     Snackbar.Add("Transfered succesfully", Severity.Success);
                 }
@@ -202,6 +212,7 @@
         _busy = false;
     }
 
+    // Method to reject the asset transfer
     public async Task Reject(List<AssetSettingsModel> context)
     {
         if (_busy)
@@ -217,7 +228,7 @@
             var user = authprov.User;
             if (model != null)
             {
-                model.IsAssetReject = 1;
+                model.IsAssetReject = 1; // Set rejection status to true
                 try
                 {
                     List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
@@ -225,12 +236,12 @@
                     model.AssetTransferEndModel.TransferStatus = false;
                     if (SubClassID == AssetSubClassID)
                     {
-                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
-                        Iservice.UpdateStatus(model, TruckID, RecievedList);
+                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID; // Get the truck ID
+                        Iservice.UpdateStatus(model, TruckID, RecievedList); // Update the status with truck ID
                     }
                     else
                     {
-                        Iservice.UpdateStatus(model, null, RecievedList);
+                        Iservice.UpdateStatus(model, null, RecievedList); // Update the status without truck ID
                     }
                     Snackbar.Add("Asset Transfer Rejected", Severity.Error);
 

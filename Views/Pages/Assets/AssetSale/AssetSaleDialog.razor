@@ -76,9 +76,11 @@
     private GstModel taxModel = new GstModel();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
+        // Check user permissions for editing and approving sales
         HasPermissionSaleServiceEdit = await Irole.HasClaim(SaleDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionSaleServiceApprove = await Irole.HasClaim(SaleDocTypeID.ToString(), "Approve", ctc.Token);
 
@@ -88,16 +90,16 @@
         UserID = user.Identity.Name;
         if (model?.SID != null)
         {
-            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
-            var ResultParticulars = Iservice.GetParticulars(model.SID);
+            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID); // Get party info
+            var ResultParticulars = Iservice.GetParticulars(model.SID); // Get particulars
             if (ResultParticulars != null)
             {
-                model.Particulars = ResultParticulars.ToList();
+                model.Particulars = ResultParticulars.ToList(); // Assign particulars to the model
             }
-            var ResultItems = Iservice.GetAssets(model.SID);
+            var ResultItems = Iservice.GetAssets(model.SID);  // Get assets
             if (ResultItems!= null)
             {
-                model.Assets = ResultItems.ToList();
+                model.Assets = ResultItems.ToList(); // Assign assets to the model
             }
         }
         else
@@ -110,6 +112,7 @@
         DocType = model.NatureOfTransaction;
     }
 
+    // Lifecycle method called when parameters are set
     protected override void OnParametersSet()
     {
         if (editContext == null)
@@ -121,6 +124,7 @@
         SetTotal();
     }
 
+    // Method to calculate the total amount based on particulars and assets
     void SetTotal()
     {
         model.TotalAmount = (model.Particulars.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0) +
@@ -130,6 +134,7 @@
                                                                        (y.SGSTValue != null ? y.SGSTValue : 0)) ?? 0);
     }
 
+    // Method to handle changes in the selected party
     void PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
@@ -141,18 +146,21 @@
         else { Local = false; }
     }
 
+    // Method to add an expense to the model
     async Task AddExpense(TaxPurchaseExpenseModel expenseModel)
     {
         model.Particulars.Add(expenseModel);
         SetTotal();
     }
 
+    // Method to add an asset to the model
     async Task AddAssets(AssetSaleModel AssetModel)
     {
         model.Assets.Add(AssetModel);
         SetTotal();
     }
 
+    // Method to approve the sale entry
     protected async Task Approve(DataApprovedStatus aprvd)
     {
         if (HasPermissionSaleServiceApprove)
@@ -161,7 +169,7 @@
             {
                 try
                 {
-                    Iservice.Approve(model.SID, UserID, aprvd.Remarks);
+                    Iservice.Approve(model.SID, UserID, aprvd.Remarks); // Call the service to approve the entry
                     snackbar.Add("Approved Successfully", Severity.Success);
                 }
                 catch (Exception ex)
@@ -178,6 +186,7 @@
         }
     }
 
+    // Method called when the form is valid and submitted
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -193,7 +202,7 @@
             {
                 model.SalesType = "Asset";
                 model.UserInfo.UserID = UserID;
-                Iservice.Update(model);
+                Iservice.Update(model); // Call the service to update the model
                 snackbar.Add("Saved Successfully", Severity.Success);
                 dialogForm.Close(model);
                 model = new();

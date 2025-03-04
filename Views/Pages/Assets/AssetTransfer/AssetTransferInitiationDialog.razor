@@ -128,6 +128,7 @@
     public bool HasPermissionAssetTransferServiceEdit { get; set; } = false;
     public int AssetTransferDocTypeID = 110;
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -154,18 +155,24 @@
             model.Asset = new();
         }
         BranchID = model?.InitiatedBranch?.BranchID ?? 0;
+
+        // Load the checklist for the asset transfer
         if (model != null)
         {
             model.CheckList = Iservice.GetCheckList(model.AssetTransferID).ToList();
         }
+
+        // Load the list of destination branches excluding the current branch
         DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != BranchID).ToList();
     }
 
+    // Method to handle file uploads
     private void FileUploaded(string filePath)
     {
         model.ImagePath.Add(filePath);
     }
 
+    // Method to delete an uploaded image
     private async Task DeleteImage(string imagePath)
     {
         if (HasPermissionAssetTransferServiceEdit)
@@ -177,12 +184,14 @@
                 Model.AssetTransferID = model.AssetTransferID;
                 Model.Images = imagePath.Normalize();
                 Model.UserInfo.UserID = authState.User.Identity.Name;
+
+                // Call the service to remove the photo
                 int a = Iservice.RemovePhoto(Model);
                 if (a == 1)
                 {
-                    if (Mfu.DeleteFile(imagePath))
+                    if (Mfu.DeleteFile(imagePath)) // Delete the file from the file upload component
                     {
-                        model.ImagePath.Remove(imagePath);
+                        model.ImagePath.Remove(imagePath); // Delete the file from the file upload component
                     }
                     Snackbar.Add("Photo removed Successfully", Severity.Success);
                     return;
@@ -206,11 +215,13 @@
         }
     }
 
+    // Method to cancel the dialog
     void Cancel()
     {
         MudDialog.Cancel();
     }
 
+    // Method to submit the asset transfer
     public async Task Submit()
     {
         if (_busy)
@@ -248,17 +259,19 @@
                         _busy = false;
                         return;
                     }
+
+                    // Get the subclass ID for trucks
                     ConfigModel cModel = config.GetAssetSubclassForTrucks();
                     AssetTrucksSubClassID = int.Parse(cModel.ValueString);
                     if (SubClassID == AssetTrucksSubClassID)
                     {
-                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
-                        Iservice.UpdateOutgoing(model, TruckID);
+                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID; // Get the truck ID
+                        Iservice.UpdateOutgoing(model, TruckID); // Update the status with truck ID
                     }
                     else
                     {
                         _busy = true;
-                        Iservice.UpdateOutgoing(model, null);
+                        Iservice.UpdateOutgoing(model, null); // Update the status without truck ID
                     }
                     Snackbar.Add("Transferred successfully", Severity.Success);
                     MudDialog.Close(model);
@@ -279,14 +292,16 @@
         _busy = false;
     }
 
+    // Method to handle the selection of an asset
     private void AssetSelected(AssetModel obj)
     {
         model.Asset = obj;
         if (obj != null)
         {
+            // Retrieve attached assets and subclass ID for the selected asset
             ChildAssets = Iassetservice.GetAttachedAssets(obj?.AssetID).Skip(1).ToList();
             SubClassID = Iassetservice.SelectByID(obj?.AssetID).SubClass.AssetSubClassID;
-            model.CheckList = Iassetsettingsservice.GetSettings(SubClassID).ToList();
+            model.CheckList = Iassetsettingsservice.GetSettings(SubClassID).ToList(); // Load checklist settings for the subclass
         }
     }
 }

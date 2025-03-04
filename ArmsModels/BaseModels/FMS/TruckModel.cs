@@ -113,4 +113,10 @@ namespace ArmsModels.BaseModels
         public virtual string? EventDateTimeDiff { get; set; }
         public string DriverSince { get; set; }
     }
+
+    public class NoDriverTruckModel
+    {
+        public string RegNo { get; set; }
+        public DateTime? AssignedTime { get; set; }
+    }
 }

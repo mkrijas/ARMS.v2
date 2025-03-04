@@ -34,5 +34,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TruckStatusModel> GetTruckStatus(int? BranchID);
         IEnumerable<TruckModel> SelectAllByBranch(bool IsChecked, int? BranchID = null, string Filer = "All", string HomeOrOperation = "AllOperation");
         IEnumerable<TruckStatusModel> GetTruckStatusByEvent(int? BranchID, string SelectedValue);
+        IEnumerable<NoDriverTruckModel> GetNoDriverTruck(int? BranchID);
+
     }
 }

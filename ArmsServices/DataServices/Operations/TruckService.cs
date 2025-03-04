@@ -531,5 +531,22 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
+        public IEnumerable<NoDriverTruckModel> GetNoDriverTruck(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.NoDriver]", parameters))
+            {
+                yield return new NoDriverTruckModel()
+                {
+                    RegNo = dr.GetString("RegNO"),
+                    AssignedTime = dr.GetDateTime("AssignedTime")
+                };
+            }
+        }
     }
 }
