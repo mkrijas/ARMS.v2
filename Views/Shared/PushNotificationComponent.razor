@@ -29,27 +29,37 @@
             <MudText Class="pointer" @onclick="@NotificationHideShow" Typo="Typo.subtitle2">@BranchName</MudText>
         </MudChip>
     </MudBadge>
-    <MudPopover Open="@IsOpen" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter" OverflowBehavior="OverflowBehavior.FlipOnOpen">
+    <MudPopover Open="@IsOpen"
+                AnchorOrigin="Origin.BottomCenter"
+                TransformOrigin="Origin.TopCenter"
+                OverflowBehavior="OverflowBehavior.FlipOnOpen">
 
-        @foreach (var nmObj in @currentNotificationMessages.Take(Take))
+        <div style="max-height: 400px; overflow-y: auto; padding: 10px;">
+            @foreach (var nmObj in currentNotificationMessages.Take(Take))
+            {
+                <MudAlert Severity="Severity.Normal" Class="my-2" ShowCloseIcon="true"
+                          CloseIconClicked="(() => AknowledgedCurrentItem(nmObj.MessageID))">
+                    <MudText Typo="Typo.caption" Color="Color.Primary">@nmObj.MessageTimeSpan</MudText>
+                    <MudText Typo="Typo.h6" Style="color:#d18213"> @nmObj.MessageTitle </MudText>
+                    @nmObj.MessageBody
+                    @if (!string.IsNullOrEmpty(nmObj.PageToRedirectLink))
+                    {
+                        <MudButton DisableElevation OnClick="@(() => RedirectToLink(nmObj.PageToRedirectLink, nmObj.DocumentID))">
+                            <a href="#" style="font-size:10px;">Click Here</a>
+                        </MudButton>
+                    }
+                </MudAlert>
+            }
+        </div>
+
+        @if (Take > 1 && currentNotificationMessages.Count() > 1)
         {
-            <MudAlert Severity="Severity.Normal" Class="my-2" ShowCloseIcon="true" CloseIconClicked="(() => AknowledgedCurrentItem(nmObj.MessageID))">
-                <MudText Typo="Typo.caption" Color="Color.Primary"> - @nmObj.MessageTimeSpan</MudText>
-                <MudText Typo="Typo.h6" Style="color:#d18213"> @nmObj.MessageTitle </MudText>
-                @nmObj.MessageBody
-                @if (!string.IsNullOrEmpty(nmObj.PageToRedirectLink))
-                {
-                    <MudButton DisableElevation OnClick="@(()=>RedirectToLink(nmObj.PageToRedirectLink,nmObj.DocumentID))"><a href="#" style="font-size:10px;">Click Here</a></MudButton>
-                }
-            </MudAlert>
-        }
-        @if (@Take > 1 && @currentNotificationMessages.Count() > 1)
-        {
-            <div style="text-align:center">
-                <MudButton OnClick="@AknowledgeAllInTheList"><a style="font-size:13px">Aknowledge All</a></MudButton>
+            <div style="text-align:center; margin-top: 10px;">
+                <MudButton OnClick="@AknowledgeAllInTheList"><a style="font-size:13px">Acknowledge All</a></MudButton>
             </div>
         }
     </MudPopover>
+
 </div>
 
 @code {
@@ -124,26 +134,24 @@
 
     private async Task AknowledgeAllInTheList()
     {
-        bool iSAnyCanNotAknowledge = false;
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var UserID = user.Identity.Name;
         try
         {
             string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var UserID = user.Identity.Name;
+
             int c = IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+
+            // Clear all notifications after acknowledgment
+            currentNotificationMessages.Clear();
+            IsOpen = false; // Close popover if all notifications are acknowledged
+
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             snackbar.Add(ex.Message, Severity.Error);
-        }
-
-        if (iSAnyCanNotAknowledge)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to acknowledge some items.");
         }
     }
 
@@ -151,20 +159,29 @@
     {
         if (MessageID != null)
         {
-            CancellationTokenSource ctc = new CancellationTokenSource();
             var CurrentMessage = currentNotificationMessages.FirstOrDefault(s => s.MessageID == MessageID);
-            if (CurrentMessage != null && await Irole.HasClaim(CurrentMessage.DocumentTypeID.ToString(), "View", ctc.Token))
+            if (CurrentMessage != null && await Irole.HasClaim(CurrentMessage.DocumentTypeID.ToString(), "View"))
             {
                 var authprov = await auth.GetAuthenticationStateAsync();
                 var user = authprov.User;
                 var UserID = user.Identity.Name;
+
                 int c = IpushNotificationService.AknowledgedCurrentItem(MessageID, UserID);
+
+                // Remove the acknowledged item from the list
+                currentNotificationMessages.Remove(CurrentMessage);
+
+                // If no messages left, close the popover
+                if (!currentNotificationMessages.Any())
+                {
+                    IsOpen = false;
+                }
+
+                await InvokeAsync(StateHasChanged); // Force UI refresh
             }
             else
             {
-                bool? result = await DialogService.ShowMessageBox(
-                    "Permission denied!",
-                    "You don't have any permission to aknowledge.");
+                await DialogService.ShowMessageBox("Permission denied!", "You don't have permission to acknowledge.");
             }
         }
     }

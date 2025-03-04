@@ -78,7 +78,7 @@ namespace ArmsServices.DataServices.General
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@KeyString", "FinanceBankGroupID"),
+               new SqlParameter("@KeyString", "FinanceCashGroupID"),
                new SqlParameter("@Operation", "ByID")
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))

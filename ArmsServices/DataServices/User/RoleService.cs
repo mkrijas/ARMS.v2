@@ -157,6 +157,7 @@ namespace ArmsServices.DataServices
             return Task.FromResult(Claims);
         }
 
+        // Method to check if a role has a specific claim
         public async Task<bool> HasClaim(string DocTypeID, string ClaimValue, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -212,6 +213,7 @@ namespace ArmsServices.DataServices
             return Task.FromResult(0);
         }
 
+        // Method to select all permissions for a role
         public void SelectAllPermissions(RoleModel role, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -223,6 +225,7 @@ namespace ArmsServices.DataServices
             Iservice.ExecuteNonQuery("[usp.user.RoleClaims.Update]", parameters);
         }
 
+        // Method to deselect all permissions for a role
         public void DeSelectAllPermissions(RoleModel role, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -235,6 +238,7 @@ namespace ArmsServices.DataServices
             Iservice.ExecuteNonQuery("[usp.user.RoleClaims.Update]", parameters);
         }
 
+        // Private method to convert an IDataRecord to a RoleModel
         private RoleModel GetModel(IDataRecord reader)
         {
             return new RoleModel
@@ -245,6 +249,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to select roles by RoleID
         public IEnumerable<RoleModel> Select(string RoleID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -258,6 +263,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get all roles
         public Task<IList<RoleModel>> GetAllRoles(CancellationToken cancellationToken = default)
         {
             IList<RoleModel> Roles = new List<RoleModel>();
@@ -272,7 +278,7 @@ namespace ArmsServices.DataServices
             };
             return Task.FromResult(Roles);
         }
-
+        // Method to get all claims
         public Task<IList<Claim>> GetAllClaims(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();

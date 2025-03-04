@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             _settings = settings;
         }
 
+        // Method to delete a data authorization entry
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -29,6 +30,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Delete]", parameters);
         }
 
+        // Method to get authorization status for a specific document
         public IEnumerable<DataAuthorizationModel> GetAuthStatus(int? DocTypeID, int? DocumentID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -56,6 +58,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select data authorizations by document
         public IEnumerable<DataAuthorizationModel> SelectByDocument(int? DocTypeID, int? DocumentID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -70,6 +73,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select data authorizations by document type
         public IEnumerable<DataAuthorizationModel> SelectByDocument(string DocType, int? DocumentID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -84,6 +88,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a data authorization entry by its ID
         public DataAuthorizationModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -98,6 +103,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a data authorization entry
         public DataAuthorizationModel Update(DataAuthorizationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -116,6 +122,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to a DataAuthorizationModel
         private DataAuthorizationModel GetModel(IDataRecord dr)
         {
             return new DataAuthorizationModel()
