@@ -154,13 +154,14 @@
     string HomeGst;
     ReimbursementSubModel subModel = new();
 
+    // Method to update the approval status of the reimbursement
     protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
         int result = Iservice.Approve(model.ID, model.UserInfo.UserID, aprvd.Remarks);
         return result;
     }
 
-
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -177,32 +178,36 @@
         }
         else
         {
-            model.Particulars = Iservice.SelectParticulars(model.ID).ToList();          
+            model.Particulars = Iservice.SelectParticulars(model.ID).ToList(); // Load particulars for existing reimbursement
         }       
     }
 
+    // Method to update the reimbursement model
     protected override async Task<int> Update(InterBranchReimbursementModel editModel)
     {
         model.IsInterBranch = true;
         model.NatureOfTransaction = InterBranchTranTypes.First(x => x.ID == model.InterBranchTranID).TransactionTypeName;
-        var updatedModel = Iservice.Update(model);
+        var updatedModel = Iservice.Update(model); // Update the model
         return updatedModel.ID.Value;
     }
 
+    // Method to calculate the total amount based on particulars
     private void SetTotalAmt()
     {
         model.TotalAmount = model.Particulars.Sum(x => x.Amount + x.IGST + x.CGST + x.SGST);
     }
 
+    // Method to handle changes in the target branch
     public void TargetBranchChanged(int? otherBranchID)
     {
         model.OtherBranchID = otherBranchID;
-        string TargetGst = branchService.GetGstNo(model.OtherBranchID);
+        string TargetGst = branchService.GetGstNo(model.OtherBranchID); // Get GST number for the target branch
         Local = HomeGst.Substring(0, 2) == TargetGst.Substring(0, 2);
         IsTaxable = HomeGst != TargetGst;
         model.Particulars.Clear();
     }
 
+    // Method to handle changes in the GST usage code
     private void usageOtherChanged(GstUsageCodeModel val)
     {
         gstusgeother = val;
@@ -210,6 +215,7 @@
         subModel.UsageCodeOtherDesc = val?.Description;
     }
 
+    // Method to handle changes in the GST usage code
     private void usageChanged(GstUsageCodeModel val)
     {
         gstusge = val;
@@ -217,20 +223,21 @@
         subModel.UsageCodeDesc = val?.Description;
     }
 
+    // Method to handle changes in the transaction type
     private void TranTypeChanged(int? ID)
     {
         model.InterBranchTranID = ID;
         if (ID == 6)
         {
             DisableUsageCodeSelection = true;
-            gstusgeother =  usageCodeService.SelectByCode(configService.GetByID("CrossChargeExpenseUsageCode").ValueString);
-            gstusge =  usageCodeService.SelectByCode(configService.GetByID("CrossChargeIncomeUsageCode").ValueString);
-        }
+            gstusgeother = usageCodeService.SelectByCode(configService.GetByID("CrossChargeExpenseUsageCode").ValueString); // Get GST usage code for cross charge expense
+            gstusge = usageCodeService.SelectByCode(configService.GetByID("CrossChargeIncomeUsageCode").ValueString); // Get GST usage code for cross charge income
+        } 
         else if (ID == 5)
         {
             DisableUsageCodeSelection = true;
-            gstusgeother = usageCodeService.SelectByCode(configService.GetByID("ReimbursementExpenseUsageCode").ValueString);
-            gstusge = usageCodeService.SelectByCode(configService.GetByID("ReimbursementIncomeUsageCode").ValueString);
+            gstusgeother = usageCodeService.SelectByCode(configService.GetByID("ReimbursementExpenseUsageCode").ValueString); // Get GST usage code for reimbursement expense
+            gstusge = usageCodeService.SelectByCode(configService.GetByID("ReimbursementIncomeUsageCode").ValueString); // Get GST usage code for reimbursement income
         }
         else if (ID == 4)
         {
@@ -258,6 +265,7 @@
     //     subModel.UsageCodeOtherDesc = gstusgeother?.Description;
     // }
 
+    // Method to delete expenses from the reimbursement
     private async Task DeleteExpenses(ReimbursementSubModel i)
     {
         int rowIndex = model.Particulars.IndexOf(i);
@@ -265,6 +273,7 @@
         await OnAmountChange.InvokeAsync();
     }
 
+    // Method to add a new expense to the reimbursement
     public async Task ADD()
     {
         if(model.OtherBranchID is null)
@@ -286,11 +295,13 @@
             snackbar.Add("Entered particulars are invalid.", Severity.Error);
         }
     }
+
+    // Method to add tax details to the expense
     private bool AddTax()
     {
         if (gstusge != null && subModel.Amount != null && gstusgeother != null)
         {
-            subModel.GstRate = usageCodeService.GetGstRate(subModel.UsageCode, DateTime.Now) ?? 0;           
+            subModel.GstRate = usageCodeService.GetGstRate(subModel.UsageCode, DateTime.Now) ?? 0; // Get GST rate based on usage code
 
             if (!IsTaxable)
             {
@@ -312,6 +323,7 @@
         return false;
     }
 
+    // Method to open the dialog for tax rates
     private async Task OpenDialogTaxRates(ReimbursementSubModel i)
     {
         if (_busy)

@@ -152,6 +152,7 @@
     List<BranchModel> branches = new();
     InterBranchMappingModel InterBrMappingList { get; set; }
 
+    // Method to check inter-branch mapping
     private void CheckInterbranchMapping()
     {
         InterBrMappingList = intermappingIservice.Select(OtherBranch.BranchID, model.InterBranchTranID);
@@ -162,6 +163,7 @@
         }
     }
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -173,16 +175,19 @@
         branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = User.Identity.Name;
 
+        // Load transaction types and branches
         transactionTypeList = intermappingIservice.GetTypes().ToList();
         BranchList = branchIservice.Select().ToList();
         if (model.OtherBranchID != null && BranchList.Any(s => s.BranchID == model.OtherBranchID))
         {
             OtherBranch = BranchList.FirstOrDefault(s => s.BranchID == model.OtherBranchID);
         }
+
+        // Load bills if the receipt ID is provided
         if (model.ReceiptID != null)
         {
             model.Bills = Iservice.GetBills(model.ReceiptID).ToList();
-            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
+            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID); // Load party info
         }
         else
         {
@@ -194,11 +199,13 @@
         DocType = model.NatureOfTransaction;
     }
 
+    // Method called when parameters are set
     protected override void OnParametersSet()
     {
         editContext = new EditContext(model);
     }
 
+    // Method to handle changes in the selected branch
     async Task BranchChanged(BranchModel branch)
     {
         OtherBranch = branch;
@@ -206,18 +213,21 @@
         await nTransactionchanged(null);
     }
 
+    // Method to handle changes in business nature
     async Task BusinessNatureChanged(string bn)
     {
         model.BusinessNature = bn;
         await PartyChanged(null);
     }
 
+    // Method to handle changes in the selected party
     async Task PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
         await nTransactionchanged(null);
     }
 
+    // Method to handle changes in the transaction nature
     private async Task nTransactionchanged(string nt)
     {
         if (model.PartyInfo?.PartyID != null)
@@ -239,11 +249,13 @@
         }
     }
 
+    // Method to calculate the total amount based on the bills
     private void calcTotalAmt()
     {
         model.TotalAmount = model.Bills.Sum(x => x.ReceiptAmount);
     }
 
+    // Method to open the dialog for outstanding bills
     private async Task OpenOutstandingBills()
     {
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
@@ -281,6 +293,7 @@
         }
     }
 
+    // Method to handle form submission
     public async void OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -294,6 +307,7 @@
         {
             try
             {
+                // Get the party COA ID based on the selected party and business nature
                 model.PartyCoaID = partyIservice.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
                 if (model.PartyCoaID == null)
                 {
@@ -301,7 +315,9 @@
                 }
                 model.UserInfo.UserID = UserID;
                 model.IsInterBranch = true;
-                Iservice.Update(model);
+
+                // Update the receipt model
+                Iservice.Update(model); 
                 snackbar.Add("Saved Successfully", Severity.Success);
                 dialogForm.Close(model);
             }
@@ -322,6 +338,7 @@
         _busy = false;
     }
 
+    // Method to approve the receipt
     protected async Task ApproveData(DataApprovedStatus aprvd)
     {
         if (HasPermissionReceiptServiceApprove)
@@ -331,7 +348,7 @@
                 model.UserInfo.UserID = UserID;
                 try
                 {
-                    Iservice.Approve(model.ReceiptID, model.UserInfo.UserID, aprvd.Remarks);
+                    Iservice.Approve(model.ReceiptID, model.UserInfo.UserID, aprvd.Remarks); // Approve the receipt
                     snackbar.Add("Approved Successfully", Severity.Success);
                 }
                 catch (Exception ex)
