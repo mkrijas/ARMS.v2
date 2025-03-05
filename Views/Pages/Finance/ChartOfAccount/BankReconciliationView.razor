@@ -162,15 +162,17 @@ else
     private bool IsViewReconciledEntry { get; set; } = false;
     DateRange dateRange;
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         userID = user.Identity.Name;
-        BankList = IbankOwnservice.Select(branchID).ToList();
+        BankList = IbankOwnservice.Select(branchID).ToList(); // Fetch the list of banks for the branch
     }
 
+    // Method to set the view mode for reconciled entries
     private void SetIsViewReconciledEntry(bool val)
     {
         IsViewReconciledEntry = val;
@@ -184,6 +186,7 @@ else
         }
     }
 
+    // Method to search for banks based on a search string
     private async Task<IEnumerable<OwnBankModel>> SearchBanks(string searchString)
     {
         if (string.IsNullOrEmpty(searchString))
@@ -192,6 +195,7 @@ else
         return await Task.FromResult(BankList.Where(x => x.BankAccountInfo.BankTitle.Contains(searchString, StringComparison.InvariantCultureIgnoreCase) || x.BankCode.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
+    // Method to fetch details based on the current view mode
     private void FetchDetails()
     {
         if (IsViewReconciledEntry)
@@ -210,6 +214,7 @@ else
         }
     }
 
+    // Method to fetch the reconciliation summary
     private void FetchRecounsileSummary(int? BranchID, string BankCode, DateTime? StartDate, DateTime? EndDate)
     {
         var UnReconciledSummary = IunreconciledBankEntryService.GetReconcilBankSummary(BranchID, BankCode, StartDate, EndDate);
@@ -228,6 +233,7 @@ else
         }
     }
 
+    // Method to save reconciled entries
     private void SaveRecounsileEntry()
     {
         if (!UnReconciledEntries.Any(x => x.ReconciledDate is not null))
@@ -245,12 +251,13 @@ else
         List<ReconcileUpdateModel> recList = new();
         recList = UnReconciledEntries.Where(x => x.ReconciledDate is not null).Select(y => new ReconcileUpdateModel() { ID = y.ID, BankID = y.BankID, AccountEntryID = y.AccountEntryID,ReconciledDate = y.ReconciledDate }).ToList();
 
-        //var authprov = await auth.GetAuthenticationStateAsync();
+        // Update the reconciled entries in the service
         var result = IunreconciledBankEntryService.UpdateUnReconciledBankEntry(recList, userID);
         getSelectedBankUnRecoincilEntries();
         FetchRecounsileSummary(branchID, SelectedBank.BankCode, DateTime.Now, DateTime.Now);
     }
 
+    // Method to get unreconciled entries for the selected bank
     public void getSelectedBankUnRecoincilEntries()
     {
         if (UnReconciledEntries != null)
@@ -261,6 +268,7 @@ else
         {
             CompleteUnReconciledEntries.Clear();
         }
+        // Fetch all unreconciled bank entries for the selected bank
         CompleteUnReconciledEntries = IunreconciledBankEntryService.SelectAllUnReconciledBank(branchID, SelectedBank.ID).ToList();
         UnReconciledEntries = CompleteUnReconciledEntries.Where(s => !(s.IsExisting ?? false)).ToList();
         if (CompleteUnReconciledEntries.Any(s => (s.IsExisting ?? false)))
@@ -270,6 +278,7 @@ else
         FetchRecounsileSummary(branchID, SelectedBank.BankCode, DateTime.Now, DateTime.Now);
     }
 
+    // Method to get reconciled entries for the selected bank
     public void getSelectedBankRecoincilEntries()
     {
         if (ReconciledEntries != null)
@@ -280,6 +289,7 @@ else
         {
             CompleteReconciledEntries.Clear();
         }
+        // Fetch all reconciled bank entries for the selected bank within the specified date range
         CompleteReconciledEntries = IunreconciledBankEntryService.SelectAllReconciledBank(branchID, SelectedBank.ID, dateRange?.Start ?? null, dateRange?.End ?? null).ToList();
         ReconciledEntries = CompleteReconciledEntries.Where(s => !(s.IsExisting ?? false)).ToList();
         if (CompleteReconciledEntries.Any(s => (s.IsExisting ?? false)))

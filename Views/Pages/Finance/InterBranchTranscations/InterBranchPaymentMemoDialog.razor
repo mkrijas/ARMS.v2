@@ -127,16 +127,20 @@
     private List<InterBranchTransactionTypeModel> transactionTypeList = new();
     private List<BranchModel> BranchList = new();
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
+        // Load branches and transaction types
         BranchList = brService.Select().ToList();
         transactionTypeList = intermappingIservice.GetTypes().ToList();
         if (BranchList != null && model.OtherBranchID != null && BranchList.Any(s => s.BranchID == model.OtherBranchID))
         {
             OtherBranch = BranchList.FirstOrDefault(s => s.BranchID == model.OtherBranchID);
         }
+
+        // Load bills if the payment memo ID is provided
         if (model.PaymentMemoID != null)
         {
             model.Bills = Iservice.GetBills(model.PaymentMemoID.Value).ToList();
@@ -152,6 +156,7 @@
         GetBills();
     } 
 
+    // Method to open the dialog for outstanding bills
     private async Task OpenOutstandingBills()
     {
         DialogOptions Doptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
@@ -190,35 +195,39 @@
         }
     }
 
+    // Method to update the payment memo
     protected override async Task<int> Update(PaymentMemoModel editModel)
     {        
-        model = Iservice.Update(model);
+        model = Iservice.Update(model); // Update the model
         return model.PaymentMemoID.Value;
     }
 
+    // Method to update the approval status of the payment memo
     protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
         model.IsInterBranch = true;
-        int result = Iservice.Approve(model.PaymentMemoID, model.UserInfo.UserID, aprvd.Remarks);
+        int result = Iservice.Approve(model.PaymentMemoID, model.UserInfo.UserID, aprvd.Remarks); // Approve the payment memo
         return result;
     }
      
-
+    // Method to fetch outstanding bills based on the party ID
     private void GetBills()
     {
         List<OutstandingBillsModel> collection = new List<OutstandingBillsModel>();
 
         if (model?.PartyInfo?.PartyID != null)
         {
-            collection = OBIservice.SelectByParty(model.PartyInfo.PartyID, BranchID).ToList();
+            collection = OBIservice.SelectByParty(model.PartyInfo.PartyID, BranchID).ToList(); // Fetch bills by party ID
         }
     }
 
+    // Method to set the total amount based on the bills
     private void SetTotalAmt()
     {
         model.TotalAmount = (model.Bills.Sum(x => x.PayAmount) ?? 0);
     }
 
+    // Method to handle changes in the other branch selection
     private async Task OtherBranchChanged(BranchModel branch)
     {
         OtherBranch = branch;
@@ -227,6 +236,7 @@
         await nbusinesschanged(null);
     }
 
+    // Method to handle changes in business nature
     async Task nbusinesschanged(string val)
     {
         model.BusinessNature = val;
@@ -234,6 +244,7 @@
         await PartyChanged(null);
     }
 
+    // Method to set the nature of transaction based on business nature
     void SetNTransaction(string nBusiness)
     {
         if (nBusiness == "Renter")

@@ -194,6 +194,7 @@
     bool HasPermissionContraServiceApprove { get; set; } = false;
     int ContraDocTypeID = 3;
 
+    // Method to approve a contra request
     protected async Task Approve(DataApprovedStatus aprvd)
     {
         if (HasPermissionContraServiceApprove)
@@ -203,7 +204,7 @@
                 model.UserInfo.UserID = UserID;
                 try
                 {
-                    Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks);
+                    Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks); // Approve the request
                     model.UserInfo.UserID = UserIDTemp;
                     snackbar.Add("Approved Successfully", Severity.Success);
                 }
@@ -221,6 +222,7 @@
         }
     }
 
+    // Method to search for payment codes for home branch
     private async Task<IEnumerable<PaymentCodeModel>> SearchAccountsH(string searchString)
     {
         await Task.Delay(5);      
@@ -229,6 +231,7 @@
         return PcodesHome.Where(x => x.Title.Contains(searchString, StringComparison.InvariantCultureIgnoreCase) || x.ArdCode.Contains(searchString, StringComparison.InvariantCultureIgnoreCase));
     }
 
+    // Method to search for payment codes for other branch
     private async Task<IEnumerable<PaymentCodeModel>> SearchAccountsO(string searchString)
     {
         await Task.Delay(5);
@@ -245,6 +248,7 @@
         }
     }
 
+    // Method to set the account rule definition for home branch
     private void SetAccountRuleDefinitionH(PaymentCodeModel obj)
     {
         accountRuleDefinitionH = obj;
@@ -252,6 +256,7 @@
         model.ArdCodeHome = obj?.ArdCode ?? null;
     }
 
+    // Method to set the account rule definition for other branch
     private void SetAccountRuleDefinitionO(PaymentCodeModel obj)
     {
         accountRuleDefinitionO = obj;
@@ -259,10 +264,11 @@
         model.ArdCodeOther = obj?.ArdCode ?? null;
     }
 
+    // Method to handle changes in the payment mode for home branch
     public void BankModeChanged(string val)
     {
         model.ContraModeHome = val;
-        PcodesHome = accountService.GetPaymentCodes(BranchID, model.ContraModeHome).ToList();
+        PcodesHome = accountService.GetPaymentCodes(BranchID, model.ContraModeHome).ToList(); // Fetch payment codes based on the selected mode
 
         if (model.IsPayment)
         {
@@ -279,10 +285,11 @@
         }
     }    
 
+    // Method to handle changes in the payment mode for other branch
     public void ModeChangeOther(string val)
     {
         model.ContraModeOther = val;
-        PcodesOther = accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther).ToList();
+        PcodesOther = accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther).ToList(); // Fetch payment codes based on the selected mode
         if (!model.IsPayment)
         {
             if (model.ContraModeOther == "Bank")
@@ -298,11 +305,13 @@
         }
     }
 
+    // Method to handle changes in the other branch ID
     public void OtherBranchChanges(int? otherBranchID)
     {
         model.OtherBranchID = otherBranchID;
     }
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -315,7 +324,7 @@
         UserID = user.Identity.Name;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
         hmbarnchName = brancIDString.ToString();
-        transactionTypeList = intermappingIservice.GetTypes().ToList();        
+        transactionTypeList = intermappingIservice.GetTypes().ToList(); // Fetch transaction types
         if (model.ContraID == null)
         {
             model.TotalAmount = 0;
@@ -330,35 +339,42 @@
             accountRuleDefinitionO.CoaID = model.CoaIDOther;
             accountRuleDefinitionO.ArdCode = model.ArdCodeOther;
 
+            // Fetch payment codes for home branch if the model is not null
             if (model != null && model.CoaIDHome != null )
             {
-                accountRuleDefinitionH = accountService.GetPaymentCodes(model.BranchID, model.ContraModeHome).FirstOrDefault(s => s.ArdCode == model.ArdCodeHome);
+                accountRuleDefinitionH = accountService.GetPaymentCodes(model.BranchID, model.ContraModeHome).FirstOrDefault(s => s.ArdCode == model.ArdCodeHome); // Get payment code for home branch
             }
+
+            // Fetch payment codes for other branch if the model is not null
             if (model != null && model.CoaIDOther != null)
             {
-                accountRuleDefinitionO = accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther).FirstOrDefault(s => s.ArdCode == model.ArdCodeOther);
+                accountRuleDefinitionO = accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther).FirstOrDefault(s => s.ArdCode == model.ArdCodeOther); // Get payment code for other branch
             }
         }
         model.BranchID = BranchID;
         model.NatureOfTransaction = "Contra";
-        costCenter = costIservice.Select().ToList();
-        dimension = dimensionIservice.Select().ToList();
-        branches = branchService.Select().ToList();
+        costCenter = costIservice.Select().ToList();// Fetch cost centers
+        dimension = dimensionIservice.Select().ToList(); // Fetch dimensions
+        branches = branchService.Select().ToList(); // Fetch branches
 
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
     }
 
+    // Method to handle changes in the payment mode
     public void PaymentModeChanged(bool val)
     {
         model.IsPayment = val;
     }
 
+    // Method to cancel the dialog
     public void Cancel()
     {
         MudDialog.Cancel();
     }
+
+    // Method to submit the form
     public async void Submit(EditContext cntxt)
     {
         if (_busy)
@@ -385,7 +401,7 @@
                 model.IsInterBranch = true;
                 model.NatureOfTransaction = "Contra";
                 model.UserInfo.UserID = UserID;
-                var updatedModel = Iservice.Update(model);
+                var updatedModel = Iservice.Update(model); // Update the model using the service
                 snackbar.Add("Saved Successfully", Severity.Success);
                 MudDialog.Close(updatedModel);
             }
