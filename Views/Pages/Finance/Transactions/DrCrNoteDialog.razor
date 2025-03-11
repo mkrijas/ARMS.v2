@@ -92,14 +92,15 @@
     public bool HasPermissionDrCrNoteServiceApprove { get; set; } = false;
     public int? DrCrNoteDocTypeID = 5;
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
         if (model.DrCrNoteID != null)
         {
-            model.Particulars = Iservice.GetExpenses(model.DrCrNoteID).ToList();
-            model.Items = Iservice.GetItems(model.DrCrNoteID).ToList();
+            model.Particulars = Iservice.GetExpenses(model.DrCrNoteID).ToList(); // Fetch expenses
+            model.Items = Iservice.GetItems(model.DrCrNoteID).ToList(); // Fetch items
         }
         else
         {
@@ -109,15 +110,20 @@
 
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
+
+        // Fetch the list of cancellation reason codes
         ReasonCodeList = reasonCodeService.SelectSubById(DrCrNoteDocTypeID).ToList();
     }
 
+    // Method to calculate total amounts for particulars and items
     void SetTotal()
     {
         model.TotalAmount = model.Particulars.Sum(x => (x.Amount ?? 0) + (x.IGST ?? 0) + (x.CGST ?? 0) + (x.SGST ?? 0));
         model.TotalAmount += model.Items.Sum(y => (y.Amount ?? 0) + (y.IGST ?? 0) + (y.CGST ?? 0) + (y.SGST ?? 0));
         model.TotalTaxableAmount = (model.Particulars.Sum(x => x.Amount) ?? 0) + (model.Items.Sum(y => y.Amount) ?? 0);
     }
+
+    // Method to handle changes in party selection
     void PartyChanged(PartyModel party)
     {
         if (model.Party?.PartyID != party?.PartyID)
@@ -126,10 +132,11 @@
             if (party != null)
             {
                 IsTaxable = party.GstType == "Registered" || party.GstType == "SEZ";
-                Local = partyService.IsLocal(model.Party.PartyID, BranchID);
+                Local = partyService.IsLocal(model.Party.PartyID, BranchID); // Check if the party is local
             }
             else { Local = false; }
 
+            // Set the appropriate COA ID based on the business nature
             if (party is not null)
             {
                 if (model.BusinessNature == "Supplier")
@@ -153,18 +160,21 @@
         }
     }
 
+    // Method to add an expense to the model
     void AddExpense(TaxPurchaseExpenseModel expenseModel)
     {
         model.Particulars.Add(expenseModel);
         SetTotal();
     }
 
+    // Method to add an item to the model
     void AddItems(TaxPurchaseItemModel ItemModel)
     {
         model.Items.Add(ItemModel);
         SetTotal();
     }
 
+    // Method to handle changes in business nature
     void BusinessNatureChanged(string bn)
     {
         if (model.BusinessNature != bn)
@@ -174,13 +184,14 @@
         }
     }
 
-
+    // Method to update approval status of the document
     protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        int result = Iservice.Approve(model.DrCrNoteID, model.UserInfo.UserID, aprvd.Remarks);
+        int result = Iservice.Approve(model.DrCrNoteID, model.UserInfo.UserID, aprvd.Remarks); // Call service to approve
         return result;
     }
 
+    // Method to update the DrCrNote model
     protected override async Task<int> Update(DrCrNoteModel editModel)
     {
         if (await validate(model))
@@ -196,12 +207,13 @@
                     item.TpeID = null;
                 }
             }
-            model = Iservice.Update(model);
+            model = Iservice.Update(model); // Call service to update the model
             return (model.DrCrNoteID ?? 0);
         }
         return 0;
     }
 
+    // Method to validate the DrCrNote model
     async Task<bool> validate(DrCrNoteModel editModel)
     {
 
@@ -214,8 +226,7 @@
         return true;
     }
 
-
-
+    // Method to fetch additional information based on the selected party and document type
     public async Task fetch()
     {
         if (ReadOnly)
@@ -255,6 +266,7 @@
         }
     }
 
+    // Method to search for cancellation reason codes based on input value
     private async Task<IEnumerable<CancellationReasonCode>> Search(string value)
     {
         await Task.Delay(5);

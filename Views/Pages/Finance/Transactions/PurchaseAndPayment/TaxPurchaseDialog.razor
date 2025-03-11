@@ -81,17 +81,21 @@
     private decimal? TotalBillAmount;
 
     ValidationMessageStore messageStore;
+
+    // Method to handle input changes for the invoice number
     private void OnInputChange(string value)
     {
         model.InvoiceNo = value.Replace(" ", string.Empty);
     }
 
+    // Document information model for the tax purchase
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 9,
             DocumentName = "Purchase"
         };
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         Console.WriteLine("Page loaded");
@@ -104,9 +108,9 @@
         if (model.PID != null)
         {
             UserIDTemp = model.UserInfo.UserID;
-            model.PartyInfo = partyService.SelectByID(model.PartyInfo.PartyID);
-            model.Expenses = Iservice.GetExpenses(model.PID).ToList();
-            model.Items = Iservice.GetItems(model.PID).ToList();
+            model.PartyInfo = partyService.SelectByID(model.PartyInfo.PartyID); // Fetch party info
+            model.Expenses = Iservice.GetExpenses(model.PID).ToList(); // Fetch expenses related to the tax purchase
+            model.Items = Iservice.GetItems(model.PID).ToList(); // Fetch items related to the tax purchase
             model.Assets = new List<AssetPOModel>();
             TotalBillAmount = model.TotalAmount;
         }
@@ -122,6 +126,7 @@
         }
     }
 
+    // Method to set the total amount based on expenses, items, and assets
     void SetTotal()
     {
         model.TotalAmount =
@@ -132,52 +137,59 @@
         + (model.Assets.Where(z => z != null && z.GstMechanism != "RCM").Sum(z => z.GSTValue) ?? 0);
     }
 
+    // Method to handle changes in the selected party
     void PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
         if (party != null)
         {
             IsTaxable = party.GstType == "Registered" || party.GstType == "SEZ";
-            Local = partyService.IsLocal(model.PartyInfo.PartyID, BranchID);
+            Local = partyService.IsLocal(model.PartyInfo.PartyID, BranchID); // Check if the party is local
         }
         else { Local = false; }
     }
 
+    // Method to add an expense to the tax purchase model
     async Task AddExpense(TaxPurchaseExpenseModel expenseModel)
     {
         model.Expenses.Add(expenseModel);
         SetTotal();
     }
 
+    // Method to add an item to the tax purchase model
     async Task AddItems(TaxPurchaseItemModel ItemModel)
     {
         model.Items.Add(ItemModel);
         SetTotal();
     }
 
+    // Method to add an asset to the tax purchase model
     async Task AddAssets(AssetPOModel AssetModel)
     {
         model.Assets.Add(AssetModel);
         SetTotal();
     }
 
+    // Method to update the tax purchase model
     protected override async Task<int> Update(TaxPurchaseModel editModel)
     {
         if (await validate(model))
         {
-            model = Iservice.Update(model);
+            model = Iservice.Update(model); // Update the model using the service
             return model.PID.Value;
         }
         return 0;
     }
 
+    // Method to approve the tax purchase model
     protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        int result = Iservice.Approve(model.PID, model.UserInfo.UserID, aprvd.Remarks);
-        model.UserInfo.UserID = UserIDTemp;
+        int result = Iservice.Approve(model.PID, model.UserInfo.UserID, aprvd.Remarks); // Call the service to approve
+        model.UserInfo.UserID = UserIDTemp; 
         return result;
     }
 
+    // Method to validate the tax purchase model
     public async Task<bool> validate(TaxPurchaseModel editModel)
     {
         if (!DayOpenService.ValidateDayOpen(editModel.DocumentDate, DocInfo.DocumentTypeID, editModel.BranchID).Value)
@@ -193,6 +205,7 @@
             snackbar.Add("Please Set Billed amount", Severity.Warning);
             return false;
         }
+        // Check for invoice duplication
         TaxPurchaseModel check = Iservice.CheckInvoiceDuplication(model);
         if (check?.PID is not null)
         {
@@ -204,15 +217,18 @@
         return true;
     }
 
+    // Method to handle rejection of the tax purchase
     protected async void OnReject()
     {
         try
         {
+            // If a GRN ID is present, cancel the invoice
             if (model.GRNID != null)
             {
                 grnIservice.ToInvoiceCancel(model.GRNID);
             }
 
+            // Fetch the fuel model associated with the tax purchase
             fuelModel = Ifuelservice.SelectByTaxPurchase(model.PID);
             if (fuelModel != null && fuelModel.TripFuelID != null)
             {
@@ -220,7 +236,7 @@
                 var user = authprov.User;
                 branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
                 UserID = user.Identity.Name;
-                Ifuelservice.Delete(fuelModel.TripFuelID, UserID);
+                Ifuelservice.Delete(fuelModel.TripFuelID, UserID); // Delete the fuel entry
                 snackbar.Add("Fuel Removed", Severity.Warning);
             }
         }

@@ -121,6 +121,7 @@
     string UserID;
     int branchID;
 
+    // Lifecycle method called when parameters are set or changed
     protected override void OnParametersSet()
     {
         if (editContext == null)
@@ -130,6 +131,7 @@
         }
     }
 
+    // Lifecycle method called when the component is initialized
     protected override void OnInitialized()
     {
         branchID = BranchID.Value;
@@ -154,15 +156,19 @@
         }
     }
 
+    // Method to search for assets based on a search string
     private async Task<IEnumerable<AssetModel>> SearchAsset(string searchString)
     {
         await Task.Delay(5);
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
+
+        // Return the filtered list of assets based on the search string
         return await Task.FromResult((assetIservice.SelectByBranch(brancID, false, null, searchString).Where(x => !x.IsComplex && !x.IsSold)));
     }
 
+    // Method to add items to the asset sale model
     public async Task AddItems()
     {
         if (Asset is null)
@@ -183,6 +189,7 @@
         }
     }
 
+    // Method to handle selection of an asset
     void AssetSelected(AssetModel selectedAsset)
     {
         Asset = selectedAsset;
@@ -194,6 +201,7 @@
         }
         if (selectedAsset is not null)
         {
+            // Populate the model with the selected asset's details
             Model = assetIservice.SelectPOByID(Asset.AssetID);
             if (Model is null)
             {
@@ -204,6 +212,7 @@
         }
     }
 
+    // Method to delete an asset sale entry
     private async Task Delete(AssetPOModel i)
     {
         int rowIndex = AssetList.IndexOf(i);
@@ -211,6 +220,7 @@
         await OnAmountChange.InvokeAsync();
     }
 
+    // Method to add tax to the asset sale model
     private bool AddTax(AssetPOModel asset)
     {
 
@@ -219,6 +229,8 @@
             snackbar.Add("select party", Severity.Error);
             return false;
         }
+
+        // Calculate TDS (Tax Deducted at Source) based on the asset's book value
         decimal tdsRate = tdsService.GetTdsRate(PartyInfo.PartyID, asset.CoaID);
         Model.TDS = Math.Round((asset.BookValue.Value * tdsRate) / 100, MidpointRounding.AwayFromZero);
         if (!IsTaxable)
@@ -239,6 +251,7 @@
         return true;
     }
 
+    // Method to open the tax rates dialog for an asset sale entry
     private async Task OpenDialogTaxRates(AssetPOModel i)
     {
         if (_busy)

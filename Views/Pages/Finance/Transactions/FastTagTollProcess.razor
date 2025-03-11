@@ -228,6 +228,7 @@
     // public bool Readonly { get; set; }
     // public bool Verify { get; set; }
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -258,6 +259,7 @@
         // DocType = "FasTag";
     }
 
+    // Lifecycle method called when parameters are set
     protected override void OnParametersSet()
     {
         id = Convert.ToInt32(EncryptionHelper.Decrypt(encryptedId));
@@ -267,6 +269,7 @@
         LoadData();
     }
 
+    // Method to load data based on the current state
     private async Task LoadData()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -275,9 +278,9 @@
         if (id != null && id != 0) //&& Readonly == true)
         {
             ListReadonly = true;
-            MainModel = IFTService.GetProcessViewModel(id);
+            MainModel = IFTService.GetProcessViewModel(id); // Get the main model
             selectedDocumentNumber = MainModel;
-            collection = IFTService.GetProcessViewCollection(id).ToList();
+            collection = IFTService.GetProcessViewCollection(id).ToList(); // Load the collection
 
             foreach (var item in collection)
             {
@@ -288,7 +291,7 @@
         else if (id == 0 && Readonly == false)
         {
             ListReadonly = false;
-            DocumentNumbers = IFTService.SelectPendingFTDoc().ToList();
+            DocumentNumbers = IFTService.SelectPendingFTDoc().ToList(); // Load pending documents
         }
         DocType = "FasTag";
         branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
@@ -307,6 +310,7 @@
         }
     }
 
+    // Method to approve an entry
     protected async Task ApproveEntry(DataApprovedStatus aprvd)
     {
         if (HasPermissionIFastTagServiceApprove)
@@ -319,7 +323,7 @@
                     var user = authprov.User;
                     MainModel.UserInfo.UserID = user.Identity.Name;
                     //MainModel.BranchID = branchID;
-                    IFTService.Approve(MainModel.FastTagProcessID, MainModel.UserInfo.UserID, aprvd.Remarks);
+                    IFTService.Approve(MainModel.FastTagProcessID, MainModel.UserInfo.UserID, aprvd.Remarks); // Approve the entry
                     snackbar.Add("Approved Successfully", Severity.Success);
                 }
                 catch (Exception ex)
@@ -336,6 +340,7 @@
         }
     }
 
+    // Method to handle document number changec
     private async Task DocNoChange(FastTagProcessModel model)
     {
         selectedDocumentNumber = model;
@@ -353,9 +358,10 @@
         GetCollection(MainModel);
     }
 
+    // Method to get the collection based on the FastTag process model
     public async Task GetCollection(FastTagProcessModel model)
     {
-        collection = IFTService.SelectByBranch(model.FastTagProcessUploadID, branchID).ToList();
+        collection = IFTService.SelectByBranch(model.FastTagProcessUploadID, branchID).ToList(); // Load collection
 
         if (collection.Count == 0)
         {
@@ -365,6 +371,7 @@
         }
     }
 
+    // Method to cancel and navigate to the view page
     public async Task Cancel()
     {
         NavigationManager.NavigateTo("/FasTagTollProcessView");
@@ -374,11 +381,13 @@
 
     public bool allselected = false;
 
+    // Method to check/uncheck an item
     public void checkitem(FastTagModel item, bool check)
     {
         item.IsChecked = check;
     }
 
+    // Method to select/deselect all items
     public void SelectAll(bool isChecked)
     {
         FilteredCollection = collection.Where(item => search(item));
@@ -388,6 +397,7 @@
         }
     }
 
+    // Method to search for items based on the plate number
     private bool search(FastTagModel model)
     {
         if (collection.All(e => e.IsChecked))
@@ -406,6 +416,7 @@
         return model.NumberPlate?.Contains(searchplatenumber, StringComparison.OrdinalIgnoreCase) == true;
     }
 
+    // Method to edit the trip number of a FastTag model
     public async Task EditTripNumber(FastTagModel model)
     {
         if (HasPermissionIFastTagServiceEdit)
@@ -442,7 +453,7 @@
                     {
                         itemToUpdate.TripNumberDisplay = data.TripNumberDisplay;
                         itemToUpdate.ActivityType = data.ActivityType;
-                        bool a = IFTService.UpdateTripNumber(data);
+                        bool a = IFTService.UpdateTripNumber(data); // Call the service to update the trip number
 
                         snackbar.Add("Updated Successfully", Severity.Success);
                     }
@@ -532,6 +543,7 @@
     //     FilteredCollection = collection.Where(item => item.NumberPlate.Contains(searchString, StringComparison.InvariantCultureIgnoreCase));
     // }
 
+    // Method to handle form submission
     public async Task OnValidSubmit()
     {
         if (HasPermissionIFastTagServiceEdit)
@@ -557,6 +569,8 @@
                         //snackbar.Add("One of the entry in the selected collection has No ActivityType !", Severity.Error);
                         return;
                     }
+
+                    // Call the service to update the process
                     IFTService.UpdateProcess(MainModel);
                     snackbar.Add("Saved Successfully", Severity.Success);
                     NavigationManager.NavigateTo("/FasTagTollProcessView");
@@ -583,6 +597,7 @@
         }
     }
 
+    // Method to download the data as an Excel file
     private async Task ExcelDownload()
     {
         var fileName = "FasTagToll ProcessList.xlsx";
@@ -592,6 +607,7 @@
         await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
     }
 
+    // Method to generate Excel file bytes
     private byte[] GenerateExcelBytes(string sheetName)
     {
         using (var package = new ExcelPackage())

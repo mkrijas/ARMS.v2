@@ -170,7 +170,7 @@
         {
             model.UserInfo.UserID = UserID;
             model.NatureOfTransaction = "Trip Expenses";
-            var tripInfo = tripIservice.GetTripInfo(model.TripID);
+            var tripInfo = tripIservice.GetTripInfo(model.TripID); // Get trip information
             if (tripInfo is not null)
             {
                 model.Narration = string.Format("Trip : {0}; Truck : {1}; Driver : {2};", tripInfo.TripNumber, tripInfo.Truck, tripInfo.Driver);
@@ -179,7 +179,7 @@
         else
         {
             UserIDTemp = model.UserInfo.UserID;
-            model.Transactions = Iservice.GetExpenses(model.OpTranID).ToList();
+            model.Transactions = Iservice.GetExpenses(model.OpTranID).ToList(); // Get expenses for the operation transaction
         }
         if (model.PaymentMode == null)
         {
@@ -187,10 +187,11 @@
         }
         model.NatureOfTransaction = model.Area;
         model.BranchID = BranchID;
-        OperationPostingList = IOpsArd.Select().ToList();
+        OperationPostingList = IOpsArd.Select().ToList(); // Load operation posting groups
 
+        // Get total advance for the trip
         Advance = advanceService.GetTotal(model.TripID);
-        AdvanceBalance = Advance.Amount;
+        AdvanceBalance = Advance.Amount; 
         displayBalance = AdvanceBalance.ToString();
     }
 
@@ -200,37 +201,44 @@
             await OperationTitleControl.FocusAsync();
     }
 
+    // Method to toggle reimbursement status
     protected void ToggleData(bool value)
     {
         opTranSubModel.IsReimbursed = value;
     }
 
+    // Method to add an operation posting group to the transaction
     void AddOperationPostingGroup(OperationPostingGroupModel uc)
     {
         opTranSubModel.OperationPostingGroupModel = uc;
 
     }
 
+    // Method to search for operation posting groups based on a search string
     private async Task<IEnumerable<OperationPostingGroupModel>> SearchOperationPostingGroup(string searchString)
     {
         return await Task.FromResult(OperationPostingList.Where(x => x.ADCode.Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase) ||
                                                                 x.Title.Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase)));
     }
 
+    // Method to update approval status of the operation transaction
     protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        int result = Iservice.Approve(model.OpTranID, model.UserInfo.UserID, aprvd.Remarks);
+        int result = Iservice.Approve(model.OpTranID, model.UserInfo.UserID, aprvd.Remarks); // Call service to approve
         model.UserInfo.UserID = UserIDTemp;
         return result;
     }
 
+    // Method to add items to the operation transaction
     public async Task AddItems()
     {
         if(opTranSubModel.IsReimbursed)
         {
+            // Get the fast tag usage code from the configuration
             ConfigModel cFModel = configTable.GetFastTagUsageCode();
             FastTagUsageCodeModel = usage.SelectByCode(cFModel.ValueString);
 
+            // Get the unloading charge usage code from the configuration
             ConfigModel cLModel = configTable.GetUnloadingChargeUsageCode();
             LoadingAndUnlodingUsageCodeModel = usage.SelectByCode(cLModel.ValueString);
 
@@ -265,6 +273,7 @@
         }
     }
 
+    // Method to delete expenses from the transaction
     public void DeleteExpenses(OpTranSubModel i)
     {
         int rowIndex = model.Transactions.IndexOf(i);
@@ -273,6 +282,7 @@
         SetTotal();
     }
 
+    // Method to set total amounts and update display balance
     private void SetTotal()
     {
         model.TotalAmount = model.Transactions.Sum(x => x.Amount);
@@ -280,6 +290,7 @@
         displayBalance = Math.Abs(AdvanceBalance ?? 0).ToString(); 
     }
 
+    // Method to update the operation transaction
     protected override async Task<int> Update(OpTranModel editModel)
     {
         if (model.OpTranID is null || model.OpTranID == 0)
@@ -320,6 +331,8 @@
                 model.TotalAmount = model.TotalAmount - AdvanceReturnAmount;
             }
         }
+
+        // Call the service to update the operation transaction
         var updatedModel = Iservice.Update(model);
         model.OpTranID = updatedModel.OpTranID;
         if (updatedModel.OpTranID != null && AdvanceReturnAmount > 0 && model.TripID is not null)
@@ -340,6 +353,8 @@
                     DocType = Advance.DocType,
                     RecordStatus = 3
                 };
+
+            // Update the advance record in the service
             advanceService.Update(advanceModel);
         }
         return updatedModel.OpTranID.Value;       

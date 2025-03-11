@@ -112,7 +112,7 @@
     private RepairJobModel _selectedJob;
     private TruckModel _truck { get; set; }
 
-
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -126,8 +126,8 @@
         }
         else
         {
-            model.PartyInfo = partyService.SelectByID(model.PartyInfo.PartyID);
-            model.Entries = Iservice.GetEntries(model.ID).ToList();
+            model.PartyInfo = partyService.SelectByID(model.PartyInfo.PartyID); // Fetch party info
+            model.Entries = Iservice.GetEntries(model.ID).ToList(); // Fetch entries related to the payment memo
         }
         model.NatureOfTransaction = "Sundry Maintenance";
 
@@ -137,6 +137,7 @@
             };
     }
 
+    // Method to handle changes in the selected truck
     void truckChanged(TruckModel truck)
     {
         _truck = truck;
@@ -144,6 +145,7 @@
         _entryModel.TruckRegNo = truck?.RegNo;
     }
 
+    // Method to handle selection of a repair job
     void JobSelected(RepairJobModel job)
     {
         _selectedJob = job;
@@ -151,34 +153,39 @@
         _entryModel.JobTitle = job?.Title;
     }
 
+    // Method to set the total amount based on entries
     void SetTotal()
     {
         model.TotalAmount = (model.Entries.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0);
     }
+
+    // Method to handle changes in the selected party
     void PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
         if (party != null)
         {
             IsTaxable = party.GstType == "Registered" || party.GstType == "SEZ";
-            Local = partyService.IsLocal(model.PartyInfo.PartyID, BranchID);
-        }
+            Local = partyService.IsLocal(model.PartyInfo.PartyID, BranchID); // Check if the party is local
+        } 
         else { Local = false; }
     }
 
+    // Method to update the payment memo
     protected override async Task<int> Update(SundryMaintenanceModel editModel)
     {
         if (await validate(model))
         {
-            model = Iservice.Update(model);
+            model = Iservice.Update(model); // Update the model using the service
             return model.ID.Value;
         }
         return 0;
     }
 
+    // Method to approve the payment memo
     protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        int result = Iservice.Approve(model.ID, model.UserInfo.UserID, aprvd.Remarks);
+        int result = Iservice.Approve(model.ID, model.UserInfo.UserID, aprvd.Remarks); // Call the service to approve
         return result;
     }
 
@@ -187,7 +194,7 @@
         return true;
     }
 
-
+    // Method to add a new entry to the payment memo
     private void ADD()
     {
         if (model.Entries is null)
@@ -216,8 +223,7 @@
         }
     }
 
-
-
+    // Method to handle selection of a GST usage code
     void UsageCodeSelected(GstUsageCodeModel u)
     {
         gstusage = u;
@@ -225,7 +231,8 @@
         _entryModel.CoaID = u?.CoaID;
         _entryModel.UsageCodeDescription = u?.Description;
     }
-
+    
+    // Method to open the tax rates dialog
     private async Task OpenDialogTaxRates(SundryMaintenanceEntryModel i)
     {
         if (_busy)
@@ -259,6 +266,7 @@
         _busy = false;
     }
 
+    // Method to delete expenses from the payment memo
     private void DeleteExpenses(SundryMaintenanceEntryModel i)
     {
         int rowIndex = model.Entries.IndexOf(i);
@@ -266,6 +274,7 @@
         SetTotal();
     }
 
+    // Method to add tax to the entry model
     private bool AddTax()
     {
         if (gstusage != null && _entryModel.Amount != null)
@@ -275,7 +284,11 @@
                 snackbar.Add("select party", Severity.Error);
                 return false;
             }
+
+            // Get the GST rate for the selected usage code
             _entryModel.GstRate = usageCodeService.GetGstRate(_entryModel.UsageCode, DateTime.Now) ?? 0;
+
+            // Get the TDS rate for the selected party and COA ID
             decimal tdsRate = tdsIService.GetTdsRate(model.PartyInfo.PartyID, _entryModel.CoaID);
             _entryModel.TDS = Math.Round((_entryModel.Amount.Value * tdsRate) / 100, MidpointRounding.AwayFromZero);
             if (!IsTaxable)
