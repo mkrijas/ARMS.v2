@@ -133,6 +133,21 @@ namespace ArmsServices.DataServices.General
             return null;
         }
 
+        // Method to get the inventory spare group ID
+        public ConfigModel GetByInventorySpareGroupID()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@KeyString", "InventorySpareGroupID"),
+               new SqlParameter("@Operation", "ByID")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
+
         // Method to get all configuration settings
         public IEnumerable<ConfigModel> GetAll()
         {

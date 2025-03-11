@@ -84,6 +84,7 @@
     private GstModel taxModel = new GstModel();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -94,15 +95,17 @@
         var user = authprov.User;
         branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
         UserID = user.Identity.Name;
+
+        // If a Sale ID is provided, fetch associated data
         if (model?.SID != null)
         {
-            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
-            var ResultParticulars = Iservice.GetParticulars(model.SID);
-            if (ResultParticulars != null)
+            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID); // Get party information
+            var ResultParticulars = Iservice.GetParticulars(model.SID); // Get particulars
+            if (ResultParticulars != null) 
             {
                 model.Particulars = ResultParticulars.ToList();
             }
-            var ResultItems = Iservice.GetItems(model.SID);
+            var ResultItems = Iservice.GetItems(model.SID); // Get items
             if (ResultItems != null)
             {
                 model.Items = ResultItems.ToList();
@@ -118,6 +121,7 @@
         DocType = model.NatureOfTransaction;
     }
 
+    // Lifecycle method called when parameters are set or changed
     protected override void OnParametersSet()
     {
         if (editContext == null)
@@ -129,34 +133,40 @@
         SetTotal();
     }
 
+    // Method to calculate the total amount from particulars and items
     void SetTotal()
     {
         model.TotalAmount = (model.Particulars.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0) + (model.Items.Where(y => y != null).Sum(y => y.Amount + y.IGST + y.CGST + y.SGST) ?? 0);
     }
 
+    // Method to handle changes in the selected party
     void PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
         if (party != null)
         {
+            // Determine if the party is taxable and local
             IsTaxable = party.GstType == "Registered" || party.GstType == "UnRegistered";
             Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
         }
         else { Local = false; }
     }
 
+    // Method to add an expense to the particulars
     async Task AddExpense(TaxPurchaseExpenseModel expenseModel)
     {
         model.Particulars.Add(expenseModel);
         SetTotal();
     }
 
+    // Method to add an item to the items list
     async Task AddItems(TaxPurchaseItemModel ItemModel)
     {
         model.Items.Add(ItemModel);
         SetTotal();
     }
 
+    // Method to approve the sale
     protected async Task Approve(DataApprovedStatus aprvd)
     {
         if (HasPermissionSaleServiceApprove)
@@ -165,6 +175,7 @@
             {
                 try
                 {
+                    // Approve the sale using the service
                     Iservice.Approve(model.SID, UserID, aprvd.Remarks);
                     snackbar.Add("Approved Successfully", Severity.Success);
                 }
@@ -182,6 +193,7 @@
         }
     }
 
+    // Method to handle form submission when the form is valid
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -197,6 +209,8 @@
             {
                 model.SalesType = "Item";
                 model.UserInfo.UserID = UserID;
+
+                // Update the sale using the service
                 Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
                 dialogForm.Close(model);

@@ -388,6 +388,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InventoryBatchID",model.InventoryBatchID),
                new SqlParameter("@TyreSerialNumber",model.TyreSerialNumber),
                new SqlParameter("@UserID",model.UserInfo.UserID),
+               new SqlParameter("@ItemType",model.ItemType),
+               new SqlParameter("@WarrantyCard",model.WarrantyCard),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Update]", parameters))
             {
@@ -438,7 +440,7 @@ namespace ArmsServices.DataServices
                 InventoryBatchID = dr.GetInt64("InventoryBatchID"),
                 InventoryItemID = dr.GetInt32("InventoryItemID"),
                 Make = dr.GetString("make"),
-                Tubeless = dr.GetBoolean("Tubeless"),
+                Tubeless = dr["Tubeless"] != DBNull.Value ? (bool?)dr.GetBoolean("Tubeless") : null, // Handle NULL
                 TyreSize = dr.GetString("TyreSize"),
                 TyreType = dr.GetString("TyreType"),
                 TyreStatus = dr.GetInt32("TyreStatus"),
@@ -452,6 +454,8 @@ namespace ArmsServices.DataServices
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
+                ItemType = dr.GetString("ItemType"),
+                WarrantyCard = dr.GetString("WarrantyCard")
             };
         }
 

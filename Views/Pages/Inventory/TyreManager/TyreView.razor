@@ -19,17 +19,17 @@
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<TyreModel,bool>(search)">
             <ToolBarContent>
-                <MudText Typo="Typo.h6">Tyres</MudText>
+                <MudText Typo="Typo.h6">Tyre/Accessories</MudText>
                 <MudTooltip Text="New Tyre">
                     <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEdit(new TyreModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search tyre..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-               @*  <MudButton OnClick="ExcelDownload" Style="margin: 14px; margin-left: 60px;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Export to Excel</MudButton> *@
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreSerialNumber)" InitialDirection="SortDirection.Ascending">Tyre Serial Number</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Make)" InitialDirection="SortDirection.Ascending">Make</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Make)" InitialDirection="SortDirection.Ascending">Item Type</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreType)" InitialDirection="SortDirection.Ascending">Tyre Type</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreSize)" InitialDirection="SortDirection.Ascending">Tyre Size</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Status)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
@@ -41,6 +41,7 @@
             <RowTemplate>
                 <MudTd DataLabel="Tyre">@context.TyreSerialNumber</MudTd>
                 <MudTd DataLabel="Make">@context.Make</MudTd>
+                <MudTd DataLabel="ItemType">@context.ItemType</MudTd>
                 <MudTd DataLabel="TyreType">@context.TyreType</MudTd>
                 <MudTd DataLabel="TyreSize">@context.TyreSize</MudTd>
                 <MudTd DataLabel="Status">@context.Status</MudTd>
@@ -62,7 +63,7 @@
                             <MudIconButton @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" />
                         </MudTooltip>
                         <MudTooltip Text="Km Reading">
-                            <MudIconButton @onclick="@(()=> OpenKmReading(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.AvTimer" Size="Size.Small" />
+                            <MudIconButton Disabled="@(context.ItemType != "Tyre")" @onclick="@(()=> OpenKmReading(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.AvTimer" Size="Size.Small" />
                         </MudTooltip>
                        
                         <MudTooltip Text="@txt">
@@ -278,63 +279,5 @@
         await Task.Delay(200);
         _busy = false;
     }
-
-    private async Task ExcelDownload()
-    {
-        var fileName = "TyreMaster.xlsx";
-        var sheetName = "Sheet1"; // Change the sheet name as needed
-        var fileBytes = GenerateExcelBytes(sheetName);
-
-        await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
-    }
-
-    private byte[] GenerateExcelBytes(string sheetName)
-    {
-        using (var package = new ExcelPackage())
-        {
-            var worksheet = package.Workbook.Worksheets.Add(sheetName);
-
-            // Add column headers
-            worksheet.Cells[1, 1].Value = "Tyre Serial Number";
-            worksheet.Cells[1, 2].Value = "Make";
-            worksheet.Cells[1, 3].Value = "Tyre Type";
-            worksheet.Cells[1, 4].Value = "Tyre Size";
-            worksheet.Cells[1, 5].Value = "Status";
-            worksheet.Cells[1, 6].Value = "Expected Life";
-            worksheet.Cells[1, 7].Value = "Mounted Truck";
-            worksheet.Cells[1, 8].Value = "Tubless";
-            for (int i = 1; i <= 8; i++)
-            {
-                worksheet.Cells[1, i].Style.Font.Bold = true;
-            }
-
-            int row = 2;
-            foreach (var item in collection)
-            {
-                worksheet.Cells[row, 1].Value = item.TyreSerialNumber;
-                worksheet.Cells[row, 2].Value = item.Make;
-                worksheet.Cells[row, 3].Value = item.TyreType;
-                worksheet.Cells[row, 4].Value = item.TyreSize;
-                worksheet.Cells[row, 5].Value = item.Status;
-                worksheet.Cells[row, 6].Value = item.TotalExpectedLife;
-                worksheet.Cells[row, 7].Value = item.TyrePosition;
-                worksheet.Cells[row, 8].Value = item.Tubeless;
-
-                
-                row++;
-            }
-
-            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Top.Style = ExcelBorderStyle.Thin;
-            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Left.Style = ExcelBorderStyle.Thin;
-            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
-
-            // Save the Excel package to a memory stream
-            using (var stream = new MemoryStream())
-            {
-                package.SaveAs(stream);
-                return stream.ToArray();
-            }
-        }
-    }
+       
 }
