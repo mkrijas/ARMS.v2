@@ -14,7 +14,7 @@ namespace ArmsServices.DataServices
     {
         OutstandingBillsModel SelectByID(int? ID);
         IEnumerable<OutstandingBillsModel> Select(int BranchID);
-        IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID);
+        IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end);
         // int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills);
         int? AutoSettle(AutoSettleModel model);  //AutoSettle
