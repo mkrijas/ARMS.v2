@@ -1,4 +1,4 @@
-﻿var _0x1751 = ["arms", "arms@123"];
+﻿var _0x1751 = ["TEAMTHAI\arms", "arms@123"];
 
 function getHTTPObject() {
     if (typeof XMLHttpRequest != 'undefined') {

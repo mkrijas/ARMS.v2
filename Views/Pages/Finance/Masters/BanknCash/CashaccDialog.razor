@@ -35,7 +35,7 @@
                     </MudSelect>
                     </MudItem>
                  <MudItem xs="12">                    
-                    <CoaSelector @bind-Value="model.Coa" LabelName="Select A/c " />
+                    <CoaSelector @bind-Value="model.Coa" LabelName="Select A/c " AccountGroup="CoaGroup" />
                 </MudItem>
             </MudGrid>
         </EditForm>
@@ -52,20 +52,24 @@
     public CashAccountModel model { get; set; }
     public BranchModel SelectBr { get; set; }
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    private List<ChartOfAccountModel> Coa = new();
+    int? CoaGroup;
+    //private List<ChartOfAccountModel> Coa = new();
     private bool _busy;
 
     public bool HasPermissionCashAccountServiceEdit { get; set; } = false;
     public int CashAccountDocTypeID = 90;
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionCashAccountServiceEdit = await Irole.HasClaim(CashAccountDocTypeID.ToString(), "Edit", ctc.Token);
 
-        Coa = ICoaservice.SelectByGroup(int.Parse(IConfig.GetByFinanceCashGroupID().ValueString)).ToList();
+        // Get the cash group ID from configuration
+        CoaGroup =  int.Parse(IConfig.GetByFinanceCashGroupID().ValueString);
     }
 
+    // Method to handle form submission when the form is valid
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -84,7 +88,7 @@
             model.UserInfo.UserID = user.Identity.Name;
             try
             {
-                Iservice.Update(model);
+                Iservice.Update(model); // Update the cash account
                 snackbar.Add("Saved Successfully", Severity.Success);
                 MudDialog.Close(model);
             }

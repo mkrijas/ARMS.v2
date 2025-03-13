@@ -141,6 +141,7 @@
     public bool HasPermissionToApprove { get; set; } = false;
     int DocVoucherDocTypeID = 19;
 
+    // Lifecycle method called when parameters are set or changed
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -173,8 +174,11 @@
         }
         else
         {
+            // Fetch sub-document details if the model is already initialized
             model.DocVoucherSubList = Iservice.GetSub(model.DocumentVoucherID).ToList();
         }
+
+        // Fetch document types and GST usage codes
         DocumentTypeList = IDocumentService.GetDocumentTypes().ToList();
         usageList = usageService.SelectByArea(Area, System.DateTime.Now).ToList();
         model.TotalTax = (model.IGST ?? 0) + (model.SGST ?? 0) + (model.CGST ?? 0) + (model.TDS ?? 0);
@@ -184,6 +188,7 @@
         DocType = model.NatureOfTransaction;
     }
 
+    // Lifecycle method called when parameters are set or changed
     protected override void OnParametersSet()
     {
         editContext = new EditContext(model);
@@ -192,6 +197,7 @@
         DocumentDetails.DocumentID = model.DocumentVoucherID;
     }
 
+    // Method to approve the document entry
     protected async Task ApproveEntry(DataApprovedStatus aprvd)
     {
         if (HasPermissionToApprove)
@@ -201,6 +207,7 @@
                 model.UserInfo.UserID = UserID;
                 try
                 {
+                    // Call the service to approve the document voucher
                     Iservice.Approve(model.DocumentVoucherID, model.UserInfo.UserID, aprvd.Remarks);
                     snackbar.Add("Approved Successfully", Severity.Success);
                 }
@@ -239,6 +246,7 @@
     //    }
     //}
 
+    // Method to handle changes in the document type
     public async Task OnChangeDocumentType(AssetDocumentTypeModel obj)
     {
         model.DocumentType = obj;
@@ -270,13 +278,15 @@
 
         }
     }
-
+    
+    // Method to handle changes in the selected agent
     public void OnChangeAgent(PartyModel obj)
     {
         model.Agent = obj;
         //AddTax();
     }
 
+    // Method to handle changes in the agent's checked status
     public void OnChangeIsAgentChecked(bool obj)
     {
         model.IsAgent = obj;
@@ -299,6 +309,7 @@
         }
     }
 
+    // Method to handle form submission when the form is valid
     public async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -315,6 +326,7 @@
             return;
         }
 
+        // Validate cost center and dimension based on document type
         if (model.DocumentType != null && (IDocumentService.IsCostCenterIsMadatoryForGivenDocumentTypeID(model.DocumentType.DocumentTypeID) == false || IDocumentService.IsDimensionIsMadatoryForGivenDocumentTypeID(model.DocumentType.DocumentTypeID) == false))
         {
             if (model.DocVoucherSubList != null && model.DocVoucherSubList.Any(s => s.CostCenterMod == null))
@@ -338,7 +350,7 @@
         {
             try
             {                
-                model = Iservice.Update(model);
+                model = Iservice.Update(model); // Update the model using the service
                 snackbar.Add("Saved Successfully", Severity.Success);
                 dialogForm.Close(model);
             }
@@ -357,6 +369,7 @@
         _busy = false;
     }
 
+    // Method to delete a sub-document from the list
     private void DeleteSubList(DocumentVoucherSubModel subModel)
     {
         if (model.DocVoucherSubList.Exists(x => x.DocumentVoucherSubID == subModel.DocumentVoucherSubID))
@@ -393,6 +406,7 @@
     //    }
     //}
 
+    // Method to add tax to the model based on the selected agent and document type
     private bool AddTax()
     {
         if (model.IsAgent)
@@ -410,6 +424,8 @@
                 snackbar.Add("Please select document type.", Severity.Error);
                 return false;
             }
+            
+            // Get the GST rate based on the document type's usage code
             model.GstRate = usageService.GetGstRate(model.DocumentType?.UsageCode?.UsageCode ?? "", DateTime.Now);
             decimal taxRate = model.GstRate ?? 0;
             if (!Local)
@@ -420,6 +436,8 @@
             {
                 model.SGST = model.CGST = Math.Round(model.TotalAmount.Value * taxRate / 200, 2);
             }
+
+            // Calculate TDS based on the agent's party ID
             decimal tdsRate = tdsService.GetTdsRate(model.Agent.PartyID, model.PaymentCoaID);
             model.TDS = Math.Round((model.TotalAmount.Value * tdsRate) / 100, 2);
             model.TotalTax = (model.IGST ?? 0) + (model.SGST ?? 0) + (model.CGST ?? 0) + (model.TDS ?? 0);

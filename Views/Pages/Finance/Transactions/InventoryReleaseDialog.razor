@@ -207,6 +207,8 @@
             model.NatureOfTransaction = "Inventory Release";
             //model.UserInfo = new() { UserID = UserID, };
         }
+
+        // Load item, job card, inventory request, truck, and store lists
         ItemList = itemIservice.SearchByDescription(string.Empty).ToList();
         JobcardList = IJobcardService.SelectByBranch(branchID, true).ToList();
         InventoryRequestList = IInventoryRequestservice.SelectByStore(model?.Store?.StoreID ?? null, branchID).Where(d => !((((d.IsCompletelyReleased != null && d.IsCompletelyReleased.Value) || d.IsClosed) && d.RequestID != model.RequestID))).ToList();
@@ -238,10 +240,12 @@
             }
             if (ReadOnly)
             {
+                // Load inventory request sub-items in read-only mode
                 InventoryRequestSubList = Iservice.GetRequstSubReadOnly(model.RID, model.Store.StoreID).ToList();
             }
             else
             {
+                // Load inventory request sub-items based on whether items are used or notc
                 if(!model.IsUsedItem)
                 {
                     InventoryRequestSubList = Iservice.GetRequstSub(model.RequestID, model.Store.StoreID).ToList();                    
@@ -273,6 +277,7 @@
         DocumentDetails.DocumentID = model.RID;
     }
 
+    // Method to handle item code selection
     protected void getitemCode(InventoryItemModel item)
     {
         if (item != null)
@@ -288,24 +293,29 @@
         }
     }
 
+    // Method to handle job card selection
     public void OnChangeJobcard(JobcardModel obj) 
     {
         model.Jobcard = obj;
     }
 
+    // Method to set the used item flag
     public void SetUsedItem(bool val)
     {
         model.IsUsedItem = val;
         if (model.Store != null && !model.IsUsedItem)
         {
+            // Load inventory request sub-items if not using items
             InventoryRequestSubList = Iservice.GetRequstSub(model.RequestID, model.Store.StoreID).ToList();
         }
         if (model.Store != null && model.IsUsedItem)
         {
+            // Load used inventory request sub-items if using items
             InventoryRequestSubList = Iservice.GetRequstSubUsed(model.RequestID, model.Store.StoreID).ToList();
         }
     }
 
+    // Method to handle inventory request selection
     public void OnChangeSelectedInventoryRequest(InventoryRequestModel obj)
     {
         SelectInventoryRequest = obj;
@@ -339,6 +349,8 @@
             {
                 InventoryRequestSubList.Clear();
             }
+
+            // Load inventory request sub-items based on the selected store
             if (obj.Store != null && !model.IsUsedItem)
             {
                 InventoryRequestSubList = Iservice.GetRequstSub(obj.RequestID, obj.Store.StoreID).ToList();
@@ -354,11 +366,13 @@
         }
     }
 
+    // Method to handle truck selection
     public void OnChangeTruck(TruckModel obj)
     {
         model.Truck = obj;
     }
 
+    // Method to handle form submission when valid
     public async void OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -402,8 +416,8 @@
                             });
                     }
                 }
-                _busy = true;
-                model = Iservice.Update(model);
+                _busy = true; 
+                model = Iservice.Update(model); // Call service to update the model
                 snackbar.Add("Saved Successfully", Severity.Success);
                 dialogForm.Close(model);
             }
@@ -425,6 +439,7 @@
         }
     }
 
+    // Method to delete an item from the inventory request
     private void DeleteItem(InventoryItemEntryModel ItemDetails)
     {
         if (model.Items.Exists(x => x.ItemID == ItemDetails.ItemID))
@@ -436,6 +451,7 @@
         }
     }
 
+    // Method to approve the inventory release
     protected async Task Approve(DataApprovedStatus aprvd)
     {
         if (HasPermissionInventoryReleaseServiceApprove)
@@ -450,7 +466,7 @@
                 try
                 {
                     model.UserInfo.UserID = UserID;
-                    Iservice.Approve(model.RID, model.UserInfo.UserID, aprvd.Remarks);
+                    Iservice.Approve(model.RID, model.UserInfo.UserID, aprvd.Remarks); // Call the service to approve the inventory release
                     notiService.AcknowledgeAuthNotification(99, 97, model.RID.Value, UserID);
                     model.UserInfo.UserID = UserIDTemp;
                     snackbar.Add("Approved Successfully", Severity.Success);

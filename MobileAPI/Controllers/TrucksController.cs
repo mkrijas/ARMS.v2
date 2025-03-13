@@ -22,5 +22,15 @@ namespace MobileAPI.Controllers
         {
             return _truckService.SelectByBranch(BranchID, Filer, HomeOrOperation);
         }
+
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<NoDriverTruckModel> GetNoDriverTrucks(int? BranchID)
+        {
+            List<NoDriverTruckModel> trucks;
+            trucks = _truckService.GetNoDriverTruck(BranchID).ToList();
+            return trucks;
+        }
     }
 }

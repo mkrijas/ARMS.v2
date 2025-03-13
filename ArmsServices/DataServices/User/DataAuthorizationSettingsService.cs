@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a data authorization setting
         public int? Delete(int? DocTypeID,int? AuthLevelID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Settings.Delete]", parameters);
         }
 
+        // Method to get all authorization types
         public IEnumerable<DataAuthorizationTypeModel> GetAuthTypes()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Types.Select]", null))
@@ -40,6 +42,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get document types as a dictionary
         public IDictionary<int?, string> GetDocTypes()
         {
             Dictionary<int?, string> DocTypes = new();
@@ -50,6 +53,7 @@ namespace ArmsServices.DataServices
             return DocTypes;
         }
 
+        // Method to get a list of document types
         public IEnumerable<DocTypeModel> GetDocTypesList()
         {            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DocTypes.Select]", null))
@@ -62,6 +66,8 @@ namespace ArmsServices.DataServices
                 };
             }           
         }
+
+        // Method to select data authorization settings by document type ID
         public IEnumerable<DataAuthorizationSettingsModel> Select(int? DocTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -75,6 +81,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select data authorization settings by document typec
         public IEnumerable<DataAuthorizationSettingsModel> Select(string DocTpye)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -88,6 +95,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a data authorization setting
         public int? Update(DataAuthorizationSettingsModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,6 +109,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Settings.Update]", parameters);
         }
 
+        // Private method to convert an IDataRecord to a DataAuthorizationSettingsModel
         private DataAuthorizationSettingsModel GetModel(IDataRecord dr)
         {
             return new DataAuthorizationSettingsModel()

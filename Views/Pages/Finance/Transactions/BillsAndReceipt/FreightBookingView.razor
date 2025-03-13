@@ -128,17 +128,20 @@
 
     IEnumerable<GcTariffModel> FilteredCollection { get; set; }
 
+    // Method to handle truck selection
     private void OnTruckSelected(TruckModel model)
     {
         SelectedTruck = model;
     }
 
+    // Method to update the filtered collection based on the search string
     void UpdateFilteredCollection(string searchString)
     {
         // Apply your filter to the collection
         FilteredCollection = collection.Where(item => item.ConsigneeName.Contains(searchString, StringComparison.InvariantCultureIgnoreCase));
     }
 
+    // Method to select or deselect all items in the filtered collection
     void SelectAll(bool isChecked)
     {
         FilteredCollection = collection.Where(item => search(item));
@@ -148,6 +151,7 @@
         }
     }
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -156,6 +160,8 @@
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(brancIDString);
         string UserID = authprov.User.Identity.Name;
+
+        // Load orders, tariff types, and GC types
         Orders = await orderIservice.SelectByBranch(BranchID).ToListAsync();
         TariffTypes = tariffIservice.SelectTariffTypes("All").ToList();
         GcTypes = IGcService.SelectGcTypes().ToList();
@@ -167,16 +173,19 @@
         GcTypes.Add(GcTypeAll);
     }
 
+    // Method to fetch data based on the action type
     public async Task fetch()
     {
         await LoadData("Fetch");
     }
 
+    // Method to generate data based on the action type
     async Task Generate()
     {
         await LoadData("Generate");
     }
 
+    // Method to search for orders based on a search string
     private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
     {
         if (string.IsNullOrEmpty(searchString))
@@ -186,6 +195,7 @@
         return await Task.FromResult(Orders.Where(x => x.ClientID == SelectedClient?.PartyID && x.OrderName.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
+    // Method to load data based on the action type
     public async Task LoadData(string a)
     {
         if (SelectedOrder?.OrderID is null && SelectedClient?.PartyID is null)
@@ -208,6 +218,8 @@
             snackbar.Add("Period Date not selected ! ", Severity.Error);
             return;
         }
+
+        // Fetch or generate data based on the action type
         if (a == "Fetch")
         {
             collection = Iservice.GetPending(SelectedClient?.PartyID, SelectedOrder?.OrderID, SelectedTariffType.TariffTypeID, GcType.GcTypeID, SelectedTruck?.TruckID, dateRange?.Start, dateRange?.End).ToList();
@@ -229,6 +241,7 @@
         }
     }
 
+    // Method to download data as an Excel filev
     private async Task ExcelDownload()
     {
         var fileName = "Pending Consignments.xlsx";
@@ -238,6 +251,7 @@
         await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
     }
 
+    // Method to generate Excel file bytes
     private byte[] GenerateExcelBytes(string sheetName)
     {
         // Generate your Excel data and file here, specifying the sheet name
@@ -300,6 +314,7 @@
         }
     }
 
+    // Method to create a consolidated draft bill
     private async Task Create()
     {
         if (HasPermissionFreightBillingServiceEditConsolidatedDraftBill)
@@ -335,7 +350,7 @@
                 if (!result.Canceled)
                 {
                     ConsolidatedDraftBillModel UpatedModel = (ConsolidatedDraftBillModel)result.Data;
-                    Iservice.UpdateConsolidatedDraftBill(UpatedModel);
+                    Iservice.UpdateConsolidatedDraftBill(UpatedModel); // Update the consolidated draft bill
                     snackbar.Add("Created Successfully ", Severity.Success);//value = "visible";
                     await LoadData("Fetch");
                 }
@@ -352,6 +367,8 @@
                 "You don't have any permission to EditConsolidatedDraftBill FreightBilling.");
         }
     }
+
+    // Method to search for GC tariff models based on a search string
     private bool search(GcTariffModel gcTariff)
     {
         if ((gcTariff.BillNumber != null && gcTariff.BillNumber.Contains(searchBookFreight, StringComparison.OrdinalIgnoreCase)) ||

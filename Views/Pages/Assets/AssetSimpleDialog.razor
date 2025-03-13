@@ -204,6 +204,7 @@
     string UserID;
     private bool disabled = true;
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -216,10 +217,13 @@
         model.BranchID = BranchID;
         UserID = user.Identity.Name;
 
+        // Load asset classes, vendors, GST rates, and account rule definitions
         assetclassList = IAssetClass.SelectClasses().ToList();
         vendorListList = IParty.GetVendors(string.Empty).ToList();
         gstRate = IGstUsageID.GetGstRates().ToList();
         AccountRuleDef = IAsset.GetAccountRuleDefinition().ToList();
+
+        // If the model is not null and has an AssetID, initialize related data
         if (model != null && model.AssetID != null)
         {
             disabled = true;
@@ -247,11 +251,13 @@
         model.ImagePath = model.Images.Split(";").ToList();
     }
 
+    // Method to handle file uploads
     private void FileUploaded(string filePath)
     {
         model.ImagePath.Add(filePath);
     }
 
+    // Method to delete an image from the asset
     private async Task DeleteImage(string imagePath)
     {
         if (HasPermissionAssetServiceEdit)
@@ -263,12 +269,14 @@
                 Model.AssetID = model.AssetID;
                 Model.Images = imagePath.Normalize();
                 Model.UserInfo.UserID = authState.User.Identity.Name;
+
+                // Remove the photo using the service
                 int a = IAsset.RemovePhoto(Model);
                 if (a == 1)
                 {
-                    if (Mfu.DeleteFile(imagePath))
+                    if (Mfu.DeleteFile(imagePath)) // Delete the file from the file upload component
                     {
-                        model.ImagePath.Remove(imagePath);
+                        model.ImagePath.Remove(imagePath); // Remove the image path from the model
                     }
                     snackbar.Add("Photo removed Successfully", Severity.Success);
                     return;
@@ -292,23 +300,27 @@
         }
     }
 
+    // Method to fetch subclasses based on the selected asset class
     public void getSubClass()
     {
         assetsubclassList = IAssetClass.SelectSubClassesByClass(model.AssetClass.AssetClassID.Value).ToList();
     }
 
+    // Method to handle changes to the projected disposal date
     public void ProjectedDisposalDateChanged(DateTime? date)
     {
         model.ProjectedDisposalDate = date;
         CalculateSpanOfYear();
     }
 
+    // Method to handle changes to the depreciation starting date
     public void DepreciationStartingDateChanged(DateTime? date)
     {
         model.DepreciationStartingDate = date;
         CalculateSpanOfYear();
     }
 
+    // Method to calculate the span of years between the projected disposal date and depreciation starting date
     public void CalculateSpanOfYear()
     {
         if (model.ProjectedDisposalDate != null && model.DepreciationStartingDate != null)
@@ -318,11 +330,13 @@
         }
     }
 
+    // Method to cancel the dialog
     private void Cancel()
     {
         MudDialog.Cancel();
     }
 
+    // Method to handle form submission
     private async void ValidSubmit(EditContext context)
     {
         if (_busy)
@@ -337,7 +351,7 @@
             model.UserInfo.UserID = UserID;
             try
             {
-                IAsset.UpdateAsset(model);
+                IAsset.UpdateAsset(model); // Update the asset using the service
                 MudDialog.Close(model);
                 model = new();
                 snackbar.Add("Saved Successfully", Severity.Success);

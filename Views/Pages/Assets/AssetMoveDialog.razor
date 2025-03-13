@@ -112,11 +112,13 @@
     public bool HasPermissionAssetServiceMove { get; set; } = false;
     public int AssetDocTypeID = 112;
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionAssetServiceMove = await Irole.HasClaim(AssetDocTypeID.ToString(), "Move", ctc.Token);
 
+        // If the asset has a parent, fetch the parent asset details
         if (model.ParentAssetID != null)
         {
             fetch = true;
@@ -124,21 +126,26 @@
             Buttontxt = "Remove";
         }
     }
+
+    // Method to search for assets based on a search string
     private async Task<IEnumerable<AssetModel>> SearchAsset(string searchString)
     {
         await Task.Delay(5);
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
+
+        // Return assets that belong to the branch and are complex
         return await Task.FromResult((Iservice.SelectByBranch(brancID, false, null, searchString).Where(x => x.IsComplex)));
     }
 
+    // Method to get details of the selected parent asset
     public void GetDetails()
     {
         if (SelectedParentAsset != null)
         {
             fetch = true;
-            assetModel = Iservice.SelectByID(SelectedParentAsset.AssetID);
+            assetModel = Iservice.SelectByID(SelectedParentAsset.AssetID); // Fetch the selected parent asset details
         }
         else
         {
@@ -146,6 +153,7 @@
         }
     }
 
+    // Method to move the asset to the selected parent asset
     public async Task Move()
     {
         if (_busy)
@@ -168,6 +176,7 @@
             _busy = true;
             try
             {
+                // If assetModel is not set, fetch it based on the selected parent asset
                 if (assetModel == null || assetModel.AssetID == null)
                 {
                     if (SelectedParentAsset != null)
@@ -175,6 +184,8 @@
                         assetModel = Iservice.SelectByID(SelectedParentAsset.AssetID);
                     }
                 }
+                    
+                // Move the asset using the service
                 Iservice.MoveAsset(model.AssetID, assetModel.AssetID, mode, user.Identity.Name);
                 snackbar.Add("Moved Successfully", Severity.Success);
                 model = new();

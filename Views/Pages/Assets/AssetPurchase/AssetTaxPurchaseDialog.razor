@@ -86,10 +86,11 @@
 
     public DocumentInfoModel DocumentDetails { get; set; } = new();
 
-
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
+        // Check user permissions for editing and approving tax purchases 
         HasPermissionTaxPurchaseServiceEdit = await Irole.HasClaim(AssetPurchaseDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionTaxPurchaseServiceApprove = await Irole.HasClaim(AssetPurchaseDocTypeID.ToString(), "Approve", ctc.Token);
 
@@ -105,6 +106,7 @@
 
         if (model.PID != null)
         {
+            // Retrieve associated data
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
             model.Expenses = Iservice.GetExpenses(model.PID).ToList();
             //model.Items = Iservice.GetItems(model.PID).ToList();
@@ -121,6 +123,7 @@
         DocType = model.NatureOfTransaction;
     }
 
+    // Lifecycle method called when parameters are set
     protected override void OnParametersSet()
     {
         if (editContext == null)
@@ -132,6 +135,7 @@
         SetTotal();
     }
 
+    // Method to calculate the total amount based on expenses, items, and assets
     void SetTotal()
     {
         model.TotalAmount =
@@ -148,6 +152,7 @@
         //                                                                (y.SGSTValue != null ? y.SGSTValue : 0)) ?? 0);
     }
 
+    // Method to handle changes in the selected party 
     void PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
@@ -158,24 +163,28 @@
         else { Local = false; }
     }
 
+    // Method to add an expense to the model
     async Task AddExpense(TaxPurchaseExpenseModel expenseModel)
     {
         model.Expenses.Add(expenseModel);
         SetTotal();
     }
 
+    // Method to add an item to the model
     async Task AddItems(TaxPurchaseItemModel ItemModel)
     {
         model.Items.Add(ItemModel);
         SetTotal();
     }
 
+    // Method to add an asset to the model
     async Task AddAssets(AssetPOModel AssetModel)
     {
         model.Assets.Add(AssetModel);
         SetTotal();
     }
 
+    // Method to approve the entry
     protected async Task ApproveEntry(DataApprovedStatus aprvd)
     {
         if (HasPermissionTaxPurchaseServiceApprove)
@@ -184,7 +193,7 @@
             {
                 try
                 {
-                    Iservice.Approve(model.PID, UserID, aprvd.Remarks);
+                    Iservice.Approve(model.PID, UserID, aprvd.Remarks); // Call the service to approve the entry
                     snackbar.Add("Approved Successfully", Severity.Success);
 
                 }
@@ -203,6 +212,7 @@
         StateHasChanged();
     }
 
+    // Method called when the form is valid and submitted
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -222,7 +232,7 @@
                     if (model.Assets.Count > 0)
                     {
                         model.UserInfo.UserID = UserID;
-                        var result = Iservice.Update(model);
+                        var result = Iservice.Update(model); // Call the service to update the model
                         snackbar.Add("Saved Successfully", Severity.Success);
                         dialogForm.Close(result);
                         model = new();

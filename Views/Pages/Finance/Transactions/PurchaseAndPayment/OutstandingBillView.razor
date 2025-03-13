@@ -6,10 +6,11 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTable Items="@collection" MultiSelection="true" @bind-SelectedItems="selectedItems" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<OutstandingBillsModel, bool>(search)">
+        <MudTable Items="@collection" MultiSelection="true" @bind-SelectedItems="selectedItems" Dense="true" Hover="true" Striped="true" Elevation="0">
             <ToolBarContent>
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchBills" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                @* <MudTextField @bind-Value="searchBills" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField> *@
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Doc Date</MudTableSortLabel></MudTh>
@@ -42,29 +43,53 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private HashSet<OutstandingBillsModel> selectedItems = new HashSet<OutstandingBillsModel>();
     private List<OutstandingBillsModel> collection = new List<OutstandingBillsModel>();
-    private string searchBills = "";
+    private string searchTerm = "";
+    private int numberOfRecords = 100;
 
-    protected override void OnInitialized()
+    private int NumberOfRecords
     {
-        GetAll();
-    }
-    private void GetAll()
-    {
-        collection = Iservice.SelectByParty(PartyID, BranchID).ToList();
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
     }
 
+    // Lifecycle method called when the component is initialized
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll(NumberOfRecords);
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
+
+    private async Task ReloadTable()
+    {
+        await GetAll(NumberOfRecords);
+    }
+
+
+    // Method to retrieve all outstanding bills for the specified party and branch
+    private async Task GetAll(int numberOfRecords)
+    {
+        // Fetch outstanding bills from the service based on PartyID and BranchID
+        collection = Iservice.SelectByParty(PartyID, BranchID, NumberOfRecords, searchTerm).ToList();
+    }
+
+    // Method to cancel the dialog
     private void Cancel() => MudDialog.Cancel();
 
+    // Method to submit the selected items and close the dialog
     private void Submit() => MudDialog.Close(selectedItems.ToList());
 
-    private bool search(OutstandingBillsModel Bills)
-    {
-        bool matchesSearch = (Bills.DocumentNumber != null && Bills.DocumentNumber.Contains(searchBills, StringComparison.OrdinalIgnoreCase)) ||
-                         (Bills.BranchName != null && Bills.BranchName.Contains(searchBills, StringComparison.OrdinalIgnoreCase));
-
-        // Check if the item is already selected
-        bool isSelected = selectedItems.Contains(Bills);
-
-        return matchesSearch || isSelected;
-    }
 }

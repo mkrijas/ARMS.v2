@@ -98,6 +98,7 @@ namespace ArmsModels.BaseModels
         public int? Group2ID { get; set; }
         [Required]
         public string UoM { get; set; }
+        [Required]
         [StringLength(8)]
         public string HsnCode { get; set; }
         public string Makes { get; set; }

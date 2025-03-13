@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices.General
         ConfigModel GetByInventoryFuelGroupID();
         ConfigModel GetByInventoryAdBlueGroupID();
         ConfigModel GetByInventoryTyreGroupID();
+        ConfigModel GetByInventorySpareGroupID();
         ConfigModel GetAssetSubclassForTrucks();
         ConfigModel GetTripAdvanceUsageCode();
         ConfigModel GetDefaultMileageShortageCoaID();

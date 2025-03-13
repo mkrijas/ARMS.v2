@@ -201,13 +201,15 @@ namespace ArmsServices.DataServices
         }
 
         // Method to select outstanding bills by Party ID
-        public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID)
+        public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByParty"),
                new SqlParameter("@PartyID", PartyID),
                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.Select]", parameters))

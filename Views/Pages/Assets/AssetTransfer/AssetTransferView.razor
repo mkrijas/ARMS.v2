@@ -188,11 +188,13 @@
     public bool HasPermissionAssetTransferServiceDelete { get; set; } = false;
     public int AssetTransferDocTypeID = 110;
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionAssetTransferServiceDelete = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Delete", ctc.Token);
 
+        // Load the list of branches
         BranchList = Ibranchservice.Select().ToList();
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -203,6 +205,7 @@
         await GetAll();
     }
 
+    // Method to retrieve all outgoing and incoming asset transfers
     private async Task GetAll()
     {
         await GetAllOutGoing();
@@ -215,6 +218,7 @@
     private List<AssetTransferInitiationModel> collectionOutGoing = new();
     string state = "Message box hasn't been opened yet";
 
+    // Method to retrieve all outgoing asset transfers
     private async Task GetAllOutGoing()
     {
         collectionOutGoing = new();
@@ -226,12 +230,15 @@
             modelOutGoing.InitiatedBranch = new();
         }
         modelOutGoing.InitiatedBranch.BranchID = int.Parse(brancIDString);
+
+        // Load outgoing assets for the current branch
         foreach (var item in Iservice.SelectOutgoingAssets(modelOutGoing.InitiatedBranch.BranchID))
         {
             collectionOutGoing.Add(item);
         }
     }
 
+    // Method to open the dialog for editing outgoing asset transfers
     private async Task OpenDialogEditOutGoing(AssetTransferInitiationModel AssetTransferInitiation)
     {
         if (_busy)
@@ -259,6 +266,7 @@
         }
         AssetTransferInitiation.InitiatedBranch.BranchID = int.Parse(brancIDString);
 
+        // Get the child assets for the selected asset
         List<AssetModel> childAssets = Iassetservice.GetAttachedAssets(AssetTransferInitiation.Asset.AssetID).Skip(1).ToList();
 
         var modelOutGoing = new DialogParameters
@@ -267,6 +275,7 @@
                 ["childAssets"] = childAssets
             };
 
+        // Show the dialog for editing
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
         var dialog = DialogService.Show<AssetTransferInitiationDialog>("Simple Dialog", modelOutGoing, options);
         var result = await dialog.Result;
@@ -274,6 +283,8 @@
         if (!isCancelled)
         {
             var ReturnData = (AssetTransferInitiationModel)result.Data;
+
+            // Prepare notification message for asset transfer
             notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiatedBranch?.BranchID ?? 0)) ?? null;
             notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
             notificationMessage.MessageTitle = "Asset " + (ReturnData?.Asset?.Description ?? "") + " is transfered to this branch.";
@@ -286,6 +297,8 @@
             notificationMessage.ClaimValue = "Edit";
             notificationMessage.DocumentTypeID = AssetTransferDocTypeID;
             notificationMessage.MsgDate = DateTime.Now;
+
+            // Send notification via SignalR
             await signalRService.Send(notificationMessage);
 
             await GetAll();
@@ -294,6 +307,7 @@
         _busy = false;
     }
 
+    // Method to open the dialog for deleting outgoing asset transfers
     private async Task OpenDialogDeleteOutGoing(AssetTransferInitiationModel AssetTransferInitiation)
     {
         if (HasPermissionAssetTransferServiceDelete)
@@ -312,9 +326,13 @@
                 {
                     var BranchID = int.Parse(brancIDString);
                     var UserID = user.Identity.Name;
+
+                    // Get the subclass ID for the asset
                     SubClassID = Iassetservice.SelectByID(AssetTransferInitiation.Asset.AssetID).SubClass.AssetSubClassID;
                     ConfigModel cModel = config.GetAssetSubclassForTrucks();
                     AssetTrucksSubClassID = int.Parse(cModel.ValueString);
+
+                    // Delete the asset transfer initiation based on subclass type
                     if (SubClassID == AssetTrucksSubClassID)
                     {
                         TruckID = Itruckservice.SelectByAsset(AssetTransferInitiation.Asset.AssetID).TruckID;
@@ -348,6 +366,7 @@
     private AssetTransferInitiationModel modelIncoming = new();
     private List<AssetTransferInitiationModel> collectionIncoming = new();
 
+    // Method to retrieve all incoming asset transfers
     private async Task GetAllIncoming()
     {
         collectionIncoming = new();
@@ -364,12 +383,15 @@
             modelIncoming.DestinationBranch = new();
         }
         modelIncoming.DestinationBranch.BranchID = int.Parse(brancIDString);
+
+        // Load incoming assets for the current branch
         foreach (var item in Iservice.SelectIncomingAssets(modelIncoming.DestinationBranch?.BranchID ?? 0))
         {
             collectionIncoming.Add(item);
         }
     }
 
+    // Method to open the dialog for editing incoming asset transfers
     private async Task OpenDialogEditIncoming(AssetTransferInitiationModel AssetTransferEnd)
     {
         if (_busy)
@@ -402,6 +424,7 @@
                 ["childAssets"] = childAssets
             };
 
+        // Show the dialog for editing
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
         var dialog = DialogService.Show<AssetTransferEndDialog>("Simple Dialog", modelIncoming, options);
         var result = await dialog.Result;
@@ -410,6 +433,7 @@
         if (!isCancelled)
         {
             var ReturnData = (AssetTransferInitiationModel)result.Data;
+            // Prepare notification message for asset rejection
             if (ReturnData.IsAssetReject == 1)
             {
                 notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
@@ -424,6 +448,7 @@
                 notificationMessage.PageToRedirectLink = "/AssetTransferView";
                 notificationMessage.ClaimValue = "Edit";
                 notificationMessage.DocumentTypeID = AssetTransferDocTypeID;
+                // Send notification via SignalR
                 await signalRService.Send(notificationMessage);
             }
             await GetAll();
@@ -432,6 +457,7 @@
         _busy = false;
     }
 
+    // Method to open the fuel form dialog
     private async Task OpenFuelForm(TripFuelModel fuelModel)
     {
         DialogParameters parms = new DialogParameters();
@@ -440,6 +466,7 @@
         var result = await dialog.Result;
     }
 
+    // Method to open the expense form dialog
     private async Task OpenExpenseForm(OpTranModel tranModel)
     {
         DialogParameters parms = new DialogParameters();
@@ -449,6 +476,7 @@
         var result = await dialog.Result;
     }
 
+    // Method to open the mileage shortage receipt dialog
     private async Task OpenMileageShortageReceipt(MileageShortageReceiptModel morModel)
     {
 

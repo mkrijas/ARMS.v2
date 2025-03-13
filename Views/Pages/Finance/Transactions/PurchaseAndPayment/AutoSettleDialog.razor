@@ -87,6 +87,7 @@
     bool HasPermissionPaymentServiceApprove { get; set; } = false;
     int DocTypeID = 118;
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -97,6 +98,8 @@
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
+
+        // If an AutoSettleID is provided, fetch associated bills
         if (model.AutoSettleID != null)
         {
             model.Bills = Iservice.GetAutoSettledBills(model.AutoSettleID.Value).ToList();
@@ -113,6 +116,7 @@
         DocType = model.NatureOfTransaction;
     }
 
+    // Lifecycle method called when parameters are set or changed
     protected override void OnParametersSet()
     {
         editContext = new EditContext(model);
@@ -155,6 +159,7 @@
     //     }
     // }
 
+    // Method to handle form submission when the form is valid
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -174,7 +179,7 @@
             try
             {
                 model.UserInfo.UserID = UserID;
-                int? result = Iservice.AutoSettle(model);
+                int? result = Iservice.AutoSettle(model); // Call the service to auto-settle
                 snackbar.Add("Submitted Successfully", Severity.Success);
                 dialogForm.Close(model);
             }
@@ -193,11 +198,13 @@
         _busy = false;
     }
 
+    // Method to calculate the total amount from outstanding bills
     private void SetTotalAmt()
     {
         model.TotalAmount = (model.Bills.Where(y => y.OutstandingAmount > 0).Sum(x => x.OutstandingAmount) ?? 0);
     }
 
+    // Method to handle changes in the selected party
     async Task PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
@@ -207,6 +214,7 @@
             await OpenOutstandingBills(party);
     }
 
+    // Method to open the outstanding bills dialog
     private async Task OpenOutstandingBills(PartyModel partyInfo)
     {
         DialogOptions Doptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
@@ -246,6 +254,7 @@
         SetTotalAmt();
     }
 
+    // Method to approve the auto-settlement
     protected async Task Approve(DataApprovedStatus aprvd)
     {
         if (HasPermissionPaymentServiceApprove)
@@ -255,6 +264,7 @@
                 model.UserInfo.UserID = UserID;
                 try
                 {
+                    // Call the service to approve the auto-settlement
                     Iservice.Approve(model.AutoSettleID, model.UserInfo.UserID, aprvd.Remarks);
                     snackbar.Add("Approved Successfully", Severity.Success);
                 }

@@ -91,6 +91,7 @@
     public bool HasPermissionFreightBillingServiceApprove { get; set; } = false;
     public int FreightBillingDocTypeID = 116;
 
+    // Lifecycle method called when the component is initializedcv
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -98,6 +99,8 @@
 
 
         model.NatureOfTransaction = "Proforma Invoice";
+
+        // If the Proforma Invoice ID is not null, fetch the party details
         if (model.ProformaInvoiceID != null)
         {
             model.Party = partyIservice.SelectByID(model.Party.PartyID.Value);
@@ -107,11 +110,15 @@
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             model.UserInfo.UserID = user.Identity.Name; ;
+
+            // Fetch the order details
             var Order = await Iorder.SelectByID(model.OrderID);
             if (model.Party?.PartyID is null)
             {
                 model.Party = Order.Party;
             }
+
+            // Get the customer receivable COA ID for the party
             model.PartyCoa = partyIservice.GetCustomerReceivableCoaID(model.Party.PartyID);
         }
         tradeName = model.Party.TradeName;
@@ -120,12 +127,14 @@
         DocType = model.NatureOfTransaction;
     }
 
+    // Lifecycle method called when parameters are set or changed
     protected override void OnParametersSet()
     {
         DocumentDetails.DocumentTypeID = FreightBillingDocTypeID;
         DocumentDetails.DocumentID = model.ProformaInvoiceID;
     }
 
+    // Method to handle approval of the Proforma Invoice
     protected async Task Approve(DataApprovedStatus aprvd)
     {
         if (HasPermissionFreightBillingServiceApprove)
@@ -143,6 +152,7 @@
                     model.UserInfo.UserID = user.Identity.Name;
                     try
                     {
+                        // Approve the Proforma Invoice
                         Iservice.ApproveProformaInvoice(model.ProformaInvoiceID, model.UserInfo.UserID, aprvd.Remarks, Ref.InvoiceNumber, Ref.InvoiceRefNumber, Ref.InvoiceDate);
                         snackbar.Add("Approved Successfully", Severity.Success);
                     }
@@ -162,6 +172,7 @@
         }
     }
 
+    // Method to handle form submission when the form is valid
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -174,9 +185,12 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
+
+        // Get the customer receivable COA ID for the party
         model.PartyCoa = partyIservice.GetCustomerReceivableCoaID(model.Party.PartyID.Value);
         if (model.PartyCoa is null)
         {
+            // If COA is not found, try to get a different COA ID
             model.PartyCoa = partyIservice.GetPartyCoaID(model.Party.PartyID, "SisterConcern", "Trade");
         }
 

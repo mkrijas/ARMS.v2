@@ -23,6 +23,7 @@ namespace ArmsServices.DataServices
             IROITonnage = iROITonnage;
         }
 
+        // Method to select truck body types
         public IEnumerable<string> SelectBSType()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -34,13 +35,15 @@ namespace ArmsServices.DataServices
                 yield return dr.GetString("BsType");
             }
         }
-    
+
+        // Method to select wheels informationv
         public IEnumerable<ROITonnageModel> SelectWheels()
         {
             List<ROITonnageModel> Model = new();
             return Model = IROITonnage.SelectWheels().ToList();
         }
 
+        // Method to update a truck record
         public TruckModel Update(TruckModel model)
         {
             bool create = model.TruckID == null;
@@ -81,6 +84,8 @@ namespace ArmsServices.DataServices
             }
             return cmodel;
         }
+
+        // Method to update truck registration
         public int UpdateRegistration(TruckRegistrationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -95,6 +100,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Truck.Registration.Update]", parameters);
         }
+
+        // Method to validate registration date
         public int? ValidateRegistrationDate(TruckRegistrationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -111,6 +118,8 @@ namespace ArmsServices.DataServices
             }
             return result;
         }
+
+        // Method to delete a truck by its ID
         public int Delete(int? TruckID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -120,6 +129,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Truck.Truck.Delete]", parameters);
         }
+
+        // Method to select a truck by its ID
         public IEnumerable<TruckModel> Select(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -133,11 +144,13 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to mark a truck as sold (not implemented)
         public int Sold(int? TruckID, DateTime? SoldDate)
         {
             throw new NotImplementedException();
         }
 
+        // Method to change the registration of a truck
         public int ChangeRegistration(TruckRegistrationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -152,6 +165,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Truck.Registration.Update]", parameters);
         }
 
+        // Helper method to map data record to TruckModel
         private TruckModel GetModel(IDataRecord reader)
         {
             return new TruckModel()
@@ -184,6 +198,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to TruckRegistrationModel
         private TruckRegistrationModel GetRegModel(IDataRecord reader)
         {
             return new TruckRegistrationModel
@@ -203,6 +218,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to select a truck by its ID
         public TruckModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -217,6 +233,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get registration details by registration ID
         public TruckRegistrationModel GetRegistration(int? RegID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -232,6 +249,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get a list of registrations for a truck
         public IEnumerable<TruckRegistrationModel> GetRegistrationList(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -246,6 +264,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get registration details by registration number
         public TruckRegistrationModel GetRegistration(string RegNo)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -260,6 +279,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to update the driver assignment for a truck
         public int UpdateDriver(int? TruckID, int? DriverID, bool AssignedStatus, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -271,6 +292,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Truck.Driver.Assignment.Update]", parameters);
         }
+
+        // Method to get the assigned driver for a truck
         int? ITruckService.GetAssignedDriver(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -288,6 +311,7 @@ namespace ArmsServices.DataServices
             return DriverID;
         }
 
+        // Method to get the current trip for a truck
         public long? GetCurrentTrip(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -301,6 +325,8 @@ namespace ArmsServices.DataServices
             }
             return TripID;
         }
+
+        // Method to get the last trip for a truck
         public long? GetLastTrip(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -315,6 +341,7 @@ namespace ArmsServices.DataServices
             return TripID;
         }
 
+        // Method to select trucks by branch with optional filters
         public IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer, string HomeOrOperation = "Operation")
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -385,6 +412,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a truck by its asset ID
         public TruckModel SelectByAsset(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -400,6 +428,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get the truck status summary by branch ID
         public IEnumerable<TruckStatusModel> GetTruckStatus(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -421,6 +450,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select all trucks by branch with optional filters
         public IEnumerable<TruckModel> SelectAllByBranch(bool IsChecked, int? BranchID = null, string Filer = "All", string HomeOrOperation = "AllOperation")
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -479,6 +509,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get the truck status summary by event
         public IEnumerable<TruckStatusModel> GetTruckStatusByEvent(int? BranchID, string SelectedValue)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -497,6 +528,23 @@ namespace ArmsServices.DataServices
                     EventTime = dr.GetDateTime("EventTime"),
                     EventDateTimeDiff = dr.GetString("EventDateTimeDiff"),
                     DriverSince = string.Format("{0} since {1}", dr.GetDateTime("DriverSince"), dr.GetString("DriverName"))
+                };
+            }
+        }
+
+        public IEnumerable<NoDriverTruckModel> GetNoDriverTruck(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.NoDriver]", parameters))
+            {
+                yield return new NoDriverTruckModel()
+                {
+                    RegNo = dr.GetString("RegNO"),
+                    AssignedTime = dr.GetDateTime("AssignedTime")
                 };
             }
         }

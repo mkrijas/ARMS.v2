@@ -12,7 +12,8 @@ namespace ArmsModels.BaseModels
     public class TyreModel
     {
         public int? TyreID { get; set; } // Unique identifier for the tyre (nullable)
-        [Required] 
+        public string ItemType { get; set; }
+        [Required]
         public string TyreSerialNumber { get; set; }
         public int? BranchID { get; set; }
         public string Make { get; set; } // Hint: MRF , CEAT
@@ -20,17 +21,18 @@ namespace ArmsModels.BaseModels
         public int? InventoryItemID { get; set; }
         [Required]
         public long? InventoryBatchID { get; set; }
-        [Required]
+        [RequiredIf("ItemType", "Tyre")]
         public string TyreType { get; set; } // Front/ Back/ All-Position
-        [Required]
+        [RequiredIf("ItemType", "Tyre")]
         public string TyreSize { get; set; } // 1000 x 25 etc
         public virtual string TyrePosition { get; set; }
         //[Required]
         public virtual int? TotalExpectedLife { get; set; }
-        public bool Tubeless { get; set; } = false;
-        [Required]
+        public bool? Tubeless { get; set; } = null;
+        [RequiredIf("ItemType", "Tyre")]
         public int? TyreStatus { get; set; }
         public string LockText { get; set; }
+        public string WarrantyCard { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public bool IsChecked { get; set; } = false;
         public bool IsMounted { get; set; } = false;
