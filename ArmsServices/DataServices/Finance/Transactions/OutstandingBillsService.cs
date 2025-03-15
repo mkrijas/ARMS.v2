@@ -18,7 +18,7 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        
+
         // Method to approve an outstanding bill
         public int Approve(int? ID, string UserID, string Remarks)
         {
@@ -323,6 +323,34 @@ namespace ArmsServices.DataServices
 
                 }
 
+            };
+        }
+
+        // Method to search and get outstanding bill info by DocumentNumber
+        public IEnumerable<OutStandingBillInfoModel> SelectByDocumentNumber(string DocumentNumber)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentNumber", DocumentNumber),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.finance.Transactions.OutstandingBills.getBillInfo]", parameters))
+            {
+                yield return GetInfoModel(dr);
+            }
+        }
+
+        private OutStandingBillInfoModel GetInfoModel(IDataRecord dr)
+        {
+            return new OutStandingBillInfoModel
+            {
+                DocumentDate = dr.GetDateTime("DocumentDate"),
+                DocumentNumber = dr.GetString("DocumentNumber"),
+                PartyCode = dr.GetString("PartyCode"),
+                PartyName = dr.GetString("PartyName"),
+                BranchName = dr.GetString("BranchName"),
+                Amount = dr.GetDecimal("Amount"),
+                AccountName = dr.GetString("AccountName"),
             };
         }
     }

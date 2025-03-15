@@ -1,0 +1,74 @@
+﻿@page "/OutstandingBillInfo"
+@inject IOutstandingBillsService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudPaper Class="pl-5 pr-5 my-5" Elevation="4">
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <MudTextField @bind-Value="DocumentNumber" Label="Document Number" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Fetch</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+@if (collection != null)
+{
+    <MudTable Items="@collection" Elevation="5">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6"> OutStanding Bill Info </MudText>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.PartyCode)" InitialDirection="SortDirection.Ascending">PartyCode</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.PartyName)" InitialDirection="SortDirection.Ascending">PartyName</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.BranchName)" InitialDirection="SortDirection.Ascending">BranchName</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.AccountName)" InitialDirection="SortDirection.Ascending">AccountName</MudTableSortLabel></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="DocumentDate">@context.DocumentDate.Value.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
+            <MudTd DataLabel="PartyCode">@context.PartyCode</MudTd>
+            <MudTd DataLabel="PartyName">@context.PartyName</MudTd>
+            <MudTd DataLabel="BranchName">@context.BranchName</MudTd>
+             <MudTd DataLabel="Amount">@context.Amount</MudTd>
+            <MudTd DataLabel="AccountName">@context.AccountName</MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+
+    private string DocumentNumber = string.Empty;
+
+    private List<OutStandingBillInfoModel> collection = new List<OutStandingBillInfoModel>();
+
+    public async Task fetch()
+    {
+        collection = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int branchID = int.Parse(brancIDString);
+        if (DocumentNumber == null)
+        {
+            snackbar.Add("Please enter document number", Severity.Warning);
+            return;
+        }
+
+        collection = Iservice.SelectByDocumentNumber(DocumentNumber).ToList();
+
+        if(collection == null || collection.Count() == 0)
+        {
+            snackbar.Add("No data found", Severity.Error);
+            return;
+        }
+    }
+}
