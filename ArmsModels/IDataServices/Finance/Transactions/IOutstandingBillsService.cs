@@ -23,5 +23,7 @@ namespace ArmsServices.DataServices
         IEnumerable<AutoSettleModel> SelectAutoSettledEntriesByUnapproved(int? BranchID,int numberOfRecords);
         int DeleteAutoSettle(int? ID, string userID);
         int Approve(int? ID, string UserID, string Remarks);
+        IEnumerable<OutStandingBillInfoModel> SelectByDocumentNumber(string DocumentNumber);
+
     }
 }
