@@ -1,12 +1,11 @@
 ﻿@inject AuthenticationStateProvider auth
 @inject IAssetTransferService Iservice
 @inject IAssetService Iassetservice
-@inject ITruckService Itruckservice
 @inject IBranchService Ibranchservice
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject IConfigTable config
-
+@using Views.Pages.Finance.Transactions
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
@@ -25,7 +24,7 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Accept Or Reject Asset
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />  Asset Complete
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -34,25 +33,12 @@
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
-                    <MudItem xs="12" md="12">
+                    <MudItem xs="12" md="6">
                         <MudTextField Value="model.Asset.Description" Label="Asset" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Asset.Description)" Disabled></MudTextField>
                     </MudItem>
-                    <MudItem xs="12" md="12">
-                        @if (ChildAssets != null && ChildAssets.Any())
-                        {
-                            <MudText Typo="Typo.body1">Following assets will be transferred along with the above asset</MudText>
-                            <div class="d-flex">
-                                @foreach (var asset in ChildAssets)
-                                {
-                                    <div class="m-2"><b>@asset.Description</b></div>
-                                    @if (!asset.Equals(ChildAssets.Last()))
-                                    {
-                                        <div class="m-2">|</div>
-                                    }
-                                }
-                            </div>
-                        }
-                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <GstMechanismSelector ReadOnly="@ReadOnly" page="Asset" @bind-Value="@model.AssetTransferEndModel.GstMechanism"></GstMechanismSelector>
+                    </MudItem>                   
                     <MudItem xs="12" md="6">
                         <MudTextField @bind-Value="model.InitiatedBranch.BranchName" Label="Initiated Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InitiatedBranch.BranchName)" Disabled></MudTextField>
                     </MudItem>
@@ -60,7 +46,7 @@
                         <MudDatePicker Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.AssetTransferEndModel.TransferEndDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.AssetTransferEndModel.Remarks" Label="Remarks" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                        <MudTextField ReadOnly="@ReadOnly" @bind-Value="model.AssetTransferEndModel.Remarks" Label="Remarks" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="12">
                         @if (Checklist != null && Checklist.Any())
@@ -100,14 +86,60 @@
                         }
                     </MudGrid>
                 </MudGrid>
+                <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
+                    <h6> <u>Assets</u></h6>
+                    <div style="width: 1600px;" class="pb-3">
+                        <MudGrid Justify="Justify.Center">
+                            <MudItem xs="4"><span class="HeadText"><b>Asset Name</b></span></MudItem>
+                            <MudItem xs="2"><span class="HeadText"><b>Book Value</b></span></MudItem>
+                            <MudItem xs="2"><span class="HeadText"><b>Taxable value</b></span></MudItem>
+                            <MudItem xs="2"><span class="HeadText"><b>Tax rate</b></span></MudItem>
+                            <MudItem xs="2"><span class="HeadText"><b>Tax value</b></span></MudItem>
+                            @foreach (var item in model.Items)
+                            {
+                                <MudItem xs="4">@item.Description</MudItem>
+                                <MudItem xs="2">@item.BookValue</MudItem>
+                                <MudItem xs="2">@item.TaxableValue</MudItem>
+                                <MudItem xs="2">@item.TaxRate</MudItem>
+                                <MudItem xs="2">@item.TaxValue</MudItem>
+                            }
+                        </MudGrid>
+                    </div>
+                </MudItem>
             </EditForm>
+            <MudItem xs="12">
+                @if (ReadOnly && model.AssetTransferEndModel.AssetTransferEndID != null)
+                {
+                    <AutherizationStatusComponent DocTypeID="@AssetTransferEndDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" DocumentID="model.AssetTransferEndModel.AssetTransferEndID" CreatedBy="@model.UserInfo" OnApprove="Approve"></AutherizationStatusComponent>
+                }
+            </MudItem>
+            <MudContainer Class="dialogInset">
+                @if (ReadOnly)
+                {
+                    @if (model.MID != null)
+                    {
+                        <AccountInfoDialog MID="@model.MID"></AccountInfoDialog>
+                    }
+                }
+            </MudContainer>
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Accept(Checklist)" Class="px-12">Accept Asset</MudButton>
-        @if (model.AssetTransferEndModel.TransferStatus == null)
+
+        @if (ReadOnly)
         {
-            <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Reject(Checklist)" Class="px-12">Reject Asset</MudButton>
+            <div style="padding-bottom:12px; padding-right:12px;">
+                <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
+            </div>
+        }
+        else
+        {
+            <div style="padding-bottom:12px; padding-right:12px;">
+                <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Accept(Checklist)" Class="px-12">Accept</MudButton>
+            </div>
+            <div style="padding-bottom:12px; padding-right:12px;">
+                <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Warning" OnClick="() => Reject(Checklist)" Class="px-12">Reject</MudButton>
+            </div>
         }
     </DialogActions>
 </MudDialog>
@@ -117,40 +149,42 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter]
     public AssetTransferInitiationModel model { get; set; } = new();
-    public int IsCompleted;
     [Parameter]
     public List<AssetModel> ChildAssets { get; set; } = new();
     [Parameter]
     public List<AssetSettingsModel> Checklist { get; set; } = new();
-    public int? SubClassID { get; set; } = new();
-    public int? TruckID { get; set; } = new();
-    int? AssetSubClassID;
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    public int IsCompleted;
     private bool _busy;
     MyFileUpload Mfu;
-
+    public string DocNumber { get; set; }
+    public DateTime? DocDate { get; set; }
+    public string DocType { get; set; }
     public bool HasPermissionAssetTransferServiceAccept { get; set; } = false;
     public bool HasPermissionAssetTransferServiceReject { get; set; } = false;
-    public int AssetTransferDocTypeID = 110;
+    public bool HasPermissionAssetTransferServiceApprove { get; set; } = false;
+    public int AssetTransferEndDocTypeID = 142;
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         // Check user permissions for accepting and rejecting asset transfers
-        HasPermissionAssetTransferServiceAccept = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Accept", ctc.Token);
-        HasPermissionAssetTransferServiceReject = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Reject", ctc.Token);
+        HasPermissionAssetTransferServiceAccept = await Irole.HasClaim(AssetTransferEndDocTypeID.ToString(), "Accept", ctc.Token);
+        HasPermissionAssetTransferServiceReject = await Irole.HasClaim(AssetTransferEndDocTypeID.ToString(), "Reject", ctc.Token);
+        HasPermissionAssetTransferServiceApprove = await Irole.HasClaim(AssetTransferEndDocTypeID.ToString(), "Approve", ctc.Token);
 
         branchID = model?.DestinationBranch?.BranchID ?? 0;
 
         // Check user permissions for accepting and rejecting asset transfers
         Checklist = Iservice.GetCheckList(model.AssetTransferID).ToList();
 
-        // Retrieve the subclass ID for the asset
-        SubClassID = Iassetservice.SelectByID(model.Asset.AssetID).SubClass.AssetSubClassID;
+        model.Items = Iservice.GetAssets(model.AssetTransferID).ToList();
 
-        // Get the configuration model for asset subclasses related to trucks
-        ConfigModel cModel = config.GetAssetSubclassForTrucks();
-        AssetSubClassID = int.Parse(cModel.ValueString);
+        DocNumber = model.AssetTransferEndModel.DocumentNumber;
+        DocDate = model.AssetTransferEndModel.TransferEndDate;
+        DocType = "Asset Transfer End";
     }
 
     private int branchID { get; set; } = 0;
@@ -176,6 +210,18 @@
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
 
+            if (model.AssetTransferEndModel.GstMechanism == null)
+            {
+                Snackbar.Add("Please select GST mechanism!", Severity.Warning);
+                return;
+            }
+
+            if (model.AssetTransferEndModel.TransferEndDate == null)
+            {
+                Snackbar.Add("Please select date!", Severity.Warning);
+                return;
+            }
+
             if (model != null)
             {
                 model.IsAssetReject = 0; // Set rejection status to false
@@ -184,15 +230,7 @@
                     List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
                     model.UserInfo.UserID = user.Identity.Name;
                     model.AssetTransferEndModel.TransferStatus = true;
-                    if (SubClassID == AssetSubClassID)
-                    {
-                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID; // Get the truck ID
-                        Iservice.UpdateStatus(model, TruckID, RecievedList); // Update the status with truck ID
-                    }
-                    else
-                    { 
-                        Iservice.UpdateStatus(model, null, RecievedList); // Update the status without truck ID
-                    }
+                    Iservice.UpdateStatus(model, RecievedList); // Update the status without truck ID
                     Snackbar.Add("Transfered succesfully", Severity.Success);
                 }
                 catch (Exception ex)
@@ -234,15 +272,8 @@
                     List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
                     model.UserInfo.UserID = user.Identity.Name;
                     model.AssetTransferEndModel.TransferStatus = false;
-                    if (SubClassID == AssetSubClassID)
-                    {
-                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID; // Get the truck ID
-                        Iservice.UpdateStatus(model, TruckID, RecievedList); // Update the status with truck ID
-                    }
-                    else
-                    {
-                        Iservice.UpdateStatus(model, null, RecievedList); // Update the status without truck ID
-                    }
+                    Iservice.UpdateStatus(model, RecievedList); // Update the status without truck ID
+                    
                     Snackbar.Add("Asset Transfer Rejected", Severity.Error);
 
                 }
@@ -261,5 +292,33 @@
         }
         await Task.Delay(200);
         _busy = false;
+    }
+
+    protected async Task Approve(DataApprovedStatus aprvd)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        if (HasPermissionAssetTransferServiceApprove)
+        {
+            if (aprvd.IsApprove)
+            {
+                model.UserInfo.UserID = User.Identity.Name;
+                try
+                {
+                    Iservice.ApproveIncoming(model.AssetTransferEndModel.AssetTransferEndID.Value, model.UserInfo.UserID);
+                    Snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Approve InventoryGrn.");
+        }
     }
 }

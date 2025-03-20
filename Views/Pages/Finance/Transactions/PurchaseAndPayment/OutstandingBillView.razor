@@ -11,6 +11,12 @@
                 <MudSpacer></MudSpacer>
                 @* <MudTextField @bind-Value="searchBills" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField> *@
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp"></MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Doc Date</MudTableSortLabel></MudTh>
@@ -82,8 +88,33 @@
     // Method to retrieve all outstanding bills for the specified party and branch
     private async Task GetAll(int numberOfRecords)
     {
-        // Fetch outstanding bills from the service based on PartyID and BranchID
-        collection = Iservice.SelectByParty(PartyID, BranchID, NumberOfRecords, searchTerm).ToList();
+        // Validate search term if it's not empty
+        if (!string.IsNullOrEmpty(searchTerm) && searchTerm.Length < 3)
+        {
+            snackbar.Add("Search term must be at least 3 characters", Severity.Warning);
+            return;
+        }
+
+        // Fetch new data from service
+        var newItems = Iservice.SelectByParty(PartyID, BranchID, NumberOfRecords, searchTerm).ToList();
+
+        // Remove unselected items from the collection (working backwards to avoid index issues)
+        for (int i = collection.Count - 1; i >= 0; i--)
+        {
+            if (!selectedItems.Contains(collection[i]))
+            {
+                collection.RemoveAt(i);
+            }
+        }
+
+        // Get document numbers of items already in the collection
+        var existingDocNumbers = collection.Select(item => item.DocumentNumber).ToHashSet();
+
+        // Add only new items that aren't already in the collection and aren't selected
+        var itemsToAdd = newItems.Where(item => !existingDocNumbers.Contains(item.DocumentNumber)).ToList();
+
+        // Add the new items
+        collection.AddRange(itemsToAdd);
     }
 
     // Method to cancel the dialog

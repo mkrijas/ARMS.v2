@@ -181,16 +181,18 @@
     public bool HasPermissionInsuranceClaimServiceUpdateList { get; set; } = false;
     public int InsuranceClaimDocTypeID = 83;
 
+    // Lifecycle method that runs when parameters are set or changed
     protected override void OnParametersSet()
     {
         try
         {
             if (Model.InsuranceClaimID != null)
             {
+                // Retrieve the insurance document associated with the asset
                 Insurance = IAssetDocument.SelectByAsset(Model.Asset.AssetID, false).FirstOrDefault(x => x.DocumentType.DocumentTypeName.ToUpper().Contains("INSURANCE") && IAssetDocument.IsValid(x, Model.DateOfAccident));
                 Model.PolicyNo = Insurance.Refference;
                 Model.InsuranceID = Insurance.DocumentID;
-                ClaimEvents = IInsuranceClaim.GetEventStatusList(Model.InsuranceClaimID).ToList();
+                ClaimEvents = IInsuranceClaim.GetEventStatusList(Model.InsuranceClaimID).ToList(); // Get claim event statuses
                 SetEventMaster();
             }
             else
@@ -210,6 +212,7 @@
         }
     }
 
+    // Method to set permissions for the current user
     private async Task PermissionSet()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -217,6 +220,7 @@
         HasPermissionInsuranceClaimServiceUpdateList = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "UpdateList", ctc.Token);
     }
 
+    // Method to delete an image associated with the insurance claim
     private async Task DeleteImage(string imagePath)
     {
         try
@@ -227,12 +231,14 @@
             model.InsuranceClaimID = Model.InsuranceClaimID;
             model.RemoveImage = imagePath.Normalize();
             model.UserInfo.UserID = authState.User.Identity.Name;
+
+            // Attempt to remove the photo
             int a = IInsuranceClaim.RemovePhoto(model);
             if (a == 1)
             {
                 if (Mfu.DeleteFile(imagePath))
                 {
-                    Model.Images.Remove(imagePath);
+                    Model.Images.Remove(imagePath); // Remove the image path from the model
                 }
                 snackbar.Add("Photo removed Successfully", Severity.Success);
                 return;
@@ -249,6 +255,7 @@
         }
     }
 
+    // Method to set the event master list based on the current claim events
     private void SetEventMaster()
     {
         int? maxval = null;
@@ -256,9 +263,10 @@
         {
             maxval = ClaimEvents?.Max(x => x.IcesID).Value;
         }
-        EventMasterSource = IInsuranceClaim.GetEventList(maxval).ToList();
+        EventMasterSource = IInsuranceClaim.GetEventList(maxval).ToList(); // Fetch the event master list
     }
 
+    // Method to handle the selection of an event
     private void EventSelected(int? IcemID)
     {
         var SelectedEvent = EventMasterSource.First(x => x.IcemID == IcemID);
@@ -270,6 +278,7 @@
         UpdateStatusModel.IcemID = IcemID;
     }
 
+    // Method to handle changes in the date of the accident
     private async Task DateChanged(DateTime? a)
     {
         if (a != null)
@@ -277,6 +286,8 @@
             //TimeOfDamage = IBreakdown.SelectByID(Model.BreakdownID).BreakdownTime;
             Model.DateOfAccident = a;
             // Insurance = IAssetDocument.SelectByAsset(Model.Asset.AssetID, false).FirstOrDefault(x => x.DocumentType.DocumentTypeName.ToUpper().Contains("INSURANCE") && IAssetDocument.IsValid(x, Model.DateOfAccident));
+
+            // Retrieve the insurance document based on the accident date
             Insurance = IAssetDocument.SelectByAccidentDate(Model.Asset.AssetID, false).FirstOrDefault(x => x.DocumentType.DocumentTypeName.ToUpper().Contains("INSURANCE") && IAssetDocument.IsValid(x, Model.DateOfAccident));
             if (Insurance == null)
             {
@@ -288,6 +299,7 @@
         }
     }
 
+    // Method to update the status of the insurance claim
     private async Task UpdateStatus()
     {
         if (HasPermissionInsuranceClaimServiceUpdateList)
@@ -297,7 +309,7 @@
                 var authState = await auth.GetAuthenticationStateAsync();
                 UpdateStatusModel.UserInfo.UserID = authState.User.Identity.Name;
                 UpdateStatusModel.InsuranceClaimID = Model.InsuranceClaimID;
-                UpdateStatusModel = IInsuranceClaim.UpdateClaimEvent(UpdateStatusModel);
+                UpdateStatusModel = IInsuranceClaim.UpdateClaimEvent(UpdateStatusModel); // Update the claim event status
                 ClaimEvents.Add(UpdateStatusModel);
                 UpdateStatusModel = new()
                     {
@@ -318,11 +330,13 @@
         }
     }
 
+    // Method to handle file uploads
     private void FileUploaded(string filePath)
     {
         Model.Images.Add(filePath);
     }
 
+    // Method to cancel the dialog and potentially delete uploaded images
     private void Cancel()
     {
         bool success = true;
@@ -343,6 +357,7 @@
         }
     }
 
+    // Method to close the insurance claim
     private async Task CloseClaim()
     {
         if (HasPermissionInsuranceClaimServiceEdit)
@@ -367,7 +382,7 @@
                 var authState = await auth.GetAuthenticationStateAsync();
                 Model.IsOpen = false;
                 Model.UserInfo.UserID = authState.User.Identity.Name;
-                IInsuranceClaim.Update(Model);
+                IInsuranceClaim.Update(Model); // Update the insurance claim in the service
                 snackbar.Add("Claim Closed Successfully!", Severity.Success);
             }
             catch (Exception ex)
@@ -383,6 +398,7 @@
         }
     }
 
+    // Method to handle form submission when the form is valid
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -398,7 +414,7 @@
                 var authState = await auth.GetAuthenticationStateAsync();
                 Model.UserInfo.UserID = authState.User.Identity.Name;
                 //model.Images.AddRange(ImagePaths);
-                IInsuranceClaim.Update(Model);
+                IInsuranceClaim.Update(Model); // Update the insurance claim in the service
                 snackbar.Add("Saved Successfully", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(Model));
             }
