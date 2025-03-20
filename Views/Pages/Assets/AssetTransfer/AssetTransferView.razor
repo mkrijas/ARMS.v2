@@ -4,11 +4,8 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 @using Views.Data
 @using Core.BaseModels.Finance.Transactions;
-@using Pages.Operations.Expenses
 @inject IAssetService Iassetservice
 @inject IAssetTransferService Iservice
-@inject ITripFuelService tripFuelIservice
-@inject ITruckService Itruckservice
 @inject IPushNotificationService IpushNotificationService
 @inject MudBlazor.ISnackbar snackbar
 @inject IConfigTable config
@@ -24,144 +21,119 @@
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="px-4 py-6">
-            <MudTabPanel Text="Outgoing" BadgeData="@(collectionOutGoing?.Count > 0 ? collectionOutGoing.Count : null)" BadgeColor="Color.Info" Visible="@(collectionOutGoing?.Count > 0)">
-                <MudItem>
-                    <MudText Typo="Typo.h6">
-                        Initiate Transfer
-                        <MudTooltip Text="New Asset Transfer">
-                            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEditOutGoing(new AssetTransferInitiationModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                        </MudTooltip>
-                    </MudText>
-                </MudItem>
-                <MudGrid Class="mud-cols-xs-1 mud-cols-md-2 mud-cols-lg-2">
-                    @foreach (var item in collectionOutGoing)
-                    {
-                        <MudItem sm="12" xl="4" lg="6">
-                            <MudCard Class="mt-3" Style="height:auto" Elevation="4">
-                                <MudCardHeader>
-                                    <CardHeaderAvatar>
-                                        <MudAvatar Color="Color.Tertiary"><MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Title="Trip Number" Color="Color.Primary" /></MudAvatar>
-                                    </CardHeaderAvatar>
-                                    <CardHeaderContent>
-                                        <MudGrid>
-                                            <MudItem xs="6">
-                                                <MudText Typo="Typo.h6" GutterBottom="true">
-                                                    <b>@item.Asset.AssetCode | @item.Asset.Description</b>
-                                                </MudText>
-                                            </MudItem>
-                                        </MudGrid>
-                                    </CardHeaderContent>
-                                    <CardHeaderActions>
-                                        <MudTooltip Text="Edit">
-                                            <MudIconButton @onclick="@(()=> OpenDialogEditOutGoing(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Medium" IconSize="Size.Small" />
-                                        </MudTooltip>
-                                        <MudTooltip Text="Remove">
-                                            <MudIconButton @onclick="@(()=> OpenDialogDeleteOutGoing(item))" Color="Color.Warning" Icon="@Icons.Material.Filled.Cancel" Size="Size.Medium" IconSize="Size.Small" />
-                                        </MudTooltip>
-                                    </CardHeaderActions>
-                                </MudCardHeader>
-                                <MudCardContent>
-                                    <MudList Style="width:700px">
-                                        <MudGrid>
-                                            <MudItem md="5">
-                                                <MudListItem Avatar="@Icons.Material.Filled.DateRange" IconColor="Color.Primary">
-                                                    <b>@item.TransferInitiatedDate</b>
-                                                </MudListItem>
-                                                <MudListItem Avatar="@Icons.Material.Filled.Approval" IconColor="Color.Primary">
-                                                    Status : <b>@item.AssetTransferEndModel.StatusText</b>
-                                                </MudListItem>
-                                                <MudListItem Avatar="@Icons.Material.Filled.MenuBook" IconColor="Color.Primary">
-                                                    Total Expense : <b>@item?.Expenses</b>
-                                                </MudListItem>
-                                            </MudItem>
-
-                                            <MudItem md="5">
-                                                <MudListItem Avatar="@Icons.Material.Filled.Warehouse" IconColor="Color.Primary">
-                                                    Destination Branch : <b>@item.DestinationBranch.BranchName</b>
-                                                </MudListItem>
-                                                <MudListItem Avatar="@Icons.Material.Filled.EditNote" IconColor="Color.Primary">
-                                                    Remarks : <b>@item?.Remarks</b>
-                                                </MudListItem>
-                                                <MudListItem Avatar="@Icons.Material.Filled.LocalGasStation" IconColor="Color.Primary">
-                                                    Total Fuel : <b>@item?.Fuel</b>
-                                                </MudListItem>
-                                            </MudItem>
-                                        </MudGrid>
-                                    </MudList>
-                                </MudCardContent>
-                            </MudCard>
+            <MudTabPanel Style="min-width: 200px;" Text="Outgoing Asset" BadgeData="@(collectionOutGoing?.Count > 0 ? collectionOutGoing.Count : null)" BadgeColor="Color.Info" Visible="@(collectionOutGoing?.Count > 0)">
+                <MudTable Items="@collectionOutGoing" Dense="true" Hover="true" Striped="true" Elevation="0">
+                    <ToolBarContent>
+                        @if (!IsOutApproved)
+                        {
+                            <MudText Typo="Typo.h6">Initiate Transfer</MudText>
+                            <MudTooltip Text="New Asset Transfer">
+                                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" @onclick="@(()=> OpenDialogEditOutGoing(new AssetTransferInitiationModel(),false))" Title="Add" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                            </MudTooltip>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.h6">Approved Transfer</MudText>
+                        }
+                        <MudSpacer></MudSpacer>
+                        <MudTextField @bind-Value="searchTermOut" Placeholder="Search Journal..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUpOut">
+                        </MudTextField>
+                        <div class="tablefont">
+                            <span style="margin-right: 10px;">Maximum Records: </span>
+                        </div>
+                        <MudItem xs="1">
+                            <MudTextField @bind-Value="@NumberOfRecordsOut" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
                         </MudItem>
-                    }
-                </MudGrid>
+                        <MudCheckBox Style="margin-right: 16px;" Label="Approved Transfers" CheckedChanged="((bool value)=>ApprovedToggledOut(value))" Checked="@IsOutApproved"></MudCheckBox>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.DestinationBranch)" InitialDirection="SortDirection.Descending">Destination Branch</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.TransferInitiatedDate)" InitialDirection="SortDirection.Descending">Initiated Date</MudTableSortLabel></MudTh>
+                        @if (IsOutApproved)
+                        {
+                            <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.AssetTransferEndModel.TransferEndDate)" InitialDirection="SortDirection.Descending">TransferEnd Date</MudTableSortLabel></MudTh>
+                        }
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x?.AssetTransferEndModel.StatusText)" InitialDirection="SortDirection.Descending">Status</MudTableSortLabel></MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Document Number">@context.DocumentNumber</MudTd>
+                        <MudTd DataLabel="Destination Branch">@context.DestinationBranch.BranchName</MudTd>
+                        <MudTd DataLabel="Initiated Date">@context.TransferInitiatedDate?.ToShortDateString()</MudTd>
+                        @if (IsOutApproved)
+                        {
+                            <MudTd DataLabel="TransferEnd Date">@context.AssetTransferEndModel.TransferEndDate?.ToShortDateString()</MudTd>
+                        }
+                        <MudTd DataLabel="Status">@context?.AssetTransferEndModel.StatusText</MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudIconButton Disabled="@(context.MID != null)" @onclick="@(()=> OpenDialogEditOutGoing(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Title="Edit" Size="Size.Small" Variant="Variant.Filled" />
+                            <MudIconButton Disabled="@(context.MID != null)" @onclick="@(()=> OpenDialogDeleteOutGoing(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Title="Remove" Size="Size.Small" Variant="Variant.Filled" />
+                            <MudIconButton Disabled="@(context.MID != null)" @onclick="@(()=> OpenDialogEditOutGoing(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                            <MudIconButton @onclick="@(()=> OpenDialogEditOutGoing(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Size="Size.Small" Variant="Variant.Filled" />
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
             </MudTabPanel>
-            <MudTabPanel Text="Incoming" BadgeData="@(collectionIncoming?.Count > 0 ? collectionIncoming.Count : null)" BadgeColor="Color.Info" Visible="@(collectionIncoming?.Count > 0)">
-                <MudGrid Class="mud-cols-xs-1 mud-cols-md-2 mud-cols-lg-2">
-                    @foreach (var item in collectionIncoming)
-                    {
-                        <MudItem sm="12" xl="4" lg="6">
-                            <MudCard Class="mt-3" Style="height:auto" Elevation="4">
-                                <MudCardHeader>
-                                    <CardHeaderAvatar>
-                                        <MudAvatar Color="Color.Tertiary"><MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Title="Trip Number" Color="Color.Primary" /></MudAvatar>
-                                    </CardHeaderAvatar>
-                                    <CardHeaderContent>
-                                        <MudGrid>
-                                            <MudItem xs="6">
-                                                <MudText Typo="Typo.h6" GutterBottom="true">
-                                                    <b>@item.Asset.AssetCode | @item.Asset.Description</b>
-                                                </MudText>
-                                            </MudItem>
-                                        </MudGrid>
-                                    </CardHeaderContent>
-                                    <CardHeaderActions>
-                                        <MudTooltip Text="Add Fuel">
-                                            <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Size="Size.Large" Color="Color.Success" @onclick="@(()=> OpenFuelForm(new TripFuelModel(){AssetTransferID = item.AssetTransferID}))" />
-                                        </MudTooltip>
-                                        <MudTooltip Text="Add Expenses">
-                                            <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenExpenseForm(new OpTranModel(){AssetTransferID = item.AssetTransferID}))" />
-                                        </MudTooltip>
-                                        <MudTooltip Text="Add Mileage Shortage Receipt">
-                                            <MudIconButton Icon="@Icons.Material.Filled.Toll" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenMileageShortageReceipt(new MileageShortageReceiptModel(){AssetTransferID = item.AssetTransferID}))" />
-                                        </MudTooltip>
-                                        <MudTooltip Text="Accept/Reject">
-                                            <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddTask" Size="Size.Medium" IconSize="Size.Small" />
-                                        </MudTooltip>
-                                    </CardHeaderActions>
-                                </MudCardHeader>
-                                <MudCardContent>
-                                    <div class="TabStyle">
-                                        <MudList Style="width:700px">
-                                            <MudGrid>
-                                                <MudItem md="5">
-                                                    <MudListItem Avatar="@Icons.Material.Filled.DateRange" IconColor="Color.Primary">
-                                                        <b>@item.TransferInitiatedDate</b>
-                                                    </MudListItem>
-                                                    <MudListItem Avatar="@Icons.Material.Filled.Approval" IconColor="Color.Primary">
-                                                        Status : <b>@item.AssetTransferEndModel.StatusText</b>
-                                                    </MudListItem>
-                                                    <MudListItem Avatar="@Icons.Material.Filled.MenuBook" IconColor="Color.Primary">
-                                                        Total Expense : <b>@item?.Expenses</b>
-                                                    </MudListItem>
-                                                </MudItem>
-                                                <MudItem md="5">
-                                                    <MudListItem Avatar="@Icons.Material.Filled.Warehouse" IconColor="Color.Primary">
-                                                        Initiation Branch : <b>@item.InitiatedBranch.BranchName</b>
-                                                    </MudListItem>
-                                                    <MudListItem Avatar="@Icons.Material.Filled.EditNote" IconColor="Color.Primary">
-                                                        Remarks : <b>@item?.Remarks</b>
-                                                    </MudListItem>
-                                                    <MudListItem Avatar="@Icons.Material.Filled.LocalGasStation" IconColor="Color.Primary">
-                                                        Total Fuel : <b>@item?.Fuel</b>
-                                                    </MudListItem>
-                                                </MudItem>
-                                            </MudGrid>
-                                        </MudList>
-                                    </div>
-                                </MudCardContent>
-                            </MudCard>
+            <MudTabPanel Style="min-width: 200px;" Text="Incoming Asset" BadgeData="@(collectionIncoming?.Count > 0 ? collectionIncoming.Count : null)" BadgeColor="Color.Info" Visible="@(collectionIncoming?.Count > 0)">
+                <MudTable Items="@collectionIncoming" Dense="true" Hover="true" Striped="true" Elevation="0">
+                    <ToolBarContent>
+                        @if (!IsInApproved)
+                        {
+                            <MudText Typo="Typo.h6">Incoming Transfer</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.h6">Approved Transfer</MudText>
+                        }
+                        <MudSpacer></MudSpacer>
+                        <MudTextField @bind-Value="searchTermIn" Placeholder="Search Journal..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUpIn">
+                        </MudTextField>
+                        <div class="tablefont">
+                            <span style="margin-right: 10px;">Maximum Records: </span>
+                        </div>
+                        <MudItem xs="1">
+                            <MudTextField @bind-Value="@NumberOfRecordsIn" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
                         </MudItem>
-                    }
-                </MudGrid>
+                        <MudCheckBox Style="margin-right: 16px;" Label="Approved Transfers" CheckedChanged="((bool value)=>ApprovedToggledIn(value))" Checked="@IsInApproved"></MudCheckBox>
+                    </ToolBarContent>
+
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.InitiatedBranch.BranchName)" InitialDirection="SortDirection.Descending">Initiated Branch</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.TransferInitiatedDate)" InitialDirection="SortDirection.Descending">Initiated Date</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Transfer Number</MudTableSortLabel></MudTh>
+                        @if (IsInApproved)
+                        {
+                            <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.AssetTransferEndModel.TransferEndDate)" InitialDirection="SortDirection.Descending">TransferEnd Date</MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.AssetTransferEndModel.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
+                        }
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x?.AssetTransferEndModel.StatusText)" InitialDirection="SortDirection.Descending">Status</MudTableSortLabel></MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+
+                    <RowTemplate>
+                        <MudTd DataLabel="Initiated Branch">@context.InitiatedBranch.BranchName</MudTd>
+                        <MudTd DataLabel="Initiated Date">@context.TransferInitiatedDate?.ToShortDateString()</MudTd>
+                        <MudTd DataLabel="Document Number">@context.DocumentNumber</MudTd>
+                        @if (IsInApproved)
+                        {
+                            <MudTd DataLabel="TransferEnd Date">@context.AssetTransferEndModel.TransferEndDate?.ToShortDateString()</MudTd>
+                            <MudTd DataLabel="DocumentNumber">@context.AssetTransferEndModel.DocumentNumber</MudTd>
+                        }
+                        <MudTd DataLabel="Status">@context?.AssetTransferEndModel.StatusText</MudTd>
+                        <MudTd DataLabel="Actions"> 
+                            <MudIconButton Disabled="@(context.MID != null || context.AssetTransferEndModel.TransferStatus != null)" @onclick="@(()=> OpenDialogEditIncoming(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddTask" Title="Accept/Reject" Size="Size.Small" Variant="Variant.Filled" />
+                            <MudIconButton Disabled="@(context.MID != null || context.AssetTransferEndModel.TransferStatus == null)" @onclick="@(()=> OpenDialogEditIncoming(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                            <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Size="Size.Small" Variant="Variant.Filled" />
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
             </MudTabPanel>
         </MudTabs>
     </MudItem>
@@ -178,15 +150,20 @@
 
     #endregion
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, CloseOnEscapeKey = true };
-    private List<OpTranModel> OptranList = new();
-    private List<TripFuelModel> TFuelList = new();
-    public int? SubClassID { get; set; } = new();
-    public int? TruckID { get; set; } = new();
-    int? AssetTrucksSubClassID;
     private bool _busy;
 
     public bool HasPermissionAssetTransferServiceDelete { get; set; } = false;
     public int AssetTransferDocTypeID = 110;
+    public int? branchID { get; set; }
+
+    public bool IsOutApproved { get; set; } = false;
+    public bool IsInApproved { get; set; } = false;
+    private int numberOfRecordsOut = 100;
+    private int numberOfRecordsIn = 100;
+    private string searchTermOut = "";
+    private string searchTermIn = "";
+       
+    private AssetTransferInitiationModel model = new();
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
@@ -204,42 +181,70 @@
 
         await GetAll();
     }
-
-    // Method to retrieve all outgoing and incoming asset transfers
+        
+    //Method to retrieve all outgoing and incoming asset transfers
     private async Task GetAll()
     {
-        await GetAllOutGoing();
-        await GetAllIncoming();
+        collectionOutGoing = Iservice.SelectOutgoingUnapproved(CurrentBranchId, numberOfRecordsOut, searchTermOut).ToList();
+        collectionIncoming = Iservice.SelectIncomingUnapproved(CurrentBranchId, numberOfRecordsIn, searchTermIn).ToList();
     }
 
     #region Outgoing
-
-    private AssetTransferInitiationModel modelOutGoing = new();
     private List<AssetTransferInitiationModel> collectionOutGoing = new();
     string state = "Message box hasn't been opened yet";
 
-    // Method to retrieve all outgoing asset transfers
-    private async Task GetAllOutGoing()
+    private int NumberOfRecordsOut
     {
-        collectionOutGoing = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (modelOutGoing.InitiatedBranch == null)
+        get => numberOfRecordsOut;
+        set
         {
-            modelOutGoing.InitiatedBranch = new();
+            if (numberOfRecordsOut != value)
+            {
+                numberOfRecordsOut = value;
+                _ = ReloadTableOut();
+            }
         }
-        modelOutGoing.InitiatedBranch.BranchID = int.Parse(brancIDString);
+    }
 
-        // Load outgoing assets for the current branch
-        foreach (var item in Iservice.SelectOutgoingAssets(modelOutGoing.InitiatedBranch.BranchID))
+    private async Task HandleSearchKeyUpOut(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
         {
-            collectionOutGoing.Add(item);
+            await ReloadTableOut();
+        }
+    }
+
+    private async Task ReloadTableOut()
+    {
+        await GetAllOutGoing(IsOutApproved, NumberOfRecordsOut);
+    }
+
+    // Method to toggle the approval status and reload the table
+    async Task ApprovedToggledOut(bool value)
+    {
+        IsOutApproved = value;
+        await GetAllOutGoing(IsOutApproved, NumberOfRecordsOut);
+    }
+
+    // Method to retrieve all outgoing asset transfers
+    async Task GetAllOutGoing(bool val, int numberOfRecords)
+    {
+        int NumberOfRecords = numberOfRecords;
+        
+        collectionOutGoing = new List<AssetTransferInitiationModel>();
+
+        @if (val)
+        {
+            collectionOutGoing = Iservice.SelectOutgoingApproved(CurrentBranchId, NumberOfRecords, searchTermOut).ToList();
+        }
+        else
+        {
+            collectionOutGoing = Iservice.SelectOutgoingUnapproved(CurrentBranchId, NumberOfRecords, searchTermOut).ToList();
         }
     }
 
     // Method to open the dialog for editing outgoing asset transfers
-    private async Task OpenDialogEditOutGoing(AssetTransferInitiationModel AssetTransferInitiation)
+    private async Task OpenDialogEditOutGoing(AssetTransferInitiationModel AssetTransferInitiation, bool ReadOnly)
     {
         if (_busy)
         {
@@ -266,18 +271,15 @@
         }
         AssetTransferInitiation.InitiatedBranch.BranchID = int.Parse(brancIDString);
 
-        // Get the child assets for the selected asset
-        List<AssetModel> childAssets = Iassetservice.GetAttachedAssets(AssetTransferInitiation.Asset.AssetID).Skip(1).ToList();
-
-        var modelOutGoing = new DialogParameters
+        var model = new DialogParameters
             {
                 ["model"] = AssetTransferInitiation,
-                ["childAssets"] = childAssets
+                ["ReadOnly"] = ReadOnly
             };
 
         // Show the dialog for editing
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<AssetTransferInitiationDialog>("Simple Dialog", modelOutGoing, options);
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large };
+        var dialog = DialogService.Show<AssetTransferInitiationDialog>("Simple Dialog", model, options);
         var result = await dialog.Result;
         var isCancelled = result.Cancelled;
         if (!isCancelled)
@@ -327,21 +329,7 @@
                     var BranchID = int.Parse(brancIDString);
                     var UserID = user.Identity.Name;
 
-                    // Get the subclass ID for the asset
-                    SubClassID = Iassetservice.SelectByID(AssetTransferInitiation.Asset.AssetID).SubClass.AssetSubClassID;
-                    ConfigModel cModel = config.GetAssetSubclassForTrucks();
-                    AssetTrucksSubClassID = int.Parse(cModel.ValueString);
-
-                    // Delete the asset transfer initiation based on subclass type
-                    if (SubClassID == AssetTrucksSubClassID)
-                    {
-                        TruckID = Itruckservice.SelectByAsset(AssetTransferInitiation.Asset.AssetID).TruckID;
-                        Iservice.DeleteInitiation(AssetTransferInitiation.AssetTransferID, BranchID, AssetTransferInitiation.Asset.AssetID, TruckID, UserID);
-                    }
-                    else
-                    {
-                        Iservice.DeleteInitiation(AssetTransferInitiation.AssetTransferID, BranchID, AssetTransferInitiation.Asset.AssetID, null, UserID);
-                    }
+                    Iservice.DeleteInitiation(AssetTransferInitiation.AssetTransferID, BranchID, AssetTransferInitiation.Asset.AssetID, UserID);
                     snackbar.Add("Asset Transfer Canceled", Severity.Warning);
                 }
                 catch (Exception ex)
@@ -362,37 +350,61 @@
     #endregion
 
     #region Incoming
-
-    private AssetTransferInitiationModel modelIncoming = new();
     private List<AssetTransferInitiationModel> collectionIncoming = new();
 
-    // Method to retrieve all incoming asset transfers
-    private async Task GetAllIncoming()
+
+     private int NumberOfRecordsIn
     {
-        collectionIncoming = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-
-        if (modelIncoming.AssetTransferEndModel == null)
+        get => numberOfRecordsIn;
+        set
         {
-            modelIncoming.AssetTransferEndModel = new();
+            if (numberOfRecordsIn != value)
+            {
+                numberOfRecordsIn = value;
+                _ = ReloadTableIn();
+            }
         }
-        if (modelIncoming.DestinationBranch == null)
-        {
-            modelIncoming.DestinationBranch = new();
-        }
-        modelIncoming.DestinationBranch.BranchID = int.Parse(brancIDString);
+    }
 
-        // Load incoming assets for the current branch
-        foreach (var item in Iservice.SelectIncomingAssets(modelIncoming.DestinationBranch?.BranchID ?? 0))
+    private async Task HandleSearchKeyUpIn(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
         {
-            collectionIncoming.Add(item);
+            await ReloadTableIn();
+        }
+    }
+
+    private async Task ReloadTableIn()
+    {
+        await GetAllIncoming(IsInApproved, NumberOfRecordsIn);
+    }
+
+    // Method to toggle the approval status and reload the table
+    async Task ApprovedToggledIn(bool value)
+    {
+        IsInApproved = value;
+        await GetAllIncoming(IsInApproved, NumberOfRecordsIn);
+    }
+
+    // Method to retrieve all incoming asset transfers
+    async Task GetAllIncoming(bool val, int numberOfRecords)
+    {
+        int NumberOfRecords = numberOfRecords;
+
+        collectionIncoming = new List<AssetTransferInitiationModel>();
+
+        @if (val)
+        {
+            collectionIncoming = Iservice.SelectIncomingApproved(CurrentBranchId, NumberOfRecords, searchTermIn).ToList();
+        }
+        else
+        {
+            collectionIncoming = Iservice.SelectIncomingUnapproved(CurrentBranchId, NumberOfRecords, searchTermIn).ToList();
         }
     }
 
     // Method to open the dialog for editing incoming asset transfers
-    private async Task OpenDialogEditIncoming(AssetTransferInitiationModel AssetTransferEnd)
+    private async Task OpenDialogEditIncoming(AssetTransferInitiationModel AssetTransferEnd, bool ReadOnly)
     {
         if (_busy)
         {
@@ -415,18 +427,15 @@
         }
         AssetTransferEnd.DestinationBranch.BranchID = int.Parse(brancIDString);
 
-        // Get the child assets for the selected asset
-        List<AssetModel> childAssets = Iassetservice.GetAttachedAssets(AssetTransferEnd.Asset.AssetID).Skip(1).ToList();
-
-        var modelIncoming = new DialogParameters
+        var model = new DialogParameters
             {
                 ["model"] = AssetTransferEnd,
-                ["childAssets"] = childAssets
+                ["ReadOnly"] = ReadOnly
             };
 
         // Show the dialog for editing
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<AssetTransferEndDialog>("Simple Dialog", modelIncoming, options);
+        var dialog = DialogService.Show<AssetTransferEndDialog>("Simple Dialog", model, options);
         var result = await dialog.Result;
         var isCancelled = result.Cancelled;
 
@@ -457,37 +466,6 @@
         _busy = false;
     }
 
-    // Method to open the fuel form dialog
-    private async Task OpenFuelForm(TripFuelModel fuelModel)
-    {
-        DialogParameters parms = new DialogParameters();
-        parms.Add("Tmodel", new TripFuelModel() { AssetTransferID = fuelModel.AssetTransferID });
-        var dialog = DialogService.Show<TripsFuelDialog>("ADD FUEL", parms, maxWidth);
-        var result = await dialog.Result;
-    }
-
-    // Method to open the expense form dialog
-    private async Task OpenExpenseForm(OpTranModel tranModel)
-    {
-        DialogParameters parms = new DialogParameters();
-        tranModel.PaymentMode = "Cash"; tranModel.Area = "Operation";
-        parms.Add("model", tranModel.Clone());
-        var dialog = DialogService.Show<Finance.Transactions.OpTranDialog>("ADD", parms, maxWidth);
-        var result = await dialog.Result;
-    }
-
-    // Method to open the mileage shortage receipt dialog
-    private async Task OpenMileageShortageReceipt(MileageShortageReceiptModel morModel)
-    {
-
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", new MileageShortageReceiptModel()
-            {
-                AssetTransferID = morModel.AssetTransferID
-            });
-        var dialog = DialogService.Show<Finance.Transactions.MileageShortageReceiptDialog>("ADD", parms, maxWidth);
-        var result = await dialog.Result;
-    }
-
     #endregion
+        
 }

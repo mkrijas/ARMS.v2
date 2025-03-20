@@ -117,7 +117,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        TdsNPs = tdsIService.SelectTdsNP().ToList();
+        TdsNPs = tdsIService.SelectTdsNP().ToList(); // Load the nature of payment options
         if (model.ID == null)
         {                        
             model.BranchID = BranchID;
@@ -126,12 +126,14 @@
         }
         else
         {
+            // Load existing party and TDS entries if editing an existing model
             model.Party = partyService.SelectByID(model.Party.PartyID);            
             model.Tds = Iservice.GetEntries(model.ID).ToList();
         }
         model.NatureOfTransaction = "TdsEntry";
     }
 
+    // Method to handle selection of nature of payment
     private void TdsNPSelected(int? val)
     {
         _entryModel.TdsNpID = val;
@@ -142,6 +144,7 @@
         }
     }
 
+    // Method to handle changes in taxable amount
     private void TaxableAmountChanged(decimal? val)
     {
         _entryModel.TaxableAmount = val;
@@ -151,27 +154,31 @@
         }
     }
 
+    // Method to calculate the total amount of TDS entries
     void SetTotal()
     {
         model.TotalAmount = model.Tds.Sum(x => x.TdsAmount);
     }
 
+    // Method to handle changes in party selection
     void PartyChanged(PartyModel party)
     {
         model.Party = party;
+        // Get the default COA ID for the selected party
         if (party is not null)
             model.PartyCoaID = partyService.GetPartyDefaultCoaID(model.Party?.PartyID);
         else
             model.PartyCoaID = null;
     }
 
+    // Method to update the TDS transaction model
     protected override async Task<int> Update(TdsTransactionModel editModel)
     {
         if (await validate(model))
         {
             try
             {
-                model = Iservice.Update(model);
+                model = Iservice.Update(model); // Update the model
                 return model.ID.Value;
             }
             catch(Exception ex)
@@ -182,17 +189,20 @@
         return 0;
     }
 
+    // Method to update approval status of the transaction
     protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        int result = Iservice.Approve(model.ID, model.UserInfo.UserID, aprvd.Remarks);
+        int result = Iservice.Approve(model.ID, model.UserInfo.UserID, aprvd.Remarks); // Approve the transaction
         return result;
     }
 
+    // Method to validate the TDS transaction model
     async Task<bool> validate(TdsTransactionModel editModel)
     {
         return true;
     }
 
+    // Method to add a new TDS entry
     private void ADD()
     {
         if (model.Tds is null)
@@ -214,6 +224,7 @@
         }
     }   
 
+    // Method to delete a TDS entry
     private void DeleteRow(TdsTransactionEntryModel i)
     {
         int rowIndex = model.Tds.IndexOf(i);
@@ -221,10 +232,12 @@
         SetTotal();
     }
 
+    // Method to set TDS amount based on taxable amount and nature of payment
     private void SetTds(TdsTransactionEntryModel e)
     {
         if (e.TaxableAmount is not null && e.TdsNpID is not null && model.Party is not null)
         {
+            // Get the TDS rate and calculate the TDS amount
             e.RateOfTds = tdsIService.GetTdsRate2(model.Party.PartyID, e.TdsNpID);
             e.TdsAmount = Math.Round((e.TaxableAmount.Value * e.RateOfTds.Value / 100), MidpointRounding.AwayFromZero);
         }

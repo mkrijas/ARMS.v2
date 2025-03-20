@@ -7,12 +7,19 @@ namespace ArmsServices.DataServices
 {
     public interface IAssetTransferService
     {
-        AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model, int? TruckID);  //Edit
+        AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model);  //Edit
         IEnumerable<AssetTransferInitiationModel> SelectOutgoingAssets(int? Branch);
+        IEnumerable<AssetTransferInitiationModel> SelectOutgoingApproved(int? Branch, int? NumberOfRecords, string searchTerm);
+        IEnumerable<AssetTransferInitiationModel> SelectOutgoingUnapproved(int? Branch, int? NumberOfRecords, string searchTerm);
         IEnumerable<AssetSettingsModel> GetCheckList(int? ID);
-        int DeleteInitiation(int? ID, int? BranchID, int? AssetID, int? TruckID, string UserID);  //Delete
-        AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model, int? TruckID, List<int?> RecievedList);  //Accept  //Reject
+        IEnumerable<AssetTransferItemModel> GetAssets(int? ID);
+        int DeleteInitiation(int? ID, int? BranchID, int? AssetID, string UserID);  //Delete
+        AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model, List<int?> RecievedList);  //Accept  //Reject
         IEnumerable<AssetTransferInitiationModel> SelectIncomingAssets(int? Branch);
+        IEnumerable<AssetTransferInitiationModel> SelectIncomingApproved(int? Branch, int? NumberOfRecords, string searchTerm);
+        IEnumerable<AssetTransferInitiationModel> SelectIncomingUnapproved(int? Branch, int? NumberOfRecords, string searchTerm);
         int RemovePhoto(AssetTransferInitiationModel model);
+        public int ApproveOutgoing(int? ID, string UserID);
+        public int ApproveIncoming(int? ID, string UserID);
     }
 }

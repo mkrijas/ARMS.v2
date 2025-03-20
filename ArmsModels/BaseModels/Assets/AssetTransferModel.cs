@@ -26,8 +26,15 @@ namespace ArmsModels.BaseModels
         public List<AssetSettingsModel> CheckList { get; set; } // List of asset settings associated with the transfer
         public decimal? Fuel { get; set; }
         public decimal? Expenses { get; set; }
+        public int? MID { get; set; }
+        public string DocumentNumber { get; set; }
+        public string GstMechanism { get; set; } = "FCM";
         public virtual string Images { get; set; } = "";
         public virtual List<string> ImagePath { get; set; } = new List<string>();
+        public List<AssetTransferItemModel> Items { get; set; } = new();
+        public int? AuthLevelId { get; set; }
+        public string AuthStatus { get; set; }
+
     }
 
     // Model representing the end of an asset transfer
@@ -36,8 +43,9 @@ namespace ArmsModels.BaseModels
         public int? AssetTransferEndID { get; set; } // Unique identifier for the end of the asset transfer
         public int? BranchID { get; set; }
         public bool? TransferStatus { get; set; }
-        [Required]
         public DateTime? TransferEndDate { get; set; } = DateTime.Today;
+        public string DocumentNumber { get; set; }
+        public string GstMechanism { get; set; } = "FCM";
         public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
 
@@ -54,6 +62,18 @@ namespace ArmsModels.BaseModels
                     return "Rejected";
             }
         }
+    }
+
+    public class AssetTransferItemModel
+    {
+        public int? ID { get; set; }
+        public int? AssetID { get; set; }
+        public decimal? BookValue { get; set; }
+        public decimal? TaxableValue { get; set; }
+        public decimal? TaxRate { get; set; }
+        public decimal? TaxValue { get; set; }
+        public virtual string Description { get; set; }
+        public virtual string AssetStatus { get; set; }
     }
 
 }
