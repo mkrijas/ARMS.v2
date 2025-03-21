@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
-
 namespace ArmsServices.DataServices
 {
     public class ContentService : IContentService
@@ -17,8 +16,6 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-
-        // Method to update content detailsc
         public async Task<ContentModel> Update(ContentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -37,8 +34,6 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-
-        // Method to select content by its IDc
         public async Task<ContentModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -52,8 +47,6 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-
-        // Method to delete content by its ID
         public async Task<int> Delete(int? ContentID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -63,8 +56,6 @@ namespace ArmsServices.DataServices
             };
             return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Content.Delete]", parameters);
         }
-
-        // Method to select content based on its ID
         public async IAsyncEnumerable<ContentModel> Select(int? ContentID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -77,7 +68,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-        // Helper method to map data record to ContentModel
         private async Task<ContentModel> GetModel(IDataRecord dr)
         {
             return new ContentModel
