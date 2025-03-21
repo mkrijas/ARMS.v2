@@ -98,19 +98,22 @@
     public EventCallback<MudListItem> OnClaimAdded { get; set; }
     private bool dialogVisible = false;
 
+    // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         await GetAll();
     }
 
+    // Method to fetch all insurance claims based on the user's branch ID
     private async Task GetAll()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int? brancID = int.Parse(brancIDString);
-        Collection = Iservice.Select(null, brancID).ToList();
+        Collection = Iservice.Select(null, brancID).ToList(); // Get claims for the branch
     }
 
+    // Method to handle the selection of an item from the list
     protected async Task SelectedItemChanged(object obj)
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -120,11 +123,13 @@
         SelectedItem = (MudListItem)obj;
         SelectedModel = (InsuranceClaimModel)SelectedItem.Value;
         var e = await auth.GetAuthenticationStateAsync();
-        BreakdownModel breakdown = Ibreakdown.SelectByID(BreakdownID);
+        BreakdownModel breakdown = Ibreakdown.SelectByID(BreakdownID); // Get breakdown details
         int TruckID = breakdown.TruckID.Value;
         Truck = Itruck.SelectByID(TruckID);
+
+        // Fetch insurance document related to the truck
         Insurance = IdocService.SelectByAsset(TruckID, false).FirstOrDefault(x => x.DocumentType.DocumentTypeName.ToUpper().Contains("INSURANCE") && IdocService.IsValid(x, breakdown.BreakdownTime));
-        ClaimEvents = Iservice.GetEventStatusList(SelectedModel.InsuranceClaimID).ToList();
+        ClaimEvents = Iservice.GetEventStatusList(SelectedModel.InsuranceClaimID).ToList(); // Get claim events
         UpdateStatusModel = new()
             {
                 InsuranceClaimID = SelectedModel.InsuranceClaimID,
@@ -133,6 +138,7 @@
         SetEventMaster();
     }
 
+    // Method to set up the event master data based on claim events
     private void SetEventMaster()
     {
         int? maxval = null;
@@ -140,16 +146,17 @@
         {
             maxval = ClaimEvents?.Max(x => x.IcesID).Value;
         }
-        EventMasterSource = Iservice.GetEventList(maxval).ToList();
+        EventMasterSource = Iservice.GetEventList(maxval).ToList(); // Fetch event master list
     }
 
+    // Method to handle the submission of a valid form
     private async Task OnValidSubmit(EditContext context)
     {
         if (HasPermissionInsuranceClaimServiceEdit)
         {
             try
             {
-                Iservice.Update(SelectedModel);
+                Iservice.Update(SelectedModel); // Update the selected claim
                 snackbar.Add("Saved Successfully", Severity.Success);
             }
             catch (Exception ex)
@@ -165,6 +172,7 @@
         }
     }
 
+    // Method to update the status of a claim
     private async Task UpdateStatus()
     {
         if (HasPermissionInsuranceClaimServiceUpdateList)
@@ -173,7 +181,7 @@
             {
                 var authState = await auth.GetAuthenticationStateAsync();
                 UpdateStatusModel.UserInfo.UserID = authState.User.Identity.Name;
-                UpdateStatusModel = Iservice.UpdateClaimEvent(UpdateStatusModel);
+                UpdateStatusModel = Iservice.UpdateClaimEvent(UpdateStatusModel); // Update claim event
                 ClaimEvents.Add(UpdateStatusModel);
                 UpdateStatusModel = new()
                     {
@@ -194,6 +202,7 @@
         }
     }
 
+    // Method to handle the selection of an event
     private void EventSelected(int? IcemID)
     {
         var SelectedEvent = EventMasterSource.First(x => x.IcemID == IcemID);
@@ -205,6 +214,7 @@
         UpdateStatusModel.IcemID = IcemID;
     }
 
+    // Method to close a claim
     private async Task CloseClaim()
     {
         if (HasPermissionInsuranceClaimServiceEdit)
@@ -214,7 +224,7 @@
                 var authState = await auth.GetAuthenticationStateAsync();
                 SelectedModel.IsOpen = false;
                 SelectedModel.UserInfo.UserID = authState.User.Identity.Name;
-                Iservice.Update(SelectedModel);
+                Iservice.Update(SelectedModel); // Update the claim
             }
             catch (Exception ex)
             {
@@ -229,22 +239,25 @@
         }
     }
 
+    // Method to handle file uploads
     private void FileUploaded(string filePath)
     {
         SelectedModel.Images.Add(filePath);
     }
 
+    // Method to add claims to the list
     async Task AddClaims(MudListItem MudListItem)
     {
         SelectedItem = MudListItem;
         //model.Assets.Add(MudListItem);
     }
 
+    // Method to edit an existing insurance claim
     private async Task Edit(InsuranceClaimModel model)
     {
         InsuranceClaimModel Model = new();
-        Breakdown = Ibreakdown.SelectByID(model.BreakdownID);
-        var asset = IAsset.SelectByTruckID(Breakdown.TruckID);
+        Breakdown = Ibreakdown.SelectByID(model.BreakdownID); // Get breakdown details
+        var asset = IAsset.SelectByTruckID(Breakdown.TruckID); // Get asset details
         model.Asset = asset;
         Model = model;
         DialogOptions options = new DialogOptions()
@@ -265,6 +278,7 @@
         await GetAll();
     }
 
+    // Method to search for claims based on the truck registration number
     private bool search(InsuranceClaimModel model)
     {
         if (model?.TruckRegNo != null && model.TruckRegNo.Contains(SearchClaim, StringComparison.OrdinalIgnoreCase))
