@@ -38,7 +38,7 @@ namespace MobileAPI.Controllers
         //Payment Initiated List Select
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<PaymentInitiatedModel> SelectPaymentInitiated(int? BranchID, string searchterm)
+        public IEnumerable<PaymentInitiatedModel> SelectPaymentInitiated(int? BranchID, string searchterm = "")
         {
             IEnumerable<PaymentInitiatedModel> PaymentInitiatedList;
             PaymentInitiatedList = _paymentInitiatedService.PendingForCompletion( BranchID, searchterm).ToList();
@@ -74,7 +74,7 @@ namespace MobileAPI.Controllers
         //Mileage shortage List Select
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<MileageShortageReceiptModel> SelectMileageShortageByUnapproved(int? BranchID, int? numberOfRecords, string searchterm)
+        public IEnumerable<MileageShortageReceiptModel> SelectMileageShortageByUnapproved(int? BranchID, int? numberOfRecords, string searchterm = "")
         {
             IEnumerable<MileageShortageReceiptModel> MIleageShortageList;
             MIleageShortageList = _mileageShortageReceiptService.SelectByUnapproved(BranchID, numberOfRecords, searchterm).ToList();
