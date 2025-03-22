@@ -2,8 +2,11 @@ using ARMS.Extensions;
 using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
+using ArmsServices.DataServices.Finance.Transactions;
+using ArmsServices.DataServices.General;
 using Core.IDataServices.Operations;
 using Core.IDataServices.Operations.ROI;
+using DAL.DataServices.Finance.Transactions;
 using DAL.DataServices.Operations;
 using DAL.DataServices.Operations.ROI;
 using Microsoft.AspNetCore.Authentication;
@@ -43,6 +46,12 @@ builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<ITruckStatusUpdateService, TruckStatusUpdateService>();
 builder.Services.AddScoped<IROITonnageService, ROITonnageService>();
+builder.Services.AddScoped<IPaymentInitiatedService, PaymentInitiatedService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IMileageShortageReceiptService, MileageShortageReceiptService>();
+builder.Services.AddScoped<IInventoryReleaseService, InventoryReleaseService>();
+builder.Services.AddScoped<IStoreService, StoreService>();
+builder.Services.AddScoped<IConfigTable, ConfigTable>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();

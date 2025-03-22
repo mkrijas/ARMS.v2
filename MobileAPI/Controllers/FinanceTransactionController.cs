@@ -56,10 +56,10 @@ namespace MobileAPI.Controllers
         //Payment Memo List Select
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<PaymentMemoModel> SelectPaymentMemoByUnapproved(int? BranchID, int? numberOfRecords, bool IsInterBranch, string searchterm)
+        public IEnumerable<PaymentMemoModel> SelectPaymentMemoByUnapproved(int? BranchID, int? numberOfRecords, bool IsInterBranch, string searchterm = "")
         {
             IEnumerable<PaymentMemoModel> PaymentMemoList;
-            PaymentMemoList = _paymentService.SelectByUnapproved( BranchID, numberOfRecords, IsInterBranch, searchterm).ToList();
+            PaymentMemoList = _paymentService.SelectByUnapproved(BranchID, numberOfRecords, IsInterBranch, searchterm).ToList();
             return PaymentMemoList;
         }
 
