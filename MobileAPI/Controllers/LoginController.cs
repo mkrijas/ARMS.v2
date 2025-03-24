@@ -45,7 +45,7 @@ namespace MobileAPI.Controllers
             var result = await _signInManager.PasswordSignInAsync(user.UserID, user.PasswordHash, true, lockoutOnFailure: false);
             if (result.Succeeded)
             {
-                if(UserName == "ADMIN")
+                if(UserName.ToUpper() == "ADMIN")
                 {
                     _dbService.ChangeConnectionString("ArmsDBTest");
                 }
