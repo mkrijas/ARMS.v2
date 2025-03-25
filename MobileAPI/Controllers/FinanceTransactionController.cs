@@ -6,6 +6,7 @@ using Core.BaseModels.Finance.Transactions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MobileAPI.Services;
 using System;
 using System.Numerics;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -21,18 +22,24 @@ namespace MobileAPI.Controllers
         private readonly IMileageShortageReceiptService _mileageShortageReceiptService;
         private readonly IInventoryReleaseService _inventoryReleaseService;
         private readonly IStoreService _storeService;
+        private readonly IDataAuthorizationService _dataAuthorizationService;
+        private readonly IRoleService<RoleModel> _roleService;
 
         public FinanceTransactionController(IPaymentInitiatedService paymentInitiatedService,
                                             IPaymentService paymentService,
                                             IMileageShortageReceiptService mileageShortageReceiptService,
                                             IInventoryReleaseService inventoryReleaseService,
-                                            IStoreService storeService)
+                                            IStoreService storeService,
+                                            IDataAuthorizationService dataAuthorizationService,
+                                            IRoleService<RoleModel> roleService)
         {
             _paymentInitiatedService = paymentInitiatedService;
             _paymentService = paymentService;
             _mileageShortageReceiptService = mileageShortageReceiptService;
             _inventoryReleaseService = inventoryReleaseService;
             _storeService = storeService;
+            _dataAuthorizationService = dataAuthorizationService;
+            _roleService = roleService;
         }
         
         //Payment Initiated List Select
@@ -69,6 +76,16 @@ namespace MobileAPI.Controllers
         public PaymentMemoModel SelectPaymentMemo(int? ID)
         {
             return _paymentService.SelectByID(ID);
+        }
+
+        //Get Payment Memo Bills
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<BillsPaidModel> SelectPaymentMemoBills(int? ID)
+        {
+            IEnumerable<BillsPaidModel> PaymentMemoBills;
+            PaymentMemoBills = _paymentService.GetBills(ID).ToList();
+            return PaymentMemoBills;
         }
 
         //Mileage shortage List Select
@@ -126,5 +143,95 @@ namespace MobileAPI.Controllers
             StoreList = _storeService.SelectByBranch(BranchID).ToList();
             return StoreList;
         }
+
+        // Define a private readonly dictionary for DocType to DocTypeID mapping
+        private readonly Dictionary<string, int> _docTypeIDDictionary = new Dictionary<string, int>
+        {
+            { "INITIATE_PAYMENT", 15 },
+            { "PAYMENT_MEMO", 7 },
+            { "MILEAGE_SHORTAGE_RECEIPT", 30 },
+            { "INVENTORY_RELEASE", 97 }
+        };
+
+        //Data auth status list
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<DataAuthorizationModel> GetAuthStatus(string DocType, int? DocumentID)
+        {
+            int DocTypeID;
+
+            if (!_docTypeIDDictionary.TryGetValue(DocType, out DocTypeID))
+            {
+                Console.WriteLine("Invalid DocType provided.");
+                return Enumerable.Empty<DataAuthorizationModel>();
+            }
+
+            IEnumerable<DataAuthorizationModel> AuthStatusList;
+            AuthStatusList = _dataAuthorizationService.GetAuthStatus(DocTypeID, DocumentID).OrderBy(x => x.AuthLevelID).ToList();
+            return AuthStatusList;
+        }
+
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> Approve([FromBody] DataAuthorizationModel model, string DocType)
+        {
+            int DocTypeID;
+            bool HasPermissionApprove = false;
+
+            // Check if DocType is valid
+            if (!_docTypeIDDictionary.TryGetValue(DocType, out DocTypeID))
+            {
+                return BadRequest(new { Status = "Invalid DocType provided." });
+            }
+
+            // If AuthLevelID is not 99, update the model
+            if (model.AuthLevelID != 99)
+            {
+                model = _dataAuthorizationService.Update(model);
+                return Ok(new
+                {
+                    Status = "Verified",
+                    UpdatedModel = model
+                });
+            }
+            else
+            {
+                // Check permission before approving
+                CancellationTokenSource ctc = new CancellationTokenSource();
+                HasPermissionApprove = await _roleService.HasClaim(DocTypeID.ToString(), "Approve", ctc.Token);
+
+                // Deny access if user does not have permission
+                if (!HasPermissionApprove)
+                {
+                    return Forbid(); // 403 Forbidden
+                }
+
+                // Approve based on DocTypeID
+                switch (DocTypeID)
+                {
+                    case 15: // INITIATE_PAYMENT
+                        _paymentInitiatedService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
+                        break;
+                    case 7: // PAYMENT_MEMO
+                        _paymentService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
+                        break;
+                    case 30: // MILEAGE_SHORTAGE_RECEIPT
+                        _mileageShortageReceiptService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
+                        break;
+                    case 97: // INVENTORY_RELEASE
+                        _inventoryReleaseService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
+                        break;
+                    default:
+                        return BadRequest(new { Status = "Invalid DocTypeID" });
+                }
+
+                return Ok(new
+                {
+                    Status = "Approved",
+                    ApprovedModel = model
+                });
+            }
+        }
+
     }
 }
