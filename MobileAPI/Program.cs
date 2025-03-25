@@ -52,6 +52,8 @@ builder.Services.AddScoped<IMileageShortageReceiptService, MileageShortageReceip
 builder.Services.AddScoped<IInventoryReleaseService, InventoryReleaseService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IConfigTable, ConfigTable>();
+builder.Services.AddScoped<IDataAuthorizationService, DataAuthorizationService>();
+builder.Services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
