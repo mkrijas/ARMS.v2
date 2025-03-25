@@ -78,6 +78,16 @@ namespace MobileAPI.Controllers
             return _paymentService.SelectByID(ID);
         }
 
+        //Get Payment Memo Bills
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<BillsPaidModel> SelectPaymentMemoBills(int? ID)
+        {
+            IEnumerable<BillsPaidModel> PaymentMemoBills;
+            PaymentMemoBills = _paymentService.GetBills(ID).ToList();
+            return PaymentMemoBills;
+        }
+
         //Mileage shortage List Select
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
