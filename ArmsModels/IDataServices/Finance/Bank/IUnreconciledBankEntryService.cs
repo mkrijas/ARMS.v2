@@ -16,7 +16,7 @@ namespace ArmsServices.DataServices
         ReconciledBankEntryModel GetRecociledInfo(int? UnreconciledEntryID);
         UnReconciledBankEntryModel SelectByID(int? ID);
         ReconciledBankEntryModel Reconcile(ReconciledBankEntryModel model);
-        IEnumerable<ReconciledBankEntryModel> SelectAllUnReconciledBank(int? BranchID,int? BankID);
+        IEnumerable<ReconciledBankEntryModel> SelectAllUnReconciledBank(int? BranchID, int? BankID, DateTime? StartDate, DateTime? EndDate);
         IEnumerable<ReconciledBankEntryModel> SelectAllReconciledBank(int? BranchID, int? BankID, DateTime? StartDate, DateTime? EndDate);
         ReconciledBankEntryModel UpdateUnReconciledBankEntry(List<ReconcileUpdateModel> lst,string userID);
         List<ReconciledBankSummaryModel> GetReconcilBankSummary(int? BranchID, string ArdCode, DateTime? StartDate, DateTime? EndDate);

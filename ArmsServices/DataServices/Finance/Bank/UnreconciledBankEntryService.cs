@@ -116,12 +116,14 @@ namespace ArmsServices.DataServices
         }
 
         // Retrieves all reconciled bank entries based on BranchID and BankID
-        public IEnumerable<ReconciledBankEntryModel> SelectAllUnReconciledBank(int? BranchID, int? BankID)
+        public IEnumerable<ReconciledBankEntryModel> SelectAllUnReconciledBank(int? BranchID, int? BankID, DateTime? StartDate, DateTime? EndDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BranchID",BranchID),
                new SqlParameter("@BankID",BankID),
+               new SqlParameter("@StartDate",StartDate?.ToString("yyyy/MM/dd")??null),
+               new SqlParameter("@EndDate",EndDate?.ToString("yyyy/MM/dd")?? null),
                new SqlParameter("@Operation","GetAllUnreconciledEntry" ),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.UnreconciledEntry.Select]", parameters))
