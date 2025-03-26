@@ -1,8 +1,14 @@
-﻿@inject IOutstandingBillsService Iservice
+﻿@using System.Threading;
+@using System.Globalization
+@using OfficeOpenXml
+@using System.IO
+@using OfficeOpenXml.Style
+@inject IOutstandingBillsService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
 
 <MudDialog>
     <DialogContent>
@@ -17,6 +23,7 @@
                 <MudItem xs="1">
                     <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
                 </MudItem>
+                <MudButton OnClick="ExcelDownload" Style="margin: 14px; margin-left: 60px;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Doc Date</MudTableSortLabel></MudTh>
@@ -123,4 +130,59 @@
     // Method to submit the selected items and close the dialog
     private void Submit() => MudDialog.Close(selectedItems.ToList());
 
+    private async Task ExcelDownload()
+    {
+        var fileName = "OutstandinBills.xlsx";
+        var sheetName = "Sheet1"; // Change the sheet name as needed
+        var fileBytes = GenerateExcelBytes(sheetName);
+
+        await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
+    }
+
+    private byte[] GenerateExcelBytes(string sheetName)
+    {
+        using (var package = new ExcelPackage())
+        {
+            var worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+            // Add column headers
+            worksheet.Cells[1, 1].Value = "Document Date";
+            worksheet.Cells[1, 2].Value = "Document Number";
+            worksheet.Cells[1, 3].Value = "Branch Name";
+            worksheet.Cells[1, 4].Value = "Reference DocNo";
+            worksheet.Cells[1, 5].Value = "Reference DocDate";
+            worksheet.Cells[1, 6].Value = "OutstandingAmount";
+
+            //worksheet.Column(11).Style.Numberformat.Format = "dd-MM-yyyy"; // Date format
+            worksheet.Column(17).Style.Numberformat.Format = "0.00"; // Integer format
+            worksheet.Column(18).Style.Numberformat.Format = "0.00"; // Integer format
+
+            // Add data rows
+            int row = 2;
+            foreach (var item in collection)
+            {
+                worksheet.Cells[row, 1].Value = item.DocumentDate?.ToShortDateString();
+                worksheet.Cells[row, 2].Value = item.DocumentNumber;
+                worksheet.Cells[row, 3].Value = item.BranchName;
+                worksheet.Cells[row, 4].Value = item.ReferenceDocNo;
+                worksheet.Cells[row, 5].Value = item.ReferenceDocDate?.ToShortDateString();
+                worksheet.Cells[row, 6].Value = item.OutstandingAmount;
+
+
+                row++;
+            }
+
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+            // Save the Excel package to a memory stream
+            using (var stream = new MemoryStream())
+            {
+                package.SaveAs(stream);
+                return stream.ToArray();
+            }
+        }
+    }
 }
