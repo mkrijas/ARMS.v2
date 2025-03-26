@@ -23,7 +23,7 @@ namespace MobileAPI.Controllers
         private readonly IInventoryReleaseService _inventoryReleaseService;
         private readonly IStoreService _storeService;
         private readonly IDataAuthorizationService _dataAuthorizationService;
-        private readonly IRoleService<RoleModel> _roleService;
+        private readonly IUserService _userService;
 
         public FinanceTransactionController(IPaymentInitiatedService paymentInitiatedService,
                                             IPaymentService paymentService,
@@ -31,7 +31,7 @@ namespace MobileAPI.Controllers
                                             IInventoryReleaseService inventoryReleaseService,
                                             IStoreService storeService,
                                             IDataAuthorizationService dataAuthorizationService,
-                                            IRoleService<RoleModel> roleService)
+                                            IUserService userService)
         {
             _paymentInitiatedService = paymentInitiatedService;
             _paymentService = paymentService;
@@ -39,7 +39,7 @@ namespace MobileAPI.Controllers
             _inventoryReleaseService = inventoryReleaseService;
             _storeService = storeService;
             _dataAuthorizationService = dataAuthorizationService;
-            _roleService = roleService;
+            _userService = userService;
         }
         
         //Payment Initiated List Select
@@ -173,7 +173,7 @@ namespace MobileAPI.Controllers
 
         [HttpPost]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> Approve([FromBody] DataAuthorizationModel model, string DocType)
+        public async Task<IActionResult> Approve([FromBody] DataAuthorizationModel model, int? BranchID, string DocType)
         {
             int DocTypeID;
             bool HasPermissionApprove = false;
@@ -196,9 +196,9 @@ namespace MobileAPI.Controllers
             }
             else
             {
-                // Check permission before approving
+                //Check permission before approving
                 CancellationTokenSource ctc = new CancellationTokenSource();
-                HasPermissionApprove = await _roleService.HasClaim(DocTypeID.ToString(), "Approve", ctc.Token);
+                HasPermissionApprove = _userService.GetClaimsAsync(model.UserInfo.UserID, DocTypeID.ToString(), "Approve", BranchID, ctc.Token);
 
                 // Deny access if user does not have permission
                 if (!HasPermissionApprove)
@@ -206,7 +206,6 @@ namespace MobileAPI.Controllers
                     return Forbid(); // 403 Forbidden
                 }
 
-                // Approve based on DocTypeID
                 switch (DocTypeID)
                 {
                     case 15: // INITIATE_PAYMENT
