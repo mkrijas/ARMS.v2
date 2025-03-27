@@ -1,92 +1,193 @@
 ﻿@page "/ROITonnage"
-@using System.Threading;
+@using System.Threading
 @using Core.BaseModels.Operations.ROI
 @using Core.IDataServices.Operations.ROI
 @layout ROILayout
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@inject NavigationManager NavigationManager;
+@inject NavigationManager NavigationManager
 @inject IROITonnageService IROITonnageService
+@inject IROIOrderTonnageModifierService IROIOrderTonnageModifierService
+@inject ITruckService ITruckService
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
 @inject IJSRuntime JSRuntime
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<ROITonnageModel, bool>(search)">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">ROI Tonnages</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(new ROITonnageModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                <MudSpacer />
-                <MudTextField @bind-Value="SearchItem" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.Order.OrderName)" InitialDirection="SortDirection.Ascending">OrderName</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.Route.RouteName)" InitialDirection="SortDirection.Ascending">RouteName</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.BSType)" InitialDirection="SortDirection.Ascending">BSType</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.Wheels)" InitialDirection="SortDirection.Ascending">Wheels</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.FromTonnage)" InitialDirection="SortDirection.Ascending">From Tonnage</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.ToTonnage)" InitialDirection="SortDirection.Ascending">To Tonnage</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.ID)" InitialDirection="SortDirection.Ascending">Action</MudTableSortLabel></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="OrderName">@context.Order.OrderName</MudTd>
-                <MudTd DataLabel="RouteName">@context.Route.RouteName</MudTd>
-                <MudTd DataLabel="BSType">@context.BSType</MudTd>
-                <MudTd DataLabel="Wheels">@context.Wheels</MudTd>
-                <MudTd DataLabel="FromTonnage">@context.FromTonnage</MudTd>
-                <MudTd DataLabel="ToTonnage">@context.ToTonnage</MudTd>
-                <MudTd>
-                    <MudFab @onclick="@(() => Edit(context))" Title="Edit" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(() => Delete(context))" Title="Edit" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
+         <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="px-4 py-6">
+            <MudTabPanel Style="min-width: 200px;" Text="Tonnage">
+                <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<ROITonnageModel, bool>(search)">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">ROI Tonnages</MudText>
+                        <MudSpacer />
+                        <MudTextField @bind-Value="SearchItem" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh Style="width:30%;font-weight: bold;">Truck</MudTh>
+                        <MudTh Style="width:30%;font-weight: bold;">From Tonnage</MudTh>
+                        <MudTh Style="width:30%;font-weight: bold;">To Tonnage</MudTh>
+                        <MudTh Style="width:10%;font-weight: bold;">Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="RegNo">
+                            <MudText Margin="Margin.Dense">@context.Truck.RegNo</MudText>
+                        </MudTd>
+                        <MudTd DataLabel="FromTonnage">
+                            @if (context.HideTextField)
+                            {
+                                <MudTextField Style="width:80%;" Label="From Tonnage" @bind-Value="@context.FromTonnage" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            }
+                            else
+                            {
+                                <MudText Margin="Margin.Dense">@context.FromTonnage</MudText>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="ToTonnage">
+                            @if (context.HideTextField)
+                            {
+                                <MudTextField Style="width:80%;" Label="To Tonnage" @bind-Value="@context.ToTonnage" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            }
+                            else
+                            {
+                                <MudText Margin="Margin.Dense">@context.ToTonnage</MudText>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Actions">
+                            @if (context.HideTextField)
+                            {
+                                <MudFab Style="font-size:5px" @onclick="() => Submit(context)" Color="Color.Success" Icon="@Icons.Material.Filled.Save" Size="Size.Small" IconSize="Size.Small" />
+                                <MudFab Style="font-size:5px" @onclick="() => Cancel(context)" Color="Color.Error" Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" IconSize="Size.Small" />
+                            }
+                            else
+                            {
+                                <MudFab Style="font-size:5px" @onclick="() => Edit(context)" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                                <MudFab Style="font-size:5px" @onclick="() => Delete(context)" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudTabPanel>
+            <MudTabPanel Style="min-width: 200px;" Text="Modifier">
+                <MudTable Items="@collectionModifier" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<ROIOrderTonnageModifierModel, bool>(searchOrder)">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">ROI Tonnages</MudText>
+                        <MudSpacer />
+                        <MudTextField @bind-Value="SearchItem" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh Style="width:30%;font-weight: bold;">Order</MudTh>
+                        <MudTh Style="width:30%;font-weight: bold;">Wheels</MudTh>
+                        <MudTh Style="width:30%;font-weight: bold;">Modifier</MudTh>
+                        <MudTh Style="width:10%;font-weight: bold;">Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Order">
+                            <MudText Margin="Margin.Dense">@context.Order.OrderName</MudText>
+                        </MudTd>
+                        <MudTd DataLabel="Wheels">
+                            @if (context.HideTextField)
+                            {
+                                <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="byte?" Label="Wheels" ResetValueOnEmptyText="true" @bind-Value="@context.Wheels"
+                                                 SearchFunc="SearchWheel" ToStringFunc="@(e => e?.ToString())" />
+                            }
+                            else
+                            {
+                                <MudText Margin="Margin.Dense">@context.Wheels</MudText>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Modifier">
+                            @if (context.HideTextField)
+                            {
+                                <MudTextField Style="width:80%;" Label="Modifier" @bind-Value="@context.Modifier" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            }
+                            else
+                            {
+                                <MudText Margin="Margin.Dense">@context.Modifier</MudText>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Actions">
+                            @if (context.HideTextField)
+                            {
+                                <MudFab Style="font-size:5px" @onclick="() => SubmitModifier(context)" Color="Color.Success" Icon="@Icons.Material.Filled.Save" Size="Size.Small" IconSize="Size.Small" />
+                                <MudFab Style="font-size:5px" @onclick="() => CancelModifier(context)" Color="Color.Error" Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" IconSize="Size.Small" />
+                            }
+                            else
+                            {
+                                <MudFab Style="font-size:5px" @onclick="() => EditModifier(context)" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                                <MudFab Style="font-size:5px" @onclick="() => DeleteModifier(context)" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                            }
+                        </MudTd>
+                    </RowTemplate>
+
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudTabPanel>
+         </MudTabs>
     </MudItem>
 </MudGrid>
 
 @code {
-
-    private List<ROITonnageModel> collection = new List<ROITonnageModel>();
+    private List<ROITonnageModel> collection = new();
+    private List<ROIOrderTonnageModifierModel> collectionModifier = new();
+    public List<ROITonnageModel> WheelList = new();
+    public ROIOrderTonnageModifierModel selectedModifier { get; set; } = new();
+    public List<byte?> WheelsList { get; set; } = new();
     private string SearchItem = "";
-    string UserID;
+    string? UserID;
     int? BranchID;
+    private bool hideTextField = false;
 
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
-        UserID = authprov.User.Identity.Name;
+        UserID = authprov.User.Identity?.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        WheelList = ITruckService.SelectWheels().ToList();
+        WheelsList = WheelList.Select(x => x.Wheels).ToList();
         GetAll();
     }
 
     private void GetAll()
     {
-        collection = IROITonnageService.Select(null,BranchID).ToList();
+        collection = IROITonnageService.Select(null, BranchID).ToList();
+        collectionModifier = IROIOrderTonnageModifierService.Select(null, BranchID).ToList();
     }
 
-    private async Task Edit(ROITonnageModel model)
+    private void Edit(ROITonnageModel context)
     {
+        context.HideTextField = true;
+    }
+
+    private async Task Submit(ROITonnageModel model)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity?.Name;
+        model.UserInfo.UserID = UserID;
+
         try
         {
-            var parameters = new DialogParameters();
-            parameters.Add("model", model.Clone());
-            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var dialog = DialogService.Show<ROITonnageDialog>("Add/Edit", parameters, maxWidth);
-            var result = await dialog.Result;
-            if (!result.Canceled)
-            {
-                snackbar.Add("Saved Successfully", Severity.Success);
-            }
+            IROITonnageService.Update(model);
+            snackbar.Add("Updated Successfully", Severity.Success);
+            model.HideTextField = false;
         }
-        catch (Exception a)
+        catch (Exception ex)
         {
-            snackbar.Add(a.Message, Severity.Error);
+            snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
         GetAll();
+    }
+
+    private void Cancel(ROITonnageModel context)
+    {
+        context.HideTextField = false;
+        GetAll(); // Refresh on cancel to revert changes
     }
 
     private async Task Delete(ROITonnageModel model)
@@ -94,31 +195,101 @@
         try
         {
             bool? value = await DialogService.ShowMessageBox(
-               "Warning !",
-               "Are you sure, you want to delete ?");
+                "Warning!",
+                "Are you sure you want to delete?");
             if (value == true)
             {
-                int result = IROITonnageService.Delete(model.ID, UserID);
+                int result = IROITonnageService.Delete(model.ID.Value, UserID);
                 if (result != 0)
                 {
                     snackbar.Add("Deleted Successfully", Severity.Success);
+                    GetAll();
                 }
             }
         }
-        catch (Exception a)
+        catch (Exception ex)
         {
-            snackbar.Add(a.Message, Severity.Error);
+            snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
-        GetAll();
     }
 
     private bool search(ROITonnageModel model)
     {
-        if ((model.ID != null && model.Order.OrderName.Contains(SearchItem, StringComparison.OrdinalIgnoreCase)) ||
-            (model.ID != null && model.Route.RouteName.Contains(SearchItem, StringComparison.OrdinalIgnoreCase)))
-        {
-            return true;
-        }
-        return false;
+        return string.IsNullOrWhiteSpace(SearchItem) ||
+               (model.Truck?.RegNo?.Contains(SearchItem, StringComparison.OrdinalIgnoreCase) ?? false);
     }
+
+    private bool searchOrder(ROIOrderTonnageModifierModel model)
+    {
+        return string.IsNullOrWhiteSpace(SearchItem) ||
+               (model.Order?.OrderName?.Contains(SearchItem, StringComparison.OrdinalIgnoreCase) ?? false);
+    }
+    private void EditModifier(ROIOrderTonnageModifierModel context)
+    {
+        context.HideTextField = true;
+    }
+
+    private async Task SubmitModifier(ROIOrderTonnageModifierModel model)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity?.Name;
+        model.UserInfo.UserID = UserID;
+
+        try
+        {
+            IROIOrderTonnageModifierService.Update(model);
+            snackbar.Add("Modifier Updated Successfully", Severity.Success);
+            model.HideTextField = false;
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        GetAll(); // Refresh data
+    }
+
+    private void CancelModifier(ROIOrderTonnageModifierModel context)
+    {
+        context.HideTextField = false;
+        GetAll(); // Refresh to revert changes
+    }
+
+    private async Task DeleteModifier(ROIOrderTonnageModifierModel model)
+    {
+        try
+        {
+            bool? value = await DialogService.ShowMessageBox(
+                "Warning!",
+                "Are you sure you want to delete this modifier?");
+            if (value == true)
+            {
+                int result = IROIOrderTonnageModifierService.Delete(model.ID.Value, UserID);
+                if (result != 0)
+                {
+                    snackbar.Add("Modifier Deleted Successfully", Severity.Success);
+                    GetAll();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public void WheelChanged(byte? obj)
+    {
+        if (selectedModifier != null)
+        {
+            selectedModifier.Wheels = obj;
+        }
+    }
+
+    public async Task<IEnumerable<byte?>> SearchWheel(string searchString)
+    {
+        return await Task.Run(() =>
+            WheelsList.Where(x => x?.ToString().Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase) ?? false)
+        );
+    }
+
 }

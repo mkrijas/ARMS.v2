@@ -11,34 +11,22 @@ using ArmsModels.SharedModels;
 
 namespace DAL.DataServices.Operations.ROI
 {
-    public class ROITonnageService : IROITonnageService
+    public class ROIOrderTonnageModifierService : IROIOrderTonnageModifierService
     {
         IDbService Iservice;
-        public ROITonnageService(IDbService iservice)
+        public ROIOrderTonnageModifierService(IDbService iservice)
         {
             Iservice = iservice;
-        }              
-
-        public IEnumerable<ROITonnageModel> SelectWheels()
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-                new SqlParameter("@Operation", "WHEELS"),
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Common.Select]", parameters))
-            {
-                yield return Model(dr);
-            }
         }
 
-        public IEnumerable<ROITonnageModel> Select(int? RowNo, int? BranchID)
+        public IEnumerable<ROIOrderTonnageModifierModel> Select(int? RowNo, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@RowNo", RowNo),
                 new SqlParameter("BranchID",BranchID)
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Tonnage.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Order_TonnageModifier.Select]", parameters))
             {
                 yield return Model(dr);
             }
@@ -51,45 +39,44 @@ namespace DAL.DataServices.Operations.ROI
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.ROI.Tonnage.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.ROI.Order_TonnageModifier.Delete]", parameters);
         }
 
-        public ROITonnageModel Update(ROITonnageModel model)
+        public ROIOrderTonnageModifierModel Update(ROIOrderTonnageModifierModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@TruckID", model.Truck.TruckID),
-               new SqlParameter("@FromTonnage", model.FromTonnage),
-               new SqlParameter("@ToTonnage", model.ToTonnage),
+               new SqlParameter("@OrderID", model.Order.OrderID),
+               new SqlParameter("@Wheels", model.Wheels),
+               new SqlParameter("@Modifier", model.Modifier),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Tonnage.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Order_TonnageModifier.Update]", parameters))
             {
                 return null;
             }
             return null;
         }
 
-        private ROITonnageModel Model(IDataRecord dr)
+        private ROIOrderTonnageModifierModel Model(IDataRecord dr)
         {
-            return new ROITonnageModel
+            return new ROIOrderTonnageModifierModel
             {
                 ID = dr?.GetInt32("ID"),
-                Truck = new TruckModel
+                Order = new OrderModel
                 {
-                    TruckID = dr.GetInt32("TruckID"),
-                    RegNo = dr.GetString("RegNo")
+                    OrderID = dr.GetInt32("OrderID"),
+                    OrderName = dr.GetString("OrderName")
                 },
-                FromTonnage = dr?.GetDecimal("FromTonnage"),
-                ToTonnage = dr?.GetDecimal("ToTonnage"),
+                Wheels = dr.GetByte("Wheels"),
+                Modifier = dr.GetInt32("Modifier"),
                 UserInfo = new UserInfoModel
                 {
                     UserID = dr.GetString("UserID"),
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     RecordStatus = dr?.GetByte("RecordStatus"),
-                },
-                Wheels = dr.GetByte("wheels")
+                },                
             };
         }
     }
