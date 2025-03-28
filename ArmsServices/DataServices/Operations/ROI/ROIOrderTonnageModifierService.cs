@@ -32,6 +32,25 @@ namespace DAL.DataServices.Operations.ROI
             }
         }
 
+        public IEnumerable<ROIOrderTonnageModifierSubModel> SelectByOrder(int? RowNo, int? OrderID, int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@RowNo", RowNo),
+                new SqlParameter("@OrderID",OrderID),
+                new SqlParameter("@BranchID",BranchID),
+                new SqlParameter("@Operation","ByOrderID")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Order_TonnageModifier.Select]", parameters))
+            {
+                yield return new ROIOrderTonnageModifierSubModel()
+                {
+                    Wheels = dr.GetByte("wheels"),
+                    Modifier = dr.GetInt32("Modifier")
+                };
+            }
+        }
+
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -48,8 +67,7 @@ namespace DAL.DataServices.Operations.ROI
             {
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@OrderID", model.Order.OrderID),
-               new SqlParameter("@Wheels", model.Wheels),
-               new SqlParameter("@Modifier", model.Modifier),
+               new SqlParameter("@modifiers", model.modifiers.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Order_TonnageModifier.Update]", parameters))
@@ -69,14 +87,21 @@ namespace DAL.DataServices.Operations.ROI
                     OrderID = dr.GetInt32("OrderID"),
                     OrderName = dr.GetString("OrderName")
                 },
-                Wheels = dr.GetByte("Wheels"),
-                Modifier = dr.GetInt32("Modifier"),
+                DisplayModifiers = dr.GetString("DisplayModifiers"),
                 UserInfo = new UserInfoModel
                 {
                     UserID = dr.GetString("UserID"),
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     RecordStatus = dr?.GetByte("RecordStatus"),
-                },                
+                },      
+                modifiers = new List<ROIOrderTonnageModifierSubModel>
+                {
+                    new ROIOrderTonnageModifierSubModel
+                    {
+                        Wheels = dr.GetByte("Wheels"),
+                        Modifier = dr.GetInt32("Modifier")
+                    }
+                }
             };
         }
     }

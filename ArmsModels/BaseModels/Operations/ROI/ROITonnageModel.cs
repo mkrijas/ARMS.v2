@@ -22,7 +22,7 @@ namespace Core.BaseModels.Operations.ROI
         public decimal? ToTonnage { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public virtual byte? Wheels { get; set; }
-        public bool HideTextField { get; set; }
+        public bool HideTextField { get; set; } = false;
 
     }
 }

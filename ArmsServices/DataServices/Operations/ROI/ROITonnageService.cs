@@ -79,7 +79,10 @@ namespace DAL.DataServices.Operations.ROI
                 Truck = new TruckModel
                 {
                     TruckID = dr.GetInt32("TruckID"),
-                    RegNo = dr.GetString("RegNo")
+                    RegNo = dr.GetString("RegNo"),
+                    wheels = dr.GetByte("wheels"),
+                    TruckType = dr.GetString("TruckType"),
+                    BodyType = dr.GetString("BodyType")
                 },
                 FromTonnage = dr?.GetDecimal("FromTonnage"),
                 ToTonnage = dr?.GetDecimal("ToTonnage"),
