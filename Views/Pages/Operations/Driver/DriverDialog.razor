@@ -130,6 +130,7 @@
     int BranchID;
     string UserID;
 
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -138,20 +139,22 @@
 
         if (model.DriverAgentID != null && model.DriverAgentID != 0)
         {
-            model.DriverAgent = Iparty.SelectByID(model.DriverAgentID);
+            model.DriverAgent = Iparty.SelectByID(model.DriverAgentID); // Load driver agent
         }
         if (model.AddressID != null && model.AddressID != 0)
         {
-            model.Address = Iaddress.SelectByID(model.AddressID);
+            model.Address = Iaddress.SelectByID(model.AddressID); // Load address
         }
         if (model.BankAccountID != null && model.BankAccountID != 0)
         {
-            model.BankAccount = IbankAccount.SelectByID(model.BankAccountID ?? 0);
-        }
+            model.BankAccount = IbankAccount.SelectByID(model.BankAccountID ?? 0); // Load bank account
+        } 
         else
         {
             model.BankAccount = new();
         }
+
+        // Load contacts associated with the driver
         model.Contacts = Icontact.Select(model.DriverID, "Driver").ToList();
 
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -160,11 +163,13 @@
         UserID = user.Identity.Name;
     }
 
+    // Method to cancel the dialog
     private void Cancel()
     {
         MudDialog.Cancel();
     }
 
+    // Method to add a new contact to the driver's contact list
     private void AddContact()
     {
         model.Contacts.Add(new ContactModel()
@@ -173,11 +178,13 @@
             });
     }
 
+    // Method to remove a contact from the driver's contact list
     private void RemoveContact(int index)
     {
         model.Contacts.RemoveAt(index);
     }
 
+    // Method called when the form is submitted and valid
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -187,6 +194,7 @@
         }
         if (HasPermissionDriverServiceEdit)
         {
+            // Check for existing driver with the same Aadhaar number
             existingDriver = (Iservice.GetDriverByAdhaarNo(model.AdhaarNo)).FirstOrDefault();
 
             if (existingDriver != null && existingDriver.DriverID != model.DriverID)
@@ -212,13 +220,13 @@
             try
             {
                 var contacts = model.Contacts;
-                model = Iservice.Update(model);
+                model = Iservice.Update(model); // Update the driver information
                 snackbar.Add("Saved Successfully", Severity.Success);
                 foreach (var item in contacts)
                 {
                     item.RefKey = model.DriverID;
                     item.UserInfo = model.UserInfo;
-                    Icontact.Update(item);
+                    Icontact.Update(item); // Update the contact in the service
                 }
                 MudDialog.Close(model);
             }

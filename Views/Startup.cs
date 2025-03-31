@@ -192,6 +192,7 @@ namespace Views
             services.AddScoped<IROIAdminExpenseService, ROIAdminExpenseService>();
             services.AddScoped<IROITyreAndMaintenanceExpenseService, ROITyreAndMaintenanceExpenseService>();
             services.AddScoped<IROITaxAndFCExpenseService, ROITaxAndFCExpenseService>();
+            services.AddScoped<IROIOrderTonnageModifierService, ROIOrderTonnageModifierService>();
             #endregion
 
             #region ------------Dashboard---------------

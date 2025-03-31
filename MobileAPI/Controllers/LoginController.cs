@@ -2,6 +2,7 @@
 using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -44,7 +45,7 @@ namespace MobileAPI.Controllers
             var result = await _signInManager.PasswordSignInAsync(user.UserID, user.PasswordHash, true, lockoutOnFailure: false);
             if (result.Succeeded)
             {
-                if(UserName == "ADMIN")
+                if(UserName.ToUpper() == "ADMIN")
                 {
                     _dbService.ChangeConnectionString("ArmsDBTest");
                 }
@@ -115,6 +116,19 @@ namespace MobileAPI.Controllers
             }
             //return (user);
             //return StatusCode(201, "Success");
+        }
+
+        // New endpoint to return the current connection string
+        [HttpGet("GetCurrentConnectionString")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public ActionResult<string> GetCurrentConnectionString()
+        {
+            var currentConnectionString = _dbService.GetCurrentConnectionString();
+            if (string.IsNullOrEmpty(currentConnectionString))
+            {
+                return NotFound("Connection string not found.");
+            }
+            return Ok(currentConnectionString);
         }
     }
 }

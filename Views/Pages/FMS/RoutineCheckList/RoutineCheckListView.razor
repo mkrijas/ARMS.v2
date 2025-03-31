@@ -61,6 +61,7 @@
     public bool HasPermissionRoutineCheckListServiceDelete { get; set; } = false;
     public int RoutineCheckListDocTypeID = 75;
 
+    // Lifecycle method that runs when the component is initialized
     protected async override Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -69,12 +70,15 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        // Fetch trucks and items associated with the branch
         TruckList = IserviceTruck.SelectByBranch(int.Parse(brancIDString), "All").ToList();
         ItemList = IserviceRoutineMaster.SelectItemByBranch(int.Parse(brancIDString)).ToList();
 
         await GetAll();
     }
 
+    // Method to open a dialog for creating or editing a routine checklist
     private async Task OpenDialog(RoutineCheckListModel model)
     {
         if (_busy)
@@ -105,6 +109,7 @@
         _busy = false;
     }
 
+    // Method to open a confirmation dialog for deleting a routine checklist
     private async Task OpenDialogDelete(RoutineCheckListModel model)
     {
         if (HasPermissionRoutineCheckListServiceDelete)
@@ -122,7 +127,7 @@
                 if (model.UserInfo != null)
                 {
                     model.UserInfo.UserID = user.Identity.Name;
-                    Iservice.Delete(model.RoutineCheckListID, model.UserInfo.UserID);
+                    Iservice.Delete(model.RoutineCheckListID, model.UserInfo.UserID); //delete the checklist
                 }
                 await GetAll();
             }
@@ -135,6 +140,7 @@
         }
     }
 
+    // Method to fetch all routine checklists
     private async Task GetAll()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -148,12 +154,16 @@
             model.UserInfo.UserID = user.Identity.Name;
         }
         model.BranchID = int.Parse(brancIDString);
+
+        // Fetch routine checklists for the branch
         collection = Iservice.SelectItemByBranch(model.BranchID)?.ToList() ?? null;
         foreach (var item in collection)
         {
             item.TruckName = TruckList?.FirstOrDefault(s => s.TruckID == item.TruckID)?.RegNo ?? "";
             string ItemNames = "";
             List<RoutineCheckListModel> TruckListTemp = new();
+
+            // Fetch the last routine checklist details
             var TruckListTempSub = Iservice.GetLastRoutineCheckListDetailsUsingID(item.RoutineCheckListID);
             if (TruckListTempSub != null)
             {
