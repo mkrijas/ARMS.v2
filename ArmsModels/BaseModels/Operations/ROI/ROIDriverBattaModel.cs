@@ -38,4 +38,28 @@ namespace ArmsModels.BaseModels
         public DateTime? ToDate { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
+
+    public class ROIDriverBattaInFrtPercentageModel : ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ROIDriverBattaInFrtPercentageModel>(Json);
+        }
+        public int? ID { get; set; }
+        [Required]
+        public BranchModel Branch { get; set; } = new();
+        [Required]
+        public decimal? Percentage { get; set; }
+        [Required]
+        public DateTime? FromDate { get; set; }
+        [Required]
+        public DateTime? ToDate { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+        public decimal? DisplayPercentage
+        {
+            get => Percentage.HasValue ? Percentage * 100 : null;
+            set => Percentage = value.HasValue ? value / 100 : null;
+        }
+    }
 }

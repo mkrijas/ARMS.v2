@@ -3,7 +3,8 @@
 @using Core.IDataServices.Operations.ROI
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@inject IROIAdminExpenseService Iservice
+@inject IROIDriverBattaService Iservice
+@inject IBranchService Ibranchservice
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
@@ -11,19 +12,20 @@
 <MudDialog Style="overflow-y: hidden;">
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Add/Edit Admin Expense
+            Add/Edit Driver Batta
         </MudText>
     </TitleContent>
     <DialogContent>
-        <EditForm id="formexp" Model="@model" OnValidSubmit="OnValidSubmit">
+        <EditForm id="formroibatta" Model="@model" OnValidSubmit="OnValidSubmit">
             <ObjectGraphDataAnnotationsValidator />
             <ValidationSummary />
             <MudGrid>
                 <MudItem xs="12" md="6">
-                    <MudNumericField HideSpinButtons @bind-Value="model.BranchAdmin" Label="Branch Admin" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BranchAdmin)"></MudNumericField>
+                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="BranchModel" Label="Select Branch" ResetValueOnEmptyText="true" ValueChanged="BranchChanged" Value="model.Branch"
+                                     SearchFunc="SearchBranch" ToStringFunc="@(e=> e==null?null : $"{e.BranchName}")"></MudAutocomplete>
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudNumericField HideSpinButtons @bind-Value="model.HOAdmin" Label="HO Admin" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.HOAdmin)"></MudNumericField>
+                    <MudNumericField HideSpinButtons @bind-Value="model.DisplayPercentage" Label="Freight" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" Margin="Margin.Dense" For="@(() => model.Percentage)"></MudNumericField>
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.FromDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
@@ -36,7 +38,7 @@
     </DialogContent>
     <DialogActions>
         <div style="padding-right:12px; padding-bottom:12px;">
-            <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" form="formexp" ButtonType="ButtonType.Submit" Class="ml-auto">Submit</MudButton>
+            <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" form="formroibatta" ButtonType="ButtonType.Submit" Class="ml-auto">Submit</MudButton>
         </div>
     </DialogActions>
 </MudDialog>
@@ -44,11 +46,11 @@
 @code {
 
     [Parameter]
-    public ROIAdminExpenseModel model { get; set; }
+    public ROIDriverBattaInFrtPercentageModel model { get; set; }
     [CascadingParameter]
     MudDialogInstance MudDialog { get; set; }
-    public List<ROIAdminExpenseModel> Collection = new();
-    public List<ROITonnageModel> BSTypeList = new();
+    public List<ROIDriverBattaInFrtPercentageModel> Collection = new();
+    public List<BranchModel> branches = new();
     string UserID;
     int BranchID;
     public int DocTypeID = 143;
@@ -63,7 +65,22 @@
         UserID = authprov.User.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
-        Collection = Iservice.Select().ToList();
+        branches = Ibranchservice.Select().ToList();
+
+        if (model != null)
+        {
+            
+        }
+    }
+
+    public async Task<IEnumerable<BranchModel>> SearchBranch(string searchString)
+    {
+        return await Task.FromResult(branches.Where(x => x.BranchName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    public void BranchChanged(BranchModel obj)
+    {
+        model.Branch = obj;
     }
 
     private async void OnValidSubmit(EditContext context)
@@ -73,7 +90,7 @@
             model.UserInfo.UserID = UserID;
             try
             {
-                model = Iservice.Update(model);
+                model = Iservice.UpdateInFrtPercentage(model);
                 MudDialog.Close(model);
             }
             catch (Exception ex)
@@ -93,5 +110,4 @@
     {
         MudDialog.Cancel();
     }
-
 }

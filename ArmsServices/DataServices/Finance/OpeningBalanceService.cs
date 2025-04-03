@@ -35,6 +35,16 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+        // Method to reset opening balance
+        public int Reset(int? PeriodID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PeriodID", PeriodID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Period.OpeningBalance.Update]", parameters);            
+        }
 
         // Method to select all opening balances
         public IEnumerable<OpeningBalanceModel> Select()

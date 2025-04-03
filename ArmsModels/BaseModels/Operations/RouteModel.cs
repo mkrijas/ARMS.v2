@@ -30,11 +30,17 @@ namespace ArmsModels.BaseModels
         public byte? SpeedLimit { get; set; }
         [Required]
         public decimal? RunningHours { get; set; }
-        public decimal? MieageModifier { get; set; }
+        public decimal? MileageModifier { get; set; }
         [Required]
         public string RouteType { get; set; }
         [Required]
-        public byte? TollBooths { get; set; }        
+        public byte? TollBooths { get; set; }    
+        public decimal? DistanceInGps { get; set; }
+        public decimal? MileageModifierPercentage
+        {
+            get => MileageModifier.HasValue ? MileageModifier * 100 : null;
+            set => MileageModifier = value.HasValue ? value / 100 : null;
+        }
         public SharedModels.UserInfoModel UserInfo { get; set; }
 
 

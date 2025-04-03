@@ -20,10 +20,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@Wheels", model.Wheels),
-               new SqlParameter("@BSType", model.BSType),
-               new SqlParameter("@BodyType", model.BodyType),
-               new SqlParameter("@OrderID", model.Order.OrderID),
+               new SqlParameter("@TruckTypeID", model.TruckTypeID),
                new SqlParameter("@LoadingMTFrom", model.LoadingMTFrom),
                new SqlParameter("@LoadingMTTo", model.LoadingMTTo),
                new SqlParameter("@Mileage", model.Mileage),
@@ -70,14 +67,17 @@ namespace ArmsServices.DataServices
             return new ROIMileageModel
             {
                 ID = dr.GetInt32("ID"),
-                Wheels = dr.GetByte("Wheels"),
                 BodyType = dr.GetString("BodyType"),
+                //TruckType = new TruckTypeModel
+                //{
+                //    TruckTypeID = dr.GetInt16("TruckTypeID"),
+                //    TruckType = dr.GetString("TruckType"),
+                //    BSType = dr.GetString("BSType"),
+                //    wheels = dr.GetByte("wheels")
+                //},
+                TruckTypeID = dr.GetInt16("TruckTypeID"),
+                TruckType = dr.GetString("TruckType"),
                 BSType = dr.GetString("BSType"),
-                Order = new OrderModel
-                {
-                    OrderID = dr.GetInt32("OrderID"),
-                    OrderName = dr.GetString("OrderName")
-                },
                 LoadingMTFrom = dr.GetDecimal("LoadingMTFrom"),
                 LoadingMTTo = dr.GetDecimal("LoadingMTTo"),
                 Mileage = dr.GetDecimal("Mileage"),
