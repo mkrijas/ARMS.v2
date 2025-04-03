@@ -18,6 +18,7 @@ namespace ArmsModels.BaseModels
         public BranchModel InitiatedBranch { get; set; } // The branch initiating the transfer
         public BranchModel DestinationBranch { get; set; } // The branch receiving the asset
         public DateTime? TransferInitiatedDate { get; set; } = DateTime.Today;
+        [Required]
         public string Remarks { get; set; }
         public AssetTransferEndModel AssetTransferEndModel { get; set; } = new(); // Model for the end of the asset transfer
         public UserInfoModel UserInfo { get; set; } = new();
@@ -46,6 +47,7 @@ namespace ArmsModels.BaseModels
         public DateTime? TransferEndDate { get; set; } = DateTime.Today;
         public string DocumentNumber { get; set; }
         public string GstMechanism { get; set; } = "FCM";
+        [Required]
         public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
 
