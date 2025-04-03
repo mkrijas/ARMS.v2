@@ -27,8 +27,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckType", model.TruckType),
                new SqlParameter("@BSType", model.BSType),
                new SqlParameter("@Axles", model.Axles),
-               
                new SqlParameter("@wheels", model.wheels),
+               new SqlParameter("@AdBlueFrequency", model.AdBlueFrequency),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -87,9 +87,9 @@ namespace ArmsServices.DataServices
                 TruckTypeID = reader.GetInt16("TruckTypeID"),
                 TruckType = reader.GetString("TruckType"),
                 BSType = reader.GetString("BSType"),
-                Axles = reader.GetByte("Axles"),
-                
+                Axles = reader.GetByte("Axles"),                
                 wheels = reader.GetByte("wheels"),
+                AdBlueFrequency = reader.GetByte("AdBlueFrequencyForTrips"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = reader.GetByte("RecordStatus"),
