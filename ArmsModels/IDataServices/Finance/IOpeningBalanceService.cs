@@ -14,6 +14,8 @@ namespace Core.IDataServices.Finance
         //IEnumerable<OpeningBalanceModel> Select();
         IEnumerable<PeriodModel> GetPeriods();
         IEnumerable<OpeningBalanceModel> GetBalance(int? PeriodID, int? BranchID);
-        OpeningBalanceModel Update(OpeningBalanceModel model);  
+        OpeningBalanceModel Update(OpeningBalanceModel model);
+        public int Reset(int? PeriodID, string UserID);
+
     }
 }
