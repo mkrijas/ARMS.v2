@@ -4,8 +4,7 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IROIMileageService Iservice
-@inject ITruckService ITruckService
-@inject IOrderService Iorder
+@inject ITruckTypeService Itrucktype
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
@@ -21,22 +20,19 @@
             <ObjectGraphDataAnnotationsValidator />
             <ValidationSummary />
             <MudGrid>
-                <MudItem xs="12" md="4">
-                    <MudNumericField HideSpinButtons @bind-Value="model.Wheels" Label="Wheels" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="2" />
+                <MudItem xs="6">
+                    <MudSelect Margin="Margin.Dense" Variant="Variant.Outlined" Label="Select Type" @bind-Value="model.TruckTypeID" AdornmentColor="Color.Secondary">
+                        @foreach (var item in TruckTypes)
+                        {
+                            <MudSelectItem Value="@item.TruckTypeID">@item.TruckType (@item.BSType)</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="string" Label="BS-Type" ResetValueOnEmptyText="true"@bind-Value="model.BSType"
-                                        SearchFunc="SearchBSType" ></MudAutocomplete>
-                </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="6">
                 <MudSelect Margin="Margin.Dense" Variant="Variant.Outlined" Label="Select Type" @bind-Value="model.BodyType" AdornmentColor="Color.Secondary">
                         <MudSelectItem Value="@("Bulker")">Bulker</MudSelectItem>
                         <MudSelectItem Value="@("Open")">Open</MudSelectItem>
                     </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="OrderModel" Label="Order" ResetValueOnEmptyText="true" ValueChanged="OrderChanged" Value="model.Order"
-                                        SearchFunc="SearchOrders" ToStringFunc="@(e=> e==null?null : $"{e.OrderName}")"></MudAutocomplete>
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <MudNumericField HideSpinButtons @bind-Value="model.LoadingMTFrom" Label="Loading MT From" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LoadingMTFrom)"></MudNumericField>
@@ -63,55 +59,47 @@
     public ROIMileageModel model { get; set; }
     [CascadingParameter] 
     MudDialogInstance MudDialog { get; set; }
-    public ROITonnageModel tmodel { get; set; }
-    //public List<ROIMileageModel> Collection = new();
-    public List<OrderModel> OrderList { get; set; }
-    public List<string> BSTypeList = new();
+    private List<TruckTypeModel> TruckTypes = new List<TruckTypeModel>();
     string UserID;
     int BranchID;
+    public int DocTypeID = 143;
+    public bool HasPermissionROIServiceEdit { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionROIServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+        if (model == null)
+        {
+            model = new ROIMileageModel();
+        }
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-
-        BSTypeList = ITruckService.SelectBSType().ToList();
-        //Collection = Iservice.Select().ToList();
-        OrderList = await Iorder.SelectByBranch(BranchID).ToListAsync();
+        TruckTypes = Itrucktype.Select(0)?.ToList();
     }
 
-    public async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    private async void OnValidSubmit(EditContext context)
     {
-        return await Task.FromResult(OrderList.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
-
-    public async Task<IEnumerable<string>> SearchBSType(string searchString)
-    {
-        return await Task.FromResult(BSTypeList.Where(x => x.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
-
-    public void OrderChanged(OrderModel obj)
-    {
-        model.Order = obj;
-    }
-
-    public void BSTypeChanged(string obj)
-    {
-        model.BSType = obj;
-    }
-
-    private void OnValidSubmit(EditContext context)
-    {
-        model.UserInfo.UserID = UserID;
-        try
+        if (HasPermissionROIServiceEdit)
         {
-            model = Iservice.Update(model);
-            MudDialog.Close(model);
+            model.UserInfo.UserID = UserID;
+            try
+            {
+                model = Iservice.Update(model);
+                MudDialog.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Edit ROI settings.");
         }
     }
 
