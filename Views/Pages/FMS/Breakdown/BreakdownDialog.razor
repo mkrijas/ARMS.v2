@@ -74,6 +74,7 @@
         MudDialog.Cancel();
     }
 
+    // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -81,6 +82,8 @@
 
         var e = await auth.GetAuthenticationStateAsync();
         string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        // Get the current event for the truck
         PreEvent = Ievent.GetCurrentEvent(Truck.TruckID);
 
         model = new();
@@ -88,6 +91,7 @@
         model.TruckID = Truck.TruckID;
     }
 
+    // Method to handle form submission when the form is valid
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -114,11 +118,16 @@
                         var authState = auth.GetAuthenticationStateAsync().Result;
                         if (PendingGcs > 0)
                         {
+                            // Cancel the current trip if there are pending GCs
                             Itrip.Cancel(CurrentTrip.TripID, authState.User.Identity.Name);
                         }
+
+                        // Close the trip with the breakdown time
                         Itrip.CloseTrip(CurrentTrip.TripID, int.Parse(authState.User.Claims.First(x => x.Type == "BranchID").Value), model.BreakdownTime, authState.User.Identity.Name);
                     }
                 }
+
+                // Update the breakdown model in the service
                 model = Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(model));

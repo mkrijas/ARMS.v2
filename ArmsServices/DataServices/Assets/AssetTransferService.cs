@@ -19,14 +19,13 @@ namespace ArmsServices.DataServices
         }
 
         // Deletes an asset transfer initiation record and returns the number of affected rows
-        public int DeleteInitiation(int? ID, int? BranchID, int? AssetID,int? TruckID, string UserID)
+        public int DeleteInitiation(int? ID, int? BranchID, int? AssetID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@AssetID", AssetID),
-               new SqlParameter("TruckID", TruckID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.Transfer.Delete]", parameters);
@@ -37,8 +36,40 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "Outgoing"),
+               new SqlParameter("@AssetFlow", "Outgoing"),
                new SqlParameter("@ID", BranchID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<AssetTransferInitiationModel> SelectOutgoingApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetFlow", "Outgoing"),
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@ID", BranchID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<AssetTransferInitiationModel> SelectOutgoingUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetFlow", "Outgoing"),
+               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@ID", BranchID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Select]", parameters))
             {
@@ -79,23 +110,24 @@ namespace ArmsServices.DataServices
         }
 
         // Updates an outgoing asset transfer and returns the updated model
-        public AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model, int? TruckID)
+        public AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AssetTransferID", model.AssetTransferID),
                new SqlParameter("@AssetID", model.Asset.AssetID),
-               new SqlParameter("@TruckID", TruckID),
                new SqlParameter("@InitiatedBranchID", model.InitiatedBranch?.BranchID??null),
                new SqlParameter("@DestinationBranchID", model.DestinationBranch.BranchID),
                new SqlParameter("@TransferInitiatedDate", model.TransferInitiatedDate),
                new SqlParameter("@ImagePath", string.Join(";",model.ImagePath)),
                new SqlParameter("@Remarks", model.Remarks),
-               new SqlParameter("@RecordStatus", 3),
+               //new SqlParameter("@RecordStatus", 3),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@GstMechanism", model.GstMechanism),
+               new SqlParameter("@AssetList", model.Items.ToDataTable()),
                new SqlParameter("@CheckList", model.CheckList.ToDataTable()),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Initiate]", parameters))
             {
                 return GetModel(dr);
             }
@@ -107,7 +139,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "Incoming"),
+               new SqlParameter("@AssetFlow", "Incoming"),
                new SqlParameter("@ID", BranchID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Select]", parameters))
@@ -116,8 +148,40 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<AssetTransferInitiationModel> SelectIncomingApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetFlow", "Incoming"),
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@ID", BranchID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<AssetTransferInitiationModel> SelectIncomingUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetFlow", "Incoming"),
+               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@ID", BranchID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         // Updates the status of an asset transfer and returns the updated model
-        public AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model, int? TruckID, List<int?> RecievedList)
+        public AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model, List<int?> RecievedList)
         {
             DataTable dataTable = new DataTable();
             dataTable.Columns.Add("IntField", typeof(int));
@@ -136,9 +200,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@AssetTransferEndID", model.AssetTransferEndModel.AssetTransferEndID),
                new SqlParameter("@AssetTransferID", model.AssetTransferID),
-               new SqlParameter("@AssetID", model.Asset.AssetID),
-               new SqlParameter("@TruckID", TruckID),
-               new SqlParameter("@InitiatedBranchID", model.InitiatedBranch.BranchID),
+               //new SqlParameter("@InitiatedBranchID", model.InitiatedBranch.BranchID),
                new SqlParameter("@BranchID", model.DestinationBranch.BranchID),
                new SqlParameter("@TransferEndDate", model.AssetTransferEndModel.TransferEndDate),
                new SqlParameter("@Remarks", model.AssetTransferEndModel.Remarks),
@@ -146,8 +208,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@Status", model.AssetTransferEndModel.TransferStatus),
                new SqlParameter("@CheckList", dataTable),
+               new SqlParameter("@GstMechanism", model.AssetTransferEndModel.GstMechanism),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Status.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Complete]", parameters))
             {
                 return GetModel(dr);
             }
@@ -178,7 +241,8 @@ namespace ArmsServices.DataServices
 
                     AssetTransferEndID = dr.GetInt32("AssetTransferEndID"),
                     TransferStatus = dr.GetBooleanNullable("TransferStatus"),
-                    //TransferEndDate = dr.GetDateTime("TransferEndDate"),
+                    DocumentNumber = dr.GetString("TargetDocumentNumber"),
+                    TransferEndDate = dr.GetDateTime("TransferEndDate"),
                 },
                 Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
@@ -187,13 +251,61 @@ namespace ArmsServices.DataServices
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
+                GstMechanism = dr.GetString("GstMechanism"),
                 Asset = new AssetModel()
                 {
                     AssetID = dr.GetInt32("AssetID"),
                     Description = dr.GetString("Description"),
                     AssetCode = dr.GetString("AssetCode"),
                 },
+                MID = dr.GetInt32("MID"),
+                DocumentNumber = dr.GetString("OriginDocumentNumber"),
+                AuthLevelId = dr.GetInt32("AuthlevelId"),
+                AuthStatus = dr.GetString("AuthStatus"),
             };
+        }
+
+        IEnumerable<AssetTransferItemModel> IAssetTransferService.GetAssets(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetAssets"),
+               new SqlParameter("@ID", ID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Select]", parameters))
+            {
+                yield return new AssetTransferItemModel()
+                {
+                    ID = dr.GetInt32("ID"),
+                    AssetID = dr.GetInt32("AssetID"),
+                    BookValue = dr.GetDecimal("BookValue"),
+                    TaxableValue = dr.GetDecimal("TaxableValue"),
+                    TaxRate = dr.GetDecimal("TaxRate"),
+                    TaxValue = dr.GetDecimal("TaxValue"),
+                    Description = dr.GetString("Description"),
+                    AssetStatus = dr.GetString("AssetStatus")
+                };
+            }
+        }
+
+        public int ApproveOutgoing(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetTransferID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Asset.Transfer.Initiate.Approve]", parameters);
+        }
+
+        public int ApproveIncoming(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetTransferEndID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Asset.Transfer.Complete.Approve]", parameters);
         }
     }
 }

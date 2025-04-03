@@ -76,6 +76,7 @@
     public bool HasPermissionJobcardServiceEdit { get; set; } = false;
     public int JobcardDocTypeID = 82;
 
+    // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -92,11 +93,14 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
+
+        // Fetch the list of workshops
         Workshops = Iworkshop.Select(null).ToList();
         await signalRService.StartAsync();
         AddJob();
     }
 
+    // Method to search for workshops based on a search string
     private async Task<IEnumerable<WorkshopModel>> SearchWorkshops(string searchString)
     {
         if (string.IsNullOrEmpty(searchString))
@@ -105,6 +109,7 @@
         return await Task.FromResult(Workshops.Where(x => x.WorkshopName.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
+    // Method to handle changes in the selected workshop
     private void OnWorkshopChanged(WorkshopModel obj)
     {
         SelectedWorkshop = obj;
@@ -118,6 +123,7 @@
         }
     }
 
+    // Method to set job details in the model
     private void SetJob()
     {
         if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g => g.RepairJobID != null))
@@ -146,22 +152,26 @@
         }
     }
 
+    // Method to cancel the dialog
     private void Cancel()
     {
         MudDialog.Cancel();
     }
 
+    // Method to add a new job to the model
     private void AddJob()
     {
         model.Jobs.Add(new JobInProgressModel() { JobStatus = 1 });
     }
 
+    // Method to delete the last job from the model
     private void DeleteJob()
     {
         model.Jobs.RemoveAt(model.Jobs.Count - 1);
         SetJob();
     }
 
+    // Method to handle form submission
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -172,6 +182,7 @@
         _busy = true;
         if (HasPermissionJobcardServiceEdit)
         {
+            // Get the current trip for the truck
             var CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(Breakdown.TruckID));
             if (CurrentTrip != null && PeriodicMaintenanceId != null && !Itrip.IsClosed(CurrentTrip.TripID))
             {
@@ -185,6 +196,7 @@
             model.BranchID = BranchID;
             try
             {
+                // Update the job card and get the new JobcardID
                 model.JobcardID = Iservice.Update(model).JobcardID;
                 JobcardWorkshopModel Jwm = new()
                     {
@@ -194,14 +206,14 @@
                         UserInfo = model.UserInfo,
                         Odometer = model.Odometer
                     };
-                Ijw.Update(Jwm);
+                Ijw.Update(Jwm); // Update the job card workshop
                 foreach (var item in model.Jobs)
                 {
                     item.JobCardID = model.JobcardID;
                     item.WorkshopID = SelectedWorkshop.WorkshopID;
                     item.UserInfo = model.UserInfo;
                     item.Odometer = model.Odometer;
-                    JipComp.UpdateJob(item);
+                    JipComp.UpdateJob(item); // Update job in progress component
                 }
                 snackbar.Add("Saved Successfully", Severity.Success);
                 if (PeriodicMaintenanceId != null)

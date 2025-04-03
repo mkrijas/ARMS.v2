@@ -1,6 +1,5 @@
 ﻿@inject AuthenticationStateProvider auth
 @inject IAssetService Iassetservice
-@inject ITruckService Itruckservice
 @inject IAssetTransferService Iservice
 @inject IAssetSettingsService Iassetsettingsservice
 @inject IBranchService Ibranchservice
@@ -9,6 +8,7 @@
 @inject IConfigTable config
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
+@using Views.Pages.Finance.Transactions
 
 <style>
     .border {
@@ -21,7 +21,7 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Asset Transfer
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Asset Transfer Initiate
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -30,27 +30,14 @@
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
-                    <MudItem xs="12" md="12">
+                    <MudItem xs="12" md="6">
                         <AssetSelector Value="model.Asset" BranchID="BranchID" ValueChanged="AssetSelected" />
                     </MudItem>
-                    <MudItem xs="12" md="12">
-                        @if (ChildAssets != null && ChildAssets.Any())
-                        {
-                            <MudText Typo="Typo.body1">Following assets will be transferred along with the above asset</MudText>
-                            <div class="d-flex">
-                                @foreach (var asset in ChildAssets)
-                                {
-                                    <div class="m-2"><b>@asset.Description</b></div>
-                                    @if (!asset.Equals(ChildAssets.Last()))
-                                    {
-                                        <div class="m-2">|</div>
-                                    }
-                                }
-                            </div>
-                        }
+                    <MudItem xs="12" md="6">
+                        <GstMechanismSelector ReadOnly="@ReadOnly" page="Asset" @bind-Value="@model.GstMechanism"></GstMechanismSelector>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudSelect Label="Destination Branch" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.DestinationBranch.BranchID" T="int?" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.TopCenter" AdornmentColor="Color.Secondary" Required>
+                        <MudSelect ReadOnly="@ReadOnly" Label="Destination Branch" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.DestinationBranch.BranchID" T="int?" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.TopCenter" AdornmentColor="Color.Secondary" Required>
                             @foreach (BranchModel ditem in DestinationBranchList)
                             {
                                 <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
@@ -61,7 +48,7 @@
                         <MudDatePicker Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.TransferInitiatedDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                        <MudTextField ReadOnly="@ReadOnly" @bind-Value="model.Remarks" Label="Remarks" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="12">
                         @if (model.CheckList != null && model.CheckList.Any())
@@ -73,7 +60,7 @@
                                     @foreach (var item in model.CheckList)
                                     {
                                         <MudItem xs="6">
-                                            <MudTextField Form="" @bind-Value="item.SettingsDescription" Label="@item.SettingsName" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
+                                            <MudTextField ReadOnly="@ReadOnly" @bind-Value="item.SettingsDescription" Label="@item.SettingsName" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
                                         </MudItem>
                                     }
                                 </MudGrid>
@@ -93,19 +80,82 @@
                                 <MudItem xs="12" md="6" Class="d-flex">
                                     <MudPaper Class="p-2 position-relative" Elevation="3">
                                         <img src="@imagePath" alt="@imagePath" class="w-100" />
-                                        <MudFab Style="width: 36px; height: 16px; margin-top: -20px; margin-left: -18px;" Icon="@Icons.Material.Rounded.Close" Color="Color.Error" Class="position-absolute top-0 end-0" OnClick="() => DeleteImage(imagePath)" />
+                                        <MudFab Disabled="@ReadOnly" Style="width: 36px; height: 16px; margin-top: -20px; margin-left: -18px;" Icon="@Icons.Material.Rounded.Close" Color="Color.Error" Class="position-absolute top-0 end-0" OnClick="() => DeleteImage(imagePath)" />
                                     </MudPaper>
                                 </MudItem>
                             }
                         }
                     </MudGrid>
                 </MudGrid>
-                <br />
+                <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
+                    <h6> <u>Assets</u></h6>
+                    <div style="width: 1600px;" class="pb-3">
+                        <MudGrid Justify="Justify.Center">
+                            <MudItem xs="2"><span class="HeadText"><b>Asset Name</b></span></MudItem>
+                            <MudItem xs="2"><span class="HeadText"><b>Status</b></span></MudItem>
+                            <MudItem xs="1"><span class="HeadText"><b>Book Value</b></span></MudItem>
+                            <MudItem xs="2"><span class="HeadText"><b>Taxable value</b></span></MudItem>
+                            <MudItem xs="2"><span class="HeadText"><b>Tax rate</b></span></MudItem>
+                            <MudItem xs="2"><span class="HeadText"><b>Tax value</b></span></MudItem>
+                            <MudItem xs="1">Actions</MudItem>
+                            @foreach (var item in model.Items)
+                            {                        
+                                <MudItem xs="2">@item.Description</MudItem>
+                                <MudItem xs="2">@item.AssetStatus</MudItem>
+                                <MudItem xs="1">@item.BookValue</MudItem>
+                                <MudItem xs="2">
+                                    <MudTd DataLabel="TaxableValue"><MudTextField ReadOnly="@ReadOnly" @bind-Value="@item.TaxableValue" @onblur="@((e) => UpdateTaxValue(item))" Variant="Variant.Outlined" Margin="Margin.Dense" /></MudTd>
+                                </MudItem>
+                                <MudItem xs="2">
+                                    <MudTd DataLabel="TaxRate"><MudTextField ReadOnly="@ReadOnly" @bind-Value="@item.TaxRate" @onblur="@((e) => UpdateTaxValue(item))" Variant="Variant.Outlined" Margin="Margin.Dense" /></MudTd>
+                                </MudItem>
+                                <MudItem xs="2">
+                                    <MudTd DataLabel="TaxValue"><MudTextField ReadOnly="@ReadOnly" @bind-Value="@item.TaxValue" Variant="Variant.Outlined" Margin="Margin.Dense" /></MudTd>
+                                </MudItem>
+                                <MudItem xs="1">                                
+                                    <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />                                
+                                </MudItem>
+                            }                    
+                        </MudGrid>
+                    </div>
+                </MudItem>
             </EditForm>
+            <MudItem xs="12">
+                @if (ReadOnly)
+                {
+                    <AutherizationStatusComponent DocTypeID="@AssetTransferDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" DocumentID="model.AssetTransferID" CreatedBy="@model.UserInfo" OnApprove="Approve"></AutherizationStatusComponent>
+                }
+            </MudItem>
+            <MudContainer Class="dialogInset">
+                @if (ReadOnly)
+                {
+                    @if (model.MID != null)
+                    {
+                        <AccountInfoDialog MID="@model.MID"></AccountInfoDialog>
+                    }
+                }
+            </MudContainer>
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        <MudButton Disabled="@_busy" form="AssetTransferForm" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">Submit</MudButton>
+        <MudText Align="Align.Start" Class="pl-3">Total : <b>@TotalValue</b></MudText>
+        <MudSpacer></MudSpacer>
+        
+        @if (ReadOnly)
+        {
+            <div style="padding-bottom:12px; padding-right:12px;">
+                <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
+            </div>
+        }
+        else
+        {
+            <div style="padding-bottom:12px; padding-right:12px;">
+                <MudButton Disabled="@_busy" form="AssetTransferForm" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">Submit</MudButton>
+            </div>
+            <div style="padding-bottom:12px; padding-right:12px;">
+                <MudButton @onclick="Cancel" Variant="Variant.Filled" Color="Color.Primary">Cancel</MudButton>
+            </div>
+        }
     </DialogActions>
 </MudDialog>
 
@@ -115,6 +165,8 @@
     MudDialogInstance MudDialog { get; set; }
     [Parameter]
     public AssetTransferInitiationModel model { get; set; } = new();
+    [Parameter]
+    public bool ReadOnly { get; set; }
     public int? SubClassID { get; set; } = new();
     public int? TruckID { get; set; } = new();
     int? AssetTrucksSubClassID;
@@ -125,7 +177,14 @@
     private bool _busy;
     MyFileUpload Mfu;
 
+    public string DocNumber { get; set; }
+    public DateTime? DocDate { get; set; }
+    public string DocType { get; set; }
+
+    public decimal TotalValue => model.Items.Sum(item => (item.BookValue ?? 0) + (item.TaxValue ?? 0));
+
     public bool HasPermissionAssetTransferServiceEdit { get; set; } = false;
+    public bool HasPermissionAssetTransferServiceApprove { get; set; } = false;
     public int AssetTransferDocTypeID = 110;
 
     // Lifecycle method called when the component is initialized
@@ -133,6 +192,7 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionAssetTransferServiceEdit = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionAssetTransferServiceApprove = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Approve", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -162,14 +222,45 @@
             model.CheckList = Iservice.GetCheckList(model.AssetTransferID).ToList();
         }
 
+        // Load the items for the asset transfer
+        if (model != null && model.Asset != null)
+        {
+            model.Items = Iservice.GetAssets(model.AssetTransferID).ToList();
+        }
+
         // Load the list of destination branches excluding the current branch
         DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != BranchID).ToList();
+
+        DocNumber = model.DocumentNumber;
+        DocDate = model.TransferInitiatedDate;
+        DocType = "Asset Transfer Initiate";
     }
 
     // Method to handle file uploads
     private void FileUploaded(string filePath)
     {
         model.ImagePath.Add(filePath);
+    }
+
+    private void UpdateTaxValue(AssetTransferItemModel item)
+    {
+        // Check if both TaxableValue and TaxRate are set
+        if (item.TaxableValue.HasValue && item.TaxRate.HasValue)
+        {
+            // Calculate TaxValue
+            item.TaxValue = item.TaxableValue.Value * item.TaxRate.Value;
+        }
+        else
+        {
+            // If either value is null, set TaxValue to 0
+            item.TaxValue = 0;
+        }
+    }
+
+    private async Task Delete(AssetTransferItemModel i)
+    {
+        int rowIndex = model.Items.IndexOf(i);
+        model.Items.RemoveAt(rowIndex);
     }
 
     // Method to delete an uploaded image
@@ -244,6 +335,33 @@
                 _busy = false;
                 return;
             }
+
+            if (model.Items == null || (model.Items != null && model.Items.Count() == 0))
+            {
+                Snackbar.Add("No assets found", Severity.Warning);
+                _busy = false;
+                return;
+            }
+
+            foreach (var item in model.Items)
+            {
+                if (item.AssetStatus != "Ready To Use")
+                {
+                    Snackbar.Add("Some asset status is not 'Ready To Use'", Severity.Warning);
+                    _busy = false;
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(item.TaxableValue?.ToString()) ||
+                    string.IsNullOrWhiteSpace(item.TaxRate?.ToString()) ||
+                    string.IsNullOrWhiteSpace(item.TaxValue?.ToString()))
+                {
+                    Snackbar.Add("All fields must be filled for all items.", Severity.Warning);
+                    _busy = false;
+                    return;
+                }
+            }
+
             if (model != null)
             {
                 try
@@ -258,21 +376,10 @@
                               yesText: "OK");
                         _busy = false;
                         return;
-                    }
-
-                    // Get the subclass ID for trucks
-                    ConfigModel cModel = config.GetAssetSubclassForTrucks();
-                    AssetTrucksSubClassID = int.Parse(cModel.ValueString);
-                    if (SubClassID == AssetTrucksSubClassID)
-                    {
-                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID; // Get the truck ID
-                        Iservice.UpdateOutgoing(model, TruckID); // Update the status with truck ID
-                    }
-                    else
-                    {
-                        _busy = true;
-                        Iservice.UpdateOutgoing(model, null); // Update the status without truck ID
-                    }
+                    }                   
+                    
+                    _busy = true;
+                    Iservice.UpdateOutgoing(model); // Update the status without truck ID
                     Snackbar.Add("Transferred successfully", Severity.Success);
                     MudDialog.Close(model);
                 }
@@ -296,12 +403,69 @@
     private void AssetSelected(AssetModel obj)
     {
         model.Asset = obj;
+        model.Items.Clear(); // Clear existing items before adding new ones
+
         if (obj != null)
         {
-            // Retrieve attached assets and subclass ID for the selected asset
-            ChildAssets = Iassetservice.GetAttachedAssets(obj?.AssetID).Skip(1).ToList();
-            SubClassID = Iassetservice.SelectByID(obj?.AssetID).SubClass.AssetSubClassID;
-            model.CheckList = Iassetsettingsservice.GetSettings(SubClassID).ToList(); // Load checklist settings for the subclass
+            // Check if the asset is complex
+            if (obj.IsComplex == false)
+            {
+                // Add the selected asset to the model.Items
+                model.Items.Add(new AssetTransferItemModel
+                    {
+                        AssetID = obj.AssetID,
+                        BookValue = obj.CurrentValue,
+                        Description = obj.Description,
+                        AssetStatus =obj.AssetStatus
+                    });
+            }
+            else if (obj.IsComplex == true)
+            {
+                // Retrieve attached assets and subclass ID for the selected asset
+                ChildAssets = Iassetservice.GetAttachedAssets(obj?.AssetID).Where(x => x.IsComplex == false).ToList();
+                SubClassID = Iassetservice.SelectByID(obj?.AssetID).SubClass.AssetSubClassID;
+                model.CheckList = Iassetsettingsservice.GetSettings(SubClassID).ToList(); // Load checklist settings for the subclass
+
+                // Add all child assets to the model.Items
+                foreach (var childAsset in ChildAssets)
+                {
+                    model.Items.Add(new AssetTransferItemModel
+                        {
+                            AssetID = childAsset.AssetID,
+                            BookValue = childAsset.CurrentValue,
+                            Description = childAsset.Description,
+                            AssetStatus = childAsset.AssetStatus
+                        });
+                }
+            }
+        }
+    }
+
+    protected async Task Approve(DataApprovedStatus aprvd)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        if (HasPermissionAssetTransferServiceApprove)
+        {
+            if (aprvd.IsApprove)
+            {
+                model.UserInfo.UserID = User.Identity.Name; 
+                try
+                {
+                    Iservice.ApproveOutgoing(model.AssetTransferID.Value, model.UserInfo.UserID);
+                    Snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                Snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Approve InventoryGrn.");
         }
     }
 }

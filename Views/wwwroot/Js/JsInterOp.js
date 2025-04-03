@@ -1,4 +1,4 @@
-﻿var _0x1751 = ["TEAMTHAI\arms", "arms@123"];
+﻿var _0x1751 = ["arms@teamthai.in", "arms@123"];
 
 function getHTTPObject() {
     if (typeof XMLHttpRequest != 'undefined') {
@@ -53,8 +53,6 @@ window.BlazorHelpers = {
         $.post(path);
     }
 };
-
-
 
 
 let element = document.getElementById("treeviewitem")

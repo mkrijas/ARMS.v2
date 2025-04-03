@@ -17,8 +17,7 @@ namespace DAL.DataServices.Operations.ROI
         public ROITonnageService(IDbService iservice)
         {
             Iservice = iservice;
-        }
-               
+        }              
 
         public IEnumerable<ROITonnageModel> SelectWheels()
         {
@@ -60,10 +59,7 @@ namespace DAL.DataServices.Operations.ROI
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@OrderID", model.Order.OrderID),
-               new SqlParameter("@RouteID", model.Route.RouteID),
-               new SqlParameter("@Wheels", model.Wheels),
-               new SqlParameter("@BSType", model.BSType),
+               new SqlParameter("@TruckID", model.Truck.TruckID),
                new SqlParameter("@FromTonnage", model.FromTonnage),
                new SqlParameter("@ToTonnage", model.ToTonnage),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -80,26 +76,23 @@ namespace DAL.DataServices.Operations.ROI
             return new ROITonnageModel
             {
                 ID = dr?.GetInt32("ID"),
-                Wheels = dr?.GetByte("Wheels"),
-                BSType = dr.GetString("BSType"),
+                Truck = new TruckModel
+                {
+                    TruckID = dr.GetInt32("TruckID"),
+                    RegNo = dr.GetString("RegNo"),
+                    wheels = dr.GetByte("wheels"),
+                    TruckType = dr.GetString("TruckType"),
+                    BodyType = dr.GetString("BodyType")
+                },
                 FromTonnage = dr?.GetDecimal("FromTonnage"),
                 ToTonnage = dr?.GetDecimal("ToTonnage"),
-                Order = new OrderModel
-                {
-                    OrderID = dr.GetInt32("OrderID"),
-                    OrderName = dr.GetString("OrderName")
-                },
-                Route = new RouteModel
-                {
-                    RouteID = dr.GetInt32("RouteID"),
-                    RouteName = dr.GetString("RouteName")
-                },
                 UserInfo = new UserInfoModel
                 {
                     UserID = dr.GetString("UserID"),
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     RecordStatus = dr?.GetByte("RecordStatus"),
-                }
+                },
+                Wheels = dr.GetByte("wheels")
             };
         }
     }

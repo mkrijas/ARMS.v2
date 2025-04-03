@@ -15,17 +15,14 @@ namespace Core.BaseModels.Operations.ROI
         }
         public int? ID { get; set; }
         [Required]
-        public OrderModel Order { get; set; }
-        [Required]
-        public RouteModel Route { get; set; }
-        [Required]
-        public byte? Wheels { get; set; }
-        [Required]
-        public string BSType { get; set; }
+        public TruckModel Truck { get; set; }
         [Required]
         public decimal? FromTonnage { get; set; }
         [Required]
         public decimal? ToTonnage { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
+        public virtual byte? Wheels { get; set; }
+        public bool HideTextField { get; set; } = false;
+
     }
 }

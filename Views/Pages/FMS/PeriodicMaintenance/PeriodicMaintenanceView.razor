@@ -106,6 +106,7 @@
     private List<BreakdownModel> BreakdownList = new();
     private bool _busy;
 
+    // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         if (id != null)
@@ -114,8 +115,12 @@
             var user = authprov.User;
             var brancIDString = authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value;
             BranchID = int.Parse(brancIDString);
+
+            // Fetch pending breakdowns and trucks for the branch
             BreakdownList = ibreakdownService.SelectPending(BranchID).ToList();
             TruckList = Itruck.SelectByBranch(BranchID, "All").ToList();
+
+            // Fetch periodic maintenance records based on the provided ID
             PmList = Iservice.Select(id).ToList();
             if (PmList != null && PmList.Count() != 0)
             {
@@ -128,11 +133,13 @@
         }
     }
 
+    // Method to handle truck selection
     private void TruckSelected(TruckModel obj)
     {
         SelectedTruck = obj;
         if (SelectedTruck != null)
         {
+            // fetch its periodic maintenance records
             PmList = Iservice.SelectByTruck(SelectedTruck?.TruckID, 3).ToList();
         }
         else
@@ -143,6 +150,7 @@
         StateHasChanged();
     }
 
+    // Method to create a new periodic maintenance record
     private async Task CreateNew()
     {
         var authState = await auth.GetAuthenticationStateAsync();
@@ -165,10 +173,12 @@
         }
     }
 
+    // Method to create a job card for a periodic maintenance record
     private async Task CreateJobcard(PeriodicMaintenanceInitiateModel item)
     {
         if (SelectedTruck != null)
         {
+            // Get the current trip for the selected truck
             var CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(SelectedTruck.TruckID));
             if (CurrentTrip != null && !Itrip.IsClosed(CurrentTrip.TripID))
             {
@@ -207,6 +217,7 @@
         }
     }
 
+    // Method to close a periodic maintenance reminder
     private async Task CloseReminder(PeriodicMaintenanceInitiateModel pmModel)
     {
         if (_busy)

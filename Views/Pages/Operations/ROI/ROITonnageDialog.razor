@@ -19,22 +19,8 @@
     <DialogContent>
         <EditForm Model="@model" id="ROITonnageForm" OnValidSubmit="Submit">
             <MudGrid>
-                <MudItem xs="6">
-                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="OrderModel" Label="Order" ResetValueOnEmptyText="true" ValueChanged="OrderChanged" Value="model.Order"
-                                     SearchFunc="SearchOrders" ToStringFunc="@(e=> e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
-                </MudItem>
-                <MudItem xs="6">
-                    <MudAutocomplete T="RouteModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Route" Value="model.Route" ValueChanged="RouteChanged" ResetValueOnEmptyText="true"
-                                     SearchFunc="SearchRoutes" ToStringFunc="@(e => e == null ? null : $"{e.RouteName}")"></MudAutocomplete>
-                </MudItem>
-                <MudItem xs="6">
-                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="byte?" Label="Wheels" ResetValueOnEmptyText="true" ValueChanged="WheelChanged" Value="model.Wheels"
-                                     SearchFunc="SearchWheel" ToStringFunc="@(e => e?.ToString())">
-                    </MudAutocomplete>
-                </MudItem>
-                <MudItem xs="6">
-                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="string" Label="BS-Type" ResetValueOnEmptyText="true" @bind-Value="model.BSType"
-                                     SearchFunc="SearchBSType" ></MudAutocomplete>
+                <MudItem xs="12">
+                    <TruckSelector Class="bg-white" Value="model.Truck" BranchID="BranchID" ValueChanged="TruckChanged" Filter="AvailableForBranch" HomeOrOperation="Operation" />
                 </MudItem>
                 <MudItem xs="6">
                     <MudNumericField HideSpinButtons @bind-Value="model.FromTonnage" Label="From Tonnage" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="10" />
@@ -73,33 +59,11 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-
-        WheelList = ITruckService.SelectWheels().ToList();
-        WheelsList = WheelList.Select(x => x.Wheels).ToList();
-        BSTypeList = ITruckService.SelectBSType().ToList();
-
-        OrderList = await IOrderService.SelectByBranch(BranchID).ToListAsync();
-        RoutList =  await IRouteService.SelectByBranch(BranchID).ToListAsync();
     }
 
-    public void OrderChanged(OrderModel obj)
+    public void TruckChanged(TruckModel obj)
     {
-        model.Order = obj;
-    }
-
-    public void RouteChanged(RouteModel obj)
-    {
-        model.Route = obj;
-    }
-
-    public void WheelChanged(byte? obj)
-    {
-        model.Wheels = obj;
-    }
-
-    public void BSTypeChanged(ROITonnageModel obj)
-    {
-        model.BSType = obj?.BSType;
+        model.Truck = obj;
     }
 
     protected async Task Submit()
@@ -114,26 +78,6 @@
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
-    }
-
-    public async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
-    {
-        return await Task.FromResult(OrderList.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
-
-    public async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
-    {
-        return await Task.FromResult(RoutList.Where(x => x.RouteName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
-
-    public async Task<IEnumerable<byte?>> SearchWheel(string searchString)
-    {
-        return await Task.Run(() => WheelsList.Where(x => x.ToString().Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase)));
-    }
-
-    public async Task<IEnumerable<string>> SearchBSType(string searchString)
-    {
-        return await Task.FromResult(BSTypeList.Where(x => x.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
     public void Cancel()
