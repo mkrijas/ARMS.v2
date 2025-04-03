@@ -100,7 +100,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "Billed"),
                new SqlParameter("@ConsolidatedDraftBillID", ConsolidatedDraftBillID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Sub.Select]", parameters))
             {
                 yield return GetTariffEntries(dr);
             }
