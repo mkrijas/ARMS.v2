@@ -27,12 +27,13 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Destination", model.Destination.PlaceID),
                new SqlParameter("@Distance", model.Distance),
                new SqlParameter("@GpsRouteID", model.GpsRouteID),
-               new SqlParameter("@MieageModifier", model.MieageModifier),
+               new SqlParameter("@MileageModifier", model.MileageModifier),
                new SqlParameter("@Origin", model.Origin.PlaceID),
                new SqlParameter("@RouteType", model.RouteType),
                new SqlParameter("@RunningHours", model.RunningHours),
                new SqlParameter("@SpeedLimit", model.SpeedLimit),
                new SqlParameter("@TollBooths", model.TollBooths),
+               new SqlParameter("@DistanceInGps", model.DistanceInGps),
                new SqlParameter("@Via", model.Via.PlaceID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -137,7 +138,7 @@ namespace ArmsServices.DataServices
                 },
                 Distance = dr.GetDecimal("Distance"),
                 GpsRouteID = dr.GetInt64("GpsRouteID"),
-                MieageModifier = dr.GetDecimal("MieageModifier"),
+                MileageModifier = dr.GetDecimal("MileageModifier"),
                 Origin = new PlaceModel
                 {
                     PlaceID = dr.GetInt32("Origin")
@@ -148,6 +149,7 @@ namespace ArmsServices.DataServices
                 RunningHours = dr.GetDecimal("RunningHours"),
                 SpeedLimit = dr.GetByte("SpeedLimit"),
                 TollBooths = dr.GetByte("TollBooths"),
+                DistanceInGps = dr.GetDecimal("DistanceInGps"),
                 Via = new PlaceModel
                 {
                     PlaceID = dr.GetInt32("Via")

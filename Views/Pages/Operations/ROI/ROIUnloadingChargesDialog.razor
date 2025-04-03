@@ -70,9 +70,14 @@
     public List<RouteModel> RouteList { get; set; }
     string UserID;
     int BranchID;
+    public int DocTypeID = 143;
+    public bool HasPermissionROIServiceEdit { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionROIServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -91,17 +96,26 @@
         model.Route = obj;
     }
 
-    private void OnValidSubmit(EditContext context)
+    private async void OnValidSubmit(EditContext context)
     {
-        model.UserInfo.UserID = UserID;
-        try
+        if (HasPermissionROIServiceEdit)
         {
-            model = Iservice.Update(model);
-            MudDialog.Close(model);
+            model.UserInfo.UserID = UserID;
+            try
+            {
+                model = Iservice.Update(model);
+                MudDialog.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Edit ROI settings.");
         }
     }
 

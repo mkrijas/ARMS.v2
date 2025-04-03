@@ -16,13 +16,12 @@ namespace ArmsModels.BaseModels
             return JsonConvert.DeserializeObject<ROIMileageModel>(Json);
         }
         public int? ID { get; set; }
-        [Required]
-        public byte? Wheels { get; set; }
-        [Required]
-        public string BSType { get; set; }
+        //public TruckTypeModel TruckType { get; set; }
+        public short? TruckTypeID { get; set; }
+        public virtual string TruckType { get; set; }
+        public virtual string BSType { get; set; }
         [Required]
         public string BodyType { get; set; }
-        public OrderModel Order { get; set; } = new();
         [Required]
         public decimal? LoadingMTFrom { get; set; }
         [Required]

@@ -30,6 +30,7 @@ namespace ArmsModels.BaseModels
         public byte? Axles { get; set; }
         [Required]
         public byte? wheels { get; set; }
+        public byte? AdBlueFrequency { get; set; } = 0;
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 }

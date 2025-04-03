@@ -1,10 +1,13 @@
-﻿@attribute [Authorize]
+﻿@using System.Threading;
+@attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @using Core.BaseModels.Operations.ROI
 @using Core.IDataServices.Operations.ROI
 @inject ITruckService ITruckService
 @inject IROITimeService IROITimeService
 @inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
 
 <MudDialog Style="overflow-y: hidden;">
     <TitleContent>
@@ -44,9 +47,14 @@
     public List<byte?> WheelsList { get; set; } = new();
     string UserID;
     int BranchID;
+    public int DocTypeID = 143;
+    public bool HasPermissionROIServiceEdit { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionROIServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -60,17 +68,26 @@
         model.Wheels = obj;
     }
 
-    protected void Submit()
+    private async void Submit()
     {
-        try
-        {
-            model.UserInfo.UserID = UserID;
-            model = IROITimeService.UpdateWheelSpeed(model);
-            MudDialog.Close(model);
+        if (HasPermissionROIServiceEdit)
+            {
+            try
+            {
+                model.UserInfo.UserID = UserID;
+                model = IROITimeService.UpdateWheelSpeed(model);
+                MudDialog.Close(model);
+            }
+            catch (Exception a)
+            {
+                snackbar.Add(a.Message, Severity.Error);
+            }
         }
-        catch (Exception a)
+        else
         {
-            snackbar.Add(a.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Edit ROI settings.");
         }
     }
 

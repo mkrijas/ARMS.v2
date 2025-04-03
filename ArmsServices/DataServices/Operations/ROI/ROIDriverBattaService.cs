@@ -96,5 +96,73 @@ namespace ArmsServices.DataServices
             };
         }
 
+        public ROIDriverBattaInFrtPercentageModel UpdateInFrtPercentage(ROIDriverBattaInFrtPercentageModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", model.ID),
+               new SqlParameter("@BranchID", model.Branch.BranchID),
+               new SqlParameter("@Percentage", model.Percentage),
+               new SqlParameter("@FromDate", model.FromDate),
+               new SqlParameter("@ToDate", model.ToDate),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.DriverBattaInFrtPercentage.Update]", parameters))
+            {
+                model = GetModelInFrtPercentage(dr);
+            }
+            return model;
+        }
+
+        public IEnumerable<ROIDriverBattaInFrtPercentageModel> SelectInFrtPercentage(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", 0),
+               new SqlParameter("BranchID",BranchID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.DriverBattaInFrtPercentage.Select]", parameters))
+            {
+                yield return GetModelInFrtPercentage(dr);
+            }
+        }
+
+        public ROIDriverBattaInFrtPercentageModel SelectByIDInFrtPercentage(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+            };
+            ROIDriverBattaInFrtPercentageModel model = new ROIDriverBattaInFrtPercentageModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.DriverBattaInFrtPercentage.Select]", parameters))
+            {
+                model = GetModelInFrtPercentage(dr);
+            }
+            return model;
+        }
+
+        private ROIDriverBattaInFrtPercentageModel GetModelInFrtPercentage(IDataRecord dr)
+        {
+            return new ROIDriverBattaInFrtPercentageModel
+            {
+                ID = dr.GetInt32("ID"),
+                Branch = new BranchModel
+                {
+                    BranchID = dr.GetInt32("BranchID"),
+                    BranchName = dr.GetString("BranchName")
+                },
+                Percentage = dr.GetDecimal("Percentage"),
+                FromDate = dr.GetDateTime("FromDate"),
+                ToDate = dr.GetDateTime("ToDate"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
     }
 }
