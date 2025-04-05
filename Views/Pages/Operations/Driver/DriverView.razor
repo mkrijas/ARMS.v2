@@ -151,7 +151,7 @@
 
     #endregion
 
-
+    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -160,6 +160,8 @@
         HasPermissionDriverServiceResign = await Irole.HasClaim(DocTypeIDDriver.ToString(), "Resign", ctc.Token);
         HasPermissionDriverServiceAllotLeave = await Irole.HasClaim(DocTypeIDDriver.ToString(), "AllotLeave", ctc.Token);
         HasPermissionDriverFaultServiceRemoveDriver = await Irole.HasClaim(DocTypeIDDriverFault.ToString(), "Remove", ctc.Token);
+
+        // Retrieve the list of branches from the service
         BranchList = Ibranchservice.Select().ToList();
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -169,11 +171,13 @@
         GetAll();
     }
 
+    // Method to retrieve all drivers for the current branch
     private void GetAll()
     {
-        collection = Iservice.SelectByBranch(BranchID).ToList();
+        collection = Iservice.SelectByBranch(BranchID).ToList(); // Fetch drivers based on branch ID
     }
 
+    // Method to begin leave for a driver
     private async void BeginLeave(int? DriverID)
     {
         if (_busy)
@@ -207,6 +211,7 @@
         _busy = false;
     }
 
+    // Method to determine the row class based on driver's status
     private string RowClassFunc(DriverModel driver, Int32 index)
     {
         if (driver.UserInfo.RecordStatus == 9)
@@ -220,12 +225,15 @@
         return string.Empty;
     }
 
+    // Method to end leave for a driver
     private async Task EndLeave(int? DriverID)
     {
         if (HasPermissionDriverServiceAllotLeave)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
+
+            // Call the service to end leave
             int qryResult = Iservice.EndLeave(DriverID, user.Identity.Name);
             if (qryResult > 0)
             {
@@ -241,6 +249,7 @@
         }
     }
 
+    // Method to edit driver information
     private async Task Edit(int? id)
     {
         if (_busy)
@@ -281,6 +290,7 @@
         _busy = false;
     }
 
+    // Method to resign a driver
     private async Task Resign(int? driverId)
     {
         if (_busy)
@@ -308,7 +318,7 @@
                 {
                     var authprov = await auth.GetAuthenticationStateAsync();
                     var user = authprov.User;
-                    Iservice.Delete(driverId, user.Identity.Name);
+                    Iservice.Delete(driverId, user.Identity.Name); // Delete the driver
                 }
                 catch (Exception ex)
                 {
@@ -327,6 +337,7 @@
         _busy = false;
     }
 
+    // Method to transfer a driver
     private async Task Transfer(int? DriverID)
     {
         if (_busy)
@@ -375,6 +386,7 @@
         _busy = false;
     }
 
+    // Method to report a fault for a driver
     private async Task Fault(int? DriverID)
     {
         if (_busy)
@@ -405,6 +417,7 @@
         _busy = false;
     }
 
+    // Method to remove a driver from the blacklist
     private async Task RemoveBlacklist(int? DriverID)
     {
         if (HasPermissionDriverFaultServiceRemoveDriver)
@@ -419,6 +432,8 @@
             {
                 var authprov = await auth.GetAuthenticationStateAsync();
                 var user = authprov.User;
+
+                // Call the service to remove the driver from the blacklist
                 int qryResult = Ifaultservice.Delete(DriverID, user.Identity.Name);
                 snackbar.Add("Driver removed from Blacklist", Severity.Warning);
             }
@@ -432,6 +447,7 @@
         }
     }
 
+    // Method to search for drivers based on the search string
     private bool search(DriverModel Driver)
     {
         if (Driver.DriverName != null && (Driver.DriverName.Contains(searchDriver, StringComparison.OrdinalIgnoreCase) || Driver.DriverCode.Contains(searchDriver, StringComparison.OrdinalIgnoreCase)))
@@ -441,18 +457,21 @@
         return false;
     }
 
+    // Method to open the driver tracking dialog
     private async Task OpenTracking()
     {
         DialogOptions para = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogService.Show<DriverTrackingDialog>("Driver Tracking", para);
     }
 
+    // Method to open the driver rejoin dialog
     private async Task OpenRejoin()
     {
         DialogOptions para = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogService.Show<DriverRejoinViewDialog>("Driver Rejoin", para);
     }
 
+    // Method to download the driver list as an Excel file
     public async Task ExcelDownload()
     {
         var fileName = "DriverList.xlsx";
@@ -471,6 +490,7 @@
         }
     }
 
+    // Method to generate Excel bytes for the driver list
     public byte[] GenerateExcelBytes(string sheetName)
     {
         using (var package = new ExcelPackage())
