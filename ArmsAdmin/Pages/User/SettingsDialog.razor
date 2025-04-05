@@ -16,8 +16,11 @@
                             <MudItem sm="4">
                                 <p style="padding-Top:18px;"><b><Center><h6>SETTINGS</h6></Center></b></p>
                             </MudItem>
-                            <MudItem sm="8">
+                            <MudItem sm="4">
                                 <p style="padding-Top:19px;"><b><Center><h6>SETTINGS DESCRIPTION</h6></Center></b></p>
+                            </MudItem>
+                            <MudItem sm="4">
+                                <p style="padding-Top:19px;"><b><Center><h6>Value</h6></Center></b></p>
                             </MudItem>
                         </MudGrid>
                     </MudItem>
@@ -30,8 +33,20 @@
                                     <MudItem sm="4" Class="d-flex align-content-lg-between">
                                         <MudCheckBox @bind-Checked="@i.RecordStatus" Label="@i.SettingsName"></MudCheckBox>
                                     </MudItem>
-                                    <MudItem sm="8" Class="d-flex align-content-lg-between">
+                                    <MudItem sm="4" Class="d-flex align-content-lg-between">
                                         <p Class="d-flex align-content-center">@i.SettingsDescription</p> @*style="padding-Top:19px;"*@
+                                    </MudItem>
+                                    <MudItem sm="4" Class="d-flex align-items-center">
+                                        @if (i.ValueInput == true)
+                                        {
+                                            <MudTextField @bind-Value="@i.Value"
+                                                          Placeholder="Enter Value"
+                                                          Disabled="@(i.RecordStatus != true)"
+                                                          Immediate="true"
+                                                          For="@(() => i.Value)"
+                                                          Required="@(i.ValueInput == true && i.RecordStatus == true)"
+                                                          RequiredError="Value is required when active." />
+                                        }
                                     </MudItem>
                                 </MudGrid>
                             </MudItem>
@@ -43,8 +58,20 @@
                                     <MudItem sm="4" Class="d-flex align-content-center">
                                         <MudCheckBox @bind-Checked="@i.RecordStatus" Label="@i.SettingsName"></MudCheckBox>
                                     </MudItem>
-                                    <MudItem sm="8" Class="d-flex align-content-lg-between">
+                                    <MudItem sm="4" Class="d-flex align-content-lg-between">
                                         <p Class="d-flex align-content-lg-between">@i.SettingsDescription</p> @*style="padding-Top:19px;"*@
+                                    </MudItem>
+                                    <MudItem sm="4" Class="d-flex align-items-center">
+                                        @if (i.ValueInput == true)
+                                        {
+                                            <MudTextField @bind-Value="@i.Value"
+                                                          Placeholder="Enter Value"
+                                                          Disabled="@(i.RecordStatus != true)"
+                                                          Immediate="true"
+                                                          For="@(() => i.Value)"
+                                                          Required="@(i.ValueInput == true && i.RecordStatus == true)"
+                                                          RequiredError="Value is required when active." />
+                                        }
                                     </MudItem>
                                 </MudGrid>
                             </MudItem>
@@ -88,32 +115,47 @@
     // Method to handle form submission
     private async Task OnValidSubmit(List<SettingsModel> context)
     {
-        if (HasPermissionBranchSettingsServiceEdit)
+        if (!HasPermissionBranchSettingsServiceEdit)
         {
-            if (_busy)
+            await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have permission to edit BranchSettings.");
+            return;
+        }
+
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+
+        // 👇 Manual validation
+        foreach (var setting in context)
+        {
+            if (setting.ValueInput == true && setting.RecordStatus == true && string.IsNullOrWhiteSpace(setting.Value))
             {
-                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                snackbar.Add($"'{setting.SettingsName}' requires a value.", Severity.Error);
                 return;
             }
-            _busy = true;
+        }
 
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
+        _busy = true;
 
-            // Create a list of settings IDs that are marked as active (RecordStatus is true)
-            List<int?> RecordStatusList = context.Where(s => s.RecordStatus ?? false).Select(d => d.SettingsID).ToList();
-            
-            // Update the settings in the branch settings service
-            IBranchSettings.Update(branchID, RecordStatusList, UserID);
+        try
+        {
+            var filteredContext = context.Where(s => s.RecordStatus == true).ToList();
+            await Task.Run(() => IBranchSettings.Update(branchID, filteredContext, UserID));
             snackbar.Add("Updated Successfully", Severity.Success);
-            await Task.Delay(200);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
             _busy = false;
         }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Edit BranchSettings.");
-        }
     }
+
+
 }

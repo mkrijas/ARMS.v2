@@ -43,6 +43,8 @@ namespace ArmsServices.DataServices
                 SettingsName = dr.GetString("SettingsName"),
                 SettingsDescription = dr.GetString("SettingsDescription"),
                 RecordStatus = dr.GetBoolean("IsSet"),
+                ValueInput = dr.GetBoolean("ValueInput"),
+                Value = dr.GetString("Value")
             };
         }
 
@@ -50,28 +52,24 @@ namespace ArmsServices.DataServices
         //////////////////////////////////
 
         // Method to update branch settings
-        public SettingsModel Update(int? ID, List<int?> RecordStatusList, string UserID)
+        public SettingsModel Update(int? ID, List<SettingsModel> settingsList, string UserID)
         {
             DataTable dataTable = new DataTable();
             dataTable.Columns.Add("IntField", typeof(int));
-            foreach (int? value in RecordStatusList)
+            dataTable.Columns.Add("Value", typeof(string));
+
+            foreach (var setting in settingsList.Where(s => s.RecordStatus == true))
             {
-                if (value.HasValue)
-                {
-                    dataTable.Rows.Add(value.Value);
-                }
-                else
-                {
-                    dataTable.Rows.Add(DBNull.Value);
-                }
+                dataTable.Rows.Add(setting.SettingsID, setting.Value ?? (object)DBNull.Value);
             }
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@BranchID", ID),
-               new SqlParameter("@Settings", dataTable),
-               new SqlParameter("@UserID", UserID),
+                new SqlParameter("@BranchID", ID),
+                new SqlParameter("@Settings", dataTable),
+                new SqlParameter("@UserID", UserID),
             };
+
             Iservice.ExecuteNonQuery("[usp.entity.Branch.Settings.Update]", parameters);
             return null;
         }
@@ -82,5 +80,12 @@ namespace ArmsServices.DataServices
             var list = SelectByID(BranchID);
             return list!= null && list.Any(x => x != null && x.RecordStatus != null && x.SettingsID == OptionID) ? list.Where(x => x != null && x.RecordStatus != null && x.SettingsID == OptionID).Select(x => x.RecordStatus.Value)?.First()??false:false;
         }
+
+        public string GetValue(int? BranchID, int? OptionID)
+        {
+            var list = SelectByID(BranchID);
+            return list.FirstOrDefault(x => x.SettingsID == OptionID)?.Value;
+        }
+
     }
 }

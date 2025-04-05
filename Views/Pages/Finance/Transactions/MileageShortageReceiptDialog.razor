@@ -16,6 +16,7 @@
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
+@inject IBranchSettingsService IbranchSettings
 @inject IDialogService DialogService
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Mileage Shortage Receipt" formID="MileageShortageReceiptForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
@@ -225,6 +226,20 @@
             model.UserInfo.UserID = UserID;
             try
             {
+                bool IsBranchAllowanceLimited = IbranchSettings.IsEnabled(model.BranchID, 8);
+                if(IsBranchAllowanceLimited)
+                {
+                    string limitedValue = IbranchSettings.GetValue(model.BranchID, 8);
+                    if (decimal.TryParse(limitedValue, out decimal limitedDecimal))
+                    {
+                        if (model.AllowanceAmount > limitedDecimal)
+                        {
+                            snackbar.Add($"Allowance Amount exceeds the limit ({limitedDecimal}) set for this branch.", Severity.Warning);
+                            return;
+                        }
+
+                    }
+                }
                 // Retrieve mileage records based on TripID or RequestApprovalHistoryID
                 if (model.TripID is not null)
                 {

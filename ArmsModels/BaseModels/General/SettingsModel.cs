@@ -7,12 +7,14 @@ namespace ArmsModels.BaseModels.General
     // Model representing application settings
     public class SettingsModel
     {
-        public int? SettingsID { get; set; } // Unique identifier for the settings
+        public int? SettingsID { get; set; }
         public int? BranchID { get; set; }
         public string SettingsName { get; set; }
         public string SettingsDescription { get; set; }
         public bool? RecordStatus { get; set; }
+        public bool? ValueInput { get; set; }
         public List<int?> RecordStatusList { get; set; } = new();
+        public string Value { get; set; } // <-- Add this
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
