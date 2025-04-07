@@ -294,6 +294,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             {
                 RID = dr.GetInt32("RID"),
                 RequestID = dr.GetInt32("RequestID"),
+                RequestNumber = dr.GetString("RequestNumber"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 RefInvoiceNo = dr.GetString("RefInvoiceNo"),

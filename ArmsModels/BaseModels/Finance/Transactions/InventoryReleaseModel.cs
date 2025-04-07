@@ -24,6 +24,7 @@ namespace ArmsModels.BaseModels
         }
         public int? RID { get; set; } // Unique identifier for the inventory release
         public int? RequestID { get; set; }// Optional
+        public string RequestNumber { get; set; }// Optional
         [Required]
         public StoreModel Store { get; set; } // Information about the store associated with the release
         public JobcardModel Jobcard { get; set; } // Optional: Information about the active job card
