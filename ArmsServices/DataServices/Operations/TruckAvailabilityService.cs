@@ -91,7 +91,10 @@ namespace DAL.DataServices.Operations
                     {
                         TruckID = reader.GetInt32("TruckID"),
                         RegNo = reader.GetString("RegNo"),
-                    }
+                    },
+                    Uploads = reader.HasColumn("Uploads") && !reader.IsDBNull("Uploads") && !string.IsNullOrWhiteSpace(reader.GetString("Uploads"))
+                        ? reader.GetString("Uploads").Split(";").ToList()
+                        : new List<string>(),
                 };
             }
             return null;
