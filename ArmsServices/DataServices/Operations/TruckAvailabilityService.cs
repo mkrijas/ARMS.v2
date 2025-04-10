@@ -164,7 +164,8 @@ namespace DAL.DataServices.Operations
                 new SqlParameter("@RequestStatus", model.RequestStatus),
                 new SqlParameter("@RecordStatus", 3),
                 new SqlParameter("@ReceivedList", dataTable),
-                new SqlParameter("@CheckList", model.CheckList.ToDataTable())
+                new SqlParameter("@CheckList", model.CheckList.ToDataTable()),
+                new SqlParameter("@Remarks", model.Remarks)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Response.Update]", parameters))
@@ -205,8 +206,7 @@ namespace DAL.DataServices.Operations
                 Uploads = dr.HasColumn("Uploads") && !dr.IsDBNull("Uploads") && !string.IsNullOrWhiteSpace(dr.GetString("Uploads"))
                         ? dr.GetString("Uploads").Split(";").ToList()
                         : new List<string>(),
-
-
+                Remarks = dr.GetString("Remarks"),
                 Truck = new TruckModel()
                 {
                     AssetID = dr.GetInt32("AssetID"),
