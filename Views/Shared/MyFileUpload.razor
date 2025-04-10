@@ -1,19 +1,19 @@
 ﻿@using System.IO
-@using Microsoft.AspNetCore.Hosting;
-@inject IWebHostEnvironment _env;
-@inject MudBlazor.ISnackbar snackbar;
-@inject IDialogService DialogService;
+@using Microsoft.AspNetCore.Hosting
+@inject IWebHostEnvironment _env
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
 
-@using System.Security.AccessControl;
-@using MimeTypes;
+@using System.Security.AccessControl
+@using MimeTypes
 
-<InputFile id="@FileName" OnChange="UploadImage" hidden multiple="@AllowMultiple" />
+<InputFile id="@FileName" OnChange="UploadImage" hidden multiple="@AllowMultiple" accept="@GetAcceptedTypes()" />
 <MudButton HtmlTag="label" for="@FileName">@Label</MudButton>
 
 @code {
     [Parameter] public string FileName { get; set; } = "Original";
     [Parameter] public string FolderName { get; set; }
-    [Parameter] public string Label { get; set; }
+    [Parameter] public string Label { get; set; } = "Upload File";
     [Parameter] public bool Resize { get; set; } = false;
     [Parameter] public bool DeleteExistingFile { get; set; } = true;
     [Parameter] public bool AcceptOnlyPdf { get; set; } = false;
@@ -33,22 +33,35 @@
         }
     }
 
+    private string GetAcceptedTypes()
+    {
+        if (AcceptOnlyPdf) return ".pdf";
+        return "image/*,video/*,.pdf";
+    }
+
     private async Task UploadImage(InputFileChangeEventArgs e)
     {
         foreach (var file in e.GetMultipleFiles())
         {
             if (AcceptOnlyPdf && !IsPdfFile(file.ContentType))
             {
-                snackbar.Add("Only Allows PDF Files", Severity.Warning);
+                snackbar.Add("Only PDF files are allowed.", Severity.Warning);
                 return;
             }
 
-            string PhysicalPath = Path.Combine(_env.WebRootPath, "ArmsStaticFiles", FolderName);
-            string VirtualPath = Path.Combine("ArmsStaticFiles", FolderName);
-            var result = await UploadFile(file, FileName, PhysicalPath);
+            if (!AcceptOnlyPdf && !IsSupportedFileType(file.ContentType))
+            {
+                snackbar.Add("Only images, videos, or PDF files are allowed.", Severity.Warning);
+                return;
+            }
+
+            string physicalPath = Path.Combine(_env.WebRootPath, "ArmsStaticFiles", FolderName);
+            string virtualPath = Path.Combine("ArmsStaticFiles", FolderName);
+            var result = await UploadFile(file, FileName, physicalPath);
+
             if (result != null)
             {
-                _filepath = Path.Combine(VirtualPath, result);
+                _filepath = Path.Combine(virtualPath, result);
             }
         }
     }
@@ -58,51 +71,59 @@
         return contentType.ToLower() == "application/pdf";
     }
 
+    private bool IsSupportedFileType(string contentType)
+    {
+        return contentType.StartsWith("image/") || contentType.StartsWith("video/") || IsPdfFile(contentType);
+    }
+
     private async Task<string> UploadFile(IBrowserFile file, string filename, string physicalPath)
     {
-        string DerivedFileName = null;
-        if (file.Size > 0 && file.Size < 2097153)
-        {
-            DerivedFileName = filename == "Original" ? file.Name : filename + MimeTypeMap.GetExtension(file.ContentType);
+        string derivedFileName = null;
 
-            DirectoryInfo di = new DirectoryInfo(physicalPath);
+        if (file.Size > 0 && file.Size < 5097153) // < 2MB
+        {
+            string extension = MimeTypeMap.GetExtension(file.ContentType);
+            derivedFileName = filename == "Original" ? file.Name : filename + extension;
+
+            DirectoryInfo di = new(physicalPath);
             if (!di.Exists)
             {
                 Directory.CreateDirectory(physicalPath);
             }
 
-            string filePath = Path.Combine(physicalPath, DerivedFileName);
+            string filePath = Path.Combine(physicalPath, derivedFileName);
 
-            if (_filepath != null)
+            if (_filepath != null && DeleteExistingFile)
             {
-                string oldFileName = Path.Combine(_env.WebRootPath, FilePath);
-                if (File.Exists(oldFileName) && DeleteExistingFile)
+                string oldFilePath = Path.Combine(_env.WebRootPath, FilePath);
+                if (File.Exists(oldFilePath))
                 {
-                    File.Delete(oldFileName);
+                    File.Delete(oldFilePath);
                 }
             }
 
-            if (Resize)
+            if (Resize && file.ContentType.StartsWith("image/"))
             {
                 file = await ResizeImage(file);
             }
 
             try
             {
-                using Stream stream = file.OpenReadStream(2097152);
+                using Stream stream = file.OpenReadStream(5097152);
                 using FileStream fs = new(filePath, FileMode.Create);
                 await stream.CopyToAsync(fs);
             }
             catch (Exception ex)
             {
-                snackbar.Add(ex.Message, Severity.Error);
+                snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
             }
         }
         else
         {
-            await DialogService.ShowMessageBox("Oops !", "Uploaded file should not be greater than 2MB.");
+            await DialogService.ShowMessageBox("Oops!", "Uploaded file should not be greater than 2MB.");
         }
-        return DerivedFileName;
+
+        return derivedFileName;
     }
 
     private async Task<IBrowserFile> ResizeImage(IBrowserFile file)
@@ -119,7 +140,7 @@
         }
         catch (Exception ex)
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
             return false;
         }
     }

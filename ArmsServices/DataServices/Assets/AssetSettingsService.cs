@@ -36,12 +36,13 @@ namespace ArmsServices.DataServices
         }
 
         // Retrieves asset settings based on subclass ID
-        public IEnumerable<AssetSettingsModel> GetSettings(int? SubClassID)
+        public IEnumerable<AssetSettingsModel> GetSettings(int? SubClassID, int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@Operation", "BySubClass"),
                 new SqlParameter("@SubClassID", SubClassID),
+                new SqlParameter("@TruckID", TruckID),
             };
             {
                 foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Settings.SelectByID]", parameters))
@@ -61,6 +62,9 @@ namespace ArmsServices.DataServices
                 SettingsName = dr.GetString("SettingsName"),
                 SettingsDescription = dr.GetString("SettingsDescription"),
                 IsActive = dr.GetBoolean("IsSet"),
+                ValueInput = dr.GetBoolean("ValueInput"),
+                Value = dr.GetString("Value"),
+                Condition = dr.GetString("Condition")
             };
         }
 

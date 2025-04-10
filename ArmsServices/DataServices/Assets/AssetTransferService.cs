@@ -93,6 +93,8 @@ namespace ArmsServices.DataServices
                     SettingsID = dr.GetInt32("AssetSettingsID"),
                     SettingsName = dr.GetString("SettingsName"),
                     SettingsDescription = dr.GetString("Description"),
+                    Value = dr.GetString("Value"),
+                    Condition = dr.GetString("Condition")
                 };
             }
         }
