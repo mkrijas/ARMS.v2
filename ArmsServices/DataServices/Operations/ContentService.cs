@@ -20,7 +20,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@ContentID", model.ContentID),
+               new SqlParameter("@ContentID", model.ContentID),
                new SqlParameter("@ContentName", model.ContentName),
                new SqlParameter("@PrimaryUnit", model.PrimaryUnit),
                new SqlParameter("@SecondaryUnit", model.SecondaryUnit),

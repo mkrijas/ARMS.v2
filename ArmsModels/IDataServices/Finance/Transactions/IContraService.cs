@@ -8,7 +8,7 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IContraService
+    public interface IContraService : IbaseInterface<ContraModel>
     {
         ContraModel Update(ContraModel model);  //Edit
         IEnumerable<ContraModel> SelectInterBranch(int? BranchID);

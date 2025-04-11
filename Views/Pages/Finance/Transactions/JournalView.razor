@@ -3,15 +3,16 @@
 @using System.Threading;
 @using System.Security.Claims;
 @using ArmsModels.Shared;
-@inject IJournalService Iservice
-@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@inject IDialogService DialogService
+@inherits ViewComponentBase<JournalModel>
 @inject SignalRService signalRService
+@inject IRoleService<RoleModel> Irole
+@inject IJournalService Iservice
+@inject IDialogService DialogService
 @inject IPushNotificationService IpushNotificationService
 @inject IJSRuntime JsRuntime
-@attribute [Authorize]
+@inject MudBlazor.ISnackbar snackbar
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -19,7 +20,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Journal</MudText>
                 <MudTooltip Text="New Journal">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new JournalModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new JournalModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Journal..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -48,17 +49,17 @@
                 </MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
                     <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
 
                     @if (@context.AuthLevelId == 99)
                     {
-                        <EntryReversedComponent DocTypeID="JournalDocTypeID" DocumentID="context.JournalID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                        <EntryReversedComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="context.JournalID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
                     }
                     else if (@context.AuthLevelId != 100)
                     {
-                        <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                        <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
                     }
                 </MudTd>
             </RowTemplate>
@@ -72,16 +73,18 @@
 @code {
 
     public bool IsApproved { get; set; } = false;
-    private List<JournalModel> collection = new List<JournalModel>();
+    protected override List<JournalModel> collection { get; set; } = new List<JournalModel>();
     private int numberOfRecords = 100;
     private string searchTerm = "";
     private bool _busy;
 
-    [Parameter]
-    public int? id { get; set; } = null;
-
     public bool HasPermissionJournalServiceDelete { get; set; } = false;
-    public int JournalDocTypeID = 18;
+
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+    {
+        DocumentTypeID = 18,
+        DocumentName = "Journal"
+    };
 
     #region SignaIR Notification
 
@@ -103,7 +106,7 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionJournalServiceDelete = await Irole.HasClaim(JournalDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionJournalServiceDelete = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
 
         await GetAll(IsApproved, NumberOfRecords);
 
@@ -111,7 +114,7 @@
         await signalRService.StartAsync();
         if (id != null && collection != null && collection.Any(g => g.JournalID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.JournalID == id), true);
+            await OpenForm(collection.FirstOrDefault(s => s.JournalID == id), true);
         }
     }
 
@@ -187,7 +190,7 @@
     }
 
     // Method to open a dialog for adding or editing a journal entry
-    private async Task OpenDialog(JournalModel JournalModel, bool ReadOnly = false)
+    protected override async Task OpenForm(JournalModel JournalModel, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -216,7 +219,7 @@
             notificationMessage.MessageGroupID = "PendingVerification";
             notificationMessage.PageToRedirectLink = "/JournalView";
             notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = JournalDocTypeID;
+            notificationMessage.DocumentTypeID = DocInfo.DocumentTypeID;
             notificationMessage.MsgDate = DateTime.Now;
             await signalRService.Send(notificationMessage);
         }

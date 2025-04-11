@@ -1,13 +1,13 @@
 ﻿@using System.Threading;
-
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inherits DialogFormComponentBase<JournalModel>
+@inject IRoleService<RoleModel> Irole
 @inject IJournalService Iservice
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
-@attribute [Authorize]
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Journal" formID="journalForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Journal" formID="journalForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="journalForm" OnValidSubmit="OnValidSubmit" Model="model">
@@ -82,56 +82,26 @@
 
 @code {
 
-    [Parameter]
-    public JournalModel model { get; set; }
-    [Parameter]
-    public bool ReadOnly { get; set; }
     private JournalSubModel JournalSub { get; set; } = new();
     private int? branchID = null;
     private string UserID = null;
     private decimal? CheckEqual;
     private EditContext editContext;
-    DialogForm dialogForm;
     [Parameter]
     public string PageToRedirectLink { get; set; }
     public string DocNumber { get; set; }
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
     public List<JournalSubModel> SubList { get; set; }
+    string UserIDTemp;
     private bool _busy;
-    
-    public DocumentInfoModel DocumentDetails { get; set; } = new();
+
+    // Document information model for the tax purchase
+    protected override DocumentInfoModel DocInfo { get; set; } = new();
 
     public bool HasPermissionJournalServiceEdit { get; set; } = false;
     public bool HasPermissionJournalServiceApprove { get; set; } = false;
     public int JournalDocTypeID = 18;
-
-    // Method to approve the journal entry
-    protected async Task Approve(DataApprovedStatus aprvd)
-    {
-        if (HasPermissionJournalServiceApprove)
-        {
-            if (aprvd.IsApprove)
-            {
-                model.UserInfo.UserID = UserID;
-                try
-                {
-                    Iservice.Approve(model.JournalID, model.UserInfo.UserID, aprvd.Remarks); // Call service to approve
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Approve Journal.");
-        }
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -139,17 +109,17 @@
         HasPermissionJournalServiceEdit = await Irole.HasClaim(JournalDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionJournalServiceApprove = await Irole.HasClaim(JournalDocTypeID.ToString(), "Approve", ctc.Token);
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
-        UserID = User.Identity.Name;
+        DocInfo.DocumentTypeID = JournalDocTypeID;
+        DocInfo.DocumentID = model.JournalID;
+
+        await base.OnInitializedAsync();
+
         if (model == null || model != null && model.JournalID == null || model != null && model.JournalID == 0)
         {
             if (model == null)
             {
                 model = new()
                     {
-                        BranchID = branchID,
                         UserInfo = new() { UserID = UserID, },
                         TotalAmount = 0,
                         NatureOfTransaction = "Journal"
@@ -157,7 +127,6 @@
             }
             else
             {
-                model.BranchID = branchID;
                 model.UserInfo = new() { UserID = UserID, }; ;
                 model.TotalAmount = 0;
                 model.NatureOfTransaction = "Journal";
@@ -167,6 +136,7 @@
         {
             // Load sub-list if JournalID is valid
             model.JournalSubList = Iservice.GetSubList(model.JournalID).ToList();
+            UserIDTemp = model.UserInfo.UserID;
         }
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
@@ -177,8 +147,8 @@
     {
         editContext = new EditContext(model);
 
-        DocumentDetails.DocumentTypeID = JournalDocTypeID;
-        DocumentDetails.DocumentID = model.JournalID;
+        DocInfo.DocumentTypeID = JournalDocTypeID;
+        DocInfo.DocumentID = model.JournalID;
     }
 
     // Method to delete a sub-entry from the journal
@@ -217,47 +187,38 @@
         JournalSub = new();
     }
 
-    // Method called on form submission
-    public async Task OnValidSubmit()
+    // Method to update the Journal model
+    protected override async Task<int> Update(JournalModel editModel)
     {
-        if (_busy)
+        if (await validate(model))
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
+            model = Iservice.Update(model); // Update the model using the service
+            return model.JournalID ?? 0;
         }
-        if (HasPermissionJournalServiceEdit)
+        return 0;
+    }
+
+    // Method to validate the Journal model
+    public async Task<bool> validate(JournalModel editModel)
+    {
+        CheckEqual = model.JournalSubList.Sum(x => x.DrCrType * x.Amount);
+        if (CheckEqual != 0)
         {
-            model.UserInfo.UserID = UserID;
-            try
-            {
-                CheckEqual = model.JournalSubList.Sum(x => x.DrCrType * x.Amount);
-                if (CheckEqual != 0)
-                {
-                    snackbar.Add("Please check the amount", Severity.Warning);
-                    return;
-                }
-                _busy = true;
-                foreach (var item in model.JournalSubList)
-                {
-                    item.CoaID = item.Coa.CoaID;
-                } 
-                Iservice.Update(model); // Call service to update the model
-                model = new();
-                snackbar.Add("Saved Successfully", Severity.Success);
-                dialogForm.Close(model);
-                await Task.Delay(200);
-                _busy = false;
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+            snackbar.Add("Please check the amount", Severity.Warning);
+            return false;
         }
-        else
+        foreach (var item in model.JournalSubList)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Edit Journal.");
+            item.CoaID = item.Coa.CoaID;
         }
+        return true;
+    }
+
+    // Method to approve the Journal model
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
+    {
+        int result = Iservice.Approve(model.JournalID, model.UserInfo.UserID, aprvd.Remarks); // Call the service to approve
+        model.UserInfo.UserID = UserIDTemp;
+        return result;
     }
 }

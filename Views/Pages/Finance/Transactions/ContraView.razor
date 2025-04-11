@@ -1,13 +1,14 @@
 ﻿@page "/ContraView"
 @page "/ContraView/{id:int}"
 @using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inherits ViewComponentBase<ContraModel>
+@inject SignalRService signalRService
+@inject IRoleService<RoleModel> Irole
 @inject IContraService Iservice
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
 @inject IDialogService DialogService
-@inject SignalRService signalRService
 @inject IPushNotificationService IpushNotificationService
 
 <MudGrid Spacing="4">
@@ -16,7 +17,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Contra Entry</MudText>
                 <MudTooltip Text="New Payment Memos">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new ContraModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new ContraModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Contra..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -47,17 +48,17 @@
                 <MudTd DataLabel="ContraModeHome">@context.ContraModeHome</MudTd>
                 <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
                     <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
 
                     @if (@context.AuthLevelId == 99)
                     {
-                        <EntryReversedComponent TDS="context.TdsAmount" DocTypeID="ContraDocTypeID" DocumentID="context.ContraID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                        <EntryReversedComponent TDS="context.TdsAmount" DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.ContraID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
                     }
                     else if (@context.AuthLevelId != 100)
                     {
-                        <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                        <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
                     }
                 </MudTd>
             </RowTemplate>
@@ -71,15 +72,19 @@
 @code {
 
     public bool IsApproved { get; set; } = false;
-    private List<ContraModel> collection = new List<ContraModel>();
+    protected override List<ContraModel> collection { get; set; } = new List<ContraModel>();
     private int numberOfRecords = 100;
     private string searchTerm = "";
-    [Parameter]
-    public int? id { get; set; } = null;
     private bool _busy;
 
     public bool HasPermissionContraServiceDelete { get; set; } = false;
     public int ContraDocTypeID = 3;
+
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 3,
+            DocumentName = "Contra"
+        };
 
     #region SignaIR Notification
 
@@ -111,7 +116,7 @@
     // Method to reload the table with data
     private async Task ReloadTable()
     {
-        await GetAll(IsApproved, NumberOfRecords);
+        await LoadData(IsApproved, NumberOfRecords);
     }
 
     // Method to reload the table with data
@@ -120,17 +125,17 @@
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionContraServiceDelete = await Irole.HasClaim(ContraDocTypeID.ToString(), "Delete", ctc.Token);
 
-        await GetAll(IsApproved, NumberOfRecords);
+        await LoadData(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         await signalRService.StartAsync();
         if (id != null && collection != null && collection.Any(g => g.ContraID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.ContraID == id), true);
+            await OpenForm(collection.FirstOrDefault(s => s.ContraID == id), true);
         }
     }
 
     // Method to fetch all contra documents based on approval status and number of records
-    private async Task GetAll(bool val, int numberOfRecords)
+    private async Task LoadData(bool val, int numberOfRecords)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -151,7 +156,7 @@
     async Task ApprovedToggled(bool value)
     {
         IsApproved = value;
-        await GetAll(IsApproved, NumberOfRecords);
+        await LoadData(IsApproved, NumberOfRecords);
     }
 
     // Method to delete a contra document
@@ -169,7 +174,7 @@
                 Iservice.Delete(model.ContraID, user.Identity.Name); // Call the service to delete the contra document
                 snackbar.Add("Deleted Successfully", Severity.Success);
             }
-            await GetAll(IsApproved, NumberOfRecords);
+            await LoadData(IsApproved, NumberOfRecords);
         }
         else
         {
@@ -179,8 +184,8 @@
         }
     }
 
-    // Method to open the contra dialog for adding or editing
-    private async Task OpenDialog(ContraModel ContraModel, bool ReadOnly)
+    // Method to open the contra form for adding or editing
+    protected override async Task OpenForm(ContraModel model, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -188,15 +193,13 @@
             return;
         }
         _busy = true;
-        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", ContraModel.Clone());
-        parms.Add("PageToRedirectLink", "/ContraView");
+        parms.Add("model", model.Clone());
         parms.Add("ReadOnly", ReadOnly);
-        var dialog = DialogService.Show<ContraDialog>(ContraModel.ContraID == null ? "ADD" : "EDIT", parms, mediumWidth);
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
+        var dialog = dialogService.Show<ContraDialog>(model.ContraID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
-        var isCancelled = result.Cancelled;
-        if (!isCancelled)
+        if (!result.Canceled)
         {
             var ReturnData = (ContraModel)result.Data;
             notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
@@ -213,8 +216,7 @@
             notificationMessage.MsgDate = DateTime.Now;
             await signalRService.Send(notificationMessage);
         }
-        await GetAll(IsApproved, NumberOfRecords);
-
+        await LoadData(ShowApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
     }
