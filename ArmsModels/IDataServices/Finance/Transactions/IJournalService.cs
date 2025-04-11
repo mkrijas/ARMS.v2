@@ -8,7 +8,7 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IJournalService
+    public interface IJournalService : IbaseInterface<JournalModel>
     {
         JournalModel Update(JournalModel model);  //Edit
         JournalModel SelectByID(int? ID);

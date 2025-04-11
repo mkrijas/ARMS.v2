@@ -1,16 +1,17 @@
 ﻿@using System.Threading;
 
+@attribute [Authorize]
+@inherits DialogFormComponentBase<ContraModel>
+@inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @inject IContraService Iservice
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Contra Entry" formID="cotraForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Contra Entry" formID="contraForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
-            <EditForm id="cotraForm" OnValidSubmit="OnValidSubmit" Model="model">
+            <EditForm id="contraForm" OnValidSubmit="OnValidSubmit" Model="model">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 @if (ValidationMessage != null)
@@ -27,17 +28,17 @@
                     <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
                     </MudItem>
-                    
+
                     <MudItem xs="12" md="12">
                         <strong>Debit/Deposit A/c</strong>
                         <PaymentAccountSelector @bind-PaymentMode="@model.ContraModeHome" @bind-ArdCode="@model.ArdCodeHome" @bind-CoaID="@model.CoaIDHome" @bind-BankCharges="@model.BankCharges" HideBankCharges @bind-BankTool="@model.PaymentTool" />
-                     </MudItem>
-                    
-                     <MudItem xs="12" md="12">
-                         <strong>Credit/Draw A/c</strong>
-                         <PaymentAccountSelector PaymentMode="@model.ContraModeOther" PaymentModeChanged="OnPaymentModeOtherChange" @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther" @bind-BankCharges="@model.BankCharges" HideBankCharges BankTool="@model.PaymentTool" BankToolChanged="OnPaymentToolChange" />
-                     </MudItem>
-                     @if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank")
+                    </MudItem>
+
+                    <MudItem xs="12" md="12">
+                        <strong>Credit/Draw A/c</strong>
+                        <PaymentAccountSelector PaymentMode="@model.ContraModeOther" PaymentModeChanged="OnPaymentModeOtherChange" @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther" @bind-BankCharges="@model.BankCharges" HideBankCharges BankTool="@model.PaymentTool" BankToolChanged="OnPaymentToolChange" />
+                    </MudItem>
+                    @if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank")
                     {
                         <MudItem xs="12" md="6">
                             <MudTextField ReadOnly="ReadOnly" Value="model.ChequeInfo.ChequeNumber" TextChanged="OnCheckNoChange" Label="ChequeNumber" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ChequeInfo.ChequeNumber)"></MudTextField>
@@ -54,7 +55,7 @@
 
                         <MudItem xs="12" md="8">
                             <MudNumericField ReadOnly="ReadOnly" @bind-Value="model.TdsAmount" Label="TDS For Cash Withdrawal" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TdsAmount)"></MudNumericField>
-                    </MudItem>
+                        </MudItem>
                     }
                     <MudItem xs="12" md="6">
                         <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
@@ -70,16 +71,12 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@ContraDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ContraID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ContraID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
 @code {
 
-    [Parameter]
-    public ContraModel model { get; set; }
-    [Parameter]
-    public bool ReadOnly { get; set; }
     [Parameter]
     public string PageToRedirectLink { get; set; }
     public string DocNumber { get; set; }
@@ -88,43 +85,17 @@
     private int? branchID = null;
     private string UserID = null;
     private EditContext editContext;
-    DialogForm dialogForm;
     public string ValidationMessage { get; set; } = null;
+    string UserIDTemp;
+    private decimal? TotalBillAmount;
     private bool _busy;
 
-    public DocumentInfoModel DocumentDetails { get; set; } = new();
+    // Document information model for the contra
+    protected override DocumentInfoModel DocInfo { get; set; } = new();
 
     public bool HasPermissionContraServiceEdit { get; set; } = false;
     public bool HasPermissionContraServiceApprove { get; set; } = false;
     public int ContraDocTypeID = 3;
-
-    // Method to approve the contra document
-    protected async Task Approve(DataApprovedStatus aprvd)
-    {
-        if (HasPermissionContraServiceApprove)
-        {
-            if (aprvd.IsApprove)
-            {
-                model.UserInfo.UserID = UserID;
-                try
-                {
-                    // Call the service to approve the contra document
-                    Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks);
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Approve Contra.");
-        }
-    }
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
@@ -133,23 +104,28 @@
         HasPermissionContraServiceEdit = await Irole.HasClaim(ContraDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionContraServiceApprove = await Irole.HasClaim(ContraDocTypeID.ToString(), "Approve", ctc.Token);
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
-        UserID = User.Identity.Name;
-        model.BranchID = model.OtherBranchID = branchID;
+        DocInfo.DocumentTypeID = ContraDocTypeID;
+        DocInfo.DocumentID = model.ContraID;
+
+        await base.OnInitializedAsync();
+
         model.NatureOfTransaction = "Contra";
 
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
+
+        if (model.ContraID != null)
+        {
+            UserIDTemp = model.UserInfo.UserID;
+        }
     }
 
     // Lifecycle method called when parameters are set or changed
     protected override void OnParametersSet()
     {
-        DocumentDetails.DocumentTypeID = ContraDocTypeID;
-        DocumentDetails.DocumentID = model.ContraID;
+        DocInfo.DocumentTypeID = ContraDocTypeID;
+        DocInfo.DocumentID = model.ContraID;
     }
 
     // Method to handle changes in payment mode
@@ -190,52 +166,46 @@
         }
     }
 
-    // Method to handle form submission when the form is valid
-    public async Task OnValidSubmit()
+    // Method to update the contra model
+    protected override async Task<int> Update(ContraModel editModel)
     {
-        if (_busy)
+        model = Iservice.Update(model); // Update the model using the service
+        if (model.ContraID != null)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
+            return model.ContraID.Value;
+        }
+        return 0;
+    }
+
+    // Method to approve the contra model
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
+    {
+        int result = Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks); // Call the service to approve
+        model.UserInfo.UserID = UserIDTemp;
+        return result;
+    }
+
+    // Method to validate the contra model
+    public async Task<bool> validate(TaxPurchaseModel editModel)
+    {
+        if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank" && (model.ChequeInfo == null || string.IsNullOrEmpty(model.ChequeInfo.ChequeNumber)))
+        {
+            ValidationMessage = "Please fill the cheque NO. !";
+            snackbar.Add("Please fill the cheque NO. !", Severity.Warning);
+            return false;
         }
 
-        if (HasPermissionContraServiceEdit)
+        if (model.ContraModeHome == "Cash" && model.ContraModeOther == "Bank" && model.IsTdsApplicable == true && (model.TdsAmount == null))
         {
-            if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank" && (model.ChequeInfo == null || string.IsNullOrEmpty(model.ChequeInfo.ChequeNumber)))
-            {
-                ValidationMessage = "Please fill the cheque NO. !";
-                snackbar.Add("Please fill the cheque NO. !", Severity.Warning);
-                return;
-            }
-
-            if (model.ContraModeHome == "Cash" && model.ContraModeOther == "Bank" && model.IsTdsApplicable == true && (model.TdsAmount == null))
-            {
-                ValidationMessage = "Please enter cash withdrawal amount !";
-                snackbar.Add("Please fill the cheque NO. !", Severity.Warning);
-                return;
-            }
-
-            _busy = true;
-            try
-            {
-                model.IsPayment = true;                
-                model.UserInfo.UserID = UserID;
-                model = Iservice.Update(model); // Update the model using the service
-                dialogForm.Close(model);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+            ValidationMessage = "Please enter cash withdrawal amount !";
+            snackbar.Add("Please fill the cheque NO. !", Severity.Warning);
+            return false;
         }
-        else
+        if (TotalBillAmount != editModel.TotalAmount)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Edit Contra.");
+            snackbar.Add("Please Set Billed amount", Severity.Warning);
+            return false;
         }
-
-        await Task.Delay(200);
-        _busy = false;
+        return true;
     }
 }

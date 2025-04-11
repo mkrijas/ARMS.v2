@@ -218,6 +218,21 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        public IEnumerable<JournalModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<JournalModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

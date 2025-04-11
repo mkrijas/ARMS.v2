@@ -295,6 +295,8 @@ namespace Views
             services.AddScoped<IbaseInterface<ReceiptModel>, ReceiptService>();
             services.AddScoped<IbaseInterface<DrCrNoteModel>, DrCrNoteService>();
             services.AddScoped<IbaseInterface<OpTranModel>, OpTranService>();
+            services.AddScoped<IbaseInterface<ContraModel>, ContraService>();
+            services.AddScoped<IbaseInterface<JournalModel>, JournalService>();
             services.AddScoped<IbaseInterface<CancellationReasonCodesByDocumentType>, ReverseEntryService>();
             services.AddScoped<IbaseInterface<SundryMaintenanceModel>, SundryMaintenanceService>();
             services.AddScoped<IbaseInterface<InterBranchReimbursementModel>, ReimbursementService>();

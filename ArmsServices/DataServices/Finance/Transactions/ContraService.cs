@@ -255,5 +255,20 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        public IEnumerable<ContraModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<ContraModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
