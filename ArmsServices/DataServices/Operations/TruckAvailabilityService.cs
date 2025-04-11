@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Data;
 using Core.BaseModels.Operations;
 using ArmsModels.BaseModels;
+using System.Linq;
+using System;
 
 namespace DAL.DataServices.Operations
 {
@@ -89,7 +91,10 @@ namespace DAL.DataServices.Operations
                     {
                         TruckID = reader.GetInt32("TruckID"),
                         RegNo = reader.GetString("RegNo"),
-                    }
+                    },
+                    Uploads = reader.HasColumn("Uploads") && !reader.IsDBNull("Uploads") && !string.IsNullOrWhiteSpace(reader.GetString("Uploads"))
+                        ? reader.GetString("Uploads").Split(";").ToList()
+                        : new List<string>(),
                 };
             }
             return null;
@@ -132,16 +137,35 @@ namespace DAL.DataServices.Operations
         }
 
         // Method to update the status of a truck availability request
-        public RequestApprovalHistoryModel UpdateStatus(RequestApprovalHistoryModel model)
+        public RequestApprovalHistoryModel UpdateStatus(RequestApprovalHistoryModel model, List<int?> RecievedList)
         {
+            DataTable dataTable = new DataTable();
+            dataTable.Columns.Add("IntField", typeof(int));
+            if (RecievedList == null)
+                RecievedList = new List<int?>();
+            foreach (int? value in RecievedList)
+            {
+                if (value.HasValue)
+                {
+                    dataTable.Rows.Add(value.Value);
+                }
+                else
+                {
+                    dataTable.Rows.Add(DBNull.Value);
+                }
+            }
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
+                new SqlParameter("@Uploads", string.Join(";",model.Uploads)),
                 new SqlParameter("@RespondedUserID", model.RespondedUserInfo.UserID),
                 new SqlParameter("@OpeningKM", model.OpeningKM),
                 new SqlParameter("@ClosingKM", model.ClosingKM),
                 new SqlParameter("@RequestStatus", model.RequestStatus),
                 new SqlParameter("@RecordStatus", 3),
+                new SqlParameter("@ReceivedList", dataTable),
+                new SqlParameter("@CheckList", model.CheckList.ToDataTable()),
+                new SqlParameter("@Remarks", model.Remarks)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Response.Update]", parameters))
@@ -176,6 +200,13 @@ namespace DAL.DataServices.Operations
                 DriverID = dr.GetInt32("DriverID"),
                 OpeningKM = dr.GetInt32("OpeningKM"),
                 ClosingKM = dr.GetInt32("ClosingKM"),
+                //Uploads = dr.IsDBNull("Uploads") || string.IsNullOrWhiteSpace(dr.GetString("Uploads"))
+                //    ? new List<string>()
+                //    : dr.GetString("Uploads").Split(";").ToList(), 
+                Uploads = dr.HasColumn("Uploads") && !dr.IsDBNull("Uploads") && !string.IsNullOrWhiteSpace(dr.GetString("Uploads"))
+                        ? dr.GetString("Uploads").Split(";").ToList()
+                        : new List<string>(),
+                Remarks = dr.GetString("Remarks"),
                 Truck = new TruckModel()
                 {
                     AssetID = dr.GetInt32("AssetID"),
@@ -208,6 +239,26 @@ namespace DAL.DataServices.Operations
                     UserID = dr.GetString("RespondedUserID"),
                 },
             };
+        }
+
+        public IEnumerable<AssetSettingsModel> GetCheckList(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetCheckList"),
+               new SqlParameter("@ID", ID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Request.Select]", parameters))
+            {
+                yield return new AssetSettingsModel()
+                {
+                    CheckListID = dr.GetInt32("CheckListID"),
+                    SettingsID = dr.GetInt32("AssetSettingsID"),
+                    SettingsName = dr.GetString("SettingsName"),
+                    Value = dr.GetString("Value"),
+                    Condition = dr.GetString("Condition")
+                };
+            }
         }
     }
 }

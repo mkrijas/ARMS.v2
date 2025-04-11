@@ -1,0 +1,77 @@
+﻿@using System.IO
+@using System.Threading;
+@using Core.BaseModels.Operations;
+@using Core.IDataServices.Operations;
+@inject AuthenticationStateProvider auth
+@inject IDialogService DialogService
+@inject ITruckAvailabilityService Iservice
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Checklist & Truck photos/video</MudText>
+    </TitleContent>
+    <DialogContent>
+        @foreach (var item in CheckList)
+        {
+            <MudItem xs="12">
+                <MudText>@item.SettingsName - @item.Value - @item.Condition  </MudText>
+                <br />
+            </MudItem>
+        }
+        <MudGrid Style="padding: 24px;" Spacing="2" Justify="Justify.Center">
+            @if (Uploads != null && Uploads.Any())
+            {
+                foreach (var imagePath in Uploads.Where(x => !string.IsNullOrWhiteSpace(x)))
+                {
+                    <MudItem xs="12" md="6" Class="d-flex">
+                        <MudPaper Class="p-2 position-relative" Elevation="3">
+                            @{
+                                var extension = Path.HasExtension(imagePath) ? Path.GetExtension(imagePath).ToLower() : string.Empty;
+                                var isVideo = extension is ".mp4" or ".mov" or ".avi";
+                            }
+                            @if (isVideo)
+                            {
+                                <video src="@imagePath" controls class="w-100" />
+                            }
+                            else
+                            {
+                                <img src="@imagePath" alt="@imagePath" class="w-100" />
+                            }
+
+                        </MudPaper>
+                    </MudItem>
+                }
+            }
+        </MudGrid>
+    </DialogContent>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public int? ID { get; set; } = new();
+    public List<AssetSettingsModel> CheckList { get; set; }
+    public List<string> Uploads { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        CheckList = Iservice.GetCheckList(ID).ToList();
+
+        var transfer = Iservice.GetTransferByID(ID);
+
+        if (transfer != null && transfer.Uploads != null)
+        {
+            Uploads = transfer.Uploads;
+        }
+        else
+        {
+            Uploads = new List<string>();
+        }
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

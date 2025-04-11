@@ -1,4 +1,5 @@
-﻿using Core.BaseModels.Operations;
+﻿using ArmsModels.BaseModels;
+using Core.BaseModels.Operations;
 using System.Collections.Generic;
 
 namespace Core.IDataServices.Operations
@@ -10,8 +11,9 @@ namespace Core.IDataServices.Operations
         public RequestApprovalHistoryModel GetTransferInfo(long? RequestApprovalHistoryID);
         public RequestApprovalHistoryModel GetTransferByID(long? RequestApprovalHistoryID);
         int DeleteRequest(int? ID, string UserID);
-        RequestApprovalHistoryModel UpdateStatus(RequestApprovalHistoryModel model);
+        RequestApprovalHistoryModel UpdateStatus(RequestApprovalHistoryModel model, List<int?> RecievedList);
         IEnumerable<RequestApprovalHistoryModel> SelectIncomingTrucks(int? ID, int? BranchID);
         IEnumerable<int?> GetAllTruckIdsByBranchID(int? BranchID);
+        IEnumerable<AssetSettingsModel> GetCheckList(int? ID);
     }
 }
