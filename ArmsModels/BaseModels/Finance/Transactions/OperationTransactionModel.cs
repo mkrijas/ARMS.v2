@@ -24,7 +24,7 @@ namespace ArmsModels.BaseModels
         public int? OpTranID { get; set; } // Unique identifier for the operational transaction
         [Required]
         public string PaymentMode { get; set; } // Cash,Bank req
-        [Required]
+        [RequiredIfPaymentModeIsCashOrBank]
         public string PaymentArdCode { get; set; } //  Account Rule Defenition Code For Bank Or Cash req 8len
         public virtual int? CreditCoaID { get; set; }
         [Required]
@@ -77,6 +77,24 @@ namespace ArmsModels.BaseModels
                     return "No";
                 }
             }
+        }
+    }
+
+    public class RequiredIfPaymentModeIsCashOrBankAttribute : ValidationAttribute
+    {
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            var model = (OpTranModel)validationContext.ObjectInstance;
+
+            if (model.PaymentMode?.ToLower() == "cash" || model.PaymentMode?.ToLower() == "bank")
+            {
+                if (string.IsNullOrWhiteSpace(model.PaymentArdCode))
+                {
+                    return new ValidationResult("Payment A/c is required when Payment Mode is Cash or Bank.");
+                }
+            }
+
+            return ValidationResult.Success;
         }
     }
 }

@@ -4,6 +4,7 @@
 @inject ITripService tripIservice
 @inject ITripFuelService tripFuelIservice
 @inject IConfigTable configTable
+@inject IChartOfAccountService accountService
 @inject IGstUsageIDService usage
 @inject IDialogService DialogService
 
@@ -25,14 +26,39 @@
                     <MudItem xs="12" md="12">
                         <h6>Transaction</h6>
                     </MudItem>
-                    <MudItem xs="12" md="6">
+                    <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="@ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
                     </MudItem>
-                    <MudItem xs="12" md="6">
-                        <PaymentAccountSelector ReadOnly="@ReadOnly" @bind-PaymentMode="@model.PaymentMode" HideMode LabelName="Cash A/c" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.CreditCoaID" />
-                     </MudItem>
-                     <MudItem xs="12" md="12">
-                         <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Elevation="0">
+                    <MudItem xs="12" md="4">
+                        <MudSelect Label="Select Payment Mode" Value="model.PaymentMode" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" ValueChanged="OnPaymentModeChanged">
+                            @foreach (var mode in PaymentModes)
+                            {
+                                <MudSelectItem Value="@mode">@mode</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
+                        <MudAutocomplete T="PaymentCodeModel"
+                                         Value="SelectedArd"
+                                         ValueChanged="OnAccountChanged"
+                                         SearchFunc="SearchAccounts"
+                                         ToStringFunc="@(e =>
+                                                            e == null
+                                                                ? string.Empty
+                                                                : string.Format("{0} | {1}",
+                                                                    string.IsNullOrWhiteSpace(e.ArdCode) ? "--" : e.ArdCode,
+                                                                    string.IsNullOrWhiteSpace(e.Title) ? "--" : e.Title)
+                                                        )"
+                                         Label="Select A/c"
+                                         Variant="Variant.Outlined"
+                                         Margin="Margin.Dense"
+                                         Dense="true"
+                                         ResetValueOnEmptyText="true"
+                                         CoerceValue="true"/>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Elevation="0">
                              <thead>
                                  <tr>
                                      <th>Particulars</th>
@@ -74,7 +100,7 @@
                                                       Value="opTranSubModel.OperationPostingGroupModel" ValueChanged="AddOperationPostingGroup"
                                                       ResetValueOnEmptyText="true" @ref="@OperationTitleControl"
                                                       SearchFunc="@SearchOperationPostingGroup" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                      ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ADCode,e.Title))"></MudAutocomplete>
+                                                      ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} ",e.Title))"></MudAutocomplete>
                                  </MudItem>
                                  <MudItem xs="12" md="3" lg="3">
                                      <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
@@ -156,6 +182,10 @@
     private GstUsageCodeModel FastTagUsageCodeModel { get; set; }
     private GstUsageCodeModel LoadingAndUnlodingUsageCodeModel { get; set; }
     string UserIDTemp;
+    private List<string> PaymentModes = new()
+    { "Cash", "Bank", "Others"};
+    private List<PaymentCodeModel> AllAccounts = new();
+    private PaymentCodeModel SelectedArd;
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
@@ -180,11 +210,12 @@
         {
             UserIDTemp = model.UserInfo.UserID;
             model.Transactions = Iservice.GetExpenses(model.OpTranID).ToList(); // Get expenses for the operation transaction
-        }
-        if (model.PaymentMode == null)
-        {
-            model.PaymentMode = "Cash";
-        }
+        }       
+
+        // if (model.PaymentMode == null)
+        // {
+        //     model.PaymentMode = "Cash";
+        // }
         model.NatureOfTransaction = model.Area;
         model.BranchID = BranchID;
         OperationPostingList = IOpsArd.Select().ToList(); // Load operation posting groups
@@ -193,6 +224,53 @@
         Advance = advanceService.GetTotal(model.TripID);
         AdvanceBalance = Advance.Amount; 
         displayBalance = AdvanceBalance.ToString();
+
+        if (!string.IsNullOrEmpty(model.PaymentMode))
+        {
+            await GetCodesAndSetDefault(BranchID, model.PaymentMode);
+        }
+    }
+
+    private async Task<IEnumerable<PaymentCodeModel>> SearchAccounts(string searchString)
+    {
+        await Task.Delay(5);
+        string search = searchString ?? string.Empty;
+
+        return AllAccounts.Where(x =>
+            (x.ArdCode ?? string.Empty).Contains(search, StringComparison.InvariantCultureIgnoreCase)
+            || (x.Title ?? string.Empty).Contains(search, StringComparison.InvariantCultureIgnoreCase)
+        );
+    }
+
+
+    private async Task OnPaymentModeChanged(string value)
+    {
+        model.PaymentMode = value;
+        SelectedArd = null;
+        model.PaymentArdCode = null;
+        model.CreditCoaID = null;
+
+        await GetCodesAndSetDefault(BranchID, value);
+    }
+
+    private async Task OnAccountChanged(PaymentCodeModel selected)
+    {
+        SelectedArd = selected;
+        model.PaymentArdCode = selected?.ArdCode;
+        model.CreditCoaID = selected?.CoaID;
+    }
+
+    private async Task GetCodesAndSetDefault(int? branchId, string mode)
+    {
+        AllAccounts = accountService.GetPaymentCodes(branchId, mode).ToList();
+
+        if (!AllAccounts.Any())
+            return;
+
+        if (AllAccounts.Count == 1)
+        {
+            await OnAccountChanged(AllAccounts.First());
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
