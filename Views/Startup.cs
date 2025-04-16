@@ -258,7 +258,6 @@ namespace Views
 
 
             //------------FINANCE TRANSACTIONS-------------------
-
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
             services.AddScoped<IAccountInfoService, AccountInfoService>();           
@@ -297,6 +296,7 @@ namespace Views
             services.AddScoped<IbaseInterface<OpTranModel>, OpTranService>();
             services.AddScoped<IbaseInterface<ContraModel>, ContraService>();
             services.AddScoped<IbaseInterface<JournalModel>, JournalService>();
+            services.AddScoped<IbaseInterface<SaleModel>, SaleService>();
             services.AddScoped<IbaseInterface<CancellationReasonCodesByDocumentType>, ReverseEntryService>();
             services.AddScoped<IbaseInterface<SundryMaintenanceModel>, SundryMaintenanceService>();
             services.AddScoped<IbaseInterface<InterBranchReimbursementModel>, ReimbursementService>();
