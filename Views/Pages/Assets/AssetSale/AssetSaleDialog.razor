@@ -1,6 +1,9 @@
 ﻿@using System.Threading;
 @using Views.Pages.Finance.Transactions
-
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inherits DialogFormComponentBase<SaleModel>
+@inject IRoleService<RoleModel> Irole
 @inject ISaleService Iservice
 @inject IPartyService partyIservice
 @inject IInventoryItemService itemIservice
@@ -11,9 +14,6 @@
 @inject IBranchService branchIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject ITdsRateService tdsIService
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
 @inject IDialogService DialogService
 @inject IJSRuntime JsRuntime
 
@@ -25,7 +25,7 @@
                 <ValidationSummary />
                 <MudGrid Spacing="2">
                     <MudItem xs="12" md="8">
-                        <PartySelector Value="model.PartyInfo" ValueChanged = "PartyChanged" NatureOfBusiness="Customer" BranchID="@branchID" IncludeSisterConcern></PartySelector>
+                        <PartySelector Value="model.PartyInfo" ValueChanged = "PartyChanged" NatureOfBusiness="Customer" BranchID="@BranchID" IncludeSisterConcern></PartySelector>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
@@ -34,10 +34,10 @@
                         <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
                     <MudItem xs="12">
-                        <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
+                        <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@BranchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
                     </MudItem>
                     <MudItem xs="12">
-                        <AssetsListView OnAssetAdded="AddAssets" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" AssetList="@model.Assets" ReadOnly="@ReadOnly" EditMode="@(model.Assets != null)" />
+                        <AssetsListView OnAssetAdded="AddAssets" OnAmountChange="SetTotal" BranchID="@BranchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" AssetList="@model.Assets" ReadOnly="@ReadOnly" EditMode="@(model.Assets != null)" />
                     </MudItem>
                 </MudGrid>
             </EditForm>
@@ -51,26 +51,23 @@
 @code {
 
     [Parameter]
-    public SaleModel model { get; set; }
-    [Parameter]
-    public bool ReadOnly { get; set; } = false;
-    private int? branchID = null;
-    private string UserID = null;
+    public string PageToRedirectLink { get; set; }
     private bool Local;
     bool IsTaxable;
     private EditContext editContext;
-    DialogForm dialogForm;
-    [Parameter]
-    public string PageToRedirectLink { get; set; }
     public string DocNumber { get; set; }
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
     private bool _busy;
+    string UserIDTemp;
     public DocumentInfoModel DocumentDetails { get; set; } = new();
 
     public bool HasPermissionSaleServiceEdit { get; set; } = false;
     public bool HasPermissionSaleServiceApprove { get; set; } = false;
     public int SaleDocTypeID = 13;
+
+    // Document information model for the Sales 
+    protected override DocumentInfoModel DocInfo { get; set; } = new();
 
     public GstUsageCodeModel gstusge = new();
     private GstModel taxModel = new GstModel();
@@ -84,12 +81,14 @@
         HasPermissionSaleServiceEdit = await Irole.HasClaim(SaleDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionSaleServiceApprove = await Irole.HasClaim(SaleDocTypeID.ToString(), "Approve", ctc.Token);
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
-        UserID = user.Identity.Name;
+        DocInfo.DocumentTypeID = SaleDocTypeID;
+        DocInfo.DocumentID = model.SID;
+
+        await base.OnInitializedAsync();
+
         if (model?.SID != null)
         {
+            UserIDTemp = model.UserInfo.UserID;
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID); // Get party info
             var ResultParticulars = Iservice.GetParticulars(model.SID); // Get particulars
             if (ResultParticulars != null)
@@ -105,7 +104,7 @@
         else
         {
             model.NatureOfTransaction = "Sale";
-            model.BranchID = branchID;
+            model.BranchID = BranchID;
         }
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
@@ -141,7 +140,7 @@
         if (party != null)
         {
             IsTaxable = party.GstType == "Registered" || party.GstType == "UnRegistered";
-            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
+            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, BranchID);
         }
         else { Local = false; }
     }
@@ -160,65 +159,23 @@
         SetTotal();
     }
 
-    // Method to approve the sale entry
-    protected async Task Approve(DataApprovedStatus aprvd)
+    // Method to update the Sale model
+    protected override async Task<int> Update(SaleModel editModel)
     {
-        if (HasPermissionSaleServiceApprove)
+        if (await validate(model))
         {
-            if (aprvd.IsApprove)
-            {
-                try
-                {
-                    Iservice.Approve(model.SID, UserID, aprvd.Remarks); // Call the service to approve the entry
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
+            model.SalesType = "Asset";
+            model = Iservice.Update(model); // Update the model using the service
+            return model.SID ?? 0;
         }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Approve Sale.");
-        }
+        return 0;
     }
 
-    // Method called when the form is valid and submitted
-    private async Task OnValidSubmit(EditContext context)
+    // Method to approve the Sale model
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-
-        if (HasPermissionSaleServiceEdit)
-        {
-            try
-            {
-                model.SalesType = "Asset";
-                model.UserInfo.UserID = UserID;
-                Iservice.Update(model); // Call the service to update the model
-                snackbar.Add("Saved Successfully", Severity.Success);
-                dialogForm.Close(model);
-                model = new();
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Edit Sale.");
-        }
-        await Task.Delay(200);
-        _busy = false;
+        int result = Iservice.Approve(model.SID, model.UserInfo.UserID, aprvd.Remarks); // Call the service to approve
+        model.UserInfo.UserID = UserIDTemp;
+        return result;
     }
 }

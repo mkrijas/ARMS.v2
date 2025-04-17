@@ -72,7 +72,7 @@ namespace ArmsModels.BaseModels
     public class PaymentCodeModel
     {
         public int? ID { get; set; }
-        public string ArdCode { get; set; }
+        public string? ArdCode { get; set; }
         public string Title { get; set; }
         public int? CoaID { get; set; }
         public virtual string paymentMode { get; set; }

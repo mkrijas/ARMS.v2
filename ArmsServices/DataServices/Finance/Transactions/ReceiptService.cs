@@ -197,7 +197,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@TotalAmount", model.TotalAmount),
-               new SqlParameter("@TimeStamp", model.UserInfo.TimeStampField),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@IsInterBranch", model.IsInterBranch),
                new SqlParameter("@InterBranchTranID", model.InterBranchTranID),

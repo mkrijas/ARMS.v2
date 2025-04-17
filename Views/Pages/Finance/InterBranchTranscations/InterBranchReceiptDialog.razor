@@ -1,24 +1,24 @@
 ﻿@using Views.Pages.Finance.Transactions.PurchaseAndPayment
 @using ArmsServices.DataServices.General
-
+@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inherits DialogFormComponentBase<ReceiptModel>
+@inject TruckDataArrayModel data
+@inject NavigationManager uriHelper;
 @inject IConfigTable IConfig
 @inject IReceiptService Iservice
 @inject IPartyService partyIservice
 @inject IOutstandingBillsService OutstandingIservice
 @inject ICostCenterService costIservice
-@inject TruckDataArrayModel data
 @inject IBranchService branchIservice
 @inject IInterBranchMappingService intermappingIservice
 @inject IDimensionService dimensionIservice
-@inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@attribute [Authorize]
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="InterBranch Receipt" formID="IreceiptForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="InterBranch Receipt" formID="IreceiptForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="IreceiptForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
@@ -29,7 +29,7 @@
                         <BranchSelector Value="@OtherBranch" ValueChanged="BranchChanged" LabelName="Target Branch receipt collected for"></BranchSelector>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudSelect Label="Select Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" SelectedValuesChanged="CheckInterbranchMapping" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
+                        <MudSelect Label="Select Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" SelectedValuesChanged="CheckInterbranchMapping" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in transactionTypeList)
                             {
                                 <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
@@ -103,10 +103,10 @@
                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
                     </MudItem>
                     @* <MudItem xs="12" md="3">
-                        <CostCenterSelector @bind-Value="@model.CostCenter"></CostCenterSelector>
+                    <CostCenterSelector @bind-Value="@model.CostCenter"></CostCenterSelector>
                     </MudItem>
                     <MudItem xs="12" md="3">
-                        <DimensionSelector @bind-Value="@model.Dimension"></DimensionSelector>
+                    <DimensionSelector @bind-Value="@model.Dimension"></DimensionSelector>
                     </MudItem> *@
                     <MudItem xs="12" md="3">
                         <MudCheckBox @bind-Value="model.IsRealized" ReadOnly="@ReadOnly" Label="IsRealized" Color="Color.Primary"></MudCheckBox>
@@ -119,25 +119,19 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@ReceiptDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ReceiptID" OnApprove="ApproveData"></AutherizationStatusComponent>
+        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ReceiptID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
 @code {
 
-
-    [Parameter]
-    public ReceiptModel model { get; set; }
-    [Parameter]
-    public bool ReadOnly { get; set; }
-    private int? branchID = null;
     private string UserID = null;
+    string UserIDTemp;
     private List<BranchModel> BranchList = new();
     private bool _busy;
     private EditContext editContext;
-    DialogForm dialogForm;
 
-    public DocumentInfoModel DocumentDetails { get; set; } = new();
+    protected override DocumentInfoModel DocInfo { get; set; } = new();
 
     public bool HasPermissionReceiptServiceEdit { get; set; } = false;
     public bool HasPermissionReceiptServiceApprove { get; set; } = false;
@@ -172,10 +166,10 @@
         HasPermissionReceiptServiceEdit = await Irole.HasClaim(ReceiptDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionReceiptServiceApprove = await Irole.HasClaim(ReceiptDocTypeID.ToString(), "Approve", ctc.Token);
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
-        UserID = User.Identity.Name;
+        DocInfo.DocumentTypeID = ReceiptDocTypeID;
+        DocInfo.DocumentID = model.ReceiptID;
+
+        await base.OnInitializedAsync();
 
         // Load transaction types and branches
         transactionTypeList = intermappingIservice.GetTypes().ToList();
@@ -188,12 +182,13 @@
         // Load bills if the receipt ID is provided
         if (model.ReceiptID != null)
         {
+            UserIDTemp = model.UserInfo.UserID;
             model.Bills = Iservice.GetBills(model.ReceiptID).ToList();
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID); // Load party info
         }
         else
         {
-            model.BranchID = branchID;
+            model.BranchID = BranchID;
         }
 
         DocNumber = model.DocumentNumber;
@@ -206,8 +201,8 @@
     protected override void OnParametersSet()
     {
         editContext = new EditContext(model);
-        DocumentDetails.DocumentTypeID = ReceiptDocTypeID;
-        DocumentDetails.DocumentID = model.ReceiptID;
+        DocInfo.DocumentTypeID = ReceiptDocTypeID;
+        DocInfo.DocumentID = model.ReceiptID;
     }
 
     // Method to handle changes in the selected branch
@@ -278,17 +273,17 @@
                 foreach (var item in SelectedItems)
                 {
                     model.Bills.Add(new BillsReceiptModel()
-                        {
-                            MID = item.MID,
-                            BranchName = item.BranchName,
-                            BranchID = item.BranchID,
-                            InvoiceDate = item.ReferenceDocDate,
-                            InvoiceNumber = item.ReferenceDocNo,
-                            ReceiptAmount = item.OutstandingAmount,
-                            CoaID = item.CoaID,
-                            IsMemo = item.isMemo,
-                            PartyID = item.PartyInfo.PartyID                            
-                        });
+                    {
+                        MID = item.MID,
+                        BranchName = item.BranchName,
+                        BranchID = item.BranchID,
+                        InvoiceDate = item.ReferenceDocDate,
+                        InvoiceNumber = item.ReferenceDocNo,
+                        ReceiptAmount = item.OutstandingAmount,
+                        CoaID = item.CoaID,
+                        IsMemo = item.isMemo,
+                        PartyID = item.PartyInfo.PartyID
+                    });
                 }
             }
         }
@@ -299,73 +294,38 @@
     }
 
     // Method to handle form submission
-    public async void OnValidSubmit(EditContext context)
+    protected override async Task<int> Update(ReceiptModel editModel)
     {
-        if (_busy)
+        if (validate(model) == true)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-
-        if (HasPermissionReceiptServiceEdit)
-        {
-            try
+            // Update the receipt model
+            model = Iservice.Update(model);
+            if (model.ReceiptID != null)
             {
-                // Get the party COA ID based on the selected party and business nature
-                model.PartyCoaID = partyIservice.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
-                if (model.PartyCoaID == null)
-                {
-                    throw new Exception("Party Account is not mapped for " + model.NatureOfTransaction + "!");
-                }
-                model.UserInfo.UserID = UserID;
-
-                // Update the receipt model
-                Iservice.Update(model); 
-                snackbar.Add("Saved Successfully", Severity.Success);
-                dialogForm.Close(model);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-                await Task.Delay(200);
-                _busy = false;
+                return model.ReceiptID.Value;
             }
         }
-        else
+        return 0;
+    }
+
+    // Method to validate the receipt model
+    public bool validate(ReceiptModel editModel)
+    {
+        // Get the party COA ID based on the selected party and business nature
+        model.PartyCoaID = partyIservice.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
+        if (model.PartyCoaID == null)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Edit Receipt.");
+            snackbar.Add("Party Account is not mapped for " + model.NatureOfTransaction + "!", Severity.Warning);
+            return false;
         }
-        await Task.Delay(200);
-        _busy = false;
+        return true;
     }
 
     // Method to approve the receipt
-    protected async Task ApproveData(DataApprovedStatus aprvd)
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        if (HasPermissionReceiptServiceApprove)
-        {
-            if (aprvd.IsApprove)
-            {
-                model.UserInfo.UserID = UserID;
-                try
-                {
-                    Iservice.Approve(model.ReceiptID, model.UserInfo.UserID, aprvd.Remarks); // Approve the receipt
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Approve Receipt.");
-        }
+        int result = Iservice.Approve(model.ReceiptID, model.UserInfo.UserID, aprvd.Remarks); // Approve the receipt
+        model.UserInfo.UserID = UserIDTemp;
+        return result;
     }
 }
