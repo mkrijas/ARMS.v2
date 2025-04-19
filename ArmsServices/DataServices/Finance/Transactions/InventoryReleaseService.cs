@@ -43,6 +43,18 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.InventoryRelease.Delete]", parameters);
         }
 
+        // Method to delete an inventory release
+        public int DeleteForNoMID(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RID", ID),
+               new SqlParameter("@UserID", UserID),
+
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transaction.InventoryRelease.Used.Reverse]", parameters);
+        }
+
         // Method to get request sub-items for inventory release
         public IEnumerable<InventoryReleaseSubViewModel> GetRequstSub(int? ID, int? StoreID)
         {

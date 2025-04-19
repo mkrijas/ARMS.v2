@@ -37,10 +37,10 @@
                 <HeaderContent>
                     <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.RID)" InitialDirection="SortDirection.Descending">Document Date</MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Store.StoreName)" >Store Name</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Jobcard.JobcardNumber)" >Jobcard Number</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Truck.RegNo)" >Truck Reg No</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Status)" >Status</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Store.StoreName)">Store Name</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Jobcard.JobcardNumber)">Jobcard Number</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Truck.RegNo)">Truck Reg No</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Status)">Status</MudTableSortLabel></MudTh>
                     <MudTh>Actions</MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -56,7 +56,14 @@
 
                         @if (@context.AuthLevelId == 99)
                         {
-                            <EntryReversedComponent DocTypeID="InventoryReleaseDocTypeID" DocumentID="context.RID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                            @if (context.MID != null)
+                            {
+                                <EntryReversedComponent DocTypeID="InventoryReleaseDocTypeID" DocumentID="context.RID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                            }
+                            else
+                            {
+                                <MudIconButton @onclick="@(()=> ReverseInventoryRelease(context))" Color="Color.Error" Title="Reverse Entry" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Class="ml-2" Variant="Variant.Filled" />
+                            }
                         }
                         else if (@context.AuthLevelId != 100)
                         {
@@ -94,7 +101,7 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
-        if (id != null )
+        if (id != null)
         {
             await Task.Delay(200);
             var item = Iservice.SelectByID(id); // Get the inventory release by ID
@@ -220,5 +227,19 @@
             return true;
         }
         return false;
+    }
+    private async Task ReverseInventoryRelease(InventoryReleaseModel model)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "This Entry is being cancelled instead of reversed because there no financial entries against it- " + model.Store.StoreName + " (" + model.Jobcard.JobcardNumber + ") ?");
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            Iservice.DeleteForNoMID(model.RID, user.Identity.Name);
+            snackbar.Add("Transaction Deleted Successfully", Severity.Success);
+        }
+        GetAll(IsApproved);
     }
 }
