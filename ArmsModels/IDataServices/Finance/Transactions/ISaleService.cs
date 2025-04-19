@@ -10,7 +10,7 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface ISaleService
+    public interface ISaleService : IbaseInterface<SaleModel>
     {
         SaleModel Update(SaleModel model);  //Edit
         SaleModel SelectByID(int? ID);

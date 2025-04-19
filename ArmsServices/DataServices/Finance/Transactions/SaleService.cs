@@ -318,5 +318,30 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        public int Reverse(int? ID, string UserID, string Remarks)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<SaleModel> Select(int? BranchID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<SaleModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<SaleModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

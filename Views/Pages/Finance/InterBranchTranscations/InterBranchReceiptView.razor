@@ -1,17 +1,18 @@
 ﻿@page "/InterBranchReceiptView"
 @page "/InterBranchReceiptView/{id:int}"
+@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inherits ViewComponentBase<ReceiptModel>
+@inject NavigationManager uriHelper;
+@inject SignalRService signalRService
 @inject IReceiptService Iservice
 @inject IOutstandingBillsService OutstandingIservice
 @inject ICostCenterService costIservice
 @inject IDimensionService dimensionIservice
-@inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@attribute [Authorize]
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
-@inject SignalRService signalRService
 @inject IPushNotificationService IpushNotificationService
 
 <MudGrid Spacing="4">
@@ -20,7 +21,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">InterBranch Receipt</MudText>
                 <MudTooltip Text="Add Receipt">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new ReceiptModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new ReceiptModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Receipt..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -44,17 +45,16 @@
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenDialog(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton OnClick="@(()=> OpenForm(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
                     <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
-
                     @if (@context.AuthLevelId == 99)
                     {
-                                <EntryReversedComponent DocTypeID="ReceiptDocTypeID" DocumentID="context.ReceiptID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                                <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.ReceiptID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
                     }
                     else if (@context.AuthLevelId != 100)
                     {
-                            <MudIconButton OnClick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                        <MudIconButton OnClick="@(()=> OpenForm(context,true,false))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
                     }
                 </MudTd>
                 @* <MudTd DataLabel="">
@@ -83,17 +83,19 @@
 @code {
 
     private ReceiptModel model = new ReceiptModel();
-    private List<ReceiptModel> collection = new List<ReceiptModel>();
-
+    protected override List<ReceiptModel> collection { get; set; } = new List<ReceiptModel>();
     public bool IsApproved { get; set; } = false;
     private int numberOfRecords = 100;
     private string searchTerm = "";
-    [Parameter]
-    public int? id { get; set; } = null;
     private bool _busy;
 
     public bool HasPermissionReceiptServiceDelete { get; set; } = false;
-    public int ReceiptDocTypeID = 14;
+
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 14,
+            DocumentName = "InterBranchReceipt"
+        };
 
     #region SignaIR Notification
 
@@ -132,14 +134,14 @@
     protected override async Task OnInitializedAsync()
     {        
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionReceiptServiceDelete = await Irole.HasClaim(ReceiptDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionReceiptServiceDelete = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Edit", ctc.Token);
 
         await GetReceiptBill(IsApproved, NumberOfRecords);
         await signalRService.StartAsync();
         await Task.Delay(200);
         if (id != null && collection != null && collection.Any(g => g.ReceiptID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.ReceiptID == id), true, false);
+            await OpenForm(collection.FirstOrDefault(s => s.ReceiptID == id), true, false);
         }
     }
 
@@ -170,7 +172,7 @@
     }
 
     // Method to open the dialog for adding or editing a receipt
-    private async Task OpenDialog(ReceiptModel tds, bool ReadOnly, bool View)
+    protected override async Task OpenForm(ReceiptModel tds, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -201,7 +203,7 @@
             notificationMessage.MessageGroupID = "PendingVerification";
             notificationMessage.PageToRedirectLink = "/InterBranchReceiptView";
             notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = ReceiptDocTypeID;
+            notificationMessage.DocumentTypeID = DocInfo.DocumentTypeID;
             notificationMessage.MsgDate = DateTime.Now;
             await signalRService.Send(notificationMessage);
         }
