@@ -21,7 +21,7 @@ namespace MobileAPI.Controllers
         public bool HasPermissionIDayOpenServiceApprove { get; set; } = false;
         public bool HasPermissionIDayOpenServiceReject { get; set; } = false;
         public bool HasPermissionIDayOpenServiceClose { get; set; } = false;
-        int DayOpenDocTypeID = 137;
+        public int DayOpenDocTypeID = 137;
 
         CancellationTokenSource ctc = new CancellationTokenSource();
 
