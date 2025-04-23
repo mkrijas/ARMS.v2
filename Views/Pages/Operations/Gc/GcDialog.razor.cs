@@ -49,6 +49,7 @@ namespace Views.Pages.Operations.Gc
         public bool HasPermissionGcServiceEdit { get; set; } = false;
         public int DocTypeID = 46;
 
+        // Method called when the component is initialized
         protected async override Task OnInitializedAsync()
         {
             CancellationTokenSource ctc = new CancellationTokenSource();
@@ -59,10 +60,12 @@ namespace Views.Pages.Operations.Gc
             BranchID = int.Parse(BranchIDString);
             UserID =   e.User.Identity.Name;
 
+            // Fetch GC types and orders
             GcTypes = Iservice.SelectGcTypes().ToList();
             Orders = await Iorder.SelectByBranch(BranchID).ToListAsync();
         }
 
+        // Method called when parameters are set or changed
         protected override async Task OnParametersSetAsync()
         {
             IsLoading = true;
@@ -85,32 +88,39 @@ namespace Views.Pages.Operations.Gc
         {
             MudDialog.Cancel();
         }
+
+        // Method to calculate freight for the GcSet
         private GcSetModel GetFreight(GcSetModel GcSet)
         {
             GcSet.Gcs.Where(x => (x.Freight??0) == 0 ).ToList().ForEach(x => x.Freight = ITariff.GetPrimaryFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
             return GcSet;
         }
 
+        // Method to search for consignees based on a search string
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
         {
             return await Task.FromResult(Consignees.Where(x => x.Consignor == false).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
+        // Method to search for consignors based on a search string
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignor(string searchString)
         {
             return await Task.FromResult(Consignees.Where(x => x.Consignor == true).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
+        // Method to search for orders based on a search string
         private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
         {
             return await Task.FromResult(Orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
+        // Method to search for routes based on a search string
         private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
         {
             return await Task.FromResult(Routes.Where(x => x.RouteName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
+        // Method called when the form is submitted
         private async Task OnValidSubmit(EditContext context)
         {
             if (_busy)
@@ -130,6 +140,7 @@ namespace Views.Pages.Operations.Gc
                 model.Gcs.ForEach(x => x.UserInfo = model.UserInfo);
                 try
                 {
+                    // Update the GcSetModel
                     model = Iservice.Update(model);
                     snackbar.Add("Saved Successfully", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(model));
@@ -153,6 +164,7 @@ namespace Views.Pages.Operations.Gc
             }   
         }
 
+        // Method to handle order selection
         private async Task OrderSelected(OrderModel obj)
         {
             Order = obj;
@@ -162,6 +174,8 @@ namespace Views.Pages.Operations.Gc
             Route = null;
             Consignor = null;
             Consignee = null;
+
+            // If an order is selected, fetch related routes and consignees
             if (Order != null)
             {
                 Routes = await Iroute.SelectByOrder(Order?.OrderID).ToListAsync();
@@ -193,6 +207,7 @@ namespace Views.Pages.Operations.Gc
             
         }
 
+        // Method to handle changes in the selected route
         private void RouteChanged(RouteModel obj)
         {
             Route = obj;
@@ -200,6 +215,7 @@ namespace Views.Pages.Operations.Gc
             GetFreight(model);
         }
 
+        // Method to add or edit a consignee/consignor
         private async Task AddConsignee_Consignor()
         {
 
@@ -217,24 +233,30 @@ namespace Views.Pages.Operations.Gc
             }
         }
 
+        // Method to handle changes in the selected consignor
         private void ConsignorChanged(ConsigneeModel obj)
         {
             Consignor = obj;
             model.ConsignorID = obj?.ConsigneeID;
         }
 
+        // Method to handle changes in the selected consignee
         private void ConsigneeChanged(ConsigneeModel obj)
         {
             Consignee = obj;
             model.ConsigneeID = obj?.ConsigneeID;
         }
 
+        // Method to handle changes in the quantity for a GcModelc
         private void QtyChanged(decimal? Qty, GcModel gc)
         {
-            gc.BillQuantity = Qty;            
+            gc.BillQuantity = Qty;
+
+            // Calculate the freight based on the updated quantityc
             gc.Freight = ITariff.GetPrimaryFreight(model.OrderID, model.RouteID, null, gc.BillQuantity, gc.Freight);  
         }
 
+        // Method to handle changes in the freight for a GcModel
         private void FrChanged(decimal? Freight, GcModel gc)
         {
             gc.Freight = Freight;
@@ -248,18 +270,21 @@ namespace Views.Pages.Operations.Gc
             //StateHasChanged();
         }
 
+        // Method to add a new invoice (GcModel) to the model
         private void AddMoreInvoice()
         {
             model.Gcs.Add(new GcModel());
             _tabAdded = true;
         }
 
+        // Method to remove an invoice (GcModel) from the model
         private void RemoveInvoice(MudTabPanel tabPanel)
         {
             var item = (GcModel)tabPanel.Tag;
             model.Gcs.Remove(item);
         }
 
+        // Method called after the component has rendered
         protected override void OnAfterRender(bool firstRender)
         {
             if (_tabAdded)
@@ -270,6 +295,7 @@ namespace Views.Pages.Operations.Gc
             }
         }
 
+        // Method to delete the GcSet
         private async Task Delete()
         {
             bool? result = await DialogService.ShowMessageBox(
@@ -278,6 +304,7 @@ namespace Views.Pages.Operations.Gc
            yesText: "Delete!", cancelText: "Cancel");
             if (result is not null && result.Value)
             {
+                // Call the service to delete the GcSet
                 Iservice.DeleteSet(model.GcSetID, UserID);
                 StateHasChanged();
             }
