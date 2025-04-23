@@ -127,6 +127,7 @@
     int branchID;
     string UserID;
 
+    // Method called on form submission
     private async void OnValidSubmit()
     {
         if (_busy)
@@ -157,7 +158,11 @@
                 item.ItemRate = Tmodel.RatePerLitre;
                 item.Amount = Tmodel.Amount;
                 item.CoaID = invItem.Group.MappedNonInventoryPurchaseHead;
+
+                // Get GST rate for the item
                 item.GstRate = gstItemService.SelectByItem(Tmodel.FuelItemID ?? 0)?.FirstOrDefault()?.TaxRate ?? 0;
+
+                // Determine if the item is taxable
                 bool IsTaxable = Tmodel.PurchaseModel.PartyInfo.GstType == "Registered" || Tmodel.PurchaseModel.PartyInfo.GstType == "SEZ";
                 if (item.GstRate != null && item.GstRate != 0 && IsTaxable)
                 {
@@ -172,12 +177,16 @@
                     }
                 }
                 //Tmodel.PurchaseModel.Narration = Tmodel.Quantity.ToString() + " Ltr";
+
+                // Calculate TDS based on the party and item
                 var tdsRate = tdsService.GetTdsRate(Tmodel.PurchaseModel.PartyInfo.PartyID ?? 0, item.CoaID ?? 0);
                 item.TDS = Math.Round((item.Amount ?? 0) * tdsRate / 100, MidpointRounding.AwayFromZero);
                 Tmodel.Amount = item.Amount + (item.CGST??0) + (item.SGST??0) + (item.IGST??0);
                 try
                 {
                     Tmodel.PurchaseModel.TaxPurchaseType = "Fuel";
+
+                    // Update the purchase model
                     Tmodel.PurchaseModel = taxPurchase.Update(Tmodel.PurchaseModel);
                     notiService.CreateAuthNotifications(branchID, 9, Tmodel.PurchaseModel.PID.Value);
                 }
@@ -190,6 +199,7 @@
 
             try
             {
+                // Update the trip fuel model
                 Tmodel = Iservice.Update(Tmodel);
                 snackbar.Add("Saved Successfully", Severity.Success);
 
@@ -214,11 +224,13 @@
         StateHasChanged();
     }
 
+    // Method to set the used item flag
     public void SetUsedItem(bool val)
     {
         Tmodel.IsUsedItem = val;
     }
 
+    // Method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -245,8 +257,9 @@
             invItem = InvService.SelectByID(Tmodel.FuelItemID);
 
         }
-        int.TryParse(IConfig.GetByInventoryFuelGroupID().ValueString, out FuelGroupID);
 
+        // Retrieve fuel group and AdBlue group IDs from configuration
+        int.TryParse(IConfig.GetByInventoryFuelGroupID().ValueString, out FuelGroupID);
         int.TryParse(IConfig.GetByInventoryAdBlueGroupID().ValueString, out AdBlueGroupID);
 
 
@@ -261,12 +274,14 @@
         MudDialog.Close();
     }
 
+    // Method called when a fuel item is selected
     void FuelItemSelected(InventoryItemModel item)
     {
         invItem = item;
         Tmodel.FuelItemID = item?.InventoryItemID;
     }
 
+    // Method to show tax information in a dialog
     void ShowTaxInfo()
     {
         var item = Tmodel.PurchaseModel.Items[0];
