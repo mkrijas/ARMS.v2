@@ -20,5 +20,19 @@ namespace ArmsModels.BaseModels
         public virtual bool IsActive { get; set; }
         public virtual bool? IsRecieved { get; set; } = false;
         public virtual bool? ValueInput { get; set; } = false;
+        public virtual string Status
+        {
+            get
+            {
+                if ((bool)IsRecieved)
+                {
+                    return "Recieved";
+                }
+                else
+                {
+                    return "Not Recieved";
+                }
+            }
+        }
     }
 }

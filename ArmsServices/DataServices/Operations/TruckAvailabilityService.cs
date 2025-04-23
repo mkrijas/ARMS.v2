@@ -289,6 +289,7 @@ namespace DAL.DataServices.Operations
                     Value = dr.GetString("Value"),
                     Condition = dr.GetString("Condition"),
                     ValueInput = dr.GetBoolean("ValueInput"),
+                    IsRecieved = dr.GetBoolean("Recieved")
                 };
             }
         }
