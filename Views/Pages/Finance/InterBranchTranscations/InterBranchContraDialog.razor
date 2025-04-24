@@ -1,17 +1,18 @@
-﻿@inject IContraService Iservice
-@using ArmsModels.BaseModels.Finance.Transactions
+﻿@using ArmsModels.BaseModels.Finance.Transactions
+@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inherits DialogFormComponentBase<ContraModel>
+@inject TruckDataArrayModel data
+@inject NavigationManager uriHelper;
+@inject IContraService Iservice
 @inject IOutstandingBillsService OBIservice
 @inject ICostCenterService costIservice
 @inject IChartOfAccountService accountService
 @inject IDimensionService dimensionIservice
 @inject IBranchService branchService
 @inject IInterBranchMappingService intermappingIservice
-@inject TruckDataArrayModel data
-@inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@attribute [Authorize]
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
@@ -19,7 +20,7 @@
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Contra Entry" formID="IContraForm" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
-            <EditForm id="IContraForm" OnValidSubmit="Submit" Model="@model">
+            <EditForm id="IContraForm" OnValidSubmit="OnValidSubmit" Model="@model">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid Spacing="4">
@@ -37,14 +38,14 @@
                                 </MudItem>
                                 <br />
                                 <MudItem xs="12" md="12">
-                                    <MudSelect ReadOnly="ReadOnly" Label="Select Mode" Value="@model.IsPayment" ValueChanged="PaymentModeChanged" T="bool" Variant="Variant.Outlined" Margin="Margin.Dense"  AdornmentColor="Color.Secondary">
+                                    <MudSelect ReadOnly="ReadOnly" Label="Select Mode" Value="@model.IsPayment" ValueChanged="PaymentModeChanged" T="bool" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                                         <MudSelectItem Value="@(false)"> Payment </MudSelectItem>
                                         <MudSelectItem Value="@(true)"> Receipt </MudSelectItem>
                                     </MudSelect>
                                 </MudItem>
                                 <br />
                                 <MudItem xs="12" md="12">
-                                    <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" Value="@model.ContraModeHome" ValueChanged="BankModeChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                                    <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" Value="@model.ContraModeHome" ValueChanged="BankModeChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                                         <MudSelectItem Value="@("Bank")" />
                                         <MudSelectItem Value="@("Cash")" />
                                         <MudSelectItem Value="@("Wallet")" />
@@ -52,7 +53,7 @@
                                 </MudItem>
                                 <br />
                                 <MudItem xs="12" md="12">
-                                    <MudAutocomplete ReadOnly="ReadOnly" T="PaymentCodeModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Account" Value="accountRuleDefinitionH" ValueChanged="SetAccountRuleDefinitionH" ResetValueOnEmptyText="true"
+                                    <MudAutocomplete ReadOnly="ReadOnly" T="PaymentCodeModel" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" Label="Select Account" Value="accountRuleDefinitionH" ValueChanged="SetAccountRuleDefinitionH" ResetValueOnEmptyText="true"
                                                      Clearable="true" SearchFunc="SearchAccountsH" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
                                 </MudItem>
                                 <br />
@@ -63,7 +64,7 @@
                         <MudCard>
                             <MudCardContent>
                                 <MudItem xs="12" md="12">
-                                    <MudSelect ReadOnly="ReadOnly" Label="Select Other Branch" @bind-Value="model.OtherBranchID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
+                                    <MudSelect ReadOnly="ReadOnly" Label="Select Other Branch" Value="model.OtherBranchID" ValueChanged="OtherBranchChanges" T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
                                         @foreach (var ditem in branches)
                                         {
                                             <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
@@ -72,14 +73,14 @@
                                 </MudItem>
                                 <br />
                                 <MudItem xs="12" md="12">
-                                    <MudSelect ReadOnly="true" Label="Mode" @bind-Value="@model.IsPayment" T="bool" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                                    <MudSelect ReadOnly="true" Label="Mode" @bind-Value="@model.IsPayment" T="bool" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                                         <MudSelectItem Value="@(true)">Payment</MudSelectItem>
                                         <MudSelectItem Value="@(false)">Receipt</MudSelectItem>
-                                    </MudSelect>                                    
+                                    </MudSelect>
                                 </MudItem>
                                 <br />
                                 <MudItem xs="12" md="12">
-                                    <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" Value="model.ContraModeOther" ValueChanged="ModeChangeOther" T="string" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
+                                    <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" Value="model.ContraModeOther" ValueChanged="ModeChangeOther" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                                         <MudSelectItem Value="@("Bank")" />
                                         <MudSelectItem Value="@("Cash")" />
                                         <MudSelectItem Value="@("Wallet")" />
@@ -98,7 +99,7 @@
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudSelect ReadOnly="ReadOnly" Label="Select Tool of Payment" T="string" @bind-Value="model.PaymentTool" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
+                        <MudSelect ReadOnly="ReadOnly" Label="Select Tool of Payment" T="string" @bind-Value="model.PaymentTool" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                             @foreach (var item in data.BankTools)
                             {
                                 <MudSelectItem Value="@item">@item</MudSelectItem>
@@ -120,7 +121,7 @@
                     }
                     <MudItem xs="12" md="12"></MudItem>
                     <MudItem xs="12" md="4">
-                        <MudSelect Label="Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary" For="@(()=> model.InterBranchTranID)" >
+                        <MudSelect Label="Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary" For="@(()=> model.InterBranchTranID)">
                             @foreach (var ditem in transactionTypeList)
                             {
                                 <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
@@ -128,7 +129,7 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudSelect ReadOnly="ReadOnly" Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                        <MudSelect ReadOnly="ReadOnly" Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in costCenter)
                             {
                                 <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
@@ -136,7 +137,7 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudSelect ReadOnly="ReadOnly" Label="Select Dimension" @bind-Value="model.Dimension" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
+                        <MudSelect ReadOnly="ReadOnly" Label="Select Dimension" @bind-Value="model.Dimension" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in dimension)
                             {
                                 <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
@@ -145,25 +146,19 @@
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                    </MudItem>                  
+                    </MudItem>
                 </MudGrid>
             </EditForm>
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@ContraDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ContraID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ContraID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
 
 @code {
 
-    [Parameter]
-    public ContraModel model { get; set; }
-    [Parameter]
-    public bool ReadOnly { get; set; }
-    [Parameter]
-    public bool IsView { get; set; }
     [Parameter]
     public string PageToRedirectLink { get; set; }
     public string DocNumber { get; set; }
@@ -172,7 +167,7 @@
     private List<InterBranchTransactionTypeModel> transactionTypeList = new();
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
-    private List<BranchModel> branches = new();    
+    private List<BranchModel> branches = new();
     private PaymentCodeModel accountRuleDefinitionH = new();
     private PaymentCodeModel accountRuleDefinitionO = new();
     List<PaymentCodeModel> PcodesHome = new();
@@ -180,7 +175,7 @@
 
     private bool _busy;
 
-    //public bool bnktl = true;   
+    //public bool bnktl = true;
     public string value = "invisible";
     private string hmbarnchName;
     private int? BranchID = null;
@@ -189,43 +184,88 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    DialogForm dialogForm;
     bool HasPermissionContraServiceEdit { get; set; } = false;
     bool HasPermissionContraServiceApprove { get; set; } = false;
-    int ContraDocTypeID = 3;
 
-    // Method to approve a contra request
-    protected async Task Approve(DataApprovedStatus aprvd)
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
     {
-        if (HasPermissionContraServiceApprove)
+        DocumentTypeID = 3,
+        DocumentName = "Contra"
+    };
+
+    // Lifecycle method called when the component is initialized
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionContraServiceEdit = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionContraServiceApprove = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Approve", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
+        hmbarnchName = brancIDString.ToString();
+
+        await base.OnInitializedAsync();
+
+        transactionTypeList = intermappingIservice.GetTypes().ToList(); // Fetch transaction types
+        if (model.ContraID == null)
         {
-            if (aprvd.IsApprove)
-            {
-                model.UserInfo.UserID = UserID;
-                try
-                {
-                    Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks); // Approve the request
-                    model.UserInfo.UserID = UserIDTemp;
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
+            model.TotalAmount = 0;
+            model.IsInterBranch = true;
+            model.UserInfo.UserID = UserID;
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Approve Contra.");
+            UserIDTemp = model.UserInfo.UserID;
+            accountRuleDefinitionH.CoaID = model.CoaIDHome;
+            accountRuleDefinitionH.ArdCode = model.ArdCodeHome;
+            accountRuleDefinitionO.CoaID = model.CoaIDOther;
+            accountRuleDefinitionO.ArdCode = model.ArdCodeOther;
+
+            // Fetch payment codes for home branch if the model is not null
+            if (model != null && model.CoaIDHome != null)
+            {
+                accountRuleDefinitionH = accountService.GetPaymentCodes(model.BranchID, model.ContraModeHome).FirstOrDefault(s => s.ArdCode == model.ArdCodeHome); // Get payment code for home branch
+            }
+
+            // Fetch payment codes for other branch if the model is not null
+            if (model != null && model.CoaIDOther != null)
+            {
+                accountRuleDefinitionO = accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther).FirstOrDefault(s => s.ArdCode == model.ArdCodeOther); // Get payment code for other branch
+            }
         }
+        model.BranchID = BranchID;
+        model.NatureOfTransaction = "Contra";
+        costCenter = costIservice.Select().ToList();// Fetch cost centers
+        dimension = dimensionIservice.Select().ToList(); // Fetch dimensions
+        branches = branchService.Select().ToList(); // Fetch branches
+
+        DocNumber = model.DocumentNumber;
+        DocDate = model.DocumentDate;
+        DocType = model.NatureOfTransaction;
+    }
+
+    // Lifecycle method called when parameters are set or changed
+    protected override void OnParametersSet()
+    {
+        DocInfo.DocumentTypeID = DocInfo.DocumentTypeID;
+        DocInfo.DocumentID = model.ContraID;
+    }
+
+    // Method to approve a contra request
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
+    {
+        int result = Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks); // Approve the request
+        model.UserInfo.UserID = UserIDTemp;
+        return result;
     }
 
     // Method to search for payment codes for home branch
     private async Task<IEnumerable<PaymentCodeModel>> SearchAccountsH(string searchString)
     {
-        await Task.Delay(5);      
+        await Task.Delay(5);
         if (string.IsNullOrEmpty(searchString))
             return PcodesHome;
         return PcodesHome.Where(x => x.Title.Contains(searchString, StringComparison.InvariantCultureIgnoreCase) || x.ArdCode.Contains(searchString, StringComparison.InvariantCultureIgnoreCase));
@@ -283,7 +323,7 @@
                 //bnktl = true;
             }
         }
-    }    
+    }
 
     // Method to handle changes in the payment mode for other branch
     public void ModeChangeOther(string val)
@@ -309,57 +349,9 @@
     public void OtherBranchChanges(int? otherBranchID)
     {
         model.OtherBranchID = otherBranchID;
-    }
+        model.ContraModeOther = null;
+        accountRuleDefinitionO = null;
 
-    // Lifecycle method called when the component is initialized
-    protected override async Task OnInitializedAsync()
-    {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionContraServiceEdit = await Irole.HasClaim(ContraDocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionContraServiceApprove = await Irole.HasClaim(ContraDocTypeID.ToString(), "Approve", ctc.Token);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        var user = authprov.User;
-        UserID = user.Identity.Name;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
-        hmbarnchName = brancIDString.ToString();
-        transactionTypeList = intermappingIservice.GetTypes().ToList(); // Fetch transaction types
-        if (model.ContraID == null)
-        {
-            model.TotalAmount = 0;
-            model.IsInterBranch = true;
-            model.UserInfo.UserID = UserID;
-        }
-        else
-        {
-            UserIDTemp = model.UserInfo.UserID;
-            accountRuleDefinitionH.CoaID = model.CoaIDHome;
-            accountRuleDefinitionH.ArdCode = model.ArdCodeHome;
-            accountRuleDefinitionO.CoaID = model.CoaIDOther;
-            accountRuleDefinitionO.ArdCode = model.ArdCodeOther;
-
-            // Fetch payment codes for home branch if the model is not null
-            if (model != null && model.CoaIDHome != null )
-            {
-                accountRuleDefinitionH = accountService.GetPaymentCodes(model.BranchID, model.ContraModeHome).FirstOrDefault(s => s.ArdCode == model.ArdCodeHome); // Get payment code for home branch
-            }
-
-            // Fetch payment codes for other branch if the model is not null
-            if (model != null && model.CoaIDOther != null)
-            {
-                accountRuleDefinitionO = accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther).FirstOrDefault(s => s.ArdCode == model.ArdCodeOther); // Get payment code for other branch
-            }
-        }
-        model.BranchID = BranchID;
-        model.NatureOfTransaction = "Contra";
-        costCenter = costIservice.Select().ToList();// Fetch cost centers
-        dimension = dimensionIservice.Select().ToList(); // Fetch dimensions
-        branches = branchService.Select().ToList(); // Fetch branches
-
-        DocNumber = model.DocumentNumber;
-        DocDate = model.DocumentDate;
-        DocType = model.NatureOfTransaction;
     }
 
     // Method to handle changes in the payment mode
@@ -375,49 +367,32 @@
     }
 
     // Method to submit the form
-    public async void Submit(EditContext cntxt)
+    protected override async Task<int> Update(ContraModel editModel)
     {
-        if (_busy)
+        if (validate(model) == true)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
+            model.CoaIDHome = accountRuleDefinitionH.CoaID;
+            model.ArdCodeHome = accountRuleDefinitionH.ArdCode;
+            model.CoaIDOther = accountRuleDefinitionO.CoaID;
+            model.ArdCodeOther = accountRuleDefinitionO.ArdCode;
+            model.BranchID = BranchID;
+            model.IsInterBranch = true;
+            model.NatureOfTransaction = "Contra";
+            model.UserInfo.UserID = UserID;
+            model = Iservice.Update(model); // Update the model using the service
+            return model.ContraID.Value;
         }
+        return 0;
+    }
+
+    // Method to validate the contra model
+    public bool validate(ContraModel editModel)
+    {
         if (model.InterBranchTranID is null)
         {
             snackbar.Add("Transaction Type Not selected!", Severity.Error);
-            return;
+            return false;
         }
-        _busy = true;      
-
-        if (HasPermissionContraServiceEdit)
-        {
-            try
-            {
-                model.CoaIDHome = accountRuleDefinitionH.CoaID;
-                model.ArdCodeHome = accountRuleDefinitionH.ArdCode;
-                model.CoaIDOther = accountRuleDefinitionO.CoaID;
-                model.ArdCodeOther = accountRuleDefinitionO.ArdCode;
-                model.BranchID = BranchID;                
-                model.IsInterBranch = true;
-                model.NatureOfTransaction = "Contra";
-                model.UserInfo.UserID = UserID;
-                var updatedModel = Iservice.Update(model); // Update the model using the service
-                snackbar.Add("Saved Successfully", Severity.Success);
-                MudDialog.Close(updatedModel);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Edit Contra.");
-        }
-
-        await Task.Delay(200);
-        _busy = false;
+        return true;
     }
 }

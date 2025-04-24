@@ -91,7 +91,7 @@
                                                 <MudIconButton Icon="@Icons.Material.Filled.Toll" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenMileageShortageReceipt(new MileageShortageReceiptModel(){RequestApprovalHistoryID = item.RequestApprovalHistoryID, DriverID = item.DriverID}))" />
                                             </MudTooltip>
                                             <MudTooltip Text="Checklist">
-                                                <MudIconButton Icon="@Icons.Material.Filled.Checklist" Color="Color.Primary" Size="Size.Small" @onclick="@(()=> OpenChecklist(item.RequestApprovalHistoryID))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Checklist" Color="Color.Primary" Size="Size.Small" @onclick="@(()=> OpenChecklist(item))" />
                                             </MudTooltip>
                                         }
                                     </CardHeaderActions>
@@ -112,7 +112,7 @@
                                                     Status :<b>@item.StatusText</b>
                                                 </MudListItem>
                                                 <MudListItem Avatar="@Icons.Material.Filled.Warehouse" IconColor="Color.Primary">
-                                                    Responded Branch : <b>@item.RespondedBranch.BranchName</b>
+                                                    Responded Branch : <b>@item.RespondedBranch.BranchName <br> (@item.SOBranchName)</b>
                                                 </MudListItem>
                                             </MudItem>
                                         </MudGrid>
@@ -143,21 +143,37 @@
                                         </MudGrid>
                                     </CardHeaderContent>
                                     <CardHeaderActions>
-                                        <MudTooltip Text="Add Fuel">
-                                            <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Size="Size.Large" Color="Color.Success" @onclick="@(()=> OpenFuelForm(new TripFuelModel(){RequestApprovalHistoryID = item.RequestApprovalHistoryID , TruckID = item.TruckID}))" />
-                                        </MudTooltip>
-                                        <MudTooltip Text="Add Expenses">
-                                            <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenExpenseForm(new OpTranModel(){RequestApprovalHistoryID = item.RequestApprovalHistoryID}))" />
-                                        </MudTooltip>
-                                        <MudTooltip Text="Accept/Reject">
-                                            <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddTask" Size="Size.Medium" IconSize="Size.Small" />
-                                        </MudTooltip>
+                                        @if (item.RespondedBranchID == CurrentBranchId)
+                                        {
+                                            <MudTooltip Text="Checklist">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Checklist" Color="Color.Primary" Size="Size.Medium" @onclick="@(()=> OpenChecklist(item))" />
+                                            </MudTooltip>
+                                        }
+                                        @if (item.RespondedBranchID != CurrentBranchId)
+                                        {
+                                            <MudTooltip Text="Add Fuel">
+                                                <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Size="Size.Large" Color="Color.Success" @onclick="@(()=> OpenFuelForm(new TripFuelModel(){RequestApprovalHistoryID = item.RequestApprovalHistoryID , TruckID = item.TruckID}))" />
+                                            </MudTooltip>
+                                            <MudTooltip Text="Add Expenses">
+                                                <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenExpenseForm(new OpTranModel(){RequestApprovalHistoryID = item.RequestApprovalHistoryID}))" />
+                                            </MudTooltip>
+                                            <MudTooltip Text="Accept/Reject">
+                                                <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddTask" Size="Size.Medium" IconSize="Size.Small" />
+                                            </MudTooltip>
+                                        }
                                     </CardHeaderActions>
                                 </MudCardHeader>
                                 <MudCardContent>
                                     <div class="TabStyle">
                                         <MudList Style="width:700px">
                                             <MudGrid>
+                                                <MudItem md="10">
+                                                    <MudListItem>
+                                                        <b>@item.RespondedBranch.BranchName</b>
+                                                        <b><MudIcon Icon="@Icons.Material.Filled.ArrowForward" Color="Color.Primary" Class="mx-2" /></b>
+                                                        <b>@item.RequestedBranch.BranchName</b>
+                                                    </MudListItem>
+                                                </MudItem>
                                                 <MudItem md="5">
                                                     <MudListItem Avatar="@Icons.Material.Filled.FireTruck" IconColor="Color.Primary">
                                                         <b>@item.Truck.RegNo</b>
@@ -169,9 +185,6 @@
                                                 <MudItem md="5">
                                                     <MudListItem Avatar="@Icons.Material.Filled.Approval" IconColor="Color.Primary">
                                                         Status :<b>@item.StatusText</b>
-                                                    </MudListItem>
-                                                    <MudListItem Avatar="@Icons.Material.Filled.Warehouse" IconColor="Color.Primary">
-                                                        Requested Branch : <b>@item.RequestedBranch.BranchName</b>
                                                     </MudListItem>
                                                 </MudItem>
                                             </MudGrid>
@@ -417,7 +430,12 @@
                 ResponseRequest.RespondedBranch.BranchID = int.Parse(brancIDString);
                 ResponseRequest.RespondedBranchID = int.Parse(brancIDString);
             }
-
+            ResponseRequest.CheckList = Iservice.GetCheckList(ResponseRequest.RequestApprovalHistoryID).ToList();
+            if (ResponseRequest.CheckList == null || !ResponseRequest.CheckList.Any())
+            {
+                snackbar.Add("Checklist not updated in " + ResponseRequest.RespondedBranch.BranchName + " branch", Severity.Warning);
+                return;
+            }
             var modelIncoming = new DialogParameters { ["model"] = ResponseRequest.Clone() };
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
             var dialog = DialogService.Show<TruckAvailabilityResponseDialog>("Simple Dialog", modelIncoming, options);
@@ -530,13 +548,14 @@
         }
     }
 
-    private async Task OpenChecklist(int? ID)
-    {
+    private async Task OpenChecklist(RequestApprovalHistoryModel ResponseRequest)
+    {        
         DialogParameters parms = new DialogParameters();
+        var model= new DialogParameters { ["model"] = ResponseRequest.Clone() };
         var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Medium };
-        parms.Add("ID", ID);
-        var dialog = DialogService.Show<TruckAvailabilityChecklist>("ADD", parms, options);
+        var dialog = DialogService.Show<TruckAvailabilityChecklist>("Simple Dialog", model, options);
         var result = await dialog.Result;
+        await GetAll(IsCompleted);
     }
 
     #endregion

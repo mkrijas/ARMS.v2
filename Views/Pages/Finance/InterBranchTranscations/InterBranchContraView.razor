@@ -1,17 +1,18 @@
 ﻿@page "/InterBranchContraView"
 @page "/InterBranchContraView/{id:int}"
 @using ArmsModels.BaseModels.Finance.Transactions
+@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inherits ViewComponentBase<ContraModel>
+@inject NavigationManager uriHelper;
+@inject SignalRService signalRService
 @inject IContraService Iservice
 @inject ICostCenterService costIservice
 @inject IDimensionService dimensionIservice
-@inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@attribute [Authorize]
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
-@inject SignalRService signalRService
 @inject IPushNotificationService IpushNotificationService
 
 <MudGrid Spacing="4">
@@ -20,7 +21,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Inter Branch Contra</MudText>
                 <MudTooltip Text="New Payment Memos">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new ContraModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new ContraModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Contra..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -47,12 +48,12 @@
                 <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
                     <MudTooltip Text="View">
-                        <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
                     @if (@context.AuthLevelId == null)
                     {
                         <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                            <MudFab @onclick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                         <MudTooltip Text="Delete">
                             <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
@@ -61,7 +62,7 @@
                     @if (@context.AuthLevelId != 99)
                     {
                         <MudTooltip Text="Verify">
-                            <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                            <MudFab @onclick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                     }
                 </MudTd>
@@ -77,16 +78,19 @@
 
     private ContraModel model = new ContraModel();
     public bool IsApproved { get; set; } = false;
-    private List<ContraModel> collection = new List<ContraModel>();
+    protected override List<ContraModel> collection { get; set; } = new List<ContraModel>();
     private int numberOfRecords = 100;
     private string searchTerm = "";
-    [Parameter]
-    public int? id { get; set; } = null;
     private bool _busy;
 
     public bool HasPermissionContraServiceDelete { get; set; } = false;
     public bool HasPermissionContraServiceApprove { get; set; } = false;
-    public int ContraDocTypeID = 3;
+
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+    {
+        DocumentTypeID = 3,
+        DocumentName = "Contra"
+    };
 
     #region SignaIR Notification
 
@@ -125,8 +129,8 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionContraServiceDelete = await Irole.HasClaim(ContraDocTypeID.ToString(), "Delete", ctc.Token);
-        HasPermissionContraServiceApprove = await Irole.HasClaim(ContraDocTypeID.ToString(), "Approve", ctc.Token);
+        HasPermissionContraServiceDelete = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionContraServiceApprove = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Approve", ctc.Token);
 
         model = new();
         await GetAll(IsApproved, NumberOfRecords);
@@ -134,7 +138,7 @@
         await signalRService.StartAsync();
         if (id != null && collection != null && collection.Any(g => g.ContraID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.ContraID == id), false, false);
+            await OpenForm(collection.FirstOrDefault(s => s.ContraID == id), false, false);
         }
     }
 
@@ -219,7 +223,7 @@
     }
 
     // Method to open the dialog for adding or editing a contra transaction
-    private async Task OpenDialog(ContraModel tds, bool ReadOnly, bool View)
+    protected override async Task OpenForm(ContraModel tds, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -233,7 +237,7 @@
         parms.Add("model", tds.Clone());
         parms.Add("PageToRedirectLink", "/InterBranchContraView");
         parms.Add("ReadOnly", ReadOnly);
-        parms.Add("IsView", View);
+        //parms.Add("IsView", View);
         var dialog = DialogService.Show<InterBranchContraDialog>(tds.ContraID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
 
@@ -251,7 +255,7 @@
             notificationMessage.MessageGroupID = "PendingVerification";
             notificationMessage.PageToRedirectLink = "/InterBranchContraView";
             notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = ContraDocTypeID;
+            notificationMessage.DocumentTypeID = DocInfo.DocumentTypeID;
             notificationMessage.MsgDate = DateTime.Now;
             await signalRService.Send(notificationMessage);
         }

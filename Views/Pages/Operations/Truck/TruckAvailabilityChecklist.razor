@@ -3,75 +3,228 @@
 @using Core.BaseModels.Operations;
 @using Core.IDataServices.Operations;
 @inject AuthenticationStateProvider auth
-@inject IDialogService DialogService
 @inject ITruckAvailabilityService Iservice
+@inject IBranchService Ibranchservice
+@inject IAssetService IassetService
+@inject IAssetSettingsService Iassetsettingsservice
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IRoleService<RoleModel> Irole
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Checklist & Truck photos/video</MudText>
+        <MudText Typo="Typo.h6">           
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Checklist & uploads
+                </MudText>
+        </MudText>
     </TitleContent>
     <DialogContent>
-        @foreach (var item in CheckList)
-        {
-            <MudItem xs="12">
-                <MudText>@item.SettingsName - @item.Value - @item.Condition  </MudText>
-                <br />
-            </MudItem>
-        }
-        <MudGrid Style="padding: 24px;" Spacing="2" Justify="Justify.Center">
-            @if (Uploads != null && Uploads.Any())
-            {
-                foreach (var imagePath in Uploads.Where(x => !string.IsNullOrWhiteSpace(x)))
-                {
-                    <MudItem xs="12" md="6" Class="d-flex">
-                        <MudPaper Class="p-2 position-relative" Elevation="3">
-                            @{
-                                var extension = Path.HasExtension(imagePath) ? Path.GetExtension(imagePath).ToLower() : string.Empty;
-                                var isVideo = extension is ".mp4" or ".mov" or ".avi";
-                            }
-                            @if (isVideo)
+        <EditForm id="formDriver" Model="@model" OnValidSubmit="Update">
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary />
+            <MudGrid>
+                <MudItem xs="12" md="12">
+                    @if (model.CheckList != null && model.CheckList.Any())
+                    {
+                        <MudText Typo="Typo.h6">Checklist</MudText>
+                        <br />
+                        <MudContainer>
+                            <MudGrid class="border">
+                                @foreach (var item in model.CheckList)
+                                {
+                                    if (model.RequestStatus == 0)
+                                    {
+                                        <MudItem xs="12" md="12">
+                                            <MudText>@item.SettingsName:</MudText>
+                                            @if (item.ValueInput == true)
+                                            {                                               
+                                                <MudTextField @bind-Value="item.Value" Label="Value" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
+                                            }
+                                            <MudRadioGroup @bind-Value="@item.Condition">
+                                                <MudRadio Value="@("Excellent")" Color="Color.Tertiary">Excellent</MudRadio>
+                                                <MudRadio Value="@("Good")" Color="Color.Primary">Good</MudRadio>
+                                                <MudRadio Value="@("Poor")" Color="Color.Secondary">Poor</MudRadio>
+                                                <MudRadio Value="@("Not Available")">Not Available</MudRadio>
+                                            </MudRadioGroup>
+                                        </MudItem>
+                                    }
+                                    else
+                                    {
+                                        <MudItem xs="6">
+                                            <MudText>@item.SettingsName - @item.Value - @item.Condition</MudText>
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudText>@item.Status</MudText>
+                                        </MudItem>
+                                    }
+                                }
+                            </MudGrid>
+                        </MudContainer>
+                    }
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudToolBar>
+                        <MudText Typo="Typo.h6">Truck photos/video</MudText>
+                        <MudSpacer />    
+                        @if (model.RequestStatus == 0)
+                        {
+                            <MyFileUpload @ref="Mfu" AllowMultiple="true" Resize="true" DeleteExistingFile="false" FileName="@Guid.NewGuid().ToString()" FolderName="@("Truck/Transfer-"+model.RequestApprovalHistoryID.ToString())" Label="Upload Photos/Videos" FilePathChanged="FileUploaded"></MyFileUpload>
+                        }
+                    </MudToolBar>
+                    <MudGrid Style="padding: 24px;" Spacing="2" Justify="Justify.Center">
+                        @if (model?.Uploads != null && model.Uploads.Any())
+                        {
+                            foreach (var imagePath in model.Uploads.Where(x => !string.IsNullOrWhiteSpace(x)))
                             {
-                                <video src="@imagePath" controls class="w-100" />
-                            }
-                            else
-                            {
-                                <img src="@imagePath" alt="@imagePath" class="w-100" />
-                            }
+                                <MudItem xs="12" md="6" Class="d-flex">
+                                    <MudPaper Class="p-2 position-relative" Elevation="3">
+                                        @{
+                                            var extension = Path.HasExtension(imagePath) ? Path.GetExtension(imagePath).ToLower() : string.Empty;
+                                            var isVideo = extension is ".mp4" or ".mov" or ".avi";
+                                        }
+                                        @if (isVideo)
+                                        {
+                                            <video src="@imagePath" controls class="w-100" />
+                                        }
+                                        else
+                                        {
+                                            <img src="@imagePath" alt="@imagePath" class="w-100" />
+                                        }
 
-                        </MudPaper>
-                    </MudItem>
-                }
-            }
-        </MudGrid>
+                                        @if (model.RequestStatus == 0)
+                                        {
+                                            <MudFab Style="width: 36px; height: 16px; margin-top: -20px; margin-left: -18px;"
+                                                    Icon="@Icons.Material.Rounded.Close"
+                                                    Color="Color.Error"
+                                                    Class="position-absolute top-0 end-0"
+                                                    OnClick="() => DeleteImage(imagePath)" />
+                                        }
+                                    </MudPaper>
+                                </MudItem>
+                            }
+                        }
+                    </MudGrid>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
     </DialogContent>
+    <DialogActions>
+        @if (model.RequestStatus == 0)
+        {
+            <MudButton Style="margin: 0px 15px 12px 0px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Update" Class="px-12">Submit</MudButton>     
+        }
+    </DialogActions>
 </MudDialog>
 
 @code {
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter]
-    public int? ID { get; set; } = new();
-    public List<AssetSettingsModel> CheckList { get; set; }
-    public List<string> Uploads { get; set; } = new();
+    public RequestApprovalHistoryModel model { get; set; } = new();
+    private int branchID { get; set; } = 0;
+    private int? BranchID { get; set; } = 0;
+    MyFileUpload Mfu;
+    private int? Odometer;
+    public AssetModel Asset { get; set; } = new();
+    public bool HasPermissionTruckAvailabilityServiceEdit { get; set; } = false;
+    public int TruckAvailabilityDocTypeID = 139;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        CheckList = Iservice.GetCheckList(ID).ToList();
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTruckAvailabilityServiceEdit = await Irole.HasClaim(TruckAvailabilityDocTypeID.ToString(), "Edit", ctc.Token);
 
-        var transfer = Iservice.GetTransferByID(ID);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(brancIDString);
+        
+        model.CheckList = Iservice.GetCheckList(model.RequestApprovalHistoryID).ToList();
 
-        if (transfer != null && transfer.Uploads != null)
+        if (model.CheckList == null || !model.CheckList.Any())
         {
-            Uploads = transfer.Uploads;
+            Asset = IassetService.SelectByTruckID(model.TruckID);
+            model.CheckList = Iassetsettingsservice.GetSettings(Asset.SubClass.AssetSubClassID, model.TruckID).ToList();
         }
-        else
-        {
-            Uploads = new List<string>();
-        }
+
+        if (model.Uploads == null)
+            model.Uploads = new List<string>();
+    }
+
+    protected override void OnParametersSet()
+    {
+
     }
 
     void Cancel()
     {
         MudDialog.Cancel();
     }
+
+    // Method to handle file uploads
+    private void FileUploaded(string filePath)
+    {
+        var webPath = "/" + filePath.Replace("\\", "/");
+        model.Uploads.Add(webPath);
+    }
+
+
+    // Method to delete an image associated with the insurance claim
+    private async Task DeleteImage(string imagePath)
+    {
+        model.Uploads.Remove(imagePath);
+    }
+
+    public async Task Update()
+    {
+        if (HasPermissionTruckAvailabilityServiceEdit)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            if (model.Uploads == null || !model.Uploads.Any())
+            {
+                Snackbar.Add("At least one upload is required!", Severity.Warning);
+                return;
+            }
+
+            if (model != null)
+            {
+                foreach (var item in model.CheckList)
+                {
+                    if (item.ValueInput == true)
+                    {
+                        if (string.IsNullOrWhiteSpace(item.Value))
+                        {
+                            Snackbar.Add($"Please provide value for '{item.SettingsName}'", Severity.Warning);
+                            return;
+                        }
+                        if (string.IsNullOrWhiteSpace(item.Condition))
+                        {
+                            Snackbar.Add($"Please select condition for '{item.SettingsName}'", Severity.Warning);
+                            return;
+                        }
+                    }
+                }
+
+                try
+                {
+                    Iservice.UpdateCheckist(model);
+                    Snackbar.Add("Updated succesfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+            MudDialog.Close(model);
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Approve Truck Request.");
+        }
+    }
+
 }

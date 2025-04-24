@@ -1,15 +1,16 @@
 ﻿@page "/AssetSale"
 @page "/AssetSale/{id:int}"
 @using System.Threading;
-@inject ISaleService Iservice
-@inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
-@inject IDialogService DialogService
-@inject SignalRService signalRService
-@inject IPushNotificationService IpushNotificationService
 @using Inventory
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inherits ViewComponentBase<SaleModel>
+@inject SignalRService signalRService
+@inject IRoleService<RoleModel> Irole
+@inject ISaleService Iservice
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject IPushNotificationService IpushNotificationService
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -17,7 +18,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Asset Sale</MudText>
                 <MudTooltip Text="New Sales">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new SaleModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new SaleModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Sale..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -49,8 +50,8 @@
                     }
                 </MudTd>
                 <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
                     <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
 
                     @if (@context.AuthLevelId == 99)
@@ -62,7 +63,7 @@
                     else
                     if (@context.AuthLevelId != 100)
                     {
-                        <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                        <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
                     }
                 </MudTd>
             </RowTemplate>
@@ -76,18 +77,19 @@
 @code {
 
     private SaleModel model = new SaleModel();
-    private List<SaleModel> collection = new List<SaleModel>();
+    protected override List<SaleModel> collection { get; set; } = new List<SaleModel>();
     public bool IsApproved { get; set; } = false;
     private int numberOfRecords = 100;
     private string searchTerm = "";
-
-    [Parameter]
-    public int? id { get; set; } = null;
-    private int? branchID = null;
     private bool _busy;
 
     public bool HasPermissionSaleServiceDelete { get; set; } = false;
-    public int SaleDocTypeID = 13;
+
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+    {
+        DocumentTypeID = 13,
+        DocumentName = "Journal"
+    };
 
     #region SignaIR Notification
 
@@ -107,16 +109,14 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionSaleServiceDelete = await Irole.HasClaim(SaleDocTypeID.ToString(), "Delete", ctc.Token);
-        model = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        HasPermissionSaleServiceDelete = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
+
         await GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         await signalRService.StartAsync();
         if (id != null && collection != null && collection.Any(g => g.SID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.SID == id), true);
+            await OpenForm(collection.FirstOrDefault(s => s.SID == id), true);
         }
     }
 
@@ -139,11 +139,11 @@
         // Retrieve sales based on approval status
         if (val)
         {
-            collection = Iservice.SelectByApproved(branchID, NumberOfRecords, searchTerm, "Asset").ToList();
+            collection = Iservice.SelectByApproved(brancID, NumberOfRecords, searchTerm, "Asset").ToList();
         }
         else
         {
-            collection = Iservice.SelectByUnapproved(branchID, NumberOfRecords, searchTerm, "Asset").ToList();
+            collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, searchTerm, "Asset").ToList();
         }
     }
 
@@ -174,7 +174,7 @@
     }
 
     // Method to open a dialog for adding or editing a sale
-    private async Task OpenDialog(SaleModel saleModel, bool ReadOnly)
+    protected override async Task OpenForm(SaleModel saleModel, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -191,8 +191,7 @@
         // Show the dialog and wait for the result
         var dialog = DialogService.Show<AssetSaleDialog>(saleModel.SID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
-        var isCancelled = result.Cancelled;
-        if (!isCancelled)
+        if (!result.Canceled)
         {
             var ReturnData = (SaleModel)result.Data;
             // Prepare the notification message
@@ -206,7 +205,7 @@
             notificationMessage.MessageGroupID = "PendingVerification";
             notificationMessage.PageToRedirectLink = "/Sale";
             notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = SaleDocTypeID;
+            notificationMessage.DocumentTypeID = DocInfo.DocumentTypeID;
             notificationMessage.MsgDate = DateTime.Now;
 
             // Send the notification via SignalR

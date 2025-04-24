@@ -157,18 +157,48 @@ namespace DAL.DataServices.Operations
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
-                new SqlParameter("@Uploads", string.Join(";",model.Uploads)),
                 new SqlParameter("@RespondedUserID", model.RespondedUserInfo.UserID),
                 new SqlParameter("@OpeningKM", model.OpeningKM),
                 new SqlParameter("@ClosingKM", model.ClosingKM),
                 new SqlParameter("@RequestStatus", model.RequestStatus),
                 new SqlParameter("@RecordStatus", 3),
+                new SqlParameter("@Remarks", model.Remarks),
                 new SqlParameter("@ReceivedList", dataTable),
-                new SqlParameter("@CheckList", model.CheckList.ToDataTable()),
-                new SqlParameter("@Remarks", model.Remarks)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Response.Update]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
+
+        public RequestApprovalHistoryModel UpdateCheckist(RequestApprovalHistoryModel model)
+        {
+            //DataTable dataTable = new DataTable();
+            //dataTable.Columns.Add("IntField", typeof(int));
+            //if (RecievedList == null)
+            //    RecievedList = new List<int?>();
+            //foreach (int? value in RecievedList)
+            //{
+            //    if (value.HasValue)
+            //    {
+            //        dataTable.Rows.Add(value.Value);
+            //    }
+            //    else
+            //    {
+            //        dataTable.Rows.Add(DBNull.Value);.
+            //    }
+            //}
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
+                new SqlParameter("@Uploads", string.Join(";",model.Uploads)),
+                //new SqlParameter("@ReceivedList", dataTable),
+                new SqlParameter("@CheckList", model.CheckList.ToDataTable()),                
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Checklist.Update]", parameters))
             {
                 return GetModel(dr);
             }
@@ -238,6 +268,7 @@ namespace DAL.DataServices.Operations
                     TimeStampField = dr.GetDateTime("RespondedTimeStamp"),
                     UserID = dr.GetString("RespondedUserID"),
                 },
+                SOBranchName = dr.GetString("SOBranchName")
             };
         }
 
@@ -256,7 +287,9 @@ namespace DAL.DataServices.Operations
                     SettingsID = dr.GetInt32("AssetSettingsID"),
                     SettingsName = dr.GetString("SettingsName"),
                     Value = dr.GetString("Value"),
-                    Condition = dr.GetString("Condition")
+                    Condition = dr.GetString("Condition"),
+                    ValueInput = dr.GetBoolean("ValueInput"),
+                    IsRecieved = dr.GetBoolean("Recieved")
                 };
             }
         }

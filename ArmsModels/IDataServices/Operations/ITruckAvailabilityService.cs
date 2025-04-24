@@ -12,6 +12,7 @@ namespace Core.IDataServices.Operations
         public RequestApprovalHistoryModel GetTransferByID(long? RequestApprovalHistoryID);
         int DeleteRequest(int? ID, string UserID);
         RequestApprovalHistoryModel UpdateStatus(RequestApprovalHistoryModel model, List<int?> RecievedList);
+        RequestApprovalHistoryModel UpdateCheckist(RequestApprovalHistoryModel model);
         IEnumerable<RequestApprovalHistoryModel> SelectIncomingTrucks(int? ID, int? BranchID);
         IEnumerable<int?> GetAllTruckIdsByBranchID(int? BranchID);
         IEnumerable<AssetSettingsModel> GetCheckList(int? ID);

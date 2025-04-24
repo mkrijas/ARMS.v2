@@ -4,8 +4,10 @@ using ArmsServices;
 using ArmsServices.DataServices;
 using ArmsServices.DataServices.Finance.Transactions;
 using ArmsServices.DataServices.General;
+using Core.IDataServices.Finance.DayOpen;
 using Core.IDataServices.Operations;
 using Core.IDataServices.Operations.ROI;
+using DAL.DataServices.Finance.DayOpen;
 using DAL.DataServices.Finance.Transactions;
 using DAL.DataServices.Operations;
 using DAL.DataServices.Operations.ROI;
@@ -33,6 +35,7 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IPlaceService, PlaceService>();
 builder.Services.AddScoped<IGcService, GcService>();
 builder.Services.AddScoped<IDriverService, DriverService>();
+builder.Services.AddScoped<IDayOpenService, DayOpenService>();
 builder.Services.AddScoped<IBranchSettingsService, BranchSettingsService>();
 builder.Services.AddScoped<ITariffService, TariffService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
@@ -54,6 +57,8 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IConfigTable, ConfigTable>();
 builder.Services.AddScoped<IDataAuthorizationService, DataAuthorizationService>();
 builder.Services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
+builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
+builder.Services.AddScoped<IInventoryGrnService, InventoryGrnService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();

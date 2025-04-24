@@ -24,6 +24,8 @@ namespace MobileAPI.Controllers
         private readonly IStoreService _storeService;
         private readonly IDataAuthorizationService _dataAuthorizationService;
         private readonly IUserService _userService;
+        private readonly IPurchaseOrderService _purchaseOrderService;
+        private readonly IInventoryGrnService _inventoryGrnService;
 
         public FinanceTransactionController(IPaymentInitiatedService paymentInitiatedService,
                                             IPaymentService paymentService,
@@ -31,7 +33,9 @@ namespace MobileAPI.Controllers
                                             IInventoryReleaseService inventoryReleaseService,
                                             IStoreService storeService,
                                             IDataAuthorizationService dataAuthorizationService,
-                                            IUserService userService)
+                                            IUserService userService,
+                                            IPurchaseOrderService purchaseOrderService,
+                                            IInventoryGrnService inventoryGrnService)
         {
             _paymentInitiatedService = paymentInitiatedService;
             _paymentService = paymentService;
@@ -40,6 +44,8 @@ namespace MobileAPI.Controllers
             _storeService = storeService;
             _dataAuthorizationService = dataAuthorizationService;
             _userService = userService;
+            _purchaseOrderService = purchaseOrderService;
+            _inventoryGrnService = inventoryGrnService;
         }
         
         //Payment Initiated List Select
@@ -150,7 +156,9 @@ namespace MobileAPI.Controllers
             { "INITIATE_PAYMENT", 15 },
             { "PAYMENT_MEMO", 7 },
             { "MILEAGE_SHORTAGE_RECEIPT", 30 },
-            { "INVENTORY_RELEASE", 97 }
+            { "INVENTORY_RELEASE", 97 },
+            { "INVENTORY_GRN", 16 },
+            { "PURCHASE_ORDER", 17 }
         };
 
         //Data auth status list
@@ -219,6 +227,12 @@ namespace MobileAPI.Controllers
                         break;
                     case 97: // INVENTORY_RELEASE
                         _inventoryReleaseService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
+                        break;
+                    case 16: // INVENTORY_GRN
+                        _inventoryGrnService.Approve(model.DocumentID.Value, model.UserInfo.UserID, model.Remarks);
+                        break;
+                    case 17: // PURCHASE_ORDER
+                        _purchaseOrderService.Approve(model.DocumentID.Value, model.UserInfo.UserID, model.Remarks);
                         break;
                     default:
                         return BadRequest(new { Status = "Invalid DocTypeID" });
