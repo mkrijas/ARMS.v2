@@ -95,8 +95,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? RequestID { get; set; }
         [Required]
-        public int? TruckID { get; set; }
-        [Required]
+        public int? TruckID { get; set; }        
         public int? PositionID { get; set; } // TyrePosition Table 
         public string PositionName { get; set; }
         [Required]
