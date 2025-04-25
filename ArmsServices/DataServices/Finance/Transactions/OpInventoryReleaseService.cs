@@ -163,6 +163,7 @@ namespace DAL.DataServices.Finance.Transactions
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@IsUsedItem",model.IsUsedItem),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.OpInventoryRelease.Update]", parameters))
             {
@@ -197,13 +198,13 @@ namespace DAL.DataServices.Finance.Transactions
                 MID = dr.GetInt32("MID"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
-
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
+                IsUsedItem = dr.GetBoolean("IsUsedItem"),
             };
         }
     }
