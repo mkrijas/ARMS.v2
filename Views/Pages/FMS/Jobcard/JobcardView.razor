@@ -15,6 +15,7 @@
 @inject ITripService Itrip
 @inject IJobcardWorkshopService Ijw
 @inject IJobInProgressService Ijp
+@inject IRepairWorkService Ijob
 @inject IWorkshopService Iworkshop
 @inject IMechanicJobService ImechanicJob
 @inject IMechanicService Imechanic
@@ -195,9 +196,57 @@
                                     <MudPaper Class="mb-2 px-5" Elevation="0">
                                         <MudGrid>
                                             <MudItem Class="d-flex" xs="12">
-                                                <b>@item.RepairJobTitle</b>
+                                                @* Title or Autocomplete *@
+                                                @if (EditingJob == item)
+                                                {
+                                                    <MudItem xs="12" md="4">
+                                                        <MudAutocomplete T="RepairJobModel"
+                                                                         Variant="Variant.Outlined"
+                                                                         Margin="Margin.Dense"
+                                                                         Label="Select Job Group"
+                                                                         Value="EditedJobGroup"
+                                                                         ValueChanged="GroupChanged"
+                                                                         ResetValueOnEmptyText="true"
+                                                                         SearchFunc="SearchGroup"
+                                                                         ToStringFunc="@(e => (e?.JobGroup == null || e?.JobSubGroup == null)
+                                                                         ? null
+                                                                         : $"{e.JobGroup.Title} | {e.JobSubGroup.Title}")" />
+                                                    </MudItem>
+                                                    <MudItem xs="12" md="4">
+                                                        <MudAutocomplete T="RepairJobModel"
+                                                                         Variant="Variant.Outlined"
+                                                                         Margin="Margin.Dense"
+                                                                         Label="Select Job"
+                                                                         Value="EditedJob"
+                                                                         ValueChanged="JobChanged"
+                                                                         ResetValueOnEmptyText="true"
+                                                                         SearchFunc="SearchJob"
+                                                                         ToStringFunc="@(e => e == null ? null : e.Title)" />
+                                                    </MudItem>
+                                                }
+                                                else
+                                                {
+                                                    <b>@item.RepairJobTitle</b>
+                                                }
+                                                @if (EditingJob == item)
+                                                {
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Save"
+                                                                   Color="Color.Success"
+                                                                   OnClick="@(() => SaveEditingJob(item))"
+                                                                   Title="Save" />
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Cancel"
+                                                                   Color="Color.Error"
+                                                                   OnClick="CancelEditingJob"
+                                                                   Title="Cancel" />
+                                                }
+                                                else
+                                                {
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                   OnClick="@(() => StartEditingJob(item))"
+                                                                   Title="Edit" />
+                                                }
                                                 <b class="ml-3" style="color: @item.JobStatusTextColor">@item.JobStatusText </b>
-                                                @if (item.JobStatus == 1)
+                                                @if (item.JobStatus == 1 && EditingJob != item)
                                                 {
                                                     <MudButtonGroup Class="ml-3" Color="Color.Primary" Variant="Variant.Outlined">
                                                         <MudTooltip Text="Finished">
@@ -433,7 +482,13 @@
     private List<MechanicModel> Mechanics = new();
     private IEnumerable<MechanicModel> SelectedMechanics;
     private JobInProgressModel SelectedJob = new();
+    private RepairJobModel EditedJob = new();
+    private RepairJobModel EditedJobGroup = new();
     private bool _busy;
+    JobInProgressModel EditingJob { get; set; } = null;
+    
+    private List<RepairJobModel> Grouplist = new();
+    private List<RepairJobModel> Joblist = new();
 
     public bool HasPermissionInventoryRequestDelete { get; set; } = false;
     public int InventoryRequestDocTypeID = 67;
@@ -550,6 +605,64 @@
         }
     }
 
+    void StartEditingJob(JobInProgressModel item)
+    {
+        EditingJob = item;
+        EditedJob = Ijob.SelectByID(item.RepairJobID);
+        EditedJobGroup = EditedJob;
+        Grouplist = Ijob.SelectJobGroupAndSub().ToList();
+        Joblist = Ijob.SelectJob(null, null, null).ToList();
+        Joblist = Joblist.Where(x => (x.JobSubGroup.ID == EditedJob.JobSubGroup.ID)).ToList();
+    }
+
+    // Method to search for job groups based on user input
+    private async Task<IEnumerable<RepairJobModel>> SearchGroup(string searchString)
+    {
+        return await Task.FromResult(Grouplist.Where(x => x.JobSubGroup.Title.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)
+                                                        || x.JobGroup.Title.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    // Method to search for jobs based on user input
+    private async Task<IEnumerable<RepairJobModel>> SearchJob(string searchString)
+    {
+        return await Task.FromResult(Joblist.Where(x => x.JobSubGroup.Title.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    // Method to handle changes in the selected job group
+    private async Task GroupChanged(RepairJobModel obj)
+    {
+        @if (obj != null && obj.JobSubGroup.ID != null)
+        {
+            // Load jobs that belong to the selected job subgroup
+            Joblist = Ijob.SelectJob(null, null, null).ToList();
+            Joblist = Joblist.Where(x => (x.JobSubGroup.ID == obj.JobSubGroup.ID)).ToList();
+        }
+        EditedJobGroup = obj;
+        EditedJob = null;
+    }
+
+    // Method to handle changes in the selected job
+    private async Task JobChanged(RepairJobModel obj)
+    {
+        EditedJob = obj;
+    }
+
+    void SaveEditingJob(JobInProgressModel item)
+    {
+        item.RepairJobID = EditedJob.RepairJobID;
+        Ijp.Update(item);
+
+        snackbar.Add("Jobs Updated.", Severity.Success);
+        setJipList(SelectedJobcard);
+        EditingJob = null;
+    }
+
+    void CancelEditingJob()
+    {
+        EditingJob = null;
+        // if you deep-cloned into NewJob, you can just discard it.
+    }
+
     // Method to handle exiting a workshop
     private async Task ExitWorkshop(JobcardWorkshopModel jwModel)
     {
@@ -663,6 +776,8 @@
             NewJob.WorkshopID = CurrentWorkshop.WorkshopID;
 
             await jipView.UpdateJob(NewJob);
+
+            snackbar.Add("Jobs Added.", Severity.Success);
             setJipList(SelectedJobcard);
             NewJob = new();
             jipView.clearmodel();

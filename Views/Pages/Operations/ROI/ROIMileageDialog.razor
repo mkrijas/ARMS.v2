@@ -21,12 +21,14 @@
             <ValidationSummary />
             <MudGrid>
                 <MudItem xs="6">
-                    <MudSelect Margin="Margin.Dense" Variant="Variant.Outlined" Label="Select Type" @bind-Value="model.TruckTypeID" AdornmentColor="Color.Secondary">
-                        @foreach (var item in TruckTypes)
-                        {
-                            <MudSelectItem Value="@item.TruckTypeID">@item.TruckType (@item.BSType)</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudAutocomplete T="TruckTypeModel"
+                                     Label="Select Type"
+                                     @bind-Value="selectedTruckType"
+                                     ToStringFunc="@(t => t == null ? string.Empty : $"{t.TruckType} ({t.BSType})")"
+                                     SearchFunc="@SearchTruckTypes"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     AdornmentColor="Color.Secondary" />
                 </MudItem>
                 <MudItem xs="12" md="6">
                 <MudSelect Margin="Margin.Dense" Variant="Variant.Outlined" Label="Select Type" @bind-Value="model.BodyType" AdornmentColor="Color.Secondary">
@@ -79,6 +81,25 @@
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         TruckTypes = Itrucktype.Select(0)?.ToList();
     }
+
+    private TruckTypeModel? selectedTruckType
+    {
+        get => TruckTypes.FirstOrDefault(x => x.TruckTypeID == model.TruckTypeID);
+        set => model.TruckTypeID = value?.TruckTypeID ?? 0;
+    }
+
+     private Task<IEnumerable<TruckTypeModel>> SearchTruckTypes(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult(TruckTypes.AsEnumerable());
+
+        return Task.FromResult(
+            TruckTypes.Where(x =>
+                x.TruckType.Contains(value, StringComparison.OrdinalIgnoreCase) ||
+                x.BSType.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .AsEnumerable());
+    }
+
 
     private async void OnValidSubmit(EditContext context)
     {

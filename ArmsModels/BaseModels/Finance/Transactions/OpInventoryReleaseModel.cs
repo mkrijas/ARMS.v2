@@ -27,6 +27,7 @@ namespace Core.BaseModels.Finance.Transactions
         [Required]
         public decimal? TotalQty { get; set; }
         public string Reference { get; set; }
+        public bool IsUsedItem { get; set; }
         [ValidateComplexType]
         public List<OpInventoryReleaseSubModel> Items { get; set; } = new(); // List of sub-entries for the inventory release
     }
