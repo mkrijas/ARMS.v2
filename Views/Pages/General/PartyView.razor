@@ -1,6 +1,9 @@
 ﻿@page "/party"
 @using System.Threading;
 @using Newtonsoft.Json
+@using OfficeOpenXml
+@using System.IO
+@using OfficeOpenXml.Style
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IPartyService Iservice
@@ -8,6 +11,7 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
+@inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 
 <MudGrid Spacing="4">
@@ -18,6 +22,7 @@
                 <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(()=>Edit(new PartyModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchParty" Placeholder="Search Partys... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudButton OnClick="ExcelDownload" Style="margin: 14px; margin-left: 60px;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.PartyCode)" InitialDirection="SortDirection.Ascending">Party Code</MudTableSortLabel></MudTh>
@@ -251,5 +256,86 @@
             
         await Task.Delay(200);
         _busy = false;
+    }
+
+    private async Task ExcelDownload()
+    {
+        var fileName = "TradingPartners.xlsx";
+        var sheetName = "Sheet1"; // Change the sheet name as needed
+        var fileBytes = GenerateExcelBytes(sheetName);
+
+        await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
+    }
+
+    private byte[] GenerateExcelBytes(string sheetName)
+    {
+        using (var package = new ExcelPackage())
+        {
+            var worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+            // Add column headers
+            worksheet.Cells[1, 1].Value = "Nature of Firm";
+            worksheet.Cells[1, 2].Value = "Party Code";
+            worksheet.Cells[1, 3].Value = "Trade Name";
+            worksheet.Cells[1, 4].Value = "Reg Name";
+            worksheet.Cells[1, 5].Value = "Tds Applicable";
+            worksheet.Cells[1, 6].Value = "PAN";
+            worksheet.Cells[1, 7].Value = "Gst Type";
+            worksheet.Cells[1, 8].Value = "Gst No";
+            worksheet.Cells[1, 9].Value = "Tan No";
+            worksheet.Cells[1, 10].Value = "Credit Period";
+            worksheet.Cells[1, 11].Value = "Credit Limit";
+            worksheet.Cells[1, 12].Value = "Payment Mode";
+            worksheet.Cells[1, 13].Value = "Account Number";
+            worksheet.Cells[1, 14].Value = "Addressee Name";
+            worksheet.Cells[1, 15].Value = "Building";
+            worksheet.Cells[1, 16].Value = "Street";
+            worksheet.Cells[1, 17].Value = "Place";
+            worksheet.Cells[1, 18].Value = "City";
+            worksheet.Cells[1, 19].Value = "PinCode";
+
+            //worksheet.Column(11).Style.Numberformat.Format = "dd-MM-yyyy"; // Date format
+            worksheet.Column(17).Style.Numberformat.Format = "0.00"; // Integer format
+            worksheet.Column(18).Style.Numberformat.Format = "0.00"; // Integer format
+
+            // Add data rows
+            int row = 2;
+            foreach (var item in collection)
+            {
+                worksheet.Cells[row, 1].Value = item.NatureOfBusiness;
+                worksheet.Cells[row, 2].Value = item.PartyCode;
+                worksheet.Cells[row, 3].Value = item.TradeName;
+                worksheet.Cells[row, 4].Value = item.RegName;
+                worksheet.Cells[row, 5].Value = item.TdsApplicable;
+                worksheet.Cells[row, 6].Value = item.PAN;
+                worksheet.Cells[row, 7].Value = item.GstType;
+                worksheet.Cells[row, 8].Value = item.GstNo;
+                worksheet.Cells[row, 9].Value = item.TanNo;
+                worksheet.Cells[row, 10].Value = item.CreditPeriod;
+                worksheet.Cells[row, 11].Value = item.CreditLimit;
+                worksheet.Cells[row, 12].Value = item.PaymentMode;
+                worksheet.Cells[row, 13].Value = item.BankAccount.AccountNumber;
+                worksheet.Cells[row, 14].Value = item.Address.AddresseeName;
+                worksheet.Cells[row, 15].Value = item.Address.Building;
+                worksheet.Cells[row, 16].Value = item.Address.Street;
+                worksheet.Cells[row, 17].Value = item.Address.Place;
+                worksheet.Cells[row, 18].Value = item.Address.City;
+                worksheet.Cells[row, 19].Value = item.Address.PinCode;
+
+                row++;
+            }
+
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+            // Save the Excel package to a memory stream
+            using (var stream = new MemoryStream())
+            {
+                package.SaveAs(stream);
+                return stream.ToArray();
+            }
+        }
     }
 }
