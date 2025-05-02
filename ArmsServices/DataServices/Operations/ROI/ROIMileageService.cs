@@ -21,6 +21,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@TruckTypeID", model.TruckTypeID),
+               new SqlParameter("@BodyType", model.BodyType),
                new SqlParameter("@LoadingMTFrom", model.LoadingMTFrom),
                new SqlParameter("@LoadingMTTo", model.LoadingMTTo),
                new SqlParameter("@Mileage", model.Mileage),

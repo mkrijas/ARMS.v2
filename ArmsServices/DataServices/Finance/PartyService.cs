@@ -181,9 +181,22 @@ namespace ArmsServices.DataServices
             {
                 PartyID = reader.GetInt32("PartyID"),
                 TradeName = reader.GetString("TradeName"),
-                Address = new AddressModel() { AddressID = reader.GetInt32("AddressID") },
+                Address = new AddressModel() 
+                { 
+                    AddressID = reader.GetInt32("AddressID"),
+                    AddresseeName = reader.GetString("AddresseeName"),
+                    Building = reader.GetString("Building"),
+                    Street = reader.GetString("Street"),
+                    Place = reader.GetString("Place"),
+                    City = reader.GetString("City"),
+                    PinCode = reader.GetString("PinCode")
+                },
                 AssesseeType = reader.GetString("AssesseeTypeID"),
-                BankAccount = new BankAccountModel() { BankAccountID = reader.GetInt32("BankAccountID") },
+                BankAccount = new BankAccountModel() 
+                { 
+                    BankAccountID = reader.GetInt32("BankAccountID"),
+                    AccountNumber = reader.GetString("AccountNumber")
+                },
                 CreditLimit = reader.GetInt32("CreditLimit"),
                 CreditPeriod = reader.GetInt32("CreditPeriod"),
                 GstNo = reader.GetString("GstNo"),

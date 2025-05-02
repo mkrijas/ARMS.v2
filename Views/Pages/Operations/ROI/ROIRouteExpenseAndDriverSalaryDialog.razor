@@ -1,0 +1,95 @@
+﻿@using System.Threading;
+@using Core.BaseModels.Operations.ROI
+@using Core.IDataServices.Operations.ROI
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IROIRouteExpenseAndDriverSalaryService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog Style="overflow-y: hidden;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+           ROI Route Expense & Driver Salary
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm id="formroird" Model="@model" OnValidSubmit="OnValidSubmit">
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary />
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons @bind-Value="model.RouteExpense" Label="Route Expense" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RouteExpense)"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons @bind-Value="model.DriverSalary" Label="Driver Salary" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DriverSalary)"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.FromDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudDatePicker Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.ToDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <div style="padding-right:12px; padding-bottom:12px;">
+            <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" form="formroird" ButtonType="ButtonType.Submit" Class="ml-auto">Submit</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public ROIRouteExpenseAndDriverSalaryModel model { get; set; }
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+    public List<ROIDriverBattaModel> Collection = new();
+    public List<BranchModel> branches = new();
+    string UserID;
+    int BranchID;
+    public int DocTypeID = 143;
+    public bool HasPermissionROIServiceEdit { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionROIServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        if (HasPermissionROIServiceEdit)
+        {
+            model.BranchID = BranchID;
+            model.UserInfo.UserID = UserID;
+            try
+            {
+                model = Iservice.Update(model);
+                MudDialog.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Edit ROI settings.");
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}
