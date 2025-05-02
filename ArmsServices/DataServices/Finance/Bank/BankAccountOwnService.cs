@@ -94,6 +94,20 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<OwnBankModel> SelectSelectByBranchALL(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "ByBranchAll"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.Own.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         // Helper method to map data from the database to an OwnBankModel
         private OwnBankModel GetModel(IDataRecord dr)
         {
@@ -109,6 +123,7 @@ namespace ArmsServices.DataServices
                 AddressInfo = new AddressModel() { AddressID = dr.GetInt32("AddressID")},
                 ContactInfo = new ContactModel() { ContactID = dr.GetInt32("ContactID")},
                 PostingGroup = new BankPostingGroupModel() { ID = dr.GetInt32("PostingGroupID") },
+                IsDisabled = (dr.GetByte("RecordStatus") == 1 ? true : false),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -149,6 +164,17 @@ namespace ArmsServices.DataServices
                 model = GetModel(dr);
             }
             return model;
+        }
+
+        public int DisableAccount(bool? IsDisable, int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@IsDisable", IsDisable),
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.BankAccount.Own.Disable]", parameters);
         }
 
         // Retrieves the COA ID for bank charges associated with a specific bank

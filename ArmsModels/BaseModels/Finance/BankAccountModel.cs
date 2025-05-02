@@ -66,6 +66,7 @@ namespace ArmsModels.BaseModels
         //[StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
         public string GstNo { get; set; }
         public string TANNo { get; set; }
+        public bool? IsDisabled { get; set; }
         public SharedModels.UserInfoModel UserInfo
         {
             get
