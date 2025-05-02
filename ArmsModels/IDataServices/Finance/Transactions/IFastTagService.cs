@@ -22,5 +22,6 @@ namespace Core.IDataServices.Finance.Transactions
         bool UpdateTripNumber(FastTagBranchEditModel model);
         FastTagProcessModel UpdateProcess(FastTagProcessModel model);
         int Approve(int? FastTagProcessID, string UserID, string Remarks);  //Approve
+        int Reject(int? FastTagProcessID, string UserID, string Remarks);  //Reject
     }
 }
