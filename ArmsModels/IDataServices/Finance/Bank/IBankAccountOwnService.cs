@@ -14,10 +14,12 @@ namespace ArmsServices.DataServices
         int Delete(int? ID, string UserID);  //Delete
         IEnumerable<OwnBankModel> Select();
         IEnumerable<OwnBankModel> Select(int? BranchID);
+        public IEnumerable<OwnBankModel> SelectSelectByBranchALL(int? BranchID);
         OwnBankModel SelectByID(int ID);
         OwnBankModel SelectByCode(string BankCode);       
         int? GetBankChargeCoaID(int? BankID);
         int? GetBankAccountCoaID(int? BankID);
         int? GetProcessingFeeCoaID(int? BankID);
+        int DisableAccount(bool? IsDisable, int? ID, string UserID);
     }
 }

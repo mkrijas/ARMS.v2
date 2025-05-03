@@ -273,6 +273,18 @@ namespace DAL.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[Finance.Transactions.FastTag.Approve]", parameters);
         }
 
+        // Method to reject a FastTag process
+        public int Reject(int? FastTagProcessID, string UserID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@FastTagProcessID", FastTagProcessID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Remarks", Remarks),
+            };
+            return Iservice.ExecuteNonQuery("[Finance.Transactions.FastTag.Reject]", parameters);
+        }
+
         // Private method to convert an IDataRecord to a FastTagTollModel
         private FastTagTollModel GetMainModel(IDataRecord dr)
         {

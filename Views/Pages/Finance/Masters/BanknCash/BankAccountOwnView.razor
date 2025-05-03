@@ -23,11 +23,16 @@
             .selected > td .mud-input {
                 color: white !important;
             }
+
+    .disabled-row {
+        background-color: #bec2bf !important;
+        color: #828894 !important;
+    }
 </style>
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model" @ref="mudTable" RowClassFunc="@SelectedRowClassFunc" T="OwnBankModel">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model" @ref="mudTable" RowClassFunc="@RowClassFunc" T="OwnBankModel">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Own Bank Accounts</MudText>
                 <MudTooltip Text="New Sundry Paymnet">
@@ -41,6 +46,7 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankAccountInfo.AccountNumber)" InitialDirection="SortDirection.Ascending">Account Number</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankAccountInfo.BankBranch)" InitialDirection="SortDirection.Ascending">Branch</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankCode)" InitialDirection="SortDirection.Ascending">BankCode</MudTableSortLabel></MudTh>
+                <MudTh>Is Disable</MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -49,6 +55,11 @@
                 <MudTd DataLabel="AccountNumber">@context.BankAccountInfo.AccountNumber</MudTd>
                 <MudTd DataLabel="Branch">@context.BankAccountInfo.BankBranch</MudTd>
                 <MudTd DataLabel="BankCode">@context.BankCode</MudTd>
+                <MudTd DataLabel="">
+                    <MudTooltip Text="Disable">
+                        <MudSwitch Checked="@context.IsDisabled" Color="Color.Primary" T="bool?" CheckedChanged="@((e) => DisableAccount(e,context.ID))"></MudSwitch>
+                    </MudTooltip>
+                </MudTd>
                 <MudTd DataLabel="">
                     <MudTooltip Text="Edit">
                         <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
@@ -102,7 +113,7 @@
         collection = new List<OwnBankModel>();
 
         // Load bank accounts for the specified branch
-        foreach (var item in Iservice.Select(branchID))
+        foreach (var item in Iservice.SelectSelectByBranchALL(branchID))
         {
             collection.Add(item);
         }
@@ -208,6 +219,18 @@
         }
     }
 
+    private string RowClassFunc(OwnBankModel element, int rowNumber)
+    {
+        if (element.IsDisabled == true)
+            return "disabled-row";
+        if (unRecounciledBankEntry != null && unRecounciledBankEntry.Equals(element))
+        {
+            selectedRowNumber = rowNumber;
+            return "selected";
+        }
+        return string.Empty;
+    }
+
     // Method to open the bank ledger views for a specific bank
     private void OpenBankLedgerViews(OwnBankModel Bank)
     {
@@ -217,4 +240,39 @@
         }
     }
 
+    // Method to enable or disable a bank account
+    public async Task DisableAccount(bool? IsDisabled, int? ID)
+    {
+        if (HasPermissionBankAccountOwnServiceEdit)
+        {
+            if (collection.Any(s => s.ID == ID))
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User.Identity.Name;
+                int result = Iservice.DisableAccount(IsDisabled, ID, user); // Call service to disable/enable account
+                if (result != -1)
+                {
+                    collection.First(s => s.ID == ID).IsDisabled = IsDisabled;
+                    if (IsDisabled == true)
+                    {
+                        snackbar.Add("Disabled " + collection.First(s => s.ID == ID).BankAccountInfo.BankTitle + " Succesfully.", Severity.Success);
+                    }
+                    else
+                    {
+                        snackbar.Add("Enabled " + collection.First(s => s.ID == ID).BankAccountInfo.BankTitle + " Succesfully.", Severity.Success);
+                    }
+                }
+                else
+                {
+                    snackbar.Add("error occurred while disabling.", Severity.Error);
+                }
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Edit BankAccountOwn.");
+        }
+    }
 }
