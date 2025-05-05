@@ -106,6 +106,9 @@ namespace ArmsServices.DataServices
                     ItemQty = (decimal)dr.GetDecimal("ItemQty"),
                     UOM = dr.GetString("UOM"),
                     ItemGstVal = dr.GetDecimal("ItemGstVal"),
+                    ItemCode = dr.GetString("InventoryItemCode"),
+                    ItemDescription = dr.GetString("ItemDescription"),
+                    ItemGroupDescription = dr.GetString("ItemGroupDescription")
                 };
             }
         }

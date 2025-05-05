@@ -174,6 +174,10 @@ namespace ArmsServices.DataServices
                 Reference = dr.GetString("Reference"),
                 Remarks = dr.GetString("Remarks"),
                 StoreID = dr.GetInt32("StoreID"),
+                Store = new StoreModel
+                {
+                   StoreName = dr.GetString("StoreName"),
+                },
                 IssuedQty = dr.GetDecimal("IssuedQty"),
                 NoOfGR = dr.GetInt32("NoOfGR"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
