@@ -201,7 +201,8 @@ namespace ArmsServices.DataServices
                    TyreID = s.TyreID ,
                    Status = s.Status ,
                    Amount = s.Amount ,
-                   Tax = s.Tax
+                   Tax = s.Tax,
+                   TDS = s.TDS
                }).ToList().ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
