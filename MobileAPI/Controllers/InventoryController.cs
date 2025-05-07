@@ -37,6 +37,16 @@ namespace MobileAPI.Controllers
             return PurchaseOrderCollection;
         }
 
+        //Pending PO Select
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<PurchaseOrderModel> SelectPurchaseOrder(int BranchID)
+        {
+            IEnumerable<PurchaseOrderModel> PurchaseOrderCollection;
+            PurchaseOrderCollection = _purchaseOrderService.SelectPending(BranchID).ToList();
+            return PurchaseOrderCollection;
+        }
+
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
         public IEnumerable<InventoryItemEntryModel> SelectPurchaseOrderEntries(int POID)
@@ -53,6 +63,16 @@ namespace MobileAPI.Controllers
         {
             IEnumerable<InventoryGrnModel> GrnCollection;
             GrnCollection = _inventoryGrnService.SelectPending(BranchID).Where(x => (x.AuthLevelID != 99 && x.AuthLevelID != 100) && x.UsedInventory == 0).ToList();
+            return GrnCollection;
+        }
+
+        //Pending GRN Select
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<InventoryGrnModel> SelectGrn(int BranchID)
+        {
+            IEnumerable<InventoryGrnModel> GrnCollection;
+            GrnCollection = _inventoryGrnService.SelectPending(BranchID).ToList();
             return GrnCollection;
         }
 
