@@ -26,8 +26,25 @@
                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <PartySelector Value="model.Party" For="@(()=> model.Party)" ValueChanged="PartyChanged" BranchID="BranchID" ></PartySelector>                        
-                    </MudItem>                   
+                        <MudSelect Label="Select Party" ReadOnly="ReadOnly" Value="@model.BusinessNature" T="string" ValueChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                            <MudSelectItem Value="@("Supplier")" />
+                            <MudSelectItem Value="@("Customer")" />
+                            <MudSelectItem Value="@("Renter")" />
+                            <MudSelectItem Value="@("SisterConcern")">Sister-Concern</MudSelectItem>
+                            <MudSelectItem Value="@("Bank")">Bank</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="6" md="6">
+                        <MudAutocomplete Label="Select Bank" @bind-Value="SelectedBank" SearchFunc="SearchBanks" T="OwnBankModel" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary" ToStringFunc="@(e => (e == null) ? null :( string.IsNullOrEmpty(e.BankAccountInfo.BankTitle) ? "" : string.Format("{0} | {1}",e.BankCode,e.BankAccountInfo.BankTitle)))">
+                        </MudAutocomplete>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <PartySelector Value="model.Party" For="@(()=> model.Party)" ValueChanged="PartyChanged" BranchID="BranchID" NatureOfBusiness="@mode.BusinessNature" ></PartySelector>                        
+                    </MudItem>      
+                    
+
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
@@ -160,16 +177,80 @@
         model.TotalAmount = model.Tds.Sum(x => x.TdsAmount);
     }
 
+
+
+    // Method to handle changes in business nature
+    async Task nbusinesschanged(string val)
+    {
+        model.BusinessNature = val;
+        SetNTransaction(val);
+        await PartyChanged(null);
+    }
+
+
     // Method to handle changes in party selection
-    void PartyChanged(PartyModel party)
+    async Task PartyChanged(PartyModel party)
     {
         model.Party = party;
         // Get the default COA ID for the selected party
-        if (party is not null)
-            model.PartyCoaID = partyService.GetPartyDefaultCoaID(model.Party?.PartyID);
-        else
-            model.PartyCoaID = null;
+        // if (party is not null)
+        //     model.PartyCoaID = partyService.GetPartyDefaultCoaID(model.Party?.PartyID);
+        // else
+        //     model.PartyCoaID = null;
+        await nTransactionChanged(null);
     }
+
+    private async Task nTransactionChanged(string nt)
+    {
+        model.NatureOfTransaction = nt;
+        if (model.NatureOfTransaction is not null)
+        {
+            // Get the COA ID for the selected party and transaction type
+            model.PartyCoaID = partyService.GetPartyCoaID(model.Party.PartyID, model.BusinessNature, model.NatureOfTransaction);
+            if (model.PartyCoaID == null)
+            {
+                bool? result = await dialogService.ShowMessageBox(
+                    "Account Not Mapped!",
+                    "Party Account is not mapped for " + model.NatureOfTransaction + "!");
+                model.NatureOfTransaction = null;
+            }
+        }
+       
+    }
+
+    string[] natureOfBusinessGroup = new string[] { };
+    string[] RentGroup = { "Rent", "Deposit", "Other" };
+    string[] SupplierGroup = { "Deposit", "Payable", "Prepayment" };
+    string[] CustomerGroup = { "Deposit", "Receivable", "Prepayment" };
+    string[] SisterGroup = { "Deposit", "Trade", "Prepayment" };
+
+    // Method to set the nature of transaction based on business nature
+    void SetNTransaction(string nBusiness)
+    {
+        if (nBusiness == "Renter")
+        {
+            natureOfBusinessGroup = RentGroup;
+        }
+        else if (nBusiness == "Customer")
+        {
+            natureOfBusinessGroup = CustomerGroup;
+        }
+        else if (nBusiness == "Supplier")
+        {
+            natureOfBusinessGroup = SupplierGroup;
+        }
+        else if (nBusiness == "SisterConcern")
+        {
+            natureOfBusinessGroup = SisterGroup;
+        }
+        else
+        {
+            natureOfBusinessGroup = new string[] { };
+        }
+    }
+
+  
+
 
     // Method to update the TDS transaction model
     protected override async Task<int> Update(TdsTransactionModel editModel)
