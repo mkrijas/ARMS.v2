@@ -40,10 +40,10 @@ namespace MobileAPI.Controllers
         //Pending PO Select
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<PurchaseOrderModel> SelectPurchaseOrder(int BranchID)
+        public IEnumerable<PurchaseOrderModel> SelectApprovedPurchaseOrder(int BranchID)
         {
             IEnumerable<PurchaseOrderModel> PurchaseOrderCollection;
-            PurchaseOrderCollection = _purchaseOrderService.SelectPending(BranchID).ToList();
+            PurchaseOrderCollection = _purchaseOrderService.SelectPending(BranchID).Where(x => x.AuthLevelID == 99).ToList();
             return PurchaseOrderCollection;
         }
 
@@ -69,10 +69,10 @@ namespace MobileAPI.Controllers
         //Pending GRN Select
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<InventoryGrnModel> SelectGrn(int BranchID)
+        public IEnumerable<InventoryGrnModel> SelectApprovedGrn(int BranchID)
         {
             IEnumerable<InventoryGrnModel> GrnCollection;
-            GrnCollection = _inventoryGrnService.SelectPending(BranchID).ToList();
+            GrnCollection = _inventoryGrnService.SelectPending(BranchID).Where(x => (x.AuthLevelID == 99 && x.AuthLevelID == 100) && x.UsedInventory == 0).ToList();
             return GrnCollection;
         }
 
