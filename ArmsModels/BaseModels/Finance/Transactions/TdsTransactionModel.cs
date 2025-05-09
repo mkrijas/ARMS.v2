@@ -18,12 +18,14 @@ namespace ArmsModels.BaseModels
         public int? ID { get; set; } // Unique identifier for the TDS transaction
 
         [Required]
-        public string TdspartyType { get; set; }// Supplier/renter/Customer/SisterConcern/Bank
-
-        [Required]
+        public string BusinessNature { get; set; }// Supplier/renter/Customer/SisterConcern/Bank        
         public PartyModel Party { get; set; } // Information about the party associated with the TDS transaction
-        
-        public string BusinessNature { get; set; }
+
+        [RequiredIf("BusinessNature","Bank") ]
+        public OwnBankModel Bank { get; set; }
+
+        public string TransactionType { get; set; }
+
         [Required]
         public int? PartyCoaID { get; set; }
         public string TdsType { get; set; } = "TDS";
