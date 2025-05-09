@@ -51,12 +51,12 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", BankID),
                new SqlParameter("@Operation", "ByBank"),
             };
-            BankPostingGroupModel model = new();
+            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Bank.Select]", parameters))
             {
-                model = GetModel(dr);
+               return GetModel(dr);
             }
-            return model;
+            return null;
         }
 
         // Retrieves a specific bank posting group by ID
