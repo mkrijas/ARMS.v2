@@ -242,6 +242,7 @@ namespace DAL.DataServices.Operations
                     AssetID = dr.GetInt32("AssetID"),
                     TruckID = dr.GetInt32("TruckID"),
                     RegNo = dr.GetString("RegNo"),
+                    HomeBranchID = dr.GetInt32("HomeBranchID")
                 },
                 RequestedBranchID = dr.GetInt32("RequestedBranchID"),
                 RequestedBranch = new BranchModel()
