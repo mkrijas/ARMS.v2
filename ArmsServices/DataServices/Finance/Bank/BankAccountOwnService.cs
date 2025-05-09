@@ -185,8 +185,9 @@ namespace ArmsServices.DataServices
 
         // Retrieves the COA ID for a bank account associated with a specific bank
         public int? GetBankAccountCoaID(int? BankID)
-        {
-            return _postingGroup.SelectByBank(BankID).BankAccount.CoaID;
+        { if (BankID is not null )
+            return _postingGroup.SelectByBank(BankID).BankAccount?.CoaID;
+            return null;
         }
 
         // Retrieves the COA ID for processing fees associated with a specific bank
