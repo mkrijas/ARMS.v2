@@ -29,12 +29,23 @@
             <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" md="12">
-                        <MudRadioGroup @bind-SelectedOption="model.NatureOfBusiness">
+                        <MudRadioGroup SelectedOption="model.NatureOfBusiness" SelectedOptionChanged="@(EventCallback.Factory.Create<string>(this, OnNatureOfBusinessChanged))">
                             <MudRadio Option="@("Supplier")" Color="Color.Primary">Supplier</MudRadio>
                             <MudRadio Option="@("Customer")" Color="Color.Primary">Customer</MudRadio>
                             <MudRadio Option="@("Renter")" Color="Color.Primary">Renter</MudRadio>
                             <MudRadio Option="@("SisterConcern")" Color="Color.Primary">Sister Concern</MudRadio>
                         </MudRadioGroup>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        @if (model.NatureOfBusiness == "Supplier" || model.NatureOfBusiness == "Renter")
+                        {
+                            <MudSelect T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Goods And Service Type" @bind-Value="@model.GoodsAndServiceType">
+                                @foreach (var types in goodsAndServiceTypes)
+                                {
+                                    <MudSelectItem Value="@types">@types</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }                       
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <h6>General Details</h6>
@@ -311,12 +322,21 @@
     bool IsShowBankInformation { get; set; } = false;
     private bool _busy;
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
+    List<string> goodsAndServiceTypes = new List<string>();
     private List<StateModel> GstStates = new();
 
     public bool HasPermissionPartyServiceEdit { get; set; } = false;
     public int PartyDocTypeID = 85;
 
+    private void OnNatureOfBusinessChanged(string newValue)
+    {
+        model.GoodsAndServiceType = null;
+        model.NatureOfBusiness = newValue;
+        if (model.NatureOfBusiness == "Supplier" || model.NatureOfBusiness == "Renter")
+        {
+            goodsAndServiceTypes = new List<string> { "Tyre Work", "Tyre", "Spare", "Lube", "Fuel", "Ad - Blue", "Vehicle Tax", "Market Truck", "Repairs_Truck", "Repairs_Office Vehicle", "Repairs_Building", "Repairs_Computer", "Admin" };
+        }
+    }
 
     void GstNumberChanged(string gstNo)
     {
@@ -342,6 +362,11 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
+        if (model.NatureOfBusiness == "Supplier" || model.NatureOfBusiness == "Renter")
+        {
+            snackbar.Add("Goods and service type is required", Severity.Warning);
+            return;
+        }
         if (_busy)
         {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
@@ -432,6 +457,7 @@
         if (model.NatureOfBusiness == null)
         {
             model.NatureOfBusiness = "Supplier";
+            OnNatureOfBusinessChanged(model.NatureOfBusiness);
             model.PanAvailable = false;
         }
         // if (model.PaymentMode == "Bank")

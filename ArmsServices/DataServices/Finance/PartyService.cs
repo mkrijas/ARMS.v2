@@ -217,6 +217,7 @@ namespace ArmsServices.DataServices
                 RegName = reader.GetString("RegName"),
                 TanNo = reader.GetString("TanNo"),
                 TdsApplicable = reader.GetBoolean("TdsApplicable"),
+                GoodsAndServiceType = reader.GetString("GoodsAndServiceType"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = reader.GetByte("RecordStatus"),
