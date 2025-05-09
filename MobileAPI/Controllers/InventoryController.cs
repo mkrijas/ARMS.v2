@@ -72,7 +72,7 @@ namespace MobileAPI.Controllers
         public IEnumerable<InventoryGrnModel> SelectApprovedGrn(int BranchID)
         {
             IEnumerable<InventoryGrnModel> GrnCollection;
-            GrnCollection = _inventoryGrnService.SelectPending(BranchID).Where(x => (x.AuthLevelID == 99 && x.AuthLevelID == 100) && x.UsedInventory == 0).ToList();
+            GrnCollection = _inventoryGrnService.SelectPending(BranchID).Where(x => (x.AuthLevelID == 99 || x.AuthLevelID == 100) && x.UsedInventory == 0).ToList();
             return GrnCollection;
         }
 

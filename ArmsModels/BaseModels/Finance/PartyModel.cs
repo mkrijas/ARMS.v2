@@ -57,6 +57,7 @@ namespace ArmsModels.BaseModels
         public string TanNo { get; set; }
         public int? CreditPeriod { get; set; } // Days
         public decimal? CreditLimit { get; set; }
+        public string GoodsAndServiceType { get; set; } // Bank/Cash
         public string PaymentMode { get; set; } // Bank/Cash
         [RequiredIf("NatureOfBusiness", "Supplier")]
         public VendorPostingGroupModel VendorPostingGroup { get; set; } // Vendor posting group
