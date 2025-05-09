@@ -1,0 +1,58 @@
+﻿@inject IBankAccountOwnService IbankService
+
+
+<MudAutocomplete 
+    Label="Select Bank" @bind-Value="_value" 
+    SearchFunc="SearchBanks" 
+    T="OwnBankModel" 
+    Variant="Variant.Outlined" 
+    Margin="Margin.Dense" 
+    AdornmentColor="Color.Secondary"
+    Disabled="@IsDisabled"
+    ToStringFunc="@(e => (e == null) ? null :( string.IsNullOrEmpty(e.BankAccountInfo.BankTitle) ? "" : string.Format("{0} | {1}",e.BankCode,e.BankAccountInfo.BankTitle)))">
+</MudAutocomplete>
+
+@code {
+
+    [Parameter]
+    public int? BranchID { get; set; }
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
+    [Parameter]
+    public OwnBankModel Value { get; set; }
+
+    [Parameter]
+    public EventCallback<OwnBankModel> ValueChanged { get; set; }
+
+
+    private OwnBankModel _value
+    {
+        get => Value;
+        set
+        {
+            if (Value == value) return;
+            Value = value;
+            ValueChanged.InvokeAsync(value);
+        }
+    }
+   
+
+    private List<OwnBankModel> BankList = new List<OwnBankModel>();
+
+    protected override void OnInitialized()
+    {        
+        BankList = IbankService.Select(BranchID).ToList();        
+    }
+
+   
+
+    private async Task<IEnumerable<OwnBankModel>> SearchBanks(string searchString)
+    {
+        if (string.IsNullOrEmpty(searchString))
+            return BankList;
+
+        return await Task.FromResult(BankList.Where(x => x.BankAccountInfo.BankTitle.Contains(searchString, StringComparison.InvariantCultureIgnoreCase) || x.BankCode.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+}

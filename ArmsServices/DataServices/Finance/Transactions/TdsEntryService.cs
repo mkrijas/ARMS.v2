@@ -195,7 +195,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@Entries", model.Tds.ToDataTable()),
                new SqlParameter("@FilePath", model.FileName),
-               new SqlParameter("@PartyID", model.Party.PartyID),
+               new SqlParameter("@BusinessNature", model.BusinessNature),
+               new SqlParameter("@PartyID", model.Party?.PartyID),
+               new SqlParameter("@BankID", model.Bank?.ID),               
+               new SqlParameter("@TransactionType", model.TransactionType),
                new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
@@ -232,6 +235,12 @@ namespace ArmsServices.DataServices
                     TradeName = dr.GetString("TradeName"),
                     PartyCode = dr.GetString("PartyCode"),
                 },
+                Bank = new OwnBankModel()
+                {
+                    ID = dr.GetInt32("BankID"),  
+                },
+                BusinessNature = dr.GetString("BusinessNature"),
+                TransactionType = dr.GetString("TransactionType"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
