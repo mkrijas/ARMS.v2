@@ -59,6 +59,7 @@ builder.Services.AddScoped<IDataAuthorizationService, DataAuthorizationService>(
 builder.Services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
 builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
 builder.Services.AddScoped<IInventoryGrnService, InventoryGrnService>();
+builder.Services.AddScoped<IDestinationFeasibilityCheckerService, DestinationFeasibilityCheckerService>();
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<ITruckTypeService, TruckTypeService>();
 
