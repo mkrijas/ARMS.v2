@@ -59,6 +59,8 @@ builder.Services.AddScoped<IDataAuthorizationService, DataAuthorizationService>(
 builder.Services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
 builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
 builder.Services.AddScoped<IInventoryGrnService, InventoryGrnService>();
+builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<ITruckTypeService, TruckTypeService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();

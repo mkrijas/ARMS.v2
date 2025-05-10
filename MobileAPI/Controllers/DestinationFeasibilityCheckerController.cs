@@ -20,13 +20,36 @@ namespace MobileAPI.Controllers
     public class DestinationFeasibilityCheckerContorller : ControllerBase
     {
         private readonly IDestinationFeasibilityCheckerService _destinationFeasibilityCheckerService;
+        private readonly IContentService _contentService;
+        private readonly ITruckTypeService _truckTypeService;
 
-        public DestinationFeasibilityCheckerContorller(IDestinationFeasibilityCheckerService destinationFeasibilityCheckerService)
+        public DestinationFeasibilityCheckerContorller(IDestinationFeasibilityCheckerService destinationFeasibilityCheckerService,
+                                                       IContentService contentService,
+                                                       ITruckTypeService truckTypeService)
         {
             _destinationFeasibilityCheckerService = destinationFeasibilityCheckerService;
+            _contentService = contentService;
+            _truckTypeService = truckTypeService;
         }
 
-        //Pending PO Select
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IAsyncEnumerable<ContentModel> GetContentLists()
+        {
+            IAsyncEnumerable<ContentModel> ContentLists;
+            ContentLists = _contentService.Select(0);
+            return ContentLists;
+        }
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<TruckTypeModel> GetTruckTypeLists()
+        {
+            IEnumerable<TruckTypeModel> TruckTypeLists;
+            TruckTypeLists = _truckTypeService.Select(0);
+            return TruckTypeLists;
+        }
+
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
         public IEnumerable<DestinationFeasibilityCheckerRatesModel> GetRates(int ID)
