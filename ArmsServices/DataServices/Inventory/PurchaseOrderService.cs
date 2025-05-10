@@ -188,6 +188,10 @@ namespace ArmsServices.DataServices
                 Reference = dr.GetString("Reference"),
                 Remarks = dr.GetString("Remarks"),
                 StoreID = dr.GetInt32("StoreID"),
+                Store = new StoreModel
+                {
+                    StoreName = dr.GetString("StoreName"),
+                },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
