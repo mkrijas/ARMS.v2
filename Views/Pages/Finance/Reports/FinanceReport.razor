@@ -1,0 +1,91 @@
+﻿@page "/FinanceReport"
+@inherits ReportComponentBase
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
+                <MudText Typo="Typo.h5" Style="font-weight:500;">Payment to Supplier Report</MudText>
+            </MudToolBar>
+            <MudDivider />
+            <MudGrid Style="padding-top: 22px;">
+                <MudItem xs="3">
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="3">
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="3">
+                    <div class="d-flex gap-3">
+                        <MudCheckBox @bind-Value="@detailed" Dense> Detailed</MudCheckBox>
+                        <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+                        <MudIconButton Title="Render Report" Icon="@Icons.Material.Filled.DocumentScanner" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer"></MudIconButton>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+    bool detailed = false;
+    ReportViewer report;
+    public DateTime? FromDate { get; set; } = DateTime.Now;
+    public DateTime? ToDate { get; set; } = DateTime.Now;
+
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    protected bool Validate()
+    {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return false;
+        }
+        if (FromDate == null)
+        {
+            snackbar.Add("Please select From Date.", Severity.Error);
+            return false;
+        }
+        if (ToDate == null)
+        {
+            snackbar.Add("Please select To Date.", Severity.Error);
+            return false;
+        }
+        return true;
+    }
+
+    public async Task RenderReportViewer()
+    {
+        try
+        {
+            await Task.Delay(5);
+            if (Validate())
+            {
+                ReportName = detailed ? "FinanceReport" : "FinanceReportSummary";
+                ReportParameters.Clear();
+                ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+                ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
+                ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
+                ShowReport = true;
+                await report.RenderReport();
+
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}
