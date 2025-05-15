@@ -84,6 +84,7 @@ namespace ArmsServices.DataServices
                    new SqlParameter("@TanNo", model.TanNo),
                    new SqlParameter("@TdsApplicable", model.TdsApplicable),
                    new SqlParameter("@UserID", model.UserInfo.UserID),
+                   new SqlParameter("@GoodsAndServiceType", model.GoodsAndServiceType),
                 };
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Update]", parameters))
             {
