@@ -214,6 +214,7 @@ namespace ArmsServices.DataServices
                 CustomerPostingGroup = new CustomerPostingGroupModel() { CustomerPostingGroupID = reader.GetInt32("CustomerPostingGroupID") },
                 RenterPostingGroup = new RenterPostingGroupModel() { RenterPostingGroupID = reader.GetInt32("RenterPostingGroupID") },
                 SisterPostingGroup = new SisterPostingGroupModel() { SisterPostingGroupID = reader.GetInt32("SisterPostingGroupID") },
+                PostingGroupTitle = reader.GetString("PostingGroupTitle"),
                 PAN = reader.GetString("PAN"),
                 RegName = reader.GetString("RegName"),
                 TanNo = reader.GetString("TanNo"),

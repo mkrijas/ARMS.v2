@@ -80,6 +80,7 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public List<ContactModel> Contacts { get; set; } = new(); // List of contacts associated with the party
         public SharedModels.UserInfoModel UserInfo { get; set; } = new(); // Information about the user associated with the party
+        public virtual string PostingGroupTitle { get; set; }
     }
 
     // Model representing a vendor posting group
