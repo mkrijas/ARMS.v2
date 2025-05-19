@@ -119,5 +119,6 @@ namespace ArmsModels.BaseModels
         public virtual string CostCenterVal { get; set; }
         public int? Dimension { get; set; }
         public virtual string DimensionVal { get; set; }
+        public virtual decimal? OriginalQty { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 ﻿@inherits DialogFormComponentBase<DrCrNoteModel>
 
+@inject IDialogService DialogService
 @inject IDrCrNoteService Iservice
 @inject IPartyService partyService
 @inject ICancellationReasonCodeService reasonCodeService
@@ -61,7 +62,53 @@
                         <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@BranchID" PartyInfo="@model.Party" Local="@Local" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
                     </MudItem>
                     <MudItem xs="12">
-                        <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" BranchID="@BranchID" PartyInfo="@model.Party" Local="@Local" ItemList="@model.Items" ReadOnly="@ReadOnly" />
+                        @* <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" BranchID="@BranchID" PartyInfo="@model.Party" Local="@Local" ItemList="@model.Items" ReadOnly="@ReadOnly" /> *@
+                        @if (model.Items.Any())
+                        {
+                            <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
+                                <h6> <u>Items</u></h6>
+                                <div style="width: 1600px;" class="pb-3">
+                                    <MudGrid Justify="Justify.Center">
+                                        <MudItem xs="3"><span class="HeadText">Item Name</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Quantity</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Rate</span></MudItem>
+                                        <MudItem xs="2"><span class="HeadText">Cost Center</span></MudItem>
+                                        <MudItem xs="2"><span class="HeadText">Dimension</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Amount</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Gst/TDS</span></MudItem>
+                                        <MudItem xs="1">Actions</MudItem>
+                                        @foreach (var item in model.Items)
+                                        {
+                                            <MudItem xs="3">@item.ItemCode | @item.ItemGroupDescription - @item.ItemDescription</MudItem>
+                                            <MudItem xs="1">
+                                                <MudNumericField T="decimal?"
+                                                                 HideSpinButtons
+                                                                 Label="Qty"
+                                                                 Immediate="true"
+                                                                 Value="item.ItemQty"
+                                                                 ValueChanged="@(val => OnQtyChanged(val, item))"
+                                                                 Variant="Variant.Outlined"
+                                                                 Margin="Margin.Dense"
+                                                                 ReadOnly="(model.DrCrNoteID != null)" />
+                                            </MudItem>
+                                            @* <MudItem xs="1">@item.ItemQty</MudItem> *@
+                                            <MudItem xs="1">@item.ItemRate</MudItem>
+                                            <MudItem xs="2">@item.CostCenterVal</MudItem>
+                                            <MudItem xs="2">@item.DimensionVal</MudItem>
+                                            <MudItem xs="1">@item.Amount</MudItem>
+                                            <MudItem xs="1">@(item.CGST + item.SGST + item.IGST)/@item.TDS</MudItem>
+                                            <MudItem xs="1" Class="d-flex">
+                                                @if (!ReadOnly)
+                                                {
+                                                    <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                                }
+                                                <MudIconButton Title="Show Taxes" Color="Color.Info" @onclick="@(()=> OpenDialogTaxRates(@item))" Icon="@Icons.Material.Filled.CurrencyExchange" Size="Size.Small" />
+                                            </MudItem>
+                                        }
+                                    </MudGrid>
+                                </div>
+                            </MudItem>
+                        }
                     </MudItem>
                 </MudGrid>
             </EditForm>
@@ -260,7 +307,11 @@
                 model.OriginalTranDocNumber = Bill.DocumentNumber;
                 model.TotalAmount = Bill.TotalAmount;
                 PID = Bill.PID.Value;
-                model.Items = Bill.Items;
+                model.Items = Bill.Items.Select(x =>
+                {
+                    x.OriginalQty = x.ItemQty;
+                    return x;
+                }).ToList();
                 model.Particulars = Bill.Particulars;
             }
         }
@@ -276,5 +327,71 @@
         return ReasonCodeList.Where(x => x.ReasonCodeDescription.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
 
+    void OnQtyChanged(decimal? newVal, TaxPurchaseItemModel item)
+    {
+        item.ItemQty = newVal;
 
+        if (item.ItemQty > item.OriginalQty)
+        {
+            snackbar.Add($"Qty cannot exceed original: {item.OriginalQty}", Severity.Error);
+            item.ItemQty = item.OriginalQty;
+        }
+
+        // Recalculate amount when quantity changes
+        if (item.ItemQty != null && item.ItemRate != null)
+        {
+            item.Amount = item.ItemQty * item.ItemRate;
+        }
+        else
+        {
+            item.Amount = 0;
+        }
+
+        editContext?.NotifyFieldChanged(new FieldIdentifier(item, nameof(item.ItemQty)));
+        editContext?.NotifyFieldChanged(new FieldIdentifier(item, nameof(item.Amount)));
+
+        SetTotal();
+    }
+
+    private async Task Delete(TaxPurchaseItemModel i)
+    {
+        int rowIndex = model.Items.IndexOf(i);
+        model.Items.RemoveAt(rowIndex);
+        SetTotal();
+    }
+
+    // Method to open the dialog for tax rates
+    private async Task OpenDialogTaxRates(TaxPurchaseItemModel i)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        GstModel taxModel = new GstModel();
+        taxModel.CGST = i.CGST;
+        taxModel.IGST = i.IGST;
+        taxModel.TDS = i.TDS;
+        taxModel.SGST = i.SGST;
+        taxModel.GstRate = i.GstRate;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("tax", taxModel);
+        parms.Add("ReadOnly", ReadOnly);
+        var dialog = DialogService.Show<TaxRatedialog>(i.PID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            taxModel = (GstModel)result.Data;
+            i.CGST = taxModel.CGST;
+            i.IGST = taxModel.IGST;
+            i.TDS = taxModel.TDS;
+            i.SGST = taxModel.SGST;
+            i.GstRate = taxModel.GstRate;
+
+            SetTotal();
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
 } 
