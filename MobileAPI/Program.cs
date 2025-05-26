@@ -62,6 +62,9 @@ builder.Services.AddScoped<IInventoryGrnService, InventoryGrnService>();
 builder.Services.AddScoped<IDestinationFeasibilityCheckerService, DestinationFeasibilityCheckerService>();
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<ITruckTypeService, TruckTypeService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IRouteService, RouteService>();
+builder.Services.AddScoped<IDistrictService, DistrictService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
