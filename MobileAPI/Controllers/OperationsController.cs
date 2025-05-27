@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Numerics;
+using System.Security;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MobileAPI.Controllers
@@ -23,13 +24,15 @@ namespace MobileAPI.Controllers
         private readonly IOrderService _orderService;
         private readonly IRouteService _routeService;
         private readonly IDistrictService _districtService;
+        private readonly IUserService _userService;
 
         public OperationsController(IPlaceService placeService,
                                     IEventService eventService,
                                     IGcService gcService,
                                     IOrderService orderService,
                                     IRouteService routeService,
-                                    IDistrictService districtService)
+                                    IDistrictService districtService,
+                                    IUserService userService)
         {
             _placeService = placeService;
             _eventService = eventService;
@@ -37,7 +40,16 @@ namespace MobileAPI.Controllers
             _orderService = orderService;
             _routeService = routeService;
             _districtService = districtService;
+            _userService = userService;
         }
+        public bool HasPermissionDistrictServiceEdit { get; set; } = false;
+        public int DistrictDocTypeID = 54;
+        public bool HasPermissionPlaceServiceEdit { get; set; } = false;
+        public int PlaceDocTypeID = 44;
+        public bool HasPermissionRouteServiceEdit { get; set; } = false;
+        public int RouteDocTypeID = 43;
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
 
         //Place Select
         [HttpGet("[action]/")]
@@ -75,42 +87,25 @@ namespace MobileAPI.Controllers
             GCsToUnload = _gcService.SelectUnloadedMobile(TripID).ToList();
             return GCsToUnload;
         }
-
-        [HttpPost("[action]/")]
-        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<string> UpdateOrder(OrderModel updateModel)
-        {
-            string result = "";
-            var returnModel = _orderService.Update(updateModel);
-            if (returnModel != null)
-            {
-                result = "Updated Successfully.";
-            }
-            return result;
-        }
-
-        [HttpGet("[action]/")]
-        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<IEnumerable<OrderModel>> SelectOrders(int BranchID)
-        {
-            var OrderCollection = new List<OrderModel>();
-            await foreach (var order in _orderService.SelectByBranch(BranchID))
-            {
-                OrderCollection.Add(order);
-            }
-            return OrderCollection;
-        }
-
+        
         [HttpPost("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]        
         public async Task<IActionResult> UpdateRoute(RouteModel updateModel)
         {
-            var returnModel = await _routeService.Update(updateModel);
-            if (returnModel != null)
+            HasPermissionRouteServiceEdit = _userService.GetClaimsAsync(updateModel.UserInfo.UserID, RouteDocTypeID.ToString(), "Edit", null, ctc.Token);
+            if (HasPermissionRouteServiceEdit)
             {
-                return Ok("Updated Successfully.");
+                var returnModel = await _routeService.Update(updateModel);
+                if (returnModel != null)
+                {
+                    return Ok("Saved Successfully.");
+                }
+                return BadRequest("Update failed.");
             }
-            return BadRequest("Update failed.");
+            else
+            {
+                return BadRequest("Permission denied! You don't have any permission to Add or Edit Route.");
+            }
         }
 
         [HttpGet("[action]/")]
@@ -138,12 +133,20 @@ namespace MobileAPI.Controllers
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
         public IActionResult UpdateDistrict(DistrictModel updateModel)
         {
-            var returnModel = _districtService.Update(updateModel);
-            if (returnModel != null)
+            HasPermissionDistrictServiceEdit = _userService.GetClaimsAsync(updateModel.UserInfo.UserID, DistrictDocTypeID.ToString(), "Edit", null, ctc.Token);
+            if (HasPermissionDistrictServiceEdit)
             {
-                return Ok("Updated Successfully.");
+                var returnModel = _districtService.Update(updateModel);
+                if (returnModel != null)
+                {
+                    return Ok("Saved Successfully.");
+                }
+                return BadRequest("Update failed.");
             }
-            return BadRequest("Update failed.");
+            else
+            {
+                return BadRequest("Permission denied! You don't have any permission to Add or Edit District.");
+            }
         }
 
         [HttpGet("[action]/")]
@@ -159,12 +162,20 @@ namespace MobileAPI.Controllers
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> UpdatePlace(PlaceModel updateModel)
         {
-            var returnModel = await _placeService.Update(updateModel);
-            if (returnModel != null)
+            HasPermissionPlaceServiceEdit = _userService.GetClaimsAsync(updateModel.UserInfo.UserID, PlaceDocTypeID.ToString(), "Edit", null, ctc.Token);
+            if (!HasPermissionPlaceServiceEdit)
             {
-                return Ok("Updated Successfully.");
+                var returnModel = await _placeService.Update(updateModel);
+                if (returnModel != null)
+                {
+                    return Ok("Saved Successfully.");
+                }
+                return BadRequest("Update failed.");
             }
-            return BadRequest("Update failed.");
+            else
+            {
+                return BadRequest("Permission denied! You don't have any permission to Add or Edit Place.");
+            }
         }
 
         [HttpGet("[action]/")]
