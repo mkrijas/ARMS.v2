@@ -72,6 +72,7 @@ namespace ArmsModels.BaseModels
         public virtual string ItemCode { get; set; }
         public string ItemDescription { get; set; }
         public string HsnCode { get; set; }
+        public virtual string? PartNumber { get; set; }
         [Required]
         public int? RID { get; set; }
         public virtual string ItemGroupDescription { get; set; }
