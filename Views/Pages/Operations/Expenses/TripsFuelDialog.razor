@@ -1,6 +1,7 @@
 ﻿@attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @using System.Threading;
+@using System.Transactions;
 @using ArmsServices.DataServices.General
 @using Core.IDataServices.Operations
 @inject MudBlazor.ISnackbar snackbar
@@ -138,79 +139,91 @@
         _busy = true;
         if (HasPermissionTripFuelServiceEdit)
         {
-
-            Tmodel.PurchaseModel.BranchID = branchID;
-            Tmodel.PurchaseModel.UserInfo.UserID = UserID;
-            TaxPurchaseItemModel item = Tmodel.PurchaseModel.Items.FirstOrDefault();
-            if (item == null)
+            using (var tran = new TransactionScope())
             {
-                item = new TaxPurchaseItemModel();
-                Tmodel.PurchaseModel.Items.Add(item);
-            }
-            item.ItemQty = Tmodel.Quantity;
-            item.ItemID = Tmodel.FuelItemID;
-            item.CostCenter = Tmodel.CostCenter;
-            item.Dimension = Tmodel.Dimension;
-
-            if (Tmodel.IsPurchase)
-            {
-                Tmodel.PurchaseModel.NonStoreInventory = true;
-                item.ItemRate = Tmodel.RatePerLitre;
-                item.Amount = Tmodel.Amount;
-                item.CoaID = invItem.Group.MappedNonInventoryPurchaseHead;
-
-                // Get GST rate for the item
-                item.GstRate = gstItemService.SelectByItem(Tmodel.FuelItemID ?? 0)?.FirstOrDefault()?.TaxRate ?? 0;
-
-                // Determine if the item is taxable
-                bool IsTaxable = Tmodel.PurchaseModel.PartyInfo.GstType == "Registered" || Tmodel.PurchaseModel.PartyInfo.GstType == "SEZ";
-                if (item.GstRate != null && item.GstRate != 0 && IsTaxable)
-                {
-                    if (partyService.IsLocal(Tmodel.PurchaseModel.PartyInfo.PartyID, branchID))
-                    {
-                        item.CGST = Math.Round((item.Amount ?? 0) * (item.GstRate ?? 0) / 200, 2);
-                        item.SGST = Math.Round((item.Amount ?? 0) * (item.GstRate ?? 0) / 200, 2);
-                    }
-                    else
-                    {
-                        item.IGST = Math.Round((item.Amount ?? 0) * (item.GstRate ?? 0) / 100, 2);
-                    }
-                }
-                //Tmodel.PurchaseModel.Narration = Tmodel.Quantity.ToString() + " Ltr";
-
-                // Calculate TDS based on the party and item
-                var tdsRate = tdsService.GetTdsRate(Tmodel.PurchaseModel.PartyInfo.PartyID ?? 0, item.CoaID ?? 0);
-                item.TDS = Math.Round((item.Amount ?? 0) * tdsRate / 100, MidpointRounding.AwayFromZero);
-                Tmodel.Amount = item.Amount + (item.CGST??0) + (item.SGST??0) + (item.IGST??0);
                 try
                 {
-                    Tmodel.PurchaseModel.TaxPurchaseType = "Fuel";
 
-                    // Update the purchase model
-                    Tmodel.PurchaseModel = taxPurchase.Update(Tmodel.PurchaseModel);
-                    notiService.CreateAuthNotifications(branchID, 9, Tmodel.PurchaseModel.PID.Value);
+                    Tmodel.PurchaseModel.BranchID = branchID;
+                    Tmodel.PurchaseModel.UserInfo.UserID = UserID;
+                    TaxPurchaseItemModel item = Tmodel.PurchaseModel.Items.FirstOrDefault();
+                    if (item == null)
+                    {
+                        item = new TaxPurchaseItemModel();
+                        Tmodel.PurchaseModel.Items.Add(item);
+                    }
+                    item.ItemQty = Tmodel.Quantity;
+                    item.ItemID = Tmodel.FuelItemID;
+                    item.CostCenter = Tmodel.CostCenter;
+                    item.Dimension = Tmodel.Dimension;
+
+                    if (Tmodel.IsPurchase)
+                    {
+                        Tmodel.PurchaseModel.NonStoreInventory = true;
+                        item.ItemRate = Tmodel.RatePerLitre;
+                        item.Amount = Tmodel.Amount;
+                        item.CoaID = invItem.Group.MappedNonInventoryPurchaseHead;
+
+                        // Get GST rate for the item
+                        item.GstRate = gstItemService.SelectByItem(Tmodel.FuelItemID ?? 0)?.FirstOrDefault()?.TaxRate ?? 0;
+
+                        // Determine if the item is taxable
+                        bool IsTaxable = Tmodel.PurchaseModel.PartyInfo.GstType == "Registered" || Tmodel.PurchaseModel.PartyInfo.GstType == "SEZ";
+                        if (item.GstRate != null && item.GstRate != 0 && IsTaxable)
+                        {
+                            if (partyService.IsLocal(Tmodel.PurchaseModel.PartyInfo.PartyID, branchID))
+                            {
+                                item.CGST = Math.Round((item.Amount ?? 0) * (item.GstRate ?? 0) / 200, 2);
+                                item.SGST = Math.Round((item.Amount ?? 0) * (item.GstRate ?? 0) / 200, 2);
+                            }
+                            else
+                            {
+                                item.IGST = Math.Round((item.Amount ?? 0) * (item.GstRate ?? 0) / 100, 2);
+                            }
+                        }
+                        //Tmodel.PurchaseModel.Narration = Tmodel.Quantity.ToString() + " Ltr";
+
+                        // Calculate TDS based on the party and item
+                        var tdsRate = tdsService.GetTdsRate(Tmodel.PurchaseModel.PartyInfo.PartyID ?? 0, item.CoaID ?? 0);
+                        item.TDS = Math.Round((item.Amount ?? 0) * tdsRate / 100, MidpointRounding.AwayFromZero);
+                        Tmodel.Amount = item.Amount + (item.CGST??0) + (item.SGST??0) + (item.IGST??0);
+                        try
+                        {
+                            Tmodel.PurchaseModel.TaxPurchaseType = "Fuel";
+
+                            // Update the purchase model
+                            Tmodel.PurchaseModel = taxPurchase.Update(Tmodel.PurchaseModel);
+                            notiService.CreateAuthNotifications(branchID, 9, Tmodel.PurchaseModel.PID.Value);
+                        }
+                        catch (Exception ex)
+                        {
+                            snackbar.Add(ex.Message, Severity.Error);
+                            goto ExitCode;
+                        }
+                    }
+
+                    try
+                    {
+                        // Update the trip fuel model
+                        Tmodel = Iservice.Update(Tmodel);
+                        snackbar.Add("Saved Successfully", Severity.Success);
+
+                        MudDialog.Close(Tmodel);
+                        Tmodel = new();
+                    }
+                    catch (Exception ex)
+                    {
+                        snackbar.Add(ex.Message, Severity.Error);
+                        goto ExitCode;
+                    }  
+                    tran.Complete();
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    snackbar.Add(ex.Message, Severity.Error);
-                    goto ExitCode;
+                    snackbar.Add(e.Message, Severity.Error);
                 }
             }
-
-            try
-            {
-                // Update the trip fuel model
-                Tmodel = Iservice.Update(Tmodel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-
-                MudDialog.Close(Tmodel);
-                Tmodel = new();
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-                goto ExitCode;
-            }            
+            
         }
         else
         {
