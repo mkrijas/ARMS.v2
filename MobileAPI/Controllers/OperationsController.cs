@@ -153,14 +153,5 @@ namespace MobileAPI.Controllers
             }
             return BadRequest("Update failed.");
         }
-
-        [HttpGet("[action]/")]
-        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<PlaceModel> SelectPlaces(int? PlaceID, string PlaceLike)
-        {
-            IEnumerable<PlaceModel> PlaceCollection;
-            PlaceCollection = _placeService.Select(PlaceID, PlaceLike).ToList();
-            return PlaceCollection;
-        }
     }
 }
