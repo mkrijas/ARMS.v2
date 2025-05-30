@@ -68,7 +68,7 @@
                     <MudItem xs="12" md="4">
                         <MudCheckBox ValueChanged="((bool e)=>SetUsedItem(e))" Value="Tmodel.IsUsedItem" Label="Used Item" Color="Color.Primary"></MudCheckBox>
                     </MudItem>
-                    
+
                     @if (Tmodel.IsPurchase)
                     {
                         <MudItem xs="12">
@@ -139,7 +139,13 @@
         _busy = true;
         if (HasPermissionTripFuelServiceEdit)
         {
-            using (var tran = new TransactionScope())
+            var scopeOptions = new TransactionOptions
+            {
+                IsolationLevel = IsolationLevel.ReadCommitted,
+                Timeout = TransactionManager.DefaultTimeout
+            };
+
+            using (var tran = new TransactionScope(TransactionScopeOption.Required, scopeOptions, TransactionScopeAsyncFlowOption.Enabled))
             {
                 try
                 {
@@ -187,40 +193,29 @@
                         var tdsRate = tdsService.GetTdsRate(Tmodel.PurchaseModel.PartyInfo.PartyID ?? 0, item.CoaID ?? 0);
                         item.TDS = Math.Round((item.Amount ?? 0) * tdsRate / 100, MidpointRounding.AwayFromZero);
                         Tmodel.Amount = item.Amount + (item.CGST??0) + (item.SGST??0) + (item.IGST??0);
-                        try
-                        {
-                            Tmodel.PurchaseModel.TaxPurchaseType = "Fuel";
 
-                            // Update the purchase model
-                            Tmodel.PurchaseModel = taxPurchase.Update(Tmodel.PurchaseModel);
-                            notiService.CreateAuthNotifications(branchID, 9, Tmodel.PurchaseModel.PID.Value);
-                        }
-                        catch (Exception ex)
-                        {
-                            snackbar.Add(ex.Message, Severity.Error);
-                            goto ExitCode;
-                        }
+                        Tmodel.PurchaseModel.TaxPurchaseType = "Fuel";
+
+                        // Update the purchase model
+                        Tmodel.PurchaseModel = taxPurchase.Update(Tmodel.PurchaseModel);
+                        notiService.CreateAuthNotifications(branchID, 9, Tmodel.PurchaseModel.PID.Value);
+
+
                     }
 
-                    try
-                    {
-                        // Update the trip fuel model
-                        Tmodel = Iservice.Update(Tmodel);
-                        snackbar.Add("Saved Successfully", Severity.Success);
+                    // Update the trip fuel model
+                    Tmodel = Iservice.Update(Tmodel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
 
-                        MudDialog.Close(Tmodel);
-                        Tmodel = new();
-                    }
-                    catch (Exception ex)
-                    {
-                        snackbar.Add(ex.Message, Severity.Error);
-                        goto ExitCode;
-                    }  
+                    MudDialog.Close(Tmodel);
+                    Tmodel = new();
+
                     tran.Complete();
                 }
                 catch (Exception e)
                 {
                     snackbar.Add(e.Message, Severity.Error);
+                    goto ExitCode;
                 }
             }
             
