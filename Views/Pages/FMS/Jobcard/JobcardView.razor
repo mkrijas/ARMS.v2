@@ -6,6 +6,7 @@
 @using Views.Pages.Finance.Transactions.PurchaseAndPayment;
 @using Views.Pages.Finance.Transactions;
 @using Views.Pages.Inventory.InvRelease;
+@using System.Transactions;
 @using Views.Pages.Operations
 @inject IJobcardService Iservice
 @inject IBreakdownService Ibreakdown
@@ -949,23 +950,39 @@
         }
         _busy = true;
         if (HasPermissionJobcardServiceEdit)
-        {         
-            var parameters = new DialogParameters();
-            parameters.Add("model", new TaxPurchaseModel() { NonStoreInventory = true, TaxPurchaseType = "Maintenance", Narration = string.Format("Jobcard : {0};", SelectedJobcard.JobcardNumber) });
-            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-            var dialog = DialogService.Show<TaxPurchaseDialog>("Maintenance Expenses", parameters, maxWidth);
-            var result = await dialog.Result;
-            if (!result.Canceled)
+        {
+            var scopeOptions = new TransactionOptions
+                {
+                    IsolationLevel = IsolationLevel.ReadCommitted,
+                    Timeout = TransactionManager.DefaultTimeout
+                };
+            using (var tran = new TransactionScope(TransactionScopeOption.Required, scopeOptions, TransactionScopeAsyncFlowOption.Enabled))
             {
-                var purchaseModel = (TaxPurchaseModel)result.Data;
-                int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, purchaseModel.PID, 134);
-                if (queryStatus == 0)
+                try
                 {
-                    snackbar.Add("Something went wrong !  Please check Taxpurchase collect number then contact Admin", Severity.Error);
+                    var parameters = new DialogParameters();
+                    parameters.Add("model", new TaxPurchaseModel() { NonStoreInventory = true, TaxPurchaseType = "Maintenance", Narration = string.Format("Jobcard : {0};", SelectedJobcard.JobcardNumber) });
+                    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+                    var dialog = DialogService.Show<TaxPurchaseDialog>("Maintenance Expenses", parameters, maxWidth);
+                    var result = await dialog.Result;
+                    if (!result.Canceled)
+                    {
+                        var purchaseModel = (TaxPurchaseModel)result.Data;
+                        int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, purchaseModel.PID, 134);
+                        if (queryStatus == 0)
+                        {
+                            snackbar.Add("Something went wrong !  Please check Taxpurchase collect number then contact Admin", Severity.Error);
+                        }
+                        else
+                        {
+                            snackbar.Add("Created Successfully", Severity.Success);
+                        }
+                    }
+                    tran.Complete();
                 }
-                else
+                catch (Exception e)
                 {
-                    snackbar.Add("Created Successfully", Severity.Success);
+                    snackbar.Add(e.Message, Severity.Error);
                 }
             }
         }
@@ -998,24 +1015,43 @@
         _busy = true;
         if (HasPermissionJobcardServiceEdit)
         {
-            var parameters = new DialogParameters();
-            parameters.Add("model", new SundryPaymentModel() { Narration = string.Format("Jobcard : {0};", SelectedJobcard.JobcardNumber) });
-            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-            var dialog = DialogService.Show<SundryPaymentDialog>("Maintenance Expenses", parameters, maxWidth);
-            var result = await dialog.Result;
-            if (!result.Canceled)
+            var scopeOptions = new TransactionOptions
+                {
+                    IsolationLevel = IsolationLevel.ReadCommitted,
+                    Timeout = TransactionManager.DefaultTimeout
+                };
+
+            using (var tran = new TransactionScope(TransactionScopeOption.Required, scopeOptions, TransactionScopeAsyncFlowOption.Enabled))
             {
-                var sundryModel = (SundryPaymentModel)result.Data;
-                int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, sundryModel.SundryPaymentID, 11);
-                if (queryStatus == 0)
+                try
                 {
-                    snackbar.Add("Something went wrong !  Please check Sundry payment collect number then contact Admin", Severity.Error);
+                    var parameters = new DialogParameters();
+                    parameters.Add("model", new SundryPaymentModel() { Narration = string.Format("Jobcard : {0};", SelectedJobcard.JobcardNumber) });
+                    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+                    var dialog = DialogService.Show<SundryPaymentDialog>("Maintenance Expenses", parameters, maxWidth);
+                    var result = await dialog.Result;
+                    if (!result.Canceled)
+                    {
+                        var sundryModel = (SundryPaymentModel)result.Data;
+                        int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, sundryModel.SundryPaymentID, 11);
+                        if (queryStatus == 0)
+                        {
+                            snackbar.Add("Something went wrong !  Please check Sundry payment collect number then contact Admin", Severity.Error);
+                        }
+                        else
+                        {
+                            snackbar.Add("Created Successfully", Severity.Success);
+                        }
+                    }
+                    tran.Complete();
                 }
-                else
+                catch (Exception e)
                 {
-                    snackbar.Add("Created Successfully", Severity.Success);
+                    snackbar.Add(e.Message, Severity.Error);
                 }
             }
+
+
         }
         else
         {

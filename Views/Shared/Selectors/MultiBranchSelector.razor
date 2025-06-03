@@ -5,45 +5,81 @@
         <h4>Select Branches</h4>
     </TitleContent>
     <DialogContent>
-        <MudGrid Class="p-2">
-            <MudItem xs="12" Class="m-0 p-0 d-flex">
-                <MudCheckBox Disabled="@(!EnableSelector)" Value="SelectAll" ValueChanged="SelectAllChanged" T="bool" Size="Size.Medium" Color="Color.Tertiary"><B>SELECT ALL</B></MudCheckBox>
-                <MudCheckBox  Value="SelectAllSubs" ValueChanged="SelectAllSubsChanged" T="bool" Size="Size.Medium" Color="Color.Tertiary"><B>SELECT ALL SUB-BRANCHES</B></MudCheckBox>
-            </MudItem>
-            @foreach (var item in AllBranches)
-            {
-                <MudItem xs="12" md="3" xl="3" Class="m-0 p-0">
-                    <MudCheckBox Disabled="@(!EnableSelector)" T="bool" Value="@(UpdatedBranches.Any(x =>  x == item.BranchID.Value))" ValueChanged="@((e)=> CheckedChanged(e,item.BranchID.Value))" Label="@item.BranchName" Color="Color.Primary"></MudCheckBox>
-                </MudItem>
-            }
-        </MudGrid>
+        <MudTabs>
+
+            <MudTabPanel Text="Branches">
+                <MudGrid Class="p-2">
+                    <MudItem xs="12" Class="m-0 p-0 d-flex">
+                        <MudCheckBox Disabled="@(!EnableSelector)" Value="SelectAll" ValueChanged="SelectAllChanged" T="bool" Size="Size.Medium" Color="Color.Tertiary">
+                            <b>SELECT ALL</b>
+                        </MudCheckBox>
+                        <MudCheckBox Value="SelectAllSubs" ValueChanged="SelectAllSubsChanged" T="bool" Size="Size.Medium" Color="Color.Tertiary">
+                            <b>SELECT ALL SUB-BRANCHES</b>
+                        </MudCheckBox>
+                    </MudItem>
+
+                    @foreach (var item in AllBranches)
+                    {
+                        <MudItem xs="12" md="3" xl="3" Class="m-0 p-0">
+                            <MudCheckBox Disabled="@(!EnableSelector)"
+                                         T="bool"
+                                         Value="@(UpdatedBranches.Contains(item.BranchID.Value))"
+                                         ValueChanged="@((e) => CheckedChanged(e, item.BranchID.Value))"
+                                         Label="@item.BranchName"
+                                         Color="Color.Primary" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudTabPanel>
+
+            <MudTabPanel Text="GST No">
+                <MudGrid Class="p-2">
+                    @foreach (var group in BranchesByGst)
+                    {
+                        <MudItem xs="12">
+                            <MudPaper Class="p-2 my-2">
+                                <MudCheckBox T="bool"
+                                             Label=@($"GST: {group.Key}")
+                                             Value="@IsGstGroupSelected(group.Value)"
+                                             ValueChanged="@((val) => SelectByGst(val, group.Value))"
+                                             Color="Color.Secondary" />
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudTabPanel>
+
+        </MudTabs>
     </DialogContent>
     <DialogActions>
-        <MudButton Style="margin-right:18px; margin-bottom:18px;" ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Success" OnClick="@Submit"> Submit</MudButton>
+        <MudButton Style="margin-right:18px; margin-bottom:18px;" ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Success" OnClick="@Submit">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-        [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-        [Parameter]
-        public List<int> SelectedBranches { get; set; }
-        [Parameter]
-        public bool EnableSelector { get; set; } = true;
+    [Parameter] public List<int> SelectedBranches { get; set; }
+    [Parameter] public bool EnableSelector { get; set; } = true;
 
-        List<int> UpdatedBranches = new();
-        List<BranchModel> AllBranches = new();
-        bool SelectAll;
-        bool SelectAllSubs;
+    List<int> UpdatedBranches = new();
+    List<BranchModel> AllBranches = new();
+    Dictionary<string, List<BranchModel>> BranchesByGst = new();
+    bool SelectAll;
+    bool SelectAllSubs;
 
     protected override void OnInitialized()
     {
         AllBranches = ibranch.Select().ToList();
 
         foreach (var item in SelectedBranches)
-        {
             UpdatedBranches.Add(item);
-        }
+
+        BranchesByGst = AllBranches
+            .Where(b => !string.IsNullOrWhiteSpace(b.GstNo))
+            .GroupBy(b => b.GstNo)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         SetSelectAll();
     }
 
@@ -52,22 +88,18 @@
         SelectAll = UpdatedBranches.Count == AllBranches.Count;
     }
 
-    void CheckedChanged(bool val, int BranchID)
+    void CheckedChanged(bool val, int branchId)
     {
         if (val)
         {
-            UpdatedBranches.Add(BranchID);
+            if (!UpdatedBranches.Contains(branchId))
+                UpdatedBranches.Add(branchId);
         }
         else
         {
-            UpdatedBranches.Remove(BranchID);
+            UpdatedBranches.Remove(branchId);
         }
         SetSelectAll();
-    }
-
-    void Submit()
-    {
-        MudDialog.Close(UpdatedBranches);
     }
 
     void SelectAllChanged(bool val)
@@ -75,10 +107,7 @@
         SelectAll = val;
         if (val)
         {
-            foreach (var item in AllBranches.Select(x => x.BranchID.Value).Except(UpdatedBranches))
-            {
-                UpdatedBranches.Add(item);
-            }
+            UpdatedBranches = AllBranches.Select(b => b.BranchID.Value).ToList();
         }
         else
         {
@@ -90,14 +119,39 @@
     {
         SelectAllSubs = val;
         UpdatedBranches.Clear();
-        if (val)
+        if (val && SelectedBranches.Any())
         {
-            List<int?> SubsBranches = ibranch.SelectSubBranches(SelectedBranches.First()).ToList();
+            List<int?> subs = ibranch.SelectSubBranches(SelectedBranches.First()).ToList();
+            foreach (var id in subs.Where(x => x.HasValue).Select(x => x.Value))
+                UpdatedBranches.Add(id);
+        }
+    }
 
-            foreach (var item in SubsBranches.Select(x => x.Value))
+    bool IsGstGroupSelected(List<BranchModel> group)
+    {
+        return group.All(b => UpdatedBranches.Contains(b.BranchID.Value));
+    }
+
+    void SelectByGst(bool isSelected, List<BranchModel> group)
+    {
+        var ids = group.Select(b => b.BranchID.Value);
+        if (isSelected)
+        {
+            foreach (var id in ids)
             {
-                UpdatedBranches.Add(item);
+                if (!UpdatedBranches.Contains(id))
+                    UpdatedBranches.Add(id);
             }
-        }       
+        }
+        else
+        {
+            UpdatedBranches = UpdatedBranches.Except(ids).ToList();
+        }
+        SetSelectAll();
+    }
+
+    void Submit()
+    {
+        MudDialog.Close(UpdatedBranches);
     }
 }

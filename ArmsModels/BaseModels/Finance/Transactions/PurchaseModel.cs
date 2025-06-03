@@ -115,6 +115,7 @@ namespace ArmsModels.BaseModels
         public virtual string ItemCode { get; set; }
         public virtual string ItemDescription { get; set; }
         public virtual string ItemGroupDescription { get; set; }
+        public virtual string PartNumber { get; set; }
         public int? CostCenter { get; set; }
         public virtual string CostCenterVal { get; set; }
         public int? Dimension { get; set; }

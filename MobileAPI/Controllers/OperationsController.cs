@@ -1,11 +1,15 @@
 ﻿using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
+using Core.BaseModels.Operations;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Numerics;
+using System.Security;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MobileAPI.Controllers
@@ -17,15 +21,35 @@ namespace MobileAPI.Controllers
         private readonly IPlaceService _placeService;
         private readonly IEventService _eventService;
         private readonly IGcService _gcService;
+        private readonly IOrderService _orderService;
+        private readonly IRouteService _routeService;
+        private readonly IDistrictService _districtService;
+        private readonly IUserService _userService;
 
-        public OperationsController(IPlaceService placeService, 
+        public OperationsController(IPlaceService placeService,
                                     IEventService eventService,
-                                    IGcService gcService)
+                                    IGcService gcService,
+                                    IOrderService orderService,
+                                    IRouteService routeService,
+                                    IDistrictService districtService,
+                                    IUserService userService)
         {
             _placeService = placeService;
             _eventService = eventService;
             _gcService = gcService;
+            _orderService = orderService;
+            _routeService = routeService;
+            _districtService = districtService;
+            _userService = userService;
         }
+        public bool HasPermissionDistrictServiceEdit { get; set; } = false;
+        public int DistrictDocTypeID = 54;
+        public bool HasPermissionPlaceServiceEdit { get; set; } = false;
+        public int PlaceDocTypeID = 44;
+        public bool HasPermissionRouteServiceEdit { get; set; } = false;
+        public int RouteDocTypeID = 43;
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
 
         //Place Select
         [HttpGet("[action]/")]
@@ -62,6 +86,72 @@ namespace MobileAPI.Controllers
             IEnumerable<GcSetModel> GCsToUnload;
             GCsToUnload = _gcService.SelectUnloadedMobile(TripID).ToList();
             return GCsToUnload;
+        }
+        
+        [HttpPost("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]        
+        public async Task<IActionResult> UpdateRoute(RouteModel updateModel)
+        {
+            var returnModel = await _routeService.Update(updateModel);
+            if (returnModel != null)
+            {
+                return Ok("Saved Successfully.");
+            }
+            return BadRequest("Update failed.");            
+        }
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IEnumerable<RouteModel>> SelectRoutes(int RoutID)
+        {
+            var RouteCollection = new List<RouteModel>();
+            await foreach (var route in _routeService.Select(0))
+            {
+                RouteCollection.Add(route);
+            }
+            return RouteCollection;            
+        }
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<StateModel> SelectSatates()
+        {
+            IEnumerable<StateModel> StateCollection;
+            StateCollection = _districtService.GetStates().ToList();
+            return StateCollection;
+        }
+
+        [HttpPost("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IActionResult UpdateDistrict(DistrictModel updateModel)
+        {            
+            var returnModel = _districtService.Update(updateModel);
+            if (returnModel != null)
+            {
+                return Ok("Saved Successfully.");
+            }
+            return BadRequest("Update failed.");            
+        }
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<DistrictModel> SelectDistricts(int? DistrictID)
+        {
+            IEnumerable<DistrictModel> DistrictCollection;
+            DistrictCollection = _districtService.Select(DistrictID).ToList();
+            return DistrictCollection;
+        }
+
+        [HttpPost("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> UpdatePlace(PlaceModel updateModel)
+        {
+            var returnModel = await _placeService.Update(updateModel);
+            if (returnModel != null)
+            {
+                return Ok("Saved Successfully.");
+            }
+            return BadRequest("Update failed.");
         }
     }
 }

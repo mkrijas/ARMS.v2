@@ -8,6 +8,7 @@
 @using System.Threading;
 @using Core.BaseModels.Finance.Transactions;
 @using Pages.Operations.Expenses
+@using System.Transactions;
 @inject IOpTranService Iservice
 @inject ITripService tripIservice
 @inject ITripFuelService tripFuelIservice
@@ -424,40 +425,60 @@
             }
         }
 
-        // Call the service to update the operation transaction
-        var updatedModel = Iservice.Update(model);
-        model.OpTranID = updatedModel.OpTranID;
-        if (updatedModel.OpTranID != null && AdvanceReturnAmount > 0 && model.TripID is not null)
+        var updatedModel =  new OpTranModel();
+
+
+        var scopeOptions = new TransactionOptions
+            {
+                IsolationLevel = IsolationLevel.ReadCommitted,
+                Timeout = TransactionManager.DefaultTimeout
+            };
+
+        using (var tran = new TransactionScope(TransactionScopeOption.Required, scopeOptions, TransactionScopeAsyncFlowOption.Enabled))
         {
-           
-            var driverId = truckService.GetAssignedDriver(updatedModel.TruckID);
-
-            TripAdvanceModel advanceModel = new()
+            try
+            {
+                // Call the service to update the operation transaction
+                updatedModel = Iservice.Update(model);
+                model.OpTranID = updatedModel.OpTranID;
+                if (updatedModel.OpTranID != null && AdvanceReturnAmount > 0 && model.TripID is not null)
                 {
-                    BranchID = BranchID,
-                    TripID = Advance.TripID,
-                    DriverID = Advance.DriverID,
-                    Amount = - (AdvanceReturnAmount),
-                    CoaID = Advance.CoaID,
-                    UsageCode = Advance.UsageCode,
-                    DocumentTypeID = DocInfo.DocumentTypeID,
-                    DocumentID = updatedModel.OpTranID,
-                    DocType = Advance.DocType,
-                    RecordStatus = 3
-                };
+           
+                    var driverId = truckService.GetAssignedDriver(updatedModel.TruckID);
 
-            // Update the advance record in the service            
-            var queryStatus = advanceService.Update(advanceModel);
-            if (queryStatus == null)
-            {
-                snackbar.Add("Something went wrong !  Please check Trip expense collect number then contact Admin", Severity.Error);
+                    TripAdvanceModel advanceModel = new()
+                        {
+                            BranchID = BranchID,
+                            TripID = Advance.TripID,
+                            DriverID = Advance.DriverID,
+                            Amount = - (AdvanceReturnAmount),
+                            CoaID = Advance.CoaID,
+                            UsageCode = Advance.UsageCode,
+                            DocumentTypeID = DocInfo.DocumentTypeID,
+                            DocumentID = updatedModel.OpTranID,
+                            DocType = Advance.DocType,
+                            RecordStatus = 3
+                        };
+
+                    // Update the advance record in the service            
+                    var queryStatus = advanceService.Update(advanceModel);
+                    if (queryStatus == null)
+                    {
+                        snackbar.Add("Something went wrong !  Please check Trip expense collect number then contact Admin", Severity.Error);
+                    }
+                    else
+                    {
+                        snackbar.Add("Created Successfully", Severity.Success);
+                    }
+                }
+                tran.Complete();
             }
-            else
+            catch (Exception e)
             {
-                snackbar.Add("Created Successfully", Severity.Success);
+                snackbar.Add(e.Message, Severity.Error);
             }
         }
-        return updatedModel.OpTranID.Value;       
+        return updatedModel.OpTranID.Value; 
     }
 
 

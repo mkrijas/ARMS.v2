@@ -120,6 +120,7 @@ namespace ArmsServices.DataServices
                     ItemCode = dr.GetString("InventoryItemCode"),
                     ItemDescription = dr.GetString("ItemDescription"),
                     ItemGroupDescription = dr.GetString("ItemGroupDescription"),
+                    PartNumber = dr.GetString("PartNumber"),
                     CostCenter = dr.GetInt32("CostCenterID"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     Dimension = dr.GetInt32("DimensionID"),

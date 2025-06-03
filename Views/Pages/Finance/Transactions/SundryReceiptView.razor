@@ -7,7 +7,8 @@
 @inject IGstUsageIDService Iusage
 @inject ITripAdvanceService Iadvance
 @inject IDialogService DialogService
-@using Views.Shared
+@using Views.Shared;
+@using System.Transactions;
 
 @* @using System.Threading;
 @using ArmsModels.BaseModels.Finance.Transactions *@
@@ -167,71 +168,79 @@
         if (!result.Canceled)
         {
             var data = (List<TripAdvanceModel>)result.Data;
-
-            try
-            {
-                SundryReceiptModel AdvaceReceiptModel = new SundryReceiptModel()
+            var scopeOptions = new TransactionOptions
                 {
-                    BranchID = BranchID,
-                    NatureOfTransaction = "Advance",
-                    PayerContactNo = data.First().DriverMobile,
-                    PayerName = data.First().DriverName,
-                    TotalAmount = data.Sum(x => x.Amount)
+                    IsolationLevel = IsolationLevel.ReadCommitted,
+                    Timeout = TransactionManager.DefaultTimeout
                 };
 
-                foreach (var item in data)
+            using (var tran = new TransactionScope(TransactionScopeOption.Required, scopeOptions, TransactionScopeAsyncFlowOption.Enabled))
+            {
+                try
                 {
-                    AdvaceReceiptModel.Entries.Add(new SundryReceiptEntryModel()
-                    {
-                        Amount = item.Amount,
-                        BranchID = BranchID,
-                        CoaID = item.CoaID,
-                        Reference = item.TripNo,
-                        UsageCode = item.UsageCode,
-                        UsageCodeDescription = item.UsageDescription,                        
-                    });
-                }
-
-                //await OpenForm(AdvaceReceiptModel, false, true);
-                DialogParameters sparms = new DialogParameters();
-                sparms.Add("model", AdvaceReceiptModel);
-                sparms.Add("ReadOnly", false);
-                sparms.Add("DisableAddition", true);
-                //sparms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
-                var sdialog = dialogService.Show<SundryReceiptDialog>(AdvaceReceiptModel.SundryReceiptID == null ? "ADD" : "EDIT", sparms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
-                var sresult = await sdialog.Result;
-                if (!sresult.Canceled)
-                {
-                    var ReturnData = (SundryReceiptModel)sresult.Data;
-                    ReturnData.Entries = Iservice.GetEntries(ReturnData.SundryReceiptID).ToList(); // Get entries for the returned receipt
-                    foreach (var item in ReturnData.Entries)
-                    {
-                        var adv = data.First(x => x.TripNo == item.Reference && x.CoaID == item.CoaID);
-                        if (adv is not null)
+                    SundryReceiptModel AdvaceReceiptModel = new SundryReceiptModel()
                         {
-                            adv.TripAdvanceID = null;
-                            adv.BranchID = BranchID;
-                            adv.Amount = -1 * (item.Amount);
-                            adv.DocumentID = ReturnData.SundryReceiptID;
-                            adv.DocumentTypeID = DocInfo.DocumentTypeID;
-                            var queryStatus = Iadvance.Update(adv);
-                            if (queryStatus == null)
+                            BranchID = BranchID,
+                            NatureOfTransaction = "Advance",
+                            PayerContactNo = data.First().DriverMobile,
+                            PayerName = data.First().DriverName,
+                            TotalAmount = data.Sum(x => x.Amount)
+                        };
+
+                    foreach (var item in data)
+                    {
+                        AdvaceReceiptModel.Entries.Add(new SundryReceiptEntryModel()
                             {
-                                snackbar.Add("Something went wrong !  Please check Sundry receipt collect number then contact Admin", Severity.Error);
-                            }
-                            else
+                                Amount = item.Amount,
+                                BranchID = BranchID,
+                                CoaID = item.CoaID,
+                                Reference = item.TripNo,
+                                UsageCode = item.UsageCode,
+                                UsageCodeDescription = item.UsageDescription,
+                            });
+                    }
+
+                    //await OpenForm(AdvaceReceiptModel, false, true);
+                    DialogParameters sparms = new DialogParameters();
+                    sparms.Add("model", AdvaceReceiptModel);
+                    sparms.Add("ReadOnly", false);
+                    sparms.Add("DisableAddition", true);
+                    //sparms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
+                    var sdialog = dialogService.Show<SundryReceiptDialog>(AdvaceReceiptModel.SundryReceiptID == null ? "ADD" : "EDIT", sparms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+                    var sresult = await sdialog.Result;
+                    if (!sresult.Canceled)
+                    {
+                        var ReturnData = (SundryReceiptModel)sresult.Data;
+                        ReturnData.Entries = Iservice.GetEntries(ReturnData.SundryReceiptID).ToList(); // Get entries for the returned receipt
+                        foreach (var item in ReturnData.Entries)
+                        {
+                            var adv = data.First(x => x.TripNo == item.Reference && x.CoaID == item.CoaID);
+                            if (adv is not null)
                             {
-                                snackbar.Add("Created Successfully", Severity.Success);
+                                adv.TripAdvanceID = null;
+                                adv.BranchID = BranchID;
+                                adv.Amount = -1 * (item.Amount);
+                                adv.DocumentID = ReturnData.SundryReceiptID;
+                                adv.DocumentTypeID = DocInfo.DocumentTypeID;
+                                var queryStatus = Iadvance.Update(adv);
+                                if (queryStatus == null)
+                                {
+                                    snackbar.Add("Something went wrong !  Please check Sundry receipt collect number then contact Admin", Severity.Error);
+                                }
+                                else
+                                {
+                                    snackbar.Add("Created Successfully", Severity.Success);
+                                }
                             }
                         }
+                        LoadData(ShowApproved, NumberOfRecords);
                     }
-                    LoadData(ShowApproved, NumberOfRecords);
+                    tran.Complete();
                 }
-
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
         }        
     }

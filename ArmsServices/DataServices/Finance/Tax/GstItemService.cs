@@ -173,6 +173,7 @@ namespace ArmsServices.DataServices
                 ItemDescription = dr.GetString("ItemDescription"),
                 HsnCode = dr.GetString("HsnCode"),
                 ItemGroupDescription = dr.GetString("ItemGroupDescription"),
+                PartNumber = dr.GetString("PartNumber"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
                 PeriodTo = dr.GetDateTime("PeriodTo"),
                 RID = dr.GetInt32("RID"),
