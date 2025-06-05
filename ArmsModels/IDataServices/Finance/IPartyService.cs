@@ -19,6 +19,7 @@ namespace ArmsServices.DataServices
         IEnumerable<PartyModel> SelectByBranch( int? BranchID);
         IEnumerable<PartyModel> SelectByCode(string PartyCode,string NatureOfBusiness);     
         IEnumerable<ContactModel> GetContacts(int? PartyID);
+        IEnumerable<AddressModel> GetAddress(int? PartyID);
         IEnumerable<PartyModel> GetCustomers(string Code);
         IEnumerable<PartyModel> GetVendors(string Code);
         IEnumerable<PartyModel> GetRenters(string Code);

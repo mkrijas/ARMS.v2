@@ -29,7 +29,8 @@ namespace ArmsModels.BaseModels
         {
             get
             { return _tradeName; }
-            set { _tradeName = value; Address.AddresseeName = value; }
+            set { _tradeName = value; }
+            //Address.AddresseeName = value; }
         }
         [Required]
         [StringLength(200)]
@@ -72,7 +73,7 @@ namespace ArmsModels.BaseModels
         public string IcPartnerCode { get; set; }
 
         [ValidateComplexType]
-        public AddressModel Address { get; set; } = new(); // Address associated with the party
+        public List<AddressModel> Addresses { get; set; } = new List<AddressModel>(); // Address associated with the party
         [ValidateComplexType]
         [RequiredIf("PaymentMode", "Bank")]
         public BankAccountModel BankAccount { get; set; } // Bank account associated with the party

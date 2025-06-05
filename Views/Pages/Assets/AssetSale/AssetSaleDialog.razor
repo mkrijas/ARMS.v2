@@ -23,23 +23,55 @@
             <EditForm id="saleForm" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
-                <MudGrid Spacing="2">
-                    <MudItem xs="12" md="8">
-                        <PartySelector Value="model.PartyInfo" ValueChanged = "PartyChanged" NatureOfBusiness="Customer" BranchID="@BranchID" IncludeSisterConcern></PartySelector>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12">
-                        <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@BranchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
-                    </MudItem>
-                    <MudItem xs="12">
-                        <AssetsListView OnAssetAdded="AddAssets" OnAmountChange="SetTotal" BranchID="@BranchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" AssetList="@model.Assets" ReadOnly="@ReadOnly" EditMode="@(model.Assets != null)" />
-                    </MudItem>
-                </MudGrid>
+                <MudTabs>
+                    <MudTabPanel Text="Invoice">
+                        <br />
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="8">
+                                <PartySelector Value="model.PartyInfo" ValueChanged = "PartyChanged" NatureOfBusiness="Customer" BranchID="@BranchID" IncludeSisterConcern></PartySelector>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                            </MudItem>
+                            <MudItem xs="12" md="12">
+                                <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@BranchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <AssetsListView OnAssetAdded="AddAssets" OnAmountChange="SetTotal" BranchID="@BranchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" AssetList="@model.Assets" ReadOnly="@ReadOnly" EditMode="@(model.Assets != null)" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudTabPanel>
+                    <MudTabPanel Text="Address">
+                        <br />
+                        <MudRadioGroup T="AddressModel" @bind-Value="selectedAddress">
+                            <MudGrid>
+                                @foreach (var address in addresses)
+                                {
+                                    <MudItem xs="12" md="6" lg="4" Class="pa-2">
+                                        <MudPaper Elevation="5" Class="pa-4">
+                                            <MudRadio T="AddressModel" Value="address" Color="Color.Primary" />
+                                            <div>
+                                                <strong>@address.AddresseeName</strong>
+                                            </div>
+                                            <div>
+                                                @address.Building, @address.Street, @address.City
+                                            </div>
+                                            <div>
+                                                @address.Place, @address.City
+                                            </div>
+                                            <div>
+                                                Pincode: @address.PinCode
+                                            </div>
+                                        </MudPaper>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </MudRadioGroup>
+                    </MudTabPanel>
+                </MudTabs>
             </EditForm>
         </MudPaper>
     </FormContent>
@@ -65,6 +97,8 @@
     public bool HasPermissionSaleServiceEdit { get; set; } = false;
     public bool HasPermissionSaleServiceApprove { get; set; } = false;
     public int SaleDocTypeID = 13;
+    private AddressModel selectedAddress;
+    private List<AddressModel> addresses = new List<AddressModel>();
 
     // Document information model for the Sales 
     protected override DocumentInfoModel DocInfo { get; set; } = new();
@@ -88,6 +122,9 @@
 
         if (model?.SID != null)
         {
+            addresses = partyIservice.GetAddress(model.PartyInfo.PartyID)?.ToList() ?? new List<AddressModel>();
+            selectedAddress = addresses.FirstOrDefault(x => x.AddressID == model.AddressID);
+
             UserIDTemp = model.UserInfo.UserID;
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID); // Get party info
             var ResultParticulars = Iservice.GetParticulars(model.SID); // Get particulars
@@ -109,6 +146,8 @@
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
+       
+        StateHasChanged();
     }
 
     // Lifecycle method called when parameters are set
@@ -139,10 +178,16 @@
         model.PartyInfo = party;
         if (party != null)
         {
+            addresses = partyIservice.GetAddress(model.PartyInfo.PartyID)?.ToList() ?? new List<AddressModel>();
+            if (addresses.Count == 1)
+            {
+                selectedAddress = addresses[0];
+            }
+
             IsTaxable = party.GstType == "Registered" || party.GstType == "UnRegistered";
             Local = partyIservice.IsLocal(model.PartyInfo.PartyID, BranchID);
         }
-        else { Local = false; }
+        else { Local = false; }        
     }
 
     // Method to add an expense to the model
@@ -161,10 +206,17 @@
 
     // Method to update the Sale model
     protected override async Task<int> Update(SaleModel editModel)
-    {
-        if (await validate(model))
+    {      
+        if (selectedAddress == null)
         {
+            snackbar.Add("Please select billing address!", Severity.Warning);
+            return 0;
+        }
+
+        if (await validate(model))
+        {            
             model.SalesType = "Asset";
+            model.AddressID = selectedAddress.AddressID;
             model = Iservice.Update(model); // Update the model using the service
             return model.SID ?? 0;
         }

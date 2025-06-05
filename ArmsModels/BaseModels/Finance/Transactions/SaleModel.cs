@@ -22,6 +22,7 @@ namespace ArmsModels.BaseModels
         public decimal? AdditionalTCS { get; set; }
         public string SalesType { get; set; }
         public string InvoiceNo { get; set; }
+        public int? AddressID { get; set; }
         [ValidateComplexType]
         public List<TaxPurchaseExpenseModel> Particulars { get; set; } = new(); // List of expenses associated with the sale
         [ValidateComplexType]

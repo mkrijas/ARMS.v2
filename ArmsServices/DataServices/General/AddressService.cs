@@ -30,6 +30,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Place", model.Place),
                new SqlParameter("@Street", model.Street),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@PartyID", model.PartyID),
+               new SqlParameter("@IsDefault", model.IsDefault),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.AddressesUpdate]", parameters))
             {
@@ -72,12 +74,14 @@ namespace ArmsServices.DataServices
                     PinCode = dr.GetString("PinCode"),
                     Place = dr.GetString("Place"),
                     Street = dr.GetString("Street"),
+                    IsDefault = dr.GetBoolean("IsDefault"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecordStatus"),
                         TimeStampField = dr.GetDateTime("TimeStamp"),
                         UserID = dr.GetString("UserID"),
                     },
+
                 };
             }
             return model;

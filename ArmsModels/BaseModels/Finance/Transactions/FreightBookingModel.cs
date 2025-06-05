@@ -52,6 +52,7 @@ namespace ArmsModels.BaseModels
         public GstModel Gst { get; set; } = new(); // Information about the GST associated with the proforma invoiced
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
+        public int? AddressID { get; set; }
         public List<GcTariffModel> BookedGCs { get; set; } // List of booked GC tariffs associated with the proforma invoice
     }
 
