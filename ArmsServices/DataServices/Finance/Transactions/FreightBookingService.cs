@@ -229,7 +229,7 @@ namespace ArmsServices.DataServices
                     PartyID = dr.GetInt32("PartyID"),
                     TradeName = dr.GetString("tradename")
                 },
-
+                AddressID = dr.GetInt32("AddressID"),
                 TariffType = new TariffTypeModel()
                 {
                     TariffTypeID = dr.GetInt16("TariffTypeID"),
@@ -320,6 +320,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DraftBillID", model.DraftBillID),
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@PartyID", model.Party?.PartyID),
+               new SqlParameter("@AddressID", model.AddressID),
                new SqlParameter("@PartyCoaID", model.PartyCoa),
                new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
                new SqlParameter("@UsageCode", model.TariffType.UsageCode),

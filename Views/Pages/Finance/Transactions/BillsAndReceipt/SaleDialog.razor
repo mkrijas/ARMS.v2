@@ -22,29 +22,61 @@
             <EditForm id="saleForm" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
-                <MudGrid Spacing="2">
-                    <MudItem xs="12" md="6">
-                        <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="Customer" BranchID="@branchID" IncludeSisterConcern></PartySelector>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceNo)"></MudTextField>
-                    </MudItem>
-                    @* <MudItem xs="12" md="4">
-                    <MudTextField @bind-Value="model.AdditionalTCS" ReadOnly="ReadOnly" Label="Additional TDS" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalTCS)"></MudTextField>
-                    </MudItem> *@
-                    <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12">
-                        <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
-                    </MudItem>
-                    <MudItem xs="12">
-                        <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ItemList="@model.Items" ReadOnly="@ReadOnly" />
-                    </MudItem>
-                </MudGrid>
+                <MudTabs>
+                    <MudTabPanel Text="Invoice">
+                        <br />             
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="6">
+                                <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="Customer" BranchID="@branchID" IncludeSisterConcern></PartySelector>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField ReadOnly="ReadOnly" @bind-Value="model.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceNo)"></MudTextField>
+                            </MudItem>
+                            @* <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.AdditionalTCS" ReadOnly="ReadOnly" Label="Additional TDS" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalTCS)"></MudTextField>
+                            </MudItem> *@
+                            <MudItem xs="12" md="12">
+                                <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ItemList="@model.Items" ReadOnly="@ReadOnly" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudTabPanel>
+                    <MudTabPanel Text="Address">
+                        <br />
+                        <MudRadioGroup T="AddressModel" @bind-Value="selectedAddress">
+                            <MudGrid>
+                                @foreach (var address in addresses)
+                                {
+                                    <MudItem xs="12" md="6" lg="4" Class="pa-2">
+                                        <MudPaper Elevation="5" Class="pa-4">
+                                            <MudRadio T="AddressModel" Value="address" Color="Color.Primary" />
+                                            <div>
+                                                <strong>@address.AddresseeName</strong>
+                                            </div>
+                                            <div>
+                                                @address.Building, @address.Street, @address.City
+                                            </div>
+                                            <div>
+                                                @address.Place, @address.City
+                                            </div>
+                                            <div>
+                                                Pincode: @address.PinCode
+                                            </div>
+                                        </MudPaper>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </MudRadioGroup>
+                    </MudTabPanel>
+                </MudTabs>
             </EditForm>
         </MudPaper>
     </FormContent>
@@ -71,6 +103,8 @@
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
     private bool _busy;
+    private AddressModel selectedAddress;
+    private List<AddressModel> addresses = new List<AddressModel>();
 
 
     public DocumentInfoModel DocumentDetails { get; set; } = new();
@@ -99,6 +133,9 @@
         // If a Sale ID is provided, fetch associated data
         if (model?.SID != null)
         {
+            addresses = partyIservice.GetAddress(model.PartyInfo.PartyID)?.ToList() ?? new List<AddressModel>();
+            selectedAddress = addresses.FirstOrDefault(x => x.AddressID == model.AddressID);
+
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID); // Get party information
             var ResultParticulars = Iservice.GetParticulars(model.SID); // Get particulars
             if (ResultParticulars != null) 
@@ -119,6 +156,8 @@
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
+
+        StateHasChanged();
     }
 
     // Lifecycle method called when parameters are set or changed
@@ -145,11 +184,19 @@
         model.PartyInfo = party;
         if (party != null)
         {
+            addresses = partyIservice.GetAddress(model.PartyInfo.PartyID)?.ToList() ?? new List<AddressModel>();
+            if (addresses.Count == 1)
+            {
+                selectedAddress = addresses[0];
+            }
+
             // Determine if the party is taxable and local
             IsTaxable = party.GstType == "Registered" || party.GstType == "UnRegistered";
             Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
         }
         else { Local = false; }
+
+        
     }
 
     // Method to add an expense to the particulars
@@ -196,6 +243,12 @@
     // Method to handle form submission when the form is valid
     private async Task OnValidSubmit(EditContext context)
     {
+        if (selectedAddress == null)
+        {
+            snackbar.Add("Please select billing address!", Severity.Warning);
+            return;
+        }
+
         if (_busy)
         {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
@@ -208,8 +261,8 @@
             try
             {
                 model.SalesType = "Item";
+                model.AddressID = selectedAddress.AddressID;
                 model.UserInfo.UserID = UserID;
-
                 // Update the sale using the service
                 Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);

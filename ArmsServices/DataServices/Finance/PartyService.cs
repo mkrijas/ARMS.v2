@@ -47,13 +47,14 @@ namespace ArmsServices.DataServices
         // Method to update a party's information
         public PartyModel Update(PartyModel model)
         {
-            AddressModel addressModel = _addressService.Update(model.Address);
+            //AddressModel addressModel = _addressService.Update(model.Address);
             if (model.BankAccount != null)
             {
                 model.BankAccount.UserInfo = model.UserInfo;
                 model.BankAccount = _bankAccountService.Update(model.BankAccount);
             }
-            model.Address = addressModel;
+            //model.Address = addressModel;
+            var AddressList = model.Addresses;
             var ContactList = model.Contacts;
             var UserId = model.UserInfo.UserID;
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -61,7 +62,7 @@ namespace ArmsServices.DataServices
                    new SqlParameter("@PartyID", model.PartyID),
                    new SqlParameter("@TradeName", model.TradeName),
                    new SqlParameter("@NatureOfFirm", model.NatureOfBusiness),
-                   new SqlParameter("@AddressID", model.Address?.AddressID??null),
+                   //new SqlParameter("@AddressID", model.Address?.AddressID??null),
                    new SqlParameter("@AssesseeType", model.AssesseeType),
                    new SqlParameter("@BankAccountID", model.BankAccount?.BankAccountID??null),
                    new SqlParameter("@PAN", model.PAN),
@@ -90,10 +91,53 @@ namespace ArmsServices.DataServices
             {
                 model = GetModel(reader);
             }
+
+            List<int?> CurrentPartyAddressIDs = new List<int?>();
+            List<SqlParameter> parametersGetAddressID = new List<SqlParameter>
+            {
+                 new SqlParameter("@PartyID", model.PartyID),
+                 new SqlParameter("@Operation", "Address")
+            };
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Contacts.GetAllContactIDForPartyID]", parametersGetAddressID))
+            {
+                CurrentPartyAddressIDs.Add(reader.GetInt32("AddressID"));
+            }
+
+            List<IntList> AddressIDsForDetete = new List<IntList>();
+            foreach (var item in CurrentPartyAddressIDs)
+            {
+                if (item != null && !(AddressList.Any(d => d.AddressID == item)))
+                {
+                    AddressIDsForDetete.Add(new IntList() { IntField = item });
+                }
+            }
+
+            
+            List<SqlParameter> parametersDeleteAddressIDs = new List<SqlParameter>
+            {
+                    new SqlParameter("@PartyID", model.PartyID),
+                    new SqlParameter("@Operation", "Address"),
+                    new SqlParameter("@IDs", AddressIDsForDetete.ToDataTable()),
+            };
+            int deleteAddressResult = Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.DeletePassedContactIDsForPartyID]", parametersDeleteAddressIDs);
+            if (deleteAddressResult < 0)
+            {
+                throw new Exception("Error occured while updating address information list.");
+            }
+
+            foreach (var address in AddressList)
+            {
+                address.PartyID = model.PartyID;
+                address.UserInfo.UserID = model.UserInfo.UserID;
+                AddressModel updatedAddress = _addressService.Update(address);
+            }
+
+
             List<int?> CurrentPartyContactIDs = new List<int?>();
             List<SqlParameter> parametersGetContactID = new List<SqlParameter>
             {
-                 new SqlParameter("@PartyID", model.PartyID)
+                 new SqlParameter("@PartyID", model.PartyID),
+                 new SqlParameter("@Operation", "Contact")
             };
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Contacts.GetAllContactIDForPartyID]", parametersGetContactID))
             {
@@ -102,7 +146,7 @@ namespace ArmsServices.DataServices
             List<IntList> ContactIDsForDetete = new List<IntList>();
             foreach (var item in CurrentPartyContactIDs)
             {
-                if(item!= null && !(ContactList.Any(d=>d.ContactID == item)))
+                if (item != null && !(ContactList.Any(d => d.ContactID == item)))
                 {
                     ContactIDsForDetete.Add(new IntList() { IntField = item });
                 }
@@ -110,12 +154,13 @@ namespace ArmsServices.DataServices
 
             List<SqlParameter> parametersDeleteContactIDs = new List<SqlParameter>
             {
-                 new SqlParameter("@PartyID", model.PartyID),
-                 new SqlParameter("@ContactIDs", ContactIDsForDetete.ToDataTable()),
+                    new SqlParameter("@PartyID", model.PartyID),
+                    new SqlParameter("@Operation", "Contact"),
+                    new SqlParameter("@IDs", ContactIDsForDetete.ToDataTable()),
 
             };
             int deleteResult = Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.DeletePassedContactIDsForPartyID]", parametersDeleteContactIDs);
-            if(deleteResult<0)
+            if (deleteResult < 0)
             {
                 throw new Exception("Error occured while updating contact information list.");
             }
@@ -124,6 +169,7 @@ namespace ArmsServices.DataServices
                 AddContact(model.PartyID, item, UserId);
             }
             return model;
+
         }
 
         // Helper class to hold integer values
@@ -182,16 +228,16 @@ namespace ArmsServices.DataServices
             {
                 PartyID = reader.GetInt32("PartyID"),
                 TradeName = reader.GetString("TradeName"),
-                Address = new AddressModel() 
-                { 
-                    AddressID = reader.GetInt32("AddressID"),
-                    AddresseeName = reader.GetString("AddresseeName"),
-                    Building = reader.GetString("Building"),
-                    Street = reader.GetString("Street"),
-                    Place = reader.GetString("Place"),
-                    City = reader.GetString("City"),
-                    PinCode = reader.GetString("PinCode")
-                },
+                //Address = new AddressModel() 
+                //{ 
+                //    AddressID = reader.GetInt32("AddressID"),
+                //    AddresseeName = reader.GetString("AddresseeName"),
+                //    Building = reader.GetString("Building"),
+                //    Street = reader.GetString("Street"),
+                //    Place = reader.GetString("Place"),
+                //    City = reader.GetString("City"),
+                //    PinCode = reader.GetString("PinCode")
+                //},
                 AssesseeType = reader.GetString("AssesseeTypeID"),
                 BankAccount = new BankAccountModel() 
                 { 
@@ -256,6 +302,20 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Contacts.Select]", parameters))
             {
                 yield return _contactService.SelectByID(reader.GetInt32("ContactID"));
+            }
+        }
+
+        public IEnumerable<AddressModel> GetAddress(int? PartyID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@Operation", "Address"),
+            };
+
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Contacts.GetAllContactIDForPartyID]", parameters))
+            {
+                yield return _addressService.SelectByID(reader.GetInt32("AddressID"));
             }
         }
 
