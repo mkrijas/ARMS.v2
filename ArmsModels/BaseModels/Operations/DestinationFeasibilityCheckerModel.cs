@@ -14,8 +14,8 @@ namespace Core.BaseModels.Operations
         public ContentModel Content { get; set; }
         public string BodyType { get; set; }
         public TruckTypeModel TruckType { get; set; }
-        public int? SystemKM { get; set; }
-        public int? RunKM { get; set; }
+        public decimal? SystemKM { get; set; }
+        public decimal? RunKM { get; set; }
         public decimal? StandardDays { get; set; }
         public decimal? FuelLitre { get; set; }
         public decimal? StandardMileage { get; set; }
