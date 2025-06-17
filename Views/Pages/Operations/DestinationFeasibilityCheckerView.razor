@@ -27,8 +27,7 @@
                 <MudTd DataLabel="District">@context.Content.ContentName</MudTd>
                 <MudTd DataLabel="State">@context.TruckType.TruckType - @context.TruckType.BSType - @context.TruckType.wheels</MudTd>
                 <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    @* <MudFab @onclick="@(()=> Print(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /> *@
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -42,12 +41,16 @@
 
     private DestinationFeasibilityCheckerModel model = new DestinationFeasibilityCheckerModel();
     public List<DestinationFeasibilityCheckerModel> collection = new List<DestinationFeasibilityCheckerModel>();
-
+    public bool HasPermissionDfcServiceView { get; set; } = false;
+    public int DocTypeID = 144;
     private string searchDfc= "";
     private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionDfcServiceView = await Irole.HasClaim(DocTypeID.ToString(), "View", ctc.Token);
+
         await GetAll();
     }
 
@@ -74,19 +77,19 @@
         }
         _busy = true;
 
-        // if (HasPermissionPlaceServiceEdit)
-        // {
+        if (HasPermissionDfcServiceView)
+        {
             DialogParameters parms = new DialogParameters();
             parms.Add("model", model.Clone());
             var dialog = DialogService.Show<DestinationFeasibilityCheckerDialog>("Destination Feasibility Checker", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
             var result = await dialog.Result;
-        // }
-        // else
-        // {
-        //     bool? ResultModel = await DialogService.ShowMessageBox(
-        //         "Permission denied!",
-        //         "You don't have any permission to Edit District.");
-        // }
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to view.");
+        }
         await GetAll();
         await Task.Delay(200);
         _busy = false;
