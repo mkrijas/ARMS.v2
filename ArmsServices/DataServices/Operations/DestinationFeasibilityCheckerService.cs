@@ -99,7 +99,7 @@ namespace ArmsServices.DataServices
         }
 
         // Method to select a place by its ID
-        public IEnumerable<DestinationFeasibilityCheckerRatesModel> SelectRates(int? ID)
+        public DestinationFeasibilityCheckerRatesModel SelectRates(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -107,13 +107,15 @@ namespace ArmsServices.DataServices
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.DestinationFeasibilityChecker.Rates.Select]", parameters))
             {
-                yield return new DestinationFeasibilityCheckerRatesModel()
+                return new DestinationFeasibilityCheckerRatesModel()
                 {
                     AverageTaxAndInsurance = dr.GetDecimal("AverageTaxAndInsurance"),
                     TyreRate = dr.GetDecimal("TyreRate"),
                     MaintenanceRate = dr.GetDecimal("MaintenanceRate"),
+                    AdBlueRatio = dr.GetDecimal("AdBlueRatio")
                 };
             }
+            return null;
         }
 
         // Helper method to map data record to PlaceModel

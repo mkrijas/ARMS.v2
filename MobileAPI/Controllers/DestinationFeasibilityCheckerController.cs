@@ -52,9 +52,9 @@ namespace MobileAPI.Controllers
 
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<DestinationFeasibilityCheckerRatesModel> GetRates(int ID)
+        public DestinationFeasibilityCheckerRatesModel GetRates(int ID)
         {
-            IEnumerable<DestinationFeasibilityCheckerRatesModel> CalculationRates;
+            DestinationFeasibilityCheckerRatesModel CalculationRates;
             CalculationRates = _destinationFeasibilityCheckerService.SelectRates(ID);
             return CalculationRates;
         }
