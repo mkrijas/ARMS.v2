@@ -51,6 +51,10 @@ namespace ArmsModels.BaseModels
         [RequiredIfDocumentType(19, 20)]
         public decimal? NCBPercentage { get; set; }
         [Required]
+        public decimal? OwnDamage { get; set; }
+        public decimal? ODGST { get; set; }
+        public decimal? ThirdParty { get; set; }
+        public decimal? TPGST { get; set; }
         public decimal? Amount { get; set; }
         public string AttachedDocument { get; set; }
         public int? RequestID { get; set; }
