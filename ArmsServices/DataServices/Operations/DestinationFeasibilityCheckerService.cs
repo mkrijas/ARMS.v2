@@ -155,7 +155,7 @@ namespace ArmsServices.DataServices
                 TollExpenses = dr.GetDecimal("TollExpenses"),
                 TaggingExpenses = dr.GetDecimal("TaggingExpenses"),
                 DriversSalary = dr.GetDecimal("DriversSalary"),
-                LoadingCharges = dr.GetDecimal("LoadingChargesc"),
+                LoadingCharges = dr.GetDecimal("LoadingCharges"),
                 UnloadingCharges = dr.GetDecimal("UnloadingCharges"),
                 TripOtherExpenses = dr.GetDecimal("TripOtherExpenses"),
                 TripDirectExpenses = dr.GetDecimal("TripDirectExpenses"),

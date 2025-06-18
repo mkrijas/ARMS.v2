@@ -28,6 +28,7 @@
                 <MudTd DataLabel="State">@context.TruckType.TruckType - @context.TruckType.BSType - @context.TruckType.wheels</MudTd>
                 <MudTd DataLabel="">
                     <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                    <MudIconButton OnClick="@(()=> PrintInvoice(context.ID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -83,6 +84,11 @@
             parms.Add("model", model.Clone());
             var dialog = DialogService.Show<DestinationFeasibilityCheckerDialog>("Destination Feasibility Checker", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
             var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                var ReturnData = (DestinationFeasibilityCheckerModel)result.Data;
+                await PrintInvoice(ReturnData.ID);
+            }
         }
         else
         {
@@ -93,5 +99,19 @@
         await GetAll();
         await Task.Delay(200);
         _busy = false;
+    }
+
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+
+    private async Task PrintInvoice(int? ID)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("ID", ID.ToString());
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintDestinationFeasibilityChecker");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
     }
 }
