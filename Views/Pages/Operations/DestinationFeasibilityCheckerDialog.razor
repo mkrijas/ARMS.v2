@@ -107,27 +107,30 @@
                 <MudItem xs="12" md="6">
                     <MudNumericField HideSpinButtons Label="Trip %" @bind-Value="model.TripPercentage" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentText="%" ReadOnly></MudNumericField>
                 </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudNumericField HideSpinButtons Label="Branch Admin Cost" @bind-Value="model.BranchAdminCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudNumericField HideSpinButtons Label="Maintenance Cost" @bind-Value="model.MaintenanceCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudNumericField HideSpinButtons Label="Tyre Cost" @bind-Value="model.TyreCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudNumericField HideSpinButtons Label="Tax And Insurance" @bind-Value="model.TaxAndInsurance" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudNumericField HideSpinButtons Label="Fc Maintenance" @bind-Value="model.FcMaintenance" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudNumericField HideSpinButtons Label="HO Admin Cost" @bind-Value="model.HOAdminCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudNumericField HideSpinButtons Label="Other than Trip Expenses" @bind-Value="model.OtherThanTripExpenses" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
-                </MudItem>
+                @if (HasPermissionDfcServiceAccess)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Branch Admin Cost" @bind-Value="model.BranchAdminCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Maintenance Cost" @bind-Value="model.MaintenanceCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Tyre Cost" @bind-Value="model.TyreCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Tax And Insurance" @bind-Value="model.TaxAndInsurance" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Fc Maintenance" @bind-Value="model.FcMaintenance" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="HO Admin Cost" @bind-Value="model.HOAdminCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Other than Trip Expenses" @bind-Value="model.OtherThanTripExpenses" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                }
                 <MudItem xs="12" md="6">
                     <MudNumericField HideSpinButtons Label="Other than Trip %" @bind-Value="model.OtherThanTripPercentage" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentText="%" ReadOnly></MudNumericField>
                 </MudItem>
@@ -145,10 +148,13 @@
                 </MudItem>
             </MudGrid>
         </EditForm>
-    </DialogContent>
+    </DialogContent>    
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="ResetForm">Reset</MudButton>
-        <MudButton Disabled="@_busy" form="Form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Calculate & Save</MudButton>
+        @if (model.ID == null)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="ResetForm">Reset</MudButton>
+            <MudButton Disabled="@_busy" form="Form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Calculate & Save</MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
@@ -159,10 +165,17 @@
     private List<ContentModel> contents = new List<ContentModel>();
     private List<TruckTypeModel> TruckTypes = new List<TruckTypeModel>();
     private DestinationFeasibilityCheckerRatesModel CalculationRates;
+    public bool HasPermissionDfcServiceEdit { get; set; } = false;
+    public bool HasPermissionDfcServiceAccess { get; set; } = false;
+    public int DocTypeID = 144;
     private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionDfcServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDfcServiceAccess = await Irole.HasClaim(DocTypeID.ToString(), "Access", ctc.Token);
+
         if (model.UserInfo == null)
         {
             model.UserInfo = new ArmsModels.SharedModels.UserInfoModel();
@@ -212,117 +225,123 @@
         CalculationRates = Iservice.SelectRates(TruckType.TruckTypeID);
     }
 
-    private async void Submit(EditContext context)
+    private async Task Submit(EditContext context)
     {
         if (_busy)
         {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
-
-        _busy = true;
-
-        // Initialize necessary objects
-        model.Content ??= new ContentModel();
-        model.TruckType ??= new TruckTypeModel();
-
-        model.RunKM = model.SystemKM * 2;
-
-        // Perform calculations
-        if (model.StandardMileage != 0)
+        if (HasPermissionDfcServiceEdit)
         {
-            model.FuelLitre = model.RunKM / model.StandardMileage;
+
+            _busy = true;
+
+            // Initialize necessary objects
+            model.Content ??= new ContentModel();
+            model.TruckType ??= new TruckTypeModel();
+
+            model.RunKM = model.SystemKM * 2;
+
+            // Perform calculations
+            if (model.StandardMileage != 0)
+            {
+                model.FuelLitre = model.RunKM / model.StandardMileage;
+            }
+            else
+            {
+                // Handle division by zero
+                model.FuelLitre = 0;
+            }
+
+            model.PrimaryFreight = (model.FreightRate + model.Incentive) * model.MetricTonn;
+
+            if (model.SystemKM != 0)
+            {
+                model.PTPK = (model.PrimaryFreight / model.MetricTonn) / model.SystemKM;
+            }
+            else
+            {
+                // Handle division by zero
+                model.PTPK = 0;
+            }
+
+            model.FuelExpenses = model.FuelLitre * model.FuelRate;
+
+            if (model.FuelExpenses.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight.Value != 0)
+            {
+                model.FuelPercentage = Math.Round((model.FuelExpenses.Value / model.PrimaryFreight.Value) * 100, 0);
+            }
+            else
+            {
+                model.FuelPercentage = 0; 
+            }
+
+            model.AdBlueCost = (model.FuelLitre / 100) * CalculationRates.AdBlueRatio * 40;
+            model.DriversSalary = (10000 / 30) * model.StandardDays;
+            model.TripDirectExpenses = model.AdBlueCost + model.DriverWages + model.TollExpenses + model.TaggingExpenses + model.DriversSalary + model.LoadingCharges + model.UnloadingCharges + model.TripOtherExpenses;
+
+            if (model.TripDirectExpenses.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight.Value != 0)
+            {
+                model.TripPercentage = Math.Round((model.TripDirectExpenses.Value / model.PrimaryFreight.Value) * 100, 0);
+            }
+            else
+            {
+                // Handle division by zero
+                model.TripPercentage = 0;
+            }
+
+            model.BranchAdminCost = 35 * model.MetricTonn;
+            model.MaintenanceCost = CalculationRates.MaintenanceRate * model.RunKM;
+            model.TyreCost = CalculationRates.TyreRate * model.RunKM;
+            model.TaxAndInsurance = CalculationRates.AverageTaxAndInsurance * model.StandardDays;
+            model.FcMaintenance = 90 * model.StandardDays;
+            model.HOAdminCost = 40 * model.MetricTonn;
+            model.OtherThanTripExpenses = model.BranchAdminCost + model.MaintenanceCost + model.TyreCost + model.TaxAndInsurance + model.FcMaintenance + model.HOAdminCost;
+
+            if (model.OtherThanTripExpenses.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight != 0)
+            {
+                model.OtherThanTripPercentage = Math.Round((model.OtherThanTripExpenses.Value / model.PrimaryFreight.Value) * 100, 0);
+            }
+            else
+            {
+                // Handle division by zero
+                model.OtherThanTripPercentage = 0;
+            }
+
+            model.TotalExpense = model.TripDirectExpenses + model.OtherThanTripExpenses + model.FuelExpenses;
+            model.Profit = model.PrimaryFreight - model.TotalExpense;
+
+            if (model.TotalExpense.HasValue && model.Profit.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight != 0)
+            {
+                model.ExpensePercentage = Math.Round((model.TotalExpense.Value / model.PrimaryFreight.Value) * 100, 0);
+                model.ProfitPercentage = Math.Round((model.Profit.Value / model.PrimaryFreight.Value) * 100, 0);
+            }
+            else
+            {
+                // Handle division by zero
+                model.ExpensePercentage = 0;
+                model.Profit = 0;
+            }
+
+            // Save the model
+            model = await Iservice.Update(model);
+            snackbar.Add("Saved successfully!", Severity.Success);
+
+            StateHasChanged();
         }
         else
         {
-            // Handle division by zero
-            model.FuelLitre = 0;
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Add or Edit.");
         }
-
-        model.PrimaryFreight = (model.FreightRate + model.Incentive) * model.MetricTonn;
-
-        if (model.SystemKM != 0)
-        {
-            model.PTPK = (model.PrimaryFreight / model.MetricTonn) / model.SystemKM;
-        }
-        else
-        {
-            // Handle division by zero
-            model.PTPK = 0;
-        }
-
-        model.FuelExpenses = model.FuelLitre * model.FuelRate;
-
-        if (model.FuelExpenses.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight.Value != 0)
-        {
-            model.FuelPercentage = Math.Round((model.FuelExpenses.Value / model.PrimaryFreight.Value) * 100, 0);
-        }
-        else
-        {
-            model.FuelPercentage = 0; 
-        }
-
-        model.AdBlueCost = (model.FuelLitre / 100) * CalculationRates.AdBlueRatio * 40;
-        model.DriversSalary = (10000 / 30) * model.StandardDays;
-        model.TripDirectExpenses = model.AdBlueCost + model.DriverWages + model.TollExpenses + model.TaggingExpenses + model.DriversSalary + model.LoadingCharges + model.UnloadingCharges + model.TripOtherExpenses;
-
-        if (model.TripDirectExpenses.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight.Value != 0)
-        {
-            model.TripPercentage = Math.Round((model.TripDirectExpenses.Value / model.PrimaryFreight.Value) * 100, 0);
-        }
-        else
-        {
-            // Handle division by zero
-            model.TripPercentage = 0;
-        }
-
-        model.BranchAdminCost = 35 * model.MetricTonn;
-        model.MaintenanceCost = CalculationRates.MaintenanceRate * model.RunKM;
-        model.TyreCost = CalculationRates.TyreRate * model.RunKM;
-        model.TaxAndInsurance = CalculationRates.AverageTaxAndInsurance * model.StandardDays;
-        model.FcMaintenance = 90 * model.StandardDays;
-        model.HOAdminCost = 40 * model.MetricTonn;
-        model.OtherThanTripExpenses = model.BranchAdminCost + model.MaintenanceCost + model.TyreCost + model.TaxAndInsurance + model.FcMaintenance + model.HOAdminCost;
-
-        if (model.OtherThanTripExpenses.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight != 0)
-        {
-            model.OtherThanTripPercentage = Math.Round((model.OtherThanTripExpenses.Value / model.PrimaryFreight.Value) * 100, 0);
-        }
-        else
-        {
-            // Handle division by zero
-            model.OtherThanTripPercentage = 0;
-        }
-
-        model.TotalExpense = model.TripDirectExpenses + model.OtherThanTripExpenses + model.FuelExpenses;
-        model.Profit = model.PrimaryFreight - model.TotalExpense;
-
-        if (model.TotalExpense.HasValue && model.Profit.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight != 0)
-        {
-            model.ExpensePercentage = Math.Round((model.TotalExpense.Value / model.PrimaryFreight.Value) * 100, 0);
-            model.ProfitPercentage = Math.Round((model.Profit.Value / model.PrimaryFreight.Value) * 100, 0);
-        }
-        else
-        {
-            // Handle division by zero
-            model.ExpensePercentage = 0;
-            model.Profit = 0;
-        }
-        StateHasChanged();
-
-        // Save the model
-        Iservice.Update(model);
-        snackbar.Add("Saved successfully!", Severity.Success);
-
-        await Task.Delay(200);
-        _busy = false;
     }
 
     private void ResetForm()
     {
         // Reset model properties to their default values
         model = new DestinationFeasibilityCheckerModel();
+        _busy = false;
     }
-
-
 }
