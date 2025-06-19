@@ -65,6 +65,7 @@ builder.Services.AddScoped<ITruckTypeService, TruckTypeService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<IDistrictService, DistrictService>();
+builder.Services.AddScoped<IMobileNotificationService, MobileNotificationService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();

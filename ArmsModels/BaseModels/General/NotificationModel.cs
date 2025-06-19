@@ -24,6 +24,13 @@ namespace ArmsModels.BaseModels
         public string OriginRef { get; set; }        
         public UserInfoModel UserInfo { get; set; }        
     }    
+
+    public class MobileNotificationModel
+    {
+        public int? NotificationID { get; set; }
+        public string UserID { get; set; }
+        public string Token { get; set; }
+    }
 }
 
 

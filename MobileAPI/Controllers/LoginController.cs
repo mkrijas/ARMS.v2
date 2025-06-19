@@ -2,6 +2,7 @@
 using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
+using Core.BaseModels.Operations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -19,6 +20,7 @@ namespace MobileAPI.Controllers
         private readonly JwtSettings jwtSettings;
         private readonly IUserService _userService;
         private readonly IDbService _dbService;
+        private readonly IMobileNotificationService _mobileNotificationService;
 
         public LoginController(JwtSettings jwtSettings,
 
@@ -26,7 +28,8 @@ namespace MobileAPI.Controllers
             UserManager<UserModel> userManager,
             SignInManager<UserModel> signInManager,
             IUserService userService,
-            IDbService dbService
+            IDbService dbService,
+            IMobileNotificationService mobileNotificationService
             )
         {
             this.jwtSettings = jwtSettings;
@@ -35,6 +38,7 @@ namespace MobileAPI.Controllers
             _logger = logger;
             _userService = userService;
             _dbService = dbService;
+            _mobileNotificationService = mobileNotificationService;
         }
 
         [HttpPost]
@@ -129,6 +133,19 @@ namespace MobileAPI.Controllers
                 return NotFound("Connection string not found.");
             }
             return Ok(currentConnectionString);
+        }
+
+        [HttpPost("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<string> UpdateMobileNotification(MobileNotificationModel updateModel)
+        {
+            string result = "";
+            var returnModel = _mobileNotificationService.UpdateMobileNotification(updateModel);
+            if (returnModel != null)
+            {
+                result = "Updated Successfully.";
+            }
+            return result;
         }
     }
 }
