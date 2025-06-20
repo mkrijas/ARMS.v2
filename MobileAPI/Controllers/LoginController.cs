@@ -3,10 +3,13 @@ using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
 using Core.BaseModels.Operations;
+using FirebaseAdmin.Messaging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using static Google.Apis.Requests.BatchRequest;
 
 namespace MobileAPI.Controllers
 {
@@ -148,13 +151,55 @@ namespace MobileAPI.Controllers
             return result;
         }
 
-        [HttpGet("[action]/")]
-        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<MobileNotificationModel> GetAllTokens()
+        [HttpPost("SendAllFirebaseNotifications")]        
+        public async Task<IActionResult> SendAllFirebaseNotifications([FromBody] MobileNotificationModel model)
         {
-            IEnumerable<MobileNotificationModel> TokenList;
-            TokenList = _mobileNotificationService.SelectAllToken();
-            return TokenList;
+            try
+            {
+                // 1. Get all device tokens from service
+                var tokenList = _mobileNotificationService.SelectAllToken();
+
+                var results = new List<object>();
+
+                foreach (var tokenModel in tokenList)
+                {
+                    var message = new Message()
+                    {
+                        Token = tokenModel.Token,
+                        Notification = new Notification
+                        {
+                            Title = model.Title,
+                            Body = model.Body
+                        }
+                    };
+
+                    try
+                    {
+                        var messaging = FirebaseMessaging.DefaultInstance;
+                        var result = await messaging.SendAsync(message);
+                        results.Add(new { Token = tokenModel.Token, Success = true, Data = result });
+                    }
+                    catch (Exception ex)
+                    {
+                        results.Add(new { Token = tokenModel.Token, Success = false, Error = ex.Message });
+                    }
+                }
+                var response = new
+                {
+                    Status = "Success",
+                    Results = results
+                };
+                return StatusCode(200, response);
+            }
+            catch (Exception ex)
+            {
+                var response = new
+                {
+                    Status = "Bad Request"
+                };
+                return StatusCode(500, response);
+            }
         }
+
     }
 }
