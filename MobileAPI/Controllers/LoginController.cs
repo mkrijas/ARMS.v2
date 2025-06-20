@@ -147,5 +147,14 @@ namespace MobileAPI.Controllers
             }
             return result;
         }
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<MobileNotificationModel> GetAllTokens()
+        {
+            IEnumerable<MobileNotificationModel> TokenList;
+            TokenList = _mobileNotificationService.SelectAllToken();
+            return TokenList;
+        }
     }
 }

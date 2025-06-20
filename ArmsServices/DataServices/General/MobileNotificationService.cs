@@ -1,7 +1,9 @@
 ﻿using ArmsModels.BaseModels;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Reflection;
 
 namespace ArmsServices.DataServices.General
 {
@@ -13,7 +15,6 @@ namespace ArmsServices.DataServices.General
         {
             Iservice = iservice;
         }
-
 
         public MobileNotificationModel UpdateMobileNotification(MobileNotificationModel model)
         {
@@ -34,5 +35,28 @@ namespace ArmsServices.DataServices.General
             }
             return model;
         }
+
+        public IEnumerable<MobileNotificationModel> SelectAllToken()
+        {
+            //List<SqlParameter> parameters = new List<SqlParameter>
+            //{
+            //    new SqlParameter("@UserID", 0) 
+            //};
+
+            var models = new List<MobileNotificationModel>();
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Mobile.Notification.Select]", null))
+            {
+                var model = new MobileNotificationModel()
+                {
+                    Token = dr.GetString("Token")
+                };
+
+                models.Add(model);
+            }
+
+            return models;
+        }
+
     }
 }
