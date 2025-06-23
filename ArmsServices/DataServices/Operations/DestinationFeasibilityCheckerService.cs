@@ -99,7 +99,7 @@ namespace ArmsServices.DataServices
         }
 
         // Method to select a place by its ID
-        public IEnumerable<DestinationFeasibilityCheckerRatesModel> SelectRates(int? ID)
+        public DestinationFeasibilityCheckerRatesModel SelectRates(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -107,13 +107,15 @@ namespace ArmsServices.DataServices
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.DestinationFeasibilityChecker.Rates.Select]", parameters))
             {
-                yield return new DestinationFeasibilityCheckerRatesModel()
+                return new DestinationFeasibilityCheckerRatesModel()
                 {
                     AverageTaxAndInsurance = dr.GetDecimal("AverageTaxAndInsurance"),
                     TyreRate = dr.GetDecimal("TyreRate"),
                     MaintenanceRate = dr.GetDecimal("MaintenanceRate"),
+                    AdBlueRatio = dr.GetDecimal("AdBlueRatio")
                 };
             }
+            return null;
         }
 
         // Helper method to map data record to PlaceModel
@@ -124,19 +126,19 @@ namespace ArmsServices.DataServices
                 ID = dr.GetInt32("ID"),
                 Content = new ContentModel
                 {
-                    ContentID = dr.GetInt16("ContentID"),
+                    ContentID = dr.GetByte("ContentID"),
                     ContentName = dr.GetString("ContentName"),
                 },
                 BodyType = dr.GetString("BodyType"),
                 TruckType = new TruckTypeModel
                 {
-                    TruckTypeID = dr.GetInt16("TruckTypeID"),
+                    TruckTypeID = dr.GetByte("TruckTypeID"),
                     TruckType = dr.GetString("TruckType"),
                     wheels = dr.GetByte("wheels"),
                     BSType = dr.GetString("BSType"),
                 },
-                SystemKM = dr.GetInt32("SystemKM"),
-                RunKM = dr.GetInt32("RunKM"),
+                SystemKM = dr.GetDecimal("SystemKM"),
+                RunKM = dr.GetDecimal("RunKM"),
                 StandardDays = dr.GetDecimal("StandardDays"),
                 FuelLitre = dr.GetDecimal("FuelLitre"),
                 StandardMileage = dr.GetDecimal("StandardMileage"),
@@ -153,7 +155,7 @@ namespace ArmsServices.DataServices
                 TollExpenses = dr.GetDecimal("TollExpenses"),
                 TaggingExpenses = dr.GetDecimal("TaggingExpenses"),
                 DriversSalary = dr.GetDecimal("DriversSalary"),
-                LoadingCharges = dr.GetDecimal("LoadingChargesc"),
+                LoadingCharges = dr.GetDecimal("LoadingCharges"),
                 UnloadingCharges = dr.GetDecimal("UnloadingCharges"),
                 TripOtherExpenses = dr.GetDecimal("TripOtherExpenses"),
                 TripDirectExpenses = dr.GetDecimal("TripDirectExpenses"),

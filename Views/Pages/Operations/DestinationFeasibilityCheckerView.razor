@@ -1,0 +1,124 @@
+﻿@page "/dfc"
+@using Core.BaseModels.Operations
+@inject IDestinationFeasibilityCheckerService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@using System.Threading;
+@using System.Data.SqlClient;
+@inject IRoleService<RoleModel> Irole
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<DestinationFeasibilityCheckerModel, bool>(search)" @bind-district="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Destination Feasibility Checker</MudText>
+                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new DestinationFeasibilityCheckerModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchDfc" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<DestinationFeasibilityCheckerModel, object>(x=> x.Content.ContentName)" InitialDirection="SortDirection.Ascending">Content</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DestinationFeasibilityCheckerModel, object>(x=> x.TruckType.TruckType)" InitialDirection="SortDirection.Ascending">Truck Type</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DestinationFeasibilityCheckerModel, object>(x=> x.UserInfo.UserID)" InitialDirection="SortDirection.Ascending">Created By</MudTableSortLabel></MudTh>
+                <MudTh>Action</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="District">@context.Content.ContentName</MudTd>
+                <MudTd DataLabel="State">@context.TruckType.TruckType - @context.TruckType.BSType - @context.TruckType.wheels</MudTd>
+                <MudTd DataLabel="State">@context.UserInfo.UserID</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                    @if (HasPermissionDfcServiceAccess)
+                    {
+                        <MudIconButton OnClick="@(()=> PrintInvoice(context.ID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
+                    }
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+    @code {
+
+    private DestinationFeasibilityCheckerModel model = new DestinationFeasibilityCheckerModel();
+    public List<DestinationFeasibilityCheckerModel> collection = new List<DestinationFeasibilityCheckerModel>();
+    public bool HasPermissionDfcServiceView { get; set; } = false;
+    public bool HasPermissionDfcServiceAccess { get; set; } = false;
+    public int DocTypeID = 144;
+    private string searchDfc= "";
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionDfcServiceView = await Irole.HasClaim(DocTypeID.ToString(), "View", ctc.Token);
+        HasPermissionDfcServiceAccess = await Irole.HasClaim(DocTypeID.ToString(), "Access", ctc.Token);
+
+        await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        collection = Iservice.Select(0).ToList();
+    }
+
+    private bool search(DestinationFeasibilityCheckerModel model)
+    {
+        if (model.Content.ContentName != null && model.Content.ContentName.Contains(searchDfc, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private async Task OpenDialog(DestinationFeasibilityCheckerModel model)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        if (HasPermissionDfcServiceView)
+        {
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", model.Clone());
+            var dialog = DialogService.Show<DestinationFeasibilityCheckerDialog>("Destination Feasibility Checker", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                var ReturnData = (DestinationFeasibilityCheckerModel)result.Data;
+                await PrintInvoice(ReturnData.ID);
+            }
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to view.");
+        }
+        await GetAll();
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+
+    private async Task PrintInvoice(int? ID)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("ID", ID.ToString());
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintDestinationFeasibilityChecker");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+    }
+}

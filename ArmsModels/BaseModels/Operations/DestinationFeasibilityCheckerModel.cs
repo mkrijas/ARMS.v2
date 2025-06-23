@@ -10,12 +10,22 @@ namespace Core.BaseModels.Operations
     // Represents the availability status of a truck
     public class DestinationFeasibilityCheckerModel
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<DestinationFeasibilityCheckerModel>(Json);
+        }
+        public DestinationFeasibilityCheckerModel()
+        {
+            TruckType = new TruckTypeModel();
+            UserInfo = new UserInfoModel();
+        }
         public int? ID { get; set; }
         public ContentModel Content { get; set; }
         public string BodyType { get; set; }
         public TruckTypeModel TruckType { get; set; }
-        public int? SystemKM { get; set; }
-        public int? RunKM { get; set; }
+        public decimal? SystemKM { get; set; }
+        public decimal? RunKM { get; set; }
         public decimal? StandardDays { get; set; }
         public decimal? FuelLitre { get; set; }
         public decimal? StandardMileage { get; set; }
@@ -57,5 +67,6 @@ namespace Core.BaseModels.Operations
         public decimal? AverageTaxAndInsurance { get; set; }
         public decimal? TyreRate { get; set; }
         public decimal? MaintenanceRate { get; set; }
+        public decimal? AdBlueRatio { get; set; }
     }
 }

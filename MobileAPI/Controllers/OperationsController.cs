@@ -92,12 +92,16 @@ namespace MobileAPI.Controllers
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]        
         public async Task<IActionResult> UpdateRoute(RouteModel updateModel)
         {
-            var returnModel = await _routeService.Update(updateModel);
-            if (returnModel != null)
+            HasPermissionRouteServiceEdit = _userService.GetClaimsAsync(updateModel.UserInfo.UserID, RouteDocTypeID.ToString(), "Edit", 7, ctc.Token);
+            if (HasPermissionRouteServiceEdit)
             {
-                return Ok("Saved Successfully.");
+                var returnModel = await _routeService.Update(updateModel);
+                if (returnModel != null)
+                {
+                    return Ok("Saved Successfully.");
+                }
             }
-            return BadRequest("Update failed.");            
+            return BadRequest("Permission denied! You don't have any permission to Edit Route.");                   
         }
 
         [HttpGet("[action]/")]
@@ -124,13 +128,17 @@ namespace MobileAPI.Controllers
         [HttpPost("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
         public IActionResult UpdateDistrict(DistrictModel updateModel)
-        {            
-            var returnModel = _districtService.Update(updateModel);
-            if (returnModel != null)
+        {
+            HasPermissionDistrictServiceEdit = _userService.GetClaimsAsync(updateModel.UserInfo.UserID, DistrictDocTypeID.ToString(), "Edit", 7, ctc.Token);
+            if (HasPermissionDistrictServiceEdit)
             {
-                return Ok("Saved Successfully.");
+                var returnModel = _districtService.Update(updateModel);
+                if (returnModel != null)
+                {
+                    return Ok("Saved Successfully.");
+                }
             }
-            return BadRequest("Update failed.");            
+            return BadRequest("Permission denied! You don't have any permission to Edit District.");
         }
 
         [HttpGet("[action]/")]
@@ -146,12 +154,16 @@ namespace MobileAPI.Controllers
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> UpdatePlace(PlaceModel updateModel)
         {
-            var returnModel = await _placeService.Update(updateModel);
-            if (returnModel != null)
+            HasPermissionPlaceServiceEdit = _userService.GetClaimsAsync(updateModel.UserInfo.UserID, PlaceDocTypeID.ToString(), "Edit", 7, ctc.Token);
+            if (HasPermissionPlaceServiceEdit)
             {
-                return Ok("Saved Successfully.");
+                var returnModel = await _placeService.Update(updateModel);
+                if (returnModel != null)
+                {
+                    return Ok("Saved Successfully.");
+                }
             }
-            return BadRequest("Update failed.");
+            return BadRequest("Permission denied! You don't have any permission to Edit Place.");
         }
     }
 }
