@@ -101,6 +101,19 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        public IEnumerable<FastTagModel> GetUploadViewCollectionUnProcessed(int? FastTagUploadID, int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@FastTagUploadID", FastTagUploadID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.SelectUnProcessed]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         // Method to get a collection of selected upload view models by FastTagUploadID
         public IEnumerable<FastTagModel> GetUploadViewSelectedCollection(int? FastTagUploadID)
         {
@@ -365,7 +378,9 @@ namespace DAL.DataServices.Finance.Transactions
                 Reimbursable = dr.GetBoolean("Reimbursable"),
                 DebitAmount = (dr.GetDecimal("DebitAmount") ?? 0),
                 RecordStatus = dr.GetByte("RecordStatus"),
+                ProcessedDateTime = dr.GetDateTime("ProcessedDateTime") 
             };
         }
     }
 }
+
