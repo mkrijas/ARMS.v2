@@ -5,6 +5,9 @@
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
+@inject ITripAdvanceService Iadvance
+@inject IConfigTable config
+@inject IGstUsageIDService usage
 
  <MudDialog>
      <TitleContent>
@@ -22,19 +25,25 @@
     </TitleContent>
     <DialogContent>
         <MudContainer Style="min-height:100px;max-height: 300px;padding-left:10px">
-            <EditForm id="AdvancePayForm" Model="@spe" OnValidSubmit="OnValidSubmit">
+            <EditForm id="AdvancePayForm" Model="@model" OnValidSubmit="OnValidSubmit">
                 <MudGrid Spacing="2">
-                    <MudItem xs="6">
-                        <CostCenterSelector @bind-Value="spe.CostCenter" @bind-ValueText="@spe.CostCenterVal" ReadOnly="@ReadOnly" />
+                    <MudItem xs="12" md="4">
+                        <MudDatePicker Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.Docdate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
                     </MudItem>
-                    <MudItem xs="6">
-                        <DimensionSelector @bind-Value="spe.Dimension" @bind-ValueText="@spe.DimensionVal" ReadOnly="@ReadOnly" />
+                    <MudItem xs="12" md="4">
+                        <CostCenterSelector @bind-Value="model.CostCenter" @bind-ValueText="@model.CostCenterVal" ReadOnly="@ReadOnly" />
                     </MudItem>
-                    <MudItem xs="6">
-                        <MudNumericField HideSpinButtons @bind-Value="spe.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Amount)" Required></MudNumericField>
+                    <MudItem xs="12" md="4">
+                        <DimensionSelector @bind-Value="model.Dimension" @bind-ValueText="@model.DimensionVal" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <PaymentAccountSelector BranchID="@model.BranchID.Value" PaymentMode="@model.PaymentMode" PaymentModeChanged="OnChangePaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" BankCharges="@model.BankCharges" @bind-BankTool="@model.PaymentTool" BankChargesChanged="CalculateTotalAmount" />
+                    </MudItem>                    
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons @bind-Value="model.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Amount)" Required></MudNumericField>
                      </MudItem>
-                     <MudItem xs="6">
-                         <MudTextField @bind-Value="spe.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Reference)"></MudTextField>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
                      </MudItem>
                 </MudGrid>
             </EditForm>
@@ -42,7 +51,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-         <MudButton Disabled="@_busy" form="AdvancePayForm" Variant="Variant.Filled" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Send" ButtonType="ButtonType.Submit">NEXT</MudButton>
+        <MudButton Disabled="@_busy" form="AdvancePayForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -55,18 +64,55 @@
     public TruckModel Truck { get; set; }
     [Parameter]
     public DriverModel AssignedDriver { get; set; }
-    private SundryPaymentEntryModel spe { get; set; } = new();
+    private TripAdvanceModel model { get; set; } = new();
     private EditContext editContext;
     [CascadingParameter] 
     MudDialogInstance MudDialog { get; set; }
+    private GstUsageCodeModel UsageCodeModel { get; set; }
     private bool _busy;
+    public bool HasPermissionSundryPaymentServiceEdit { get; set; } = false;
+    int SundryPaymentDocTypeID = 11;
 
     protected override async Task OnInitializedAsync()
     {
-        spe = new()
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionSundryPaymentServiceEdit = await Irole.HasClaim(SundryPaymentDocTypeID.ToString(), "Edit", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;      
+
+        model = new()
         {
+            BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value),
+            UserInfo = new ArmsModels.SharedModels.UserInfoModel
+            {
+                UserID = user.Identity.Name
+            },
             Reference = Trip.TripNumberDisplay.ToString() + " Advance"
         };
+    }
+
+    public void OnChangePaymentMode(string? val)
+    {
+        model.PaymentMode = val;
+        CalculateTotalAmount(model.BankCharges);
+    }
+
+    // Method to calculate the total amount based on bank charges
+    public void CalculateTotalAmount(decimal? val)
+    {
+        model.BankCharges = val;
+        if (model.PaymentMode != null)
+        {
+            if (model.PaymentMode.ToLower().Trim() == ("Bank").ToLower().Trim())
+            {
+                model.Amount += model?.BankCharges ?? 0;
+            }
+        }
+        else
+        {
+            snackbar.Add("PaymentMode is not selected !", Severity.Warning);
+        }
     }
 
     public async Task OnValidSubmit(EditContext context)
@@ -77,17 +123,41 @@
             return;
         }
         _busy = true;
-        try
+        if (HasPermissionSundryPaymentServiceEdit)
         {
-            MudDialog.Close(spe);
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Error);
-        }
+            try
+            {
+                ConfigModel cModel = config.GetTripAdvanceUsageCode();
+                UsageCodeModel = usage.SelectByCode(cModel.ValueString);
+
+                // BranchID = BranchID;
+                model.TripID = Trip.TripID;
+                model.DriverID = AssignedDriver.DriverID;            
+                model.CoaID = UsageCodeModel.CoaID;
+                model.UsageCode = (cModel.ValueString);
+                model.DocumentTypeID = SundryPaymentDocTypeID;
+                // DocumentID = sundryPayment.SundryPaymentID,
+                model.DocType = "Trip";
+                       
+                model = Iadvance.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+            
+                MudDialog.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
        
-        await Task.Delay(200);
-        _busy = false;
+            await Task.Delay(200);
+            _busy = false;
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Add or Edit Sundry Payment.");
+        }
     }
 
     private void Cancel()

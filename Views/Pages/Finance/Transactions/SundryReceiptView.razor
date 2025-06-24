@@ -168,13 +168,20 @@
         if (!result.Canceled)
         {
             var data = (List<TripAdvanceModel>)result.Data;
-            SundryReceiptModel AdvaceReceiptModel = new SundryReceiptModel()
+
+            // Check if all TripIDs are the same
+            if (data.Select(x => x.TripID).Distinct().Count() > 1)
+            {
+                snackbar.Add("Operation not allowed! Trips are different.", Severity.Error);
+                return;
+            }
+
+            TripAdvanceModel AdvaceReceiptModel = new TripAdvanceModel()
                 {
                     BranchID = BranchID,
-                    NatureOfTransaction = "Advance",
-                    PayerContactNo = data.First().DriverMobile,
-                    PayerName = data.First().DriverName,
-                    TotalAmount = data.Sum(x => x.Amount)
+                    TripID = data.First().TripID,
+                    DriverID = data.First().DriverID,
+                    Amount = data.Sum(x => x.Amount)
                 };
 
             foreach (var item in data)
@@ -196,42 +203,43 @@
             sparms.Add("ReadOnly", false);
             sparms.Add("DisableAddition", true);
             //sparms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
-            var sdialog = dialogService.Show<SundryReceiptDialog>(AdvaceReceiptModel.SundryReceiptID == null ? "ADD" : "EDIT", sparms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+            var sdialog = dialogService.Show<AdvanceReceivableDialog>("Advance Receivable", sparms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
             var sresult = await sdialog.Result;
-            if (!sresult.Canceled)
-            {
-                var ReturnData = (SundryReceiptModel)sresult.Data;
-                ReturnData.Entries = Iservice.GetEntries(ReturnData.SundryReceiptID).ToList(); // Get entries for the returned receipt
-                foreach (var item in ReturnData.Entries)
-                {
-                    var adv = data.First(x => x.TripNo == item.Reference && x.CoaID == item.CoaID);
-                    if (adv is not null)
-                    {
-                        adv.TripAdvanceID = null;
-                        adv.BranchID = BranchID;
-                        adv.Amount = -1 * (item.Amount);
-                        adv.DocumentID = ReturnData.SundryReceiptID;
-                        adv.DocumentTypeID = DocInfo.DocumentTypeID;
-                        try
-                        {
-                            Iadvance.Update(adv);
-                        }
-                        catch
-                        {
-                            try
-                            {
-                                Iservice.Delete(ReturnData.SundryReceiptID, ReturnData.UserInfo.UserID);
-                                snackbar.Add("Something went wrong!  Try again", Severity.Error);
-                            }
-                            catch
-                            {
-                                snackbar.Add("Receivable amount not processed!  Please check Sundry receipt and delete the entry", Severity.Error);
-                            }
-                        }
-                    }
-                }
-                LoadData(ShowApproved, NumberOfRecords);
-            }
+            LoadData(ShowApproved, NumberOfRecords);
+            // if (!sresult.Canceled)
+            // {
+            //     var ReturnData = (SundryReceiptModel)sresult.Data;
+            //     ReturnData.Entries = Iservice.GetEntries(ReturnData.SundryReceiptID).ToList(); // Get entries for the returned receipt
+            //     foreach (var item in ReturnData.Entries)
+            //     {
+            //         var adv = data.First(x => x.TripNo == item.Reference && x.CoaID == item.CoaID);
+            //         if (adv is not null)
+            //         {
+            //             adv.TripAdvanceID = null;
+            //             adv.BranchID = BranchID;
+            //             adv.Amount = -1 * (item.Amount);
+            //             adv.DocumentID = ReturnData.SundryReceiptID;
+            //             adv.DocumentTypeID = DocInfo.DocumentTypeID;
+            //             try
+            //             {
+            //                 Iadvance.Update(adv);
+            //             }
+            //             catch
+            //             {
+            //                 try
+            //                 {
+            //                     Iservice.Delete(ReturnData.SundryReceiptID, ReturnData.UserInfo.UserID);
+            //                     snackbar.Add("Something went wrong!  Try again", Severity.Error);
+            //                 }
+            //                 catch
+            //                 {
+            //                     snackbar.Add("Receivable amount not processed!  Please check Sundry receipt and delete the entry", Severity.Error);
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     LoadData(ShowApproved, NumberOfRecords);
+            // }
         }        
     }
 

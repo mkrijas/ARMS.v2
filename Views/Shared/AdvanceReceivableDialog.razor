@@ -1,0 +1,183 @@
+﻿@attribute [Authorize]
+@using System.Threading;
+
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+@inject ITripAdvanceService Iadvance
+
+<MudDialog>
+    <TitleContent>
+        <MudItem xs="12">
+            <MudText Typo="Typo.h5">Advance Receipt</MudText>
+        </MudItem>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="dialogInset">            
+            <MudPaper Class="p-3">
+                <EditForm id="sundryReceiptForm" Model="@model" OnValidSubmit="OnValidSubmit">
+                    <MudGrid>
+                        <MudItem xs="12" md="12">
+                            <PaymentAccountSelector BranchID="@model.BranchID.Value" @bind-PaymentMode="@model.PaymentMode" HideBankCharges HideTool @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.Docdate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
+                        </MudItem>
+                        <MudItem xs="12" md="12">
+                            <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
+                                <div style="width: 1600px;" class="pb-3">
+                                    <MudGrid Justify="Justify.Center">
+                                        <MudItem xs="3"><span class="HeadText"><b>Account Name</b></span></MudItem>
+                                        <MudItem xs="2"><span class="HeadText"><b>Cost Center</b></span></MudItem>
+                                        <MudItem xs="2"><span class="HeadText"><b>Dimension</b></span></MudItem>
+                                        <MudItem xs="2"><span class="HeadText"><b>Amount</b></span></MudItem>
+                                        <MudItem xs="2"><span class="HeadText"><b>Reference</b></span></MudItem>
+                                        <MudItem xs="1"></MudItem>
+                                        @foreach (var item in model.Entries)
+                                        {
+                                            <MudItem xs="3">@string.Format("{0} | {1}", item.UsageCode, item.UsageCodeDescription)</MudItem>
+                                            <MudItem xs="2">@item.CostCenterVal</MudItem>
+                                            <MudItem xs="2">@item.DimensionVal</MudItem>
+                                            <MudItem xs="2">
+                                                @if (DisableAddition)
+                                                {
+                                                    <MudNumericField HideSpinButtons Value="@item.Amount" T="decimal?" ValueChanged="@((e) =>  AmountChanged(e,item))" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.Amount)"></MudNumericField>
+                                                }
+                                                else
+                                                {
+                                                    @item.Amount
+                                                }
+                                            </MudItem>
+                                            <MudItem xs="2">@item.Reference</MudItem>
+                                            <MudItem xs="1"></MudItem>
+                                        }
+                                    </MudGrid>
+                                </div>
+                            </MudItem>
+                        </MudItem>
+                    </MudGrid>
+                </EditForm>
+            </MudPaper>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Disabled="@_busy" form="sundryReceiptForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    [Parameter]
+    public TripAdvanceModel model { get; set; } = new();
+    [Parameter]
+    public bool DisableAddition { get; set; } = false;
+    private EditContext editContext;
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+    private SundryReceiptEntryModel spe = new SundryReceiptEntryModel();
+    private GstUsageCodeModel gstusge = new();
+    private GstUsageCodeModel UsageCodeModel { get; set; }
+    private bool _busy;
+    private int? BranchID = null;
+    private string UserID = null;
+    public bool HasPermissionSundryReceiptServiceEdit { get; set; } = false;
+    int SundryReceiptDocTypeID = 12;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionSundryReceiptServiceEdit = await Irole.HasClaim(SundryReceiptDocTypeID.ToString(), "Edit", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+    }
+
+    // Method to handle changes in the amount for a specific entry
+    void AmountChanged(decimal? e, SundryReceiptEntryModel sr)
+    {
+        sr.Amount = e;
+        model.Amount = model.Entries.Sum(x => x.Amount);
+    }
+
+    // Method to handle changes in the GST usage code
+    void UsageCodeChanged(GstUsageCodeModel uc)
+    {
+        gstusge = uc;
+        spe.UsageCode = uc?.UsageCode;
+        spe.UsageCodeDescription = uc?.Description;
+        spe.CoaID = uc?.CoaID;
+    }
+
+    public async Task OnValidSubmit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+
+        if (HasPermissionSundryReceiptServiceEdit)
+        {
+            try
+            {
+                // ConfigModel cModel = config.GetTripAdvanceUsageCode();
+                // UsageCodeModel = usage.SelectByCode(cModel.ValueString);
+
+                // BranchID = BranchID;
+                // model.TripID = Trip.TripID;
+                // model.DriverID = AssignedDriver.DriverID;
+                // model.CoaID = UsageCodeModel.CoaID;
+                // model.UsageCode = (cModel.ValueString);
+                // DocumentID = sundryPayment.SundryPaymentID,
+                if (model.PaymentCoaID == null)
+                {
+                    snackbar.Add("Payment Account is required", Severity.Error);
+                    return;
+                }
+                if (model.Narration == null)
+                {
+                    snackbar.Add("The Narration field is required", Severity.Error);
+                    return;
+                }
+                _busy = true;
+                model.UserInfo.UserID = UserID;
+                model.DocumentTypeID = SundryReceiptDocTypeID;
+                model.DocType = "Trip";
+
+                model = Iadvance.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+
+                MudDialog.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+
+            await Task.Delay(200);
+            _busy = false;
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Add or Edit Sundry Receipt.");
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

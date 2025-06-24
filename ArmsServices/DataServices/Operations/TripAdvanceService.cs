@@ -84,6 +84,12 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripAdvanceID", model.TripAdvanceID),
+               new SqlParameter("@DocDate", model.Docdate),
+               new SqlParameter("@PaymentMode", model.PaymentMode),
+               new SqlParameter("@PaymentTool", model.PaymentTool),
+               new SqlParameter("@PaymentArdCode", model.PaymentArdCode),
+               new SqlParameter("@PaymentCoaID", model.PaymentCoaID),
+               new SqlParameter("@BankCharges", model.BankCharges),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@DriverID", model.DriverID),
@@ -93,7 +99,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
                new SqlParameter("@DocumentID", model.DocumentID),
                new SqlParameter("@DocType", model.DocType),
-               new SqlParameter("@RecordStatus", model.RecordStatus)
+               new SqlParameter("@Reference", model.Reference),
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@UserID", model.UserInfo?.UserID),
+               new SqlParameter("@RecordStatus", model.RecordStatus),
+               new SqlParameter("@entries", model.Entries.ToDataTable()),
             };
 
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Advance.Update]", parameters))
