@@ -12,6 +12,7 @@ namespace Core.IDataServices.Finance.Transactions
         IEnumerable<FastTagTollModel> GetUploadViewComplete(int? ID);
         FastTagTollModel GetUploadViewModel(int? FastTagUploadID);
         IEnumerable<FastTagModel> GetUploadViewCollection(int? FastTagUploadID);
+        IEnumerable<FastTagModel> GetUploadViewCollectionUnProcessed(int? FastTagUploadID, int? branchID);
         IEnumerable<FastTagModel> GetUploadViewSelectedCollection(int? FastTagUploadID);
         IEnumerable<FastTagTollModel> GetProcessView(int? BranchID);
         FastTagProcessModel GetProcessViewModel(int? FastTagProcessID);
