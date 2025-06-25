@@ -36,6 +36,29 @@ namespace ArmsServices.DataServices.General
             return model;
         }
 
+        public MobileNotificationModel UpdateMobileNotificationMessage(MobileNotificationModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", null),
+               new SqlParameter("@UserID", model.UserID),
+               new SqlParameter("@Title", model.Title),
+               new SqlParameter("@Body", model.Body),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Mobile.Notification.Message.Update]", parameters))
+            {
+                model = new MobileNotificationModel()
+                {
+                    NotificationID = dr.GetInt32("ID"),
+                    UserID = dr.GetString("UserID"),
+                    Title = dr.GetString("Title"),
+                    Body = dr.GetString("Body"),
+                    IsRead = dr.GetBoolean("IsRead"),
+                };
+            }
+            return model;
+        }
+
         public IEnumerable<MobileNotificationModel> SelectAllToken()
         {
             //List<SqlParameter> parameters = new List<SqlParameter>
@@ -49,7 +72,34 @@ namespace ArmsServices.DataServices.General
             {
                 var model = new MobileNotificationModel()
                 {
-                    Token = dr.GetString("Token")
+                    Token = dr.GetString("Token"),
+                    UserID = dr.GetString("UserID"),
+                };
+
+                models.Add(model);
+            }
+
+            return models;
+        }
+
+        public IEnumerable<MobileNotificationModel> SelectAllMessage(string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@UserID", UserID)
+            };
+
+            var models = new List<MobileNotificationModel>();
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Mobile.Notification.Message.Select]", null))
+            {
+                var model = new MobileNotificationModel()
+                {
+                    NotificationID = dr.GetInt32("ID"),
+                    UserID = dr.GetString("UserID"),
+                    Title = dr.GetString("Title"),
+                    Body = dr.GetString("Body"),
+                    IsRead = dr.GetBoolean("IsRead"),
                 };
 
                 models.Add(model);
