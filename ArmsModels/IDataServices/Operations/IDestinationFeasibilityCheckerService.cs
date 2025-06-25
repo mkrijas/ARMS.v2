@@ -14,7 +14,7 @@ namespace ArmsServices.DataServices
     {
         Task<DestinationFeasibilityCheckerModel> Update(DestinationFeasibilityCheckerModel model);  //Edit
         Task<int> Delete(int? ID, string UserID);  //Edit
-        IEnumerable<DestinationFeasibilityCheckerModel> Select(int? ID);
-        IEnumerable<DestinationFeasibilityCheckerRatesModel> SelectRates(int? ID);
+        IEnumerable<DestinationFeasibilityCheckerModel> Select(int? ID, int? BranchID);
+        DestinationFeasibilityCheckerRatesModel SelectRates(int? ID);
     }
 }

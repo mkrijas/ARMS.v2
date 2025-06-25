@@ -1,0 +1,388 @@
+﻿@using System.Threading;
+@using Core.BaseModels.Operations
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IDestinationFeasibilityCheckerService Iservice
+@inject IContentService Icontent
+@inject ITruckTypeService Itrucktype
+@inject MudBlazor.ISnackbar snackbar
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Destination Feasibility Checker
+        </MudText>
+        @if (model.ID != null)
+        {
+            <MudIconButton OnClick="@(()=> PrintInvoice(model.ID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
+        }
+    </TitleContent>
+    <DialogContent>
+        <EditForm id="Form" Model="@model" OnValidSubmit="Submit">
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="ContentModel" Label="Content" ResetValueOnEmptyText="true" ValueChanged="ContentChanged" Value="@(model.Content ?? new ContentModel())"
+                                     SearchFunc="SearchRoutes" ToStringFunc="@(e => e == null ? null : $"{e.ContentName}")"></MudAutocomplete>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect Margin="Margin.Dense" Variant="Variant.Outlined" Label="Select Type" @bind-Value="model.BodyType" AdornmentColor="Color.Secondary">
+                        <MudSelectItem Value="@("Bulker")">Bulker</MudSelectItem>
+                        <MudSelectItem Value="@("Open")">Open</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="TruckTypeModel" Label="Truck Type" ResetValueOnEmptyText="true" ValueChanged="TruckTypeChanged" Value="@(model.TruckType ?? new TruckTypeModel())"
+                                     SearchFunc="SearchTruckType" ToStringFunc="@(e=> e == null ? null : $"{e.TruckType}")"></MudAutocomplete>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="(model.TruckType ?? new TruckTypeModel()).BSType" Label="BS Category" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudNumericField HideSpinButtons @bind-Value="(model.TruckType ?? new TruckTypeModel()).wheels" Label="Wheel" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Sys Km (One Side)" @bind-Value="model.SystemKM" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Run Km" @bind-Value="model.RunKM" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Standard Days" @bind-Value="model.StandardDays" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Fuel Litre" @bind-Value="model.FuelLitre" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Standard Mileage" @bind-Value="model.StandardMileage" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Metric Tonn" @bind-Value="model.MetricTonn" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Freight Rate" @bind-Value="model.FreightRate" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Incentive" @bind-Value="model.Incentive" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Primary Freight" @bind-Value="model.PrimaryFreight" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="PTPK" @bind-Value="model.PTPK" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Fuel Expenses" @bind-Value="model.FuelExpenses" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Fuel Rate" @bind-Value="model.FuelRate" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Fuel %" @bind-Value="model.FuelPercentage" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentText="%" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Ad-Blue Cost" @bind-Value="model.AdBlueCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Driver Wages" @bind-Value="model.DriverWages" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Toll Expenses" @bind-Value="model.TollExpenses" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Tagging Expenses" @bind-Value="model.TaggingExpenses" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Drivers Salary" @bind-Value="model.DriversSalary" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Loading Charges" @bind-Value="model.LoadingCharges" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Unloading Charges" @bind-Value="model.UnloadingCharges" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Trip Other Expenses" @bind-Value="model.TripOtherExpenses" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Trip Direct Expenses" @bind-Value="model.TripDirectExpenses" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Trip %" @bind-Value="model.TripPercentage" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentText="%" ReadOnly></MudNumericField>
+                </MudItem>
+                @if (HasPermissionDfcServiceAccess)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Branch Admin Cost" @bind-Value="model.BranchAdminCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Maintenance Cost" @bind-Value="model.MaintenanceCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Tyre Cost" @bind-Value="model.TyreCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Tax And Insurance" @bind-Value="model.TaxAndInsurance" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Fc Maintenance" @bind-Value="model.FcMaintenance" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="HO Admin Cost" @bind-Value="model.HOAdminCost" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Other than Trip Expenses" @bind-Value="model.OtherThanTripExpenses" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                    </MudItem>
+                }
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Other than Trip %" @bind-Value="model.OtherThanTripPercentage" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentText="%" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Total Expense" @bind-Value="model.TotalExpense" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Profit" @bind-Value="model.Profit" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Expense %" @bind-Value="model.ExpensePercentage" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentText="%" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField HideSpinButtons Label="Profit %" @bind-Value="model.ProfitPercentage" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentText="%" ReadOnly></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="model.UserInfo.UserID" Label="Created By" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudTextField>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </DialogContent>    
+    <DialogActions>
+        @if (model.ID == null)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="ResetForm">Reset</MudButton>
+            <MudButton Disabled="@_busy" form="Form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Calculate & Save</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public DestinationFeasibilityCheckerModel model { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private List<ContentModel> contents = new List<ContentModel>();
+    private List<TruckTypeModel> TruckTypes = new List<TruckTypeModel>();
+    private DestinationFeasibilityCheckerRatesModel CalculationRates;
+    public bool HasPermissionDfcServiceEdit { get; set; } = false;
+    public bool HasPermissionDfcServiceAccess { get; set; } = false;
+    public int DocTypeID = 144;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionDfcServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDfcServiceAccess = await Irole.HasClaim(DocTypeID.ToString(), "Access", ctc.Token);
+
+        if (model.UserInfo == null)
+        {
+            model.UserInfo = new ArmsModels.SharedModels.UserInfoModel();
+        }
+        // Fetch all content items
+        await foreach (var item in Icontent.Select(0))
+        {
+            contents.Add(item);
+        }
+        TruckTypes = Itrucktype.Select(0).ToList();
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        if (model.ID == null)
+        {
+            var user = authprov.User;
+            if (user?.Identity != null)
+            {
+                model.UserInfo.UserID = user.Identity.Name;
+            }
+        }
+    }
+
+    // Method to search for contents based on the search string
+    private async Task<IEnumerable<ContentModel>> SearchRoutes(string searchString)
+    {
+        return await Task.FromResult(contents.Where(x => x.ContentName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    // Method to set the content object
+    private void ContentChanged(ContentModel obj)
+    {
+        model.Content = obj;
+    }
+
+    public async Task<IEnumerable<TruckTypeModel>> SearchTruckType(string searchString)
+    {
+        return await Task.FromResult(TruckTypes.Where(x => x.TruckType.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private void TruckTypeChanged(TruckTypeModel TruckType)
+    {
+        if (TruckType == null || TruckType.TruckTypeID == null)
+        {
+            model.TruckType = null;
+            CalculationRates = null;
+            return;
+        }
+
+        model.TruckType = TruckType;
+        CalculationRates = Iservice.SelectRates(TruckType.TruckTypeID);
+    }
+
+    private async Task Submit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        if (HasPermissionDfcServiceEdit)
+        {
+
+            _busy = true;
+
+            // Initialize necessary objects
+            model.Content ??= new ContentModel();
+            model.TruckType ??= new TruckTypeModel();
+            model.SystemKM ??= 0;
+            model.StandardDays ??= 0;
+            model.StandardMileage ??= 0;
+            model.MetricTonn ??= 0;
+            model.FreightRate ??= 0;
+            model.Incentive ??= 0;
+            model.DriverWages ??= 0;
+            model.TollExpenses ??= 0;
+            model.TaggingExpenses ??= 0;
+            model.LoadingCharges ??= 0;
+            model.UnloadingCharges ??= 0;
+            model.TripOtherExpenses ??= 0;
+            model.FuelRate ??= 0;
+
+            model.RunKM = model.SystemKM * 2;
+
+            // Perform calculations
+            if (model.StandardMileage != 0)
+            {
+                model.FuelLitre = model.RunKM / model.StandardMileage;
+            }
+            else
+            {
+                // Handle division by zero
+                model.FuelLitre = 0;
+            }
+
+            model.PrimaryFreight = (model.FreightRate + model.Incentive) * model.MetricTonn;
+
+            if (model.SystemKM != 0)
+            {
+                model.PTPK = (model.PrimaryFreight / model.MetricTonn) / model.SystemKM;
+            }
+            else
+            {
+                // Handle division by zero
+                model.PTPK = 0;
+            }
+
+            model.FuelExpenses = model.FuelLitre * model.FuelRate;
+
+            if (model.FuelExpenses.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight.Value != 0)
+            {
+                model.FuelPercentage = Math.Round((model.FuelExpenses.Value / model.PrimaryFreight.Value) * 100, 0);
+            }
+            else
+            {
+                model.FuelPercentage = 0; 
+            }
+
+            model.AdBlueCost = (model.FuelLitre / 100) * CalculationRates.AdBlueRatio * 40;
+            model.DriversSalary = (10000 / 30) * model.StandardDays;
+            model.TripDirectExpenses = model.AdBlueCost + model.DriverWages + model.TollExpenses + model.TaggingExpenses + model.DriversSalary + model.LoadingCharges + model.UnloadingCharges + model.TripOtherExpenses;
+
+            if (model.TripDirectExpenses.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight.Value != 0)
+            {
+                model.TripPercentage = Math.Round((model.TripDirectExpenses.Value / model.PrimaryFreight.Value) * 100, 0);
+            }
+            else
+            {
+                // Handle division by zero
+                model.TripPercentage = 0;
+            }
+
+            model.BranchAdminCost = 35 * model.MetricTonn;
+            model.MaintenanceCost = CalculationRates.MaintenanceRate * model.RunKM;
+            model.TyreCost = CalculationRates.TyreRate * model.RunKM;
+            model.TaxAndInsurance = CalculationRates.AverageTaxAndInsurance * model.StandardDays;
+            model.FcMaintenance = 90 * model.StandardDays;
+            model.HOAdminCost = 40 * model.MetricTonn;
+            model.OtherThanTripExpenses = model.BranchAdminCost + model.MaintenanceCost + model.TyreCost + model.TaxAndInsurance + model.FcMaintenance + model.HOAdminCost;
+
+            if (model.OtherThanTripExpenses.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight != 0)
+            {
+                model.OtherThanTripPercentage = Math.Round((model.OtherThanTripExpenses.Value / model.PrimaryFreight.Value) * 100, 0);
+            }
+            else
+            {
+                // Handle division by zero
+                model.OtherThanTripPercentage = 0;
+            }
+
+            model.TotalExpense = model.TripDirectExpenses + model.OtherThanTripExpenses + model.FuelExpenses;
+            model.Profit = model.PrimaryFreight - model.TotalExpense;
+
+            if (model.TotalExpense.HasValue && model.Profit.HasValue && model.PrimaryFreight.HasValue && model.PrimaryFreight != 0)
+            {
+                model.ExpensePercentage = Math.Round((model.TotalExpense.Value / model.PrimaryFreight.Value) * 100, 0);
+                model.ProfitPercentage = Math.Round((model.Profit.Value / model.PrimaryFreight.Value) * 100, 0);
+            }
+            else
+            {
+                // Handle division by zero
+                model.ExpensePercentage = 0;
+                model.Profit = 0;
+            }
+
+            // Save the model
+            model = await Iservice.Update(model);
+            snackbar.Add("Saved successfully!", Severity.Success);
+
+            StateHasChanged();
+
+            MudDialog.Close(model);
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Add or Edit.");
+        }
+    }
+
+    private void ResetForm()
+    {
+        // Reset model properties to their default values
+        model = new DestinationFeasibilityCheckerModel();
+        _busy = false;
+    }
+
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+
+    private async Task PrintInvoice(int? ID)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("ID", ID.ToString());
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintDestinationFeasibilityChecker");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+    }
+}

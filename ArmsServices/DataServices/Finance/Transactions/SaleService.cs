@@ -276,6 +276,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@SalesType", model.SalesType),
                new SqlParameter("@InvoiceNo", model.InvoiceNo),
+               new SqlParameter("@AddressID", model.AddressID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Update]", parameters))
             {
@@ -304,6 +305,7 @@ namespace ArmsServices.DataServices
                 Narration = dr.GetString("Narration"),
                 SalesType = dr.GetString("SalesType"),
                 InvoiceNo = dr.GetString("InvoiceNo"),
+                AddressID = dr.GetInt32("AddressID"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("CustomerID"),

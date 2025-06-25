@@ -49,7 +49,11 @@ namespace ArmsModels.BaseModels
         [RequiredIfDocumentType(19, 20)] // Custom validation attribute to require this field based on document type
         public decimal? IDVAmount { get; set; }
         [RequiredIfDocumentType(19, 20)]
-        public decimal? NCBPercentage { get; set; }
+        public decimal? NCBPercentage { get; set; }     
+        public decimal? OwnDamage { get; set; }
+        public decimal? ODGST { get; set; }
+        public decimal? ThirdParty { get; set; }
+        public decimal? TPGST { get; set; }
         [Required]
         public decimal? Amount { get; set; }
         public string AttachedDocument { get; set; }

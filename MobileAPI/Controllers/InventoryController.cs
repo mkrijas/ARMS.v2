@@ -33,7 +33,7 @@ namespace MobileAPI.Controllers
         public IEnumerable<PurchaseOrderModel> SelectPendingPurchaseOrder(int BranchID)
         {
             IEnumerable<PurchaseOrderModel> PurchaseOrderCollection;
-            PurchaseOrderCollection = _purchaseOrderService.SelectPending(BranchID).Where(x => x.AuthLevelID != 99).ToList();
+            PurchaseOrderCollection = _purchaseOrderService.SelectPending(BranchID).Where(x => x.AuthLevelID != 99 && x.AuthLevelID != 100).ToList();
             return PurchaseOrderCollection;
         }
 

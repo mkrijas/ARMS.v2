@@ -35,5 +35,8 @@ namespace ArmsModels.BaseModels
         [StringLength(maximumLength: 6,MinimumLength =6)]
         public string PinCode { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+        public virtual bool IsDefault { get; set; }
+        public int? PartyID { get; set; } // Unique identifier for the address
+
     }
 }

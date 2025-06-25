@@ -10,10 +10,19 @@
 @inject IFastTagService IFTService
 @inject IJSRuntime JSRuntime
 
+
+@using System.IO;
+@using NPOI.HSSF.UserModel;
+@using NPOI.SS.UserModel;
+@using OfficeOpenXml;
+@using System.Threading;
+@using OfficeOpenXml.Style
+
 <MudTable Items="@MainModel" Class="item-shadow" Filter="new Func<FastTagTollModel, bool>(search)" @bind-model="model">
     <ToolBarContent>
         <MudText Typo="Typo.h6">FastTag Upload List</MudText>
         <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> EditView(0, false, false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+        <MudIconButton OnClick="ExcelDownload" Title="Export Unprocessed Tolls" Icon="@Icons.Material.Outlined.Download"  Color="Color.Primary" ButtonType="ButtonType.Button"/>
         <MudSpacer></MudSpacer>
         <MudTextField @bind-Value="searchmodel" Placeholder="Search Document... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
         <MudCheckBox Style="margin: 0px; margin-right: 20px;" Label="Completed List" ValueChanged="((bool value)=>Completed(value))" Value="@IsCompleted" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
@@ -87,7 +96,75 @@
             // Handle the case where the value is not found or is null
             IsCompleted = false; // Or set to default value
         }
-        GetCollection();
+       await GetCollection();
+    }
+
+
+      private async Task ExcelDownload()
+    {
+        var fileName = "FasTagToll UploadList.xlsx";
+        var sheetName = "Sheet1"; // Change the sheet name as needed
+        var data =   IFTService.GetUploadViewCollectionUnProcessed(null,null).ToList();
+        var fileBytes = GenerateExcelBytes(sheetName,data);
+
+        await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
+    }
+    
+    // Method to Generate Excel file
+    private byte[] GenerateExcelBytes(string sheetName,List<FastTagModel> data)
+    {
+        using (var package = new ExcelPackage())
+        {
+            var worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+            // Add column headers
+            worksheet.Cells[1, 1].Value = "Document Number";
+            worksheet.Cells[1, 2].Value = "Document Date";
+            worksheet.Cells[1, 3].Value = "Branch Name";
+            worksheet.Cells[1, 4].Value = "Activity Type";
+            worksheet.Cells[1, 5].Value = "Amount";
+            worksheet.Cells[1, 6].Value = "Truck";
+            worksheet.Cells[1, 7].Value = "Plaza";
+            worksheet.Cells[1, 8].Value = "Toll Entry On";
+            worksheet.Cells[1, 9].Value = "Transaction ID";   
+            
+            for (int i = 1; i <= 9; i++)
+            {
+                worksheet.Cells[1, i].Style.Font.Bold = true;
+            }
+            worksheet.Column(2).Style.Numberformat.Format = "dd-MM-yyyy"; 
+            worksheet.Column(7).Style.Numberformat.Format = "dd-MM-yyyy hh:mm AM/PM"; // Date format
+            worksheet.Column(5).Style.Numberformat.Format = "0.00"; // Integer format
+
+            // Add data rows
+            int row = 2;
+            foreach (var item in data)
+            {
+                worksheet.Cells[row, 1].Value = item.TripNumberDisplay;
+                worksheet.Cells[row, 2].Value = item.ProcessedDateTime;
+                worksheet.Cells[row, 3].Value = item.BranchName;                
+                worksheet.Cells[row, 4].Value = item.ActivityType;
+                worksheet.Cells[row, 5].Value = item.DebitAmount;
+                worksheet.Cells[row, 6].Value = item.NumberPlate;
+                worksheet.Cells[row, 7].Value = item.PlazaCode;
+                worksheet.Cells[row, 8].Value = item.TransactionDateTime;
+                worksheet.Cells[row, 9].Value = item.TransactionID;         
+
+                row++;
+            }
+
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+            // Save the Excel package to a memory stream
+            using (var stream = new MemoryStream())
+            {
+                package.SaveAs(stream);
+                return stream.ToArray();
+            }
+        }
     }
 
     // Method to retrieve the collection of FastTag toll models
@@ -108,7 +185,7 @@
     {
         IsCompleted = value;
         await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "FTincompleteRecordsToggle", value);
-        GetCollection();
+        await GetCollection();
     }
 
     // Method to navigate to the edit view
