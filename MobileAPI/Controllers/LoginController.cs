@@ -156,13 +156,17 @@ namespace MobileAPI.Controllers
         {
             try
             {
-                // 1. Get all device tokens from service
+                                
                 var tokenList = _mobileNotificationService.SelectAllToken();
 
                 var results = new List<object>();
 
                 foreach (var tokenModel in tokenList)
                 {
+                    tokenModel.Title = model.Title;
+                    tokenModel.Body = model.Body;
+                    var savedModel = _mobileNotificationService.UpdateMobileNotificationMessage(tokenModel);
+
                     var message = new Message()
                     {
                         Token = tokenModel.Token,

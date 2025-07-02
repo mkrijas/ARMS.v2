@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
@@ -111,6 +112,10 @@ namespace ArmsModels.BaseModels
     // Represents an advance payment associated with a trip
     public class TripAdvanceModel
     {
+        public TripAdvanceModel()
+        {
+            UserInfo = new();
+        }
         public long? TripAdvanceID { get; set; } // Unique identifier for the trip advance record (nullable)
         [Required]
         public int? BranchID { get; set; }
@@ -135,6 +140,21 @@ namespace ArmsModels.BaseModels
         public string AccountCode { get; set; }
         public string AccountName { get; set; }
         public int RecordStatus { get; set; }
+
+        public DateTime? Docdate = DateTime.Today;
+        public string PaymentMode { get; set; }
+        public string PaymentArdCode { get; set; }
+        public int? PaymentCoaID { get; set; }
+        public string PaymentTool { get; set; }
+        public decimal? BankCharges { get; set; }
+        public int? CostCenter { get; set; }
+        public virtual string CostCenterVal { get; set; }
+        public int? Dimension { get; set; }
+        public virtual string DimensionVal { get; set; }
+        public string Reference { get; set; }
+        public string Narration { get; set; }
+        public List<SundryReceiptEntryModel> Entries { get; set; } = new();
+        public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
     // Represents an event card associated with a trip

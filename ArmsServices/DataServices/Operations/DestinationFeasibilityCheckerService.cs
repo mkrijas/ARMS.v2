@@ -63,6 +63,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Profit", model.Profit),
                new SqlParameter("@ExpensePercentage", model.ExpensePercentage),
                new SqlParameter("@ProfitPercentage", model.ProfitPercentage),
+               new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -85,11 +86,12 @@ namespace ArmsServices.DataServices
         }
 
         // Method to select places based on ID and a search string
-        public IEnumerable<DestinationFeasibilityCheckerModel> Select(int? ID)
+        public IEnumerable<DestinationFeasibilityCheckerModel> Select(int? ID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID)
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@BranchID", BranchID)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.DestinationFeasibilityChecker.Select]", parameters))
@@ -172,6 +174,7 @@ namespace ArmsServices.DataServices
                 Profit = dr.GetDecimal("Profit"),
                 ExpensePercentage = dr.GetDecimal("ExpensePercentage"),
                 ProfitPercentage = dr.GetDecimal("ProfitPercentage"),
+                BranchID = dr.GetInt32("BranchID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

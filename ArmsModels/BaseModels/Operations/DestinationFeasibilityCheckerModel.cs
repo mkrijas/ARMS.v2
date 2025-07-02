@@ -59,6 +59,7 @@ namespace Core.BaseModels.Operations
         public decimal? Profit { get; set; }
         public decimal? ExpensePercentage { get; set; }
         public decimal? ProfitPercentage { get; set; }
+        public int? BranchID { get; set; }
         public ArmsModels.SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
