@@ -26,6 +26,7 @@ namespace MobileAPI.Controllers
         private readonly IUserService _userService;
         private readonly IPurchaseOrderService _purchaseOrderService;
         private readonly IInventoryGrnService _inventoryGrnService;
+        private readonly IMobileNotificationService _mobileNotificationService;
 
         public FinanceTransactionController(IPaymentInitiatedService paymentInitiatedService,
                                             IPaymentService paymentService,
@@ -35,7 +36,8 @@ namespace MobileAPI.Controllers
                                             IDataAuthorizationService dataAuthorizationService,
                                             IUserService userService,
                                             IPurchaseOrderService purchaseOrderService,
-                                            IInventoryGrnService inventoryGrnService)
+                                            IInventoryGrnService inventoryGrnService,
+                                            IMobileNotificationService mobileNotificationService)
         {
             _paymentInitiatedService = paymentInitiatedService;
             _paymentService = paymentService;
@@ -46,6 +48,7 @@ namespace MobileAPI.Controllers
             _userService = userService;
             _purchaseOrderService = purchaseOrderService;
             _inventoryGrnService = inventoryGrnService;
+            _mobileNotificationService = mobileNotificationService;
         }
         
         //Payment Initiated List Select
@@ -244,6 +247,21 @@ namespace MobileAPI.Controllers
                     ApprovedModel = model
                 });
             }
+        }
+
+        [HttpPost("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]        
+        public async Task<IActionResult> UpdateMonthlyIncentive(MonthlyIncentiveModel updateModel)
+        {            
+            if (updateModel.UserInfo.UserID == "HASEEBRAHMAN" || updateModel.UserInfo.UserID == "SOUMYA")
+            {
+                var returnModel = _mobileNotificationService.UpdateMonthlyIncentive(updateModel);
+                if (returnModel != null)
+                {
+                    return Ok("Saved Successfully.");
+                }
+            }
+            return BadRequest("Permission denied! You don't have any permission to Edit Route.");                   
         }
 
     }

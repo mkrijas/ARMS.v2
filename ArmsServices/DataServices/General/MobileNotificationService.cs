@@ -108,5 +108,31 @@ namespace ArmsServices.DataServices.General
             return models;
         }
 
+        MonthlyIncentiveModel IMobileNotificationService.UpdateMonthlyIncentive(MonthlyIncentiveModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@FromDate", model.FromDate),
+               new SqlParameter("@ToDate", model.ToDate),
+               new SqlParameter("@Amount", model.Amount),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Monthly.Incentive.Update]", parameters))
+            {
+                model = new MonthlyIncentiveModel()
+                {
+                    ID = dr.GetInt32("ID"),
+                    FromDate = dr.GetDateTime("FromDate"),
+                    ToDate = dr.GetDateTime("ToDate"),
+                    Amount = dr.GetDecimal("Amount"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserId"),
+                    },
+                };
+            }
+            return model;
+        }
     }
 }
