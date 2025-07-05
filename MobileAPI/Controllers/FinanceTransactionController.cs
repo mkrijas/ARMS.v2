@@ -197,7 +197,7 @@ namespace MobileAPI.Controllers
 
             // If AuthLevelID is not 99, update the model
             if (model.AuthLevelID != 99)
-            {
+            {               
                 model = _dataAuthorizationService.Update(model);
                 return Ok(new
                 {
@@ -214,38 +214,40 @@ namespace MobileAPI.Controllers
                 // Deny access if user does not have permission
                 if (!HasPermissionApprove)
                 {
-                    return Forbid(); // 403 Forbidden
+                    return BadRequest(new { Status = "Permission denied! You don't have any permission to Approve." }); ; // 403 Forbidden
                 }
+                else 
+                { 
+                    switch (DocTypeID)
+                    {
+                        case 15: // INITIATE_PAYMENT
+                            _paymentInitiatedService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
+                            break;
+                        case 7: // PAYMENT_MEMO
+                            _paymentService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
+                            break;
+                        case 30: // MILEAGE_SHORTAGE_RECEIPT
+                            _mileageShortageReceiptService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
+                            break;
+                        case 97: // INVENTORY_RELEASE
+                            _inventoryReleaseService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
+                            break;
+                        case 16: // INVENTORY_GRN
+                            _inventoryGrnService.Approve(model.DocumentID.Value, model.UserInfo.UserID, model.Remarks);
+                            break;
+                        case 17: // PURCHASE_ORDER
+                            _purchaseOrderService.Approve(model.DocumentID.Value, model.UserInfo.UserID, model.Remarks);
+                            break;
+                        default:
+                            return BadRequest(new { Status = "Invalid DocTypeID" });
+                    }
 
-                switch (DocTypeID)
-                {
-                    case 15: // INITIATE_PAYMENT
-                        _paymentInitiatedService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
-                        break;
-                    case 7: // PAYMENT_MEMO
-                        _paymentService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
-                        break;
-                    case 30: // MILEAGE_SHORTAGE_RECEIPT
-                        _mileageShortageReceiptService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
-                        break;
-                    case 97: // INVENTORY_RELEASE
-                        _inventoryReleaseService.Approve(model.DocumentID, model.UserInfo.UserID, model.Remarks);
-                        break;
-                    case 16: // INVENTORY_GRN
-                        _inventoryGrnService.Approve(model.DocumentID.Value, model.UserInfo.UserID, model.Remarks);
-                        break;
-                    case 17: // PURCHASE_ORDER
-                        _purchaseOrderService.Approve(model.DocumentID.Value, model.UserInfo.UserID, model.Remarks);
-                        break;
-                    default:
-                        return BadRequest(new { Status = "Invalid DocTypeID" });
+                    return Ok(new
+                    {
+                        Status = "Approved",
+                        ApprovedModel = model
+                    });
                 }
-
-                return Ok(new
-                {
-                    Status = "Approved",
-                    ApprovedModel = model
-                });
             }
         }
 
