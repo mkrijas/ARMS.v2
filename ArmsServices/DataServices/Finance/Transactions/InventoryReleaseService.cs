@@ -343,5 +343,15 @@ namespace ArmsServices.DataServices.Finance.Transactions
                 },
             };
         }
+
+        public int Reject(int? ID,string DocType)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@DocType", DocType),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transaction.InventoryRelease.Reserve.Delete]", parameters);
+        }
     }
 }

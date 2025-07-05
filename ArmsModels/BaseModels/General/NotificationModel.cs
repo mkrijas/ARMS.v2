@@ -34,6 +34,15 @@ namespace ArmsModels.BaseModels
         public string Body { get; set; }
         public bool IsRead { get; set; } = false;
     }
+
+    public class MonthlyIncentiveModel
+    {
+        public int? ID { get; set; }
+        public DateTime? FromDate { get; set; } = DateTime.Today;
+        public DateTime? ToDate { get; set; } = DateTime.Today;
+        public decimal? Amount { get; set; }
+        public UserInfoModel UserInfo { get; set; }
+    }
 }
 
 

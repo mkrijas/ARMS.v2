@@ -23,6 +23,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
         IEnumerable<InventoryReleaseSubViewModel> GetRequstSubUsed(int? ID, int? StoreID);
         IEnumerable<InventoryReleaseSubViewModel> GetRequstSubReadOnly(int? ID, int? StoreID);
         public int Approve(int? RID, string UserID, string Remarks);
-        
+        public int Reject(int? ID, string DocType);
+
     }
 }

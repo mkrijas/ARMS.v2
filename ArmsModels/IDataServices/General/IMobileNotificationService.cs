@@ -10,5 +10,6 @@ namespace ArmsServices.DataServices
         MobileNotificationModel UpdateMobileNotificationMessage(MobileNotificationModel model);
         IEnumerable<MobileNotificationModel> SelectAllToken();
         IEnumerable<MobileNotificationModel> SelectAllMessage(string UserID);
+        MonthlyIncentiveModel UpdateMonthlyIncentive(MonthlyIncentiveModel model);
     }
 }
