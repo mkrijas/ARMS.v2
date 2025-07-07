@@ -22,5 +22,7 @@ namespace ArmsServices.DataServices
        // int Approve(int? ID, string UserID, string Remarks);  //Approve
         //int Reverse(int? ID, string UserID, string Remarks);  //Reverse
         IEnumerable<OpTranSubModel> GetExpenses(long? TransactionID);
+        IEnumerable<OpTranModel> SelectByTransfer(int? RequestApprovalHistoryID);
+
     }
 }

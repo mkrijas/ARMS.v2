@@ -17,6 +17,8 @@ namespace ArmsServices.DataServices
         IEnumerable<TripFuelModel> SelectByTrip(long? TripID);
         IEnumerable<TripFuelModel> SelectByAssetTransfer(int? AssetTransferID);
         TripFuelModel SelectByTaxPurchase(int? TaxPurchaseID);
+        IEnumerable<TripFuelModel> SelectByTransfer(int? RequestApprovalHistoryID);
+
 
     }
 }

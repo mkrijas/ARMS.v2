@@ -274,5 +274,19 @@ namespace ArmsServices.DataServices
         {
             throw new NotImplementedException();
         }
+
+        // Method to select operational transactions by Trip ID
+        public IEnumerable<OpTranModel> SelectByTransfer(int? RequestApprovalHistoryID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RequestApprovalHistoryID", RequestApprovalHistoryID),
+               new SqlParameter("@Operation", "ByTransfer"),
+            };
+            foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
     }
 }

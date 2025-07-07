@@ -162,5 +162,19 @@ namespace ArmsServices.DataServices
                 RequestApprovalHistoryID = reader.GetInt32("RequestApprovalHistoryID"),
             };
         }
+
+        public IEnumerable<TripFuelModel> SelectByTransfer(int? RequestApprovalHistoryID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RequestApprovalHistoryID", RequestApprovalHistoryID),
+                new SqlParameter("@Operation", "SelectByTransfer"),
+            };
+
+            foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Fuel.Select]", parameters))
+            {
+                yield return GetModel(reader);
+            }
+        }
     }
 }
