@@ -82,7 +82,8 @@ namespace ArmsServices.DataServices
                     BillType = dr.GetString("BillType"),
                     BillID = dr.GetInt32("ID"),                  
                     DocumentNumber = dr.GetString("DocumentNumber"),
-                    DocumentDate = dr.GetDateTime("DocumentDate")
+                    DocumentDate = dr.GetDateTime("DocumentDate"),
+                    Reference = dr.GetString("Reference")
                 };
             }
         }

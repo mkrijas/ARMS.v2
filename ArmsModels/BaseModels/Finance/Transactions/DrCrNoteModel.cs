@@ -46,6 +46,7 @@ namespace ArmsModels.BaseModels
         public string DocumentNumber { get; set; }
         public DateTime? DocumentDate { get; set; }
         public decimal? TotalAmount { get; set; }
+        public virtual string Reference { get; set; }
         public List<TaxPurchaseExpenseModel> Particulars { get; set; } = new();
         public List<TaxPurchaseItemModel> Items { get; set; } = new();
     }
