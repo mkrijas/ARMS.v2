@@ -327,19 +327,22 @@ namespace Views
             services.AddScoped<IBankLedgerViewService, BankLedgerViewService>();
 
 
-       //     System.Reflection.Assembly.GetExecutingAssembly().GetTypes().Where(item => item.GetInterfaces()
-       //       .Where(i => i.IsGenericType).Any(i => i.GetGenericTypeDefinition() == typeof(IbaseInterface<>)) && !item.IsAbstract && !item.IsInterface)
-       //   .ToList()
-       //   .ForEach(assignedTypes =>
-       //   {
-       //       var serviceType = assignedTypes.GetInterfaces().First(i => i.GetGenericTypeDefinition() == typeof(IbaseInterface<>));
-       //       services.AddScoped(serviceType, assignedTypes);
-       //   });
+            //     System.Reflection.Assembly.GetExecutingAssembly().GetTypes().Where(item => item.GetInterfaces()
+            //       .Where(i => i.IsGenericType).Any(i => i.GetGenericTypeDefinition() == typeof(IbaseInterface<>)) && !item.IsAbstract && !item.IsInterface)
+            //   .ToList()
+            //   .ForEach(assignedTypes =>
+            //   {
+            //       var serviceType = assignedTypes.GetInterfaces().First(i => i.GetGenericTypeDefinition() == typeof(IbaseInterface<>));
+            //       services.AddScoped(serviceType, assignedTypes);
+            //   });
 
-    
+
             #endregion
 
-         
+        #region ------------CENTRALIZED STORE-------------------
+        services.AddScoped<ICSPurchaseOrderService, CSPurchaseOrderService>();
+        #endregion
+
             //services.AddCors(options =>
             //{
             //    options.AddPolicy("CorsPolicy",
@@ -349,7 +352,7 @@ namespace Views
             //            .AllowAnyHeader()
             //            .AllowCredentials());
             //});
-        #region------------ASSETS-------------------
+            #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
             services.AddScoped<IAssetTransferService, AssetTransferService>();
