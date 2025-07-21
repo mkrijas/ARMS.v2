@@ -88,6 +88,7 @@ namespace ArmsModels.BaseModels
         public virtual string PaymentMode { get; set; }
         public virtual string DistrictName { get; set; }
         public virtual string StateName { get; set; }
+        public virtual string Destination { get; set; }
     }
 
     // Model representing a reference

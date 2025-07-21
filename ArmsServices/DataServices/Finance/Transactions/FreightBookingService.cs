@@ -493,7 +493,8 @@ namespace ArmsServices.DataServices
                 Deduction = dr.GetDecimal("Deduction"),
                 PaymentMode = dr.GetString("PaymentMode"),
                 DistrictName = dr.GetString("DistrictName"),
-                StateName = dr.GetString("StateName")
+                StateName = dr.GetString("StateName"),
+                Destination = dr.GetString("Destination")
             };
         }
 
