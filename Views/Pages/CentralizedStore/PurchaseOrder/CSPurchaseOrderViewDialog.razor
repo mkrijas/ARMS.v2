@@ -1,0 +1,155 @@
+﻿@using CentralizedStore.Grn;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject ICSPurchaseOrderService Iservice
+@inject IPartyService partyIservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid Spacing="4">
+            <MudItem xs="12">
+                <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="model">
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<CSPurchaseOrderModel, object>(x=> x.PONo)" InitialDirection="SortDirection.Ascending">PO No</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<CSPurchaseOrderModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">Entry Date</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<CSPurchaseOrderModel, object>(x=> x.PartyName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="PONo">@context.PONo</MudTd>
+                        <MudTd DataLabel="EntryDate">@context.EntryDate</MudTd>
+                        <MudTd DataLabel="Party">@context.PartyName</MudTd>
+                        <MudTd DataLabel="">
+                            <MudTooltip Text="View">
+                                <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Preview" Size="Size.Small" IconSize="Size.Small" />
+                            </MudTooltip>
+                            <MudTooltip Text="Convert to Grn">
+                                <MudFab @onclick="@(()=> Add(context))" Color="Color.Success" Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" IconSize="Size.Small" />
+                            </MudTooltip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+</MudDialog>
+
+    @code {
+
+    private CSPurchaseOrderModel model = new CSPurchaseOrderModel();
+    private List<CSPurchaseOrderModel> collection = new List<CSPurchaseOrderModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private string searchPurchase = "";
+    private bool _busy;
+    int? BranchID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(brancIDString);
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+
+        collection = new List<CSPurchaseOrderModel>();
+        foreach (var item in Iservice.PendingForGrn(BranchID.Value))
+        {
+            collection.Add(item);
+        }
+    }
+
+    private async Task OpenDialog(CSPurchaseOrderModel tds)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", tds.Clone());
+        parms.Add("ReadOnly", true);
+        parms.Add("IsView", true);
+        var dialog = DialogService.Show<CSPurchaseOrderDialog>("Centralized Store Purchase Order", parms, maxWidth);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            GetAll();
+        }
+        GetAll();
+        await Task.Delay(200);
+        _busy = false;
+    }
+    List<InventoryItemEntryModel> PoItems = new();
+
+
+    private async Task Add(CSPurchaseOrderModel po)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        model.UserInfo.UserID = user.Identity.Name;
+        CSGrnModel grn = new CSGrnModel()
+            {
+                POID = po.POID,
+                PartyInfo = partyIservice.SelectByID(po.PartyID),
+                Reference = po.Reference,
+            };
+        foreach (var item in Iservice.GetItemEntries(po.POID.Value))
+        {
+            grn.Items.Add(
+                new CSGrnItemModel()
+                    {
+                        ItemID = item.ItemID,
+                        ItemRate = item.ItemRate,
+                        ItemQty = item.ItemQty,
+                        UoM = item.UoM,
+                        Amount = item.ItemRate * item.ItemQty,
+                        CoaID = item.CoaID,
+                        ItemCode = item.ItemCode,
+                        ItemGroupDescription = item.ItemGroupDescription,
+                        ItemDescription = item.ItemDescription,
+                        PartNumber = item.PartNumber,
+                        POItemID = item.POItemID,
+                        ItemGstVal = item.ItemGstVal,
+                        BaseQty = item.BaseQty,
+                        BaseRate = item.BaseRate,
+                        // CGST = IsTaxable ? (Local ? (item.ItemGstVal / 2) : 0) : 0,
+                        // SGST = IsTaxable ? (Local ? (item.ItemGstVal / 2) : 0) : 0,
+                        // IGST = IsTaxable ? (Local ? 0 : (item.ItemGstVal)) : 0,
+                        // IGST = item.ItemGstVal,
+                    }
+            );
+        }
+        grn.TotalAmount = grn.Items.Sum(x => x.Amount + x.IGST);
+        DialogParameters parms = new DialogParameters();
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        parms.Add("model", grn.Clone());
+        var dialog = DialogService.Show<CSGrnDialog>(grn.GrnID == null ? "ADD" : "EDIT", parms, maxWidth);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            GetAll();
+        }
+        GetAll();
+        await Task.Delay(200);
+        _busy = false;
+    }
+}

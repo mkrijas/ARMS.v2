@@ -341,7 +341,10 @@ namespace Views
 
         #region ------------CENTRALIZED STORE-------------------
         services.AddScoped<ICSPurchaseOrderService, CSPurchaseOrderService>();
-        #endregion
+        services.AddScoped<ICSGrnService, CSGrnService>();
+        services.AddScoped<IbaseInterface<CSGrnModel>, CSGrnService>();
+        services.AddScoped<IBarcodeService, BarcodeService>();
+            #endregion
 
             //services.AddCors(options =>
             //{

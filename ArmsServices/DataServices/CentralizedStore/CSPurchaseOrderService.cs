@@ -65,7 +65,7 @@ namespace ArmsServices.DataServices
         }
 
         // Method to get item entries for a specific purchase order
-        public IEnumerable<CSItemEntryModel> GetItemEntries(int POID)
+        public IEnumerable<CSPOItemEntryModel> GetItemEntries(int POID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -74,20 +74,27 @@ namespace ArmsServices.DataServices
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Centralized.Store.PurchaseOrder.Select]", parameters))
             {
-                yield return new CSItemEntryModel()
+                yield return new CSPOItemEntryModel()
                 {
-                    ItemEntryID = dr.GetInt64("POItemID"),
+                    POItemID = dr.GetInt64("POItemID"),
                     ItemID = dr.GetInt32("ItemID"),
                     ItemRate = dr.GetDecimal("ItemRate"),
                     ItemQty = (decimal)dr.GetDecimal("ItemQty"),
-                    UOM = dr.GetString("UOM"),
+                    UoM = dr.GetString("UOM"),
                     ItemGstVal = dr.GetDecimal("ItemGstVal"),
+                    ItemDescription = dr.GetString("ItemDescription"),  
+                    ItemCode = dr.GetString("InventoryItemCode"),
+                    ItemGroupDescription = dr.GetString("ItemGroupDescription"),
+                    PartNumber = dr.GetString("PartNumber"),
+                    CoaID = dr.GetInt32("CoaID"),
+                    BaseQty = dr.GetDecimal("BaseQty"),
+                    BaseRate = dr.GetDecimal("BaseRate"),
                 };
             }
         }
 
         // Method to get item entries for a specific purchase order (alternative method)
-        public IEnumerable<CSItemEntryModel> GetItemEntriesPO(int POID)
+        public IEnumerable<CSPOItemEntryModel> GetItemEntriesPO(int POID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -96,13 +103,13 @@ namespace ArmsServices.DataServices
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Centralized.Store.PurchaseOrder.Select]", parameters))
             {
-                yield return new CSItemEntryModel()
+                yield return new CSPOItemEntryModel()
                 {
-                    ItemEntryID = dr.GetInt64("POItemID"),
+                    POItemID = dr.GetInt64("POItemID"),
                     ItemID = dr.GetInt32("ItemID"),
                     ItemRate = dr.GetDecimal("ItemRate"),
                     ItemQty = (decimal)dr.GetDecimal("ItemQty"),
-                    UOM = dr.GetString("UOM"),
+                    UoM = dr.GetString("UOM"),
                     ItemGstVal = dr.GetDecimal("ItemGstVal"),
                     ItemCode = dr.GetString("InventoryItemCode"),
                     ItemDescription = dr.GetString("ItemDescription"),
@@ -154,8 +161,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TotalValue",model.TotalValue),
                new SqlParameter("@Reference",model.Reference),
                new SqlParameter("@Remarks",model.Remarks),
-               new SqlParameter("@BranchID",model.Branch.BranchID),
-               new SqlParameter("entries",model.Entries.ToDataTable()),
+               new SqlParameter("@BranchID",model.BranchID),
+               new SqlParameter("@Items",model.Entries.ToDataTable()),
                new SqlParameter("@UserID",model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Centralized.Store.PurchaseOrder.Update]", parameters))
@@ -180,12 +187,8 @@ namespace ArmsServices.DataServices
                 AuthStatus = dr.GetString("AuthStatus"),
                 TotalValue = dr.GetDecimal("TotalValue"),
                 Reference = dr.GetString("Reference"),
-                Remarks = dr.GetString("Remarks"),                
-                Branch = new BranchModel
-                {
-                    BranchID = dr.GetInt32("BranchID"),
-                    BranchName = dr.GetString("BranchName"),
-                },
+                Remarks = dr.GetString("Remarks"),               
+                BranchID = dr.GetInt32("BranchID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

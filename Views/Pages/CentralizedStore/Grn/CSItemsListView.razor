@@ -1,0 +1,312 @@
+﻿@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject ITdsRateService tdsService
+@inject IGstItemService gstIservice
+@inject IInventoryItemService Iservice
+
+@if (!ReadOnly || ItemList.Any())
+{
+    <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
+        <h6> <u>Items</u></h6>
+        <div style="width: 1100px;" class="pb-3">
+            <MudGrid Justify="Justify.Center">
+                <MudItem xs="3"><span class="HeadText">Item Name</span></MudItem>
+                <MudItem xs="2"><span class="HeadText">Quantity</span></MudItem>
+                <MudItem xs="1"><span class="HeadText">UOM</span></MudItem>
+                <MudItem xs="1"><span class="HeadText">Rate</span></MudItem>
+                <MudItem xs="1"><span class="HeadText">Amount</span></MudItem>
+                <MudItem xs="2"><span class="HeadText">Gst/TDS</span></MudItem>
+                <MudItem xs="1"><span class="HeadText">MRP</span></MudItem>
+                <MudItem xs="1">Actions</MudItem>
+                @foreach (var item in ItemList)
+                {
+                    <MudItem xs="3">@item.ItemCode | @item.ItemGroupDescription - @item.ItemDescription - @item.PartNumber</MudItem>
+                    @if (item.GrnItemID == null)
+                    {
+                        <MudItem xs="2">
+                            <MudTextField Immediate=true T="decimal?" Value="@item.ItemQty" ValueChanged="@(e => CalculateAndDisplay(e, @item))" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.ItemQty)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="1">
+                            <MudAutocomplete T="string"
+                                             Label="UOM"
+                                             Value="@item.UoM"
+                                             ValueChanged="@(uom => OnUomChanged(uom, item))"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             For="@(() => item.UoM)"
+                                             SearchFunc="@(text => SearchUoMs(text, item.ItemID))"
+                                             CoerceText="true" />
+                        </MudItem>
+                    }
+                    else
+                    {
+                        <MudItem xs="2">
+                            @item.ItemQty
+                        </MudItem>
+                        <MudItem xs="1">
+                            @item.UoM
+                        </MudItem>
+                    }
+                    <MudItem xs="1">@item.ItemRate</MudItem>
+                    <MudItem xs="1">@item.Amount</MudItem>
+                    <MudItem xs="2">@(item.CGST + item.SGST + item.IGST)/@item.TDS</MudItem>
+                    @if (item.GrnItemID == null)
+                    {
+                        <MudItem xs="1">
+                            <MudTextField T="decimal?" @bind-value="@item.MRP" Label="MRP" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.MRP)"></MudTextField>
+                        </MudItem>
+                    }
+                    else
+                    {
+                        <MudItem xs="1">@item.MRP</MudItem>
+                    }
+                    <MudItem xs="1" Class="d-flex">
+                        @if (!ReadOnly)
+                        {
+                            <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                        }
+                        <MudIconButton Title="Show Taxes" Color="Color.Info" @onclick="@(()=> OpenDialogTaxRates(@item))" Icon="@Icons.Material.Filled.CurrencyExchange" Size="Size.Small" /> 
+                        @if (item.BatchNo != null)
+                        {
+                            <MudIconButton Title="Show Barcode" Color="Color.Primary" @onclick="@(() => ShowBarcodeDialog(item.BatchNo))" Icon="@Icons.Material.Filled.QrCode2" Size="Size.Small" />        
+                        }
+                    </MudItem>
+                }
+            </MudGrid>
+        </div>
+    </MudItem>
+}
+
+<style>
+
+    .HeadText {
+        font-weight: 500;
+    }
+
+</style>
+@code {
+
+    [Parameter]
+    public List<CSGrnItemModel> ItemList { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    [Parameter]
+    public int? BranchID { get; set; }
+    [Parameter]
+    public PartyModel PartyInfo { get; set; }
+    [Parameter]
+    public bool Local { get; set; } = true;
+    [Parameter]
+    public bool IsTaxable { get; set; } = true;
+    [Parameter]
+    public EventCallback<CSGrnItemModel> OnItemAdded { get; set; }
+    [Parameter]
+    public EventCallback OnAmountChange { get; set; }
+    [Parameter]
+    public bool EditMode { get; set; } = true;
+    InventoryItemModel InventoryItem = new();
+    CSGrnItemModel Model = new CSGrnItemModel();
+    EditContext editContext;
+    private Dictionary<int, List<InventoryUoMModel>> itemUomMap = new();
+    private bool _busy;
+
+    protected override void OnParametersSet()
+    {
+        if (editContext == null)
+        {
+            editContext = new EditContext(Model);
+            editContext.EnableDataAnnotationsValidation();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        if (EditMode)
+        {
+            foreach (var item in ItemList)
+            {
+                AddTax(item);
+            }
+        }
+    }
+
+    private async Task<IEnumerable<string>> SearchUoMs(string searchText, int? inventoryItemId)
+    {
+        await Task.Delay(100); // Simulate network delay
+
+        if (inventoryItemId == null)
+            return Enumerable.Empty<string>();
+
+        if (!itemUomMap.ContainsKey(inventoryItemId.Value))
+        {
+            var uoms = Iservice.GetConversionUoM(inventoryItemId.Value).ToList();
+            itemUomMap[inventoryItemId.Value] = uoms;
+        }
+
+        var uomList = itemUomMap[inventoryItemId.Value];
+
+        var filtered = uomList
+            .Where(u => string.IsNullOrWhiteSpace(searchText) || u.UoM.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+            .Select(u => u.UoM)
+            .Distinct(); // <-- removes duplicates
+
+        return filtered;
+    }
+
+
+    // Method to open the dialog for tax rates
+    private async Task OpenDialogTaxRates(CSGrnItemModel i)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        GstModel taxModel = new GstModel();
+        taxModel.CGST = i.CGST;
+        taxModel.IGST = i.IGST;
+        taxModel.TDS = i.TDS;
+        taxModel.SGST = i.SGST;
+        taxModel.GstRate = i.GstRate;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("tax", taxModel);
+        parms.Add("ReadOnly", ReadOnly);
+        var dialog = DialogService.Show<TaxRatedialog>(i.GrnID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            taxModel = (GstModel)result.Data;
+            i.CGST = taxModel.CGST;
+            i.IGST = taxModel.IGST;
+            i.TDS = taxModel.TDS;
+            i.SGST = taxModel.SGST;
+            i.GstRate = taxModel.GstRate;
+
+            await OnAmountChange.InvokeAsync();
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    // Method to delete an item from the inventory
+    private async Task Delete(CSGrnItemModel i)
+    {
+        int rowIndex = ItemList.IndexOf(i);
+        ItemList.RemoveAt(rowIndex);
+        await OnAmountChange.InvokeAsync();
+    }
+
+    // Method to add tax details to the item
+    private bool AddTax(CSGrnItemModel item)
+    {
+        if (item?.ItemID != null && item.Amount != null)
+        {
+            if (PartyInfo == null)
+            {
+                snackbar.Add("Select Party !", Severity.Error);
+                return false;
+            }
+
+            // Get GST item details based on the item ID
+            var gstItem = gstIservice.SelectByItem(item?.ItemID ?? 0, DateTime.Today);
+            item.GstRate = (gstItem?.TaxRate) ?? 0;
+
+            // Calculate TDS based on the party information
+            decimal tdsRate = tdsService.GetTdsRate(PartyInfo.PartyID, item.CoaID);
+            item.TDS = Math.Round((item.Amount.Value * tdsRate) / 100, MidpointRounding.AwayFromZero);
+            if (!IsTaxable)
+            {
+                return true;
+            }
+
+            decimal taxRate = item.GstRate.Value;
+            if (!Local)
+            {
+                item.IGST = Math.Round(item.Amount.Value * taxRate / 100, 2);
+                item.CGST = item.SGST = 0;
+            }
+            else
+            {
+                item.SGST = item.CGST = Math.Round(item.Amount.Value * taxRate / 200, 2);
+                item.IGST = 0;
+            }
+
+            return true;
+        }
+        return false;
+    }
+
+    private async Task CalculateAndDisplay(decimal? qty, CSGrnItemModel item)
+    {
+        if (qty == null || item == null)
+            return;
+
+        item.ItemQty = qty;
+
+        // If rate is null or zero, prevent calculation
+        if (item.ItemRate == null || item.ItemRate == 0)
+        {
+            item.Amount = 0;
+        }
+        else
+        {
+            item.Amount = Math.Round((qty ?? 0) * (item.ItemRate ?? 0), 2);
+        }
+
+        AddTax(item); // Update tax details
+
+        await OnAmountChange.InvokeAsync(); // Trigger any updates to parent
+    }
+
+    private async Task OnUomChanged(string selectedUom, CSGrnItemModel item)
+    {
+        item.UoM = selectedUom;
+
+        if (item.ItemID == null || string.IsNullOrEmpty(selectedUom))
+            return;
+
+        if (!itemUomMap.TryGetValue(item.ItemID.Value, out var uomList))
+        {
+            uomList = Iservice.GetConversionFactor(item.ItemID.Value, selectedUom).ToList();
+            itemUomMap[item.ItemID.Value] = uomList;
+        }
+
+        var selected = uomList.FirstOrDefault(u => u.UoM == selectedUom);
+        if (selected != null)
+        {
+            if (selected.ConversionFactor.HasValue && selected.ConversionFactor.Value != 0)
+            {
+                // Update rate
+                item.ItemRate = Math.Round(item.BaseRate.Value * selected.ConversionFactor.Value, 2);
+
+                // Update quantity
+                item.ItemQty = Math.Round((item.BaseQty ?? 0) /  selected.ConversionFactor.Value, 2);
+            }
+            else
+            {
+                item.ItemRate = 0;
+                snackbar.Add("Invalid Unit Rate or Conversion Factor.", Severity.Warning);
+            }
+        }
+
+        await CalculateAndDisplay(item.ItemQty, item);
+    }
+
+    private async Task ShowBarcodeDialog(string batchNo)
+    {
+        if (string.IsNullOrWhiteSpace(batchNo))
+        {
+            snackbar.Add("Item code is empty!", Severity.Warning);
+            return;
+        }
+
+        var parameters = new DialogParameters
+        {
+            { "Code", batchNo }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        DialogService.Show<BarcodeDialog>("Barcode", parameters, options);
+    }
+}

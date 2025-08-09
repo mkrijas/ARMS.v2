@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
         int Approve(int POID, string UserID, string Remarks);  //Approve
         int Reverse(int POID, string UserID);  //Reverse
         int CancelOrder(int POID, string UserID, string Remarks);  //Cancel
-        IEnumerable<CSItemEntryModel> GetItemEntries(int POID);
-        IEnumerable<CSItemEntryModel> GetItemEntriesPO(int POID);
+        IEnumerable<CSPOItemEntryModel> GetItemEntries(int POID);
+        IEnumerable<CSPOItemEntryModel> GetItemEntriesPO(int POID);
     }
 }

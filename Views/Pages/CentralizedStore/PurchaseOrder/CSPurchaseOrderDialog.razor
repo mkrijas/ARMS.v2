@@ -57,7 +57,7 @@
                                     var itemInfo = itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID);
 
                                     <MudItem xs="5" Class="il ali-C">@string.Format("{0} | {1} | {2} | {3}", itemInfo?.InventoryItemCode, itemInfo.ItemGroup.ItemGroupDescription, itemInfo?.ItemDescription, itemInfo?.PartNumber)</MudItem>
-                                    <MudItem xs="2" Class="ali-C">@item.ItemQty<MudText Class="mx-4" Typo="Typo.caption" Style="opacity: 0.8;">@item.UOM</MudText></MudItem>
+                                    <MudItem xs="2" Class="ali-C">@item.ItemQty<MudText Class="mx-4" Typo="Typo.caption" Style="opacity: 0.8;">@item.UoM</MudText></MudItem>
                                     <MudItem xs="2" Class="ali-C">@item.ItemRate</MudItem>
                                     <MudItem xs="2" Class="ali-C">@item.ItemGstVal</MudItem>
                                     <MudItem xs="1">
@@ -72,10 +72,14 @@
                                     <MudItem xs="5">
                                         <InventoryItemSelector Value="SelectedItem" ValueChanged="@((InventoryItemModel newValue) => ItemChanged(newValue))" />
                                     </MudItem>
-                                    <MudItem xs="3">
-                                        <MudTextField @bind-Value="Entrymodel.ItemQty" Adornment="Adornment.End" AdornmentText="@UOM" AdornmentColor="Color.Primary" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField>
+                                    <MudItem xs="2">
+                                        <MudTextField @bind-Value="Entrymodel.ItemQty" Adornment="Adornment.End" AdornmentColor="Color.Primary" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField>
                                     </MudItem>
-                                    <MudItem xs="3">
+                                    <MudItem xs="2">
+                                        <MudAutocomplete Label="UOM" @bind-Value="Entrymodel.UoM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.UoM)"
+                                                         SearchFunc="@SearchUoMs" CoerceText="true" />
+                                    </MudItem>
+                                    <MudItem xs="2">
                                         <MudTextField @bind-Value="Entrymodel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemRate)"></MudTextField>
                                     </MudItem>
                                     <MudItem xs="1">
@@ -88,7 +92,7 @@
                     <MudItem xs="12">
                         @if ((ReadOnly) && (!IsView))
                         {
-                            <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="17" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.POID" OnApprove="IsApproveData"></AutherizationStatusComponent>
+                            <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.POID" OnApprove="IsApproveData"></AutherizationStatusComponent>
                         }
                     </MudItem>
                 </MudGrid>
@@ -131,9 +135,9 @@
     public string DocType { get; set; }
     private int branchID = 0;
     public InventoryItemModel SelectedItem = new();
-    private CSItemEntryModel Entrymodel = new CSItemEntryModel();
+    private CSPOItemEntryModel Entrymodel = new CSPOItemEntryModel();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    public string UOM { get; set; }
+    private List<InventoryUoMModel> uoms = new();
 
     private bool _busy;
 
@@ -164,11 +168,22 @@
         else
         {
             model.TotalValue = 0;
+            model.BranchID = branchID;
         }
 
         DocNumber = model.PONo;
         DocDate = model.EntryDate;
         DocType = "Centralized Store Purchase Order";
+    }
+
+    private async Task<IEnumerable<string>> SearchUoMs(string searchText)
+    {
+        await Task.Delay(100); // Simulate network delay
+        if (string.IsNullOrWhiteSpace(searchText))
+            return uoms.Select(u => u.UoM);
+        return uoms
+            .Where(u => u.UoM.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+            .Select(u => u.UoM);
     }
 
     protected async Task IsApproveData(DataApprovedStatus aprvd)
@@ -199,7 +214,7 @@
         }
     }
 
-    private void Delete(CSItemEntryModel i)
+    private void Delete(CSPOItemEntryModel i)
     {
         int rowIndex = model.Entries.IndexOf(i);
         model.Entries.RemoveAt(rowIndex);
@@ -229,7 +244,6 @@
             model.PartyCode = partyinfo.PartyCode;
             model.PartyID = partyinfo.PartyID;
             model.PartyName = partyinfo.TradeName;
-            model.Branch.BranchID = branchID;
             MudDialog.Close(model);
         }
         await Task.Delay(200);
@@ -282,7 +296,6 @@
         {
             Entrymodel.ItemGstVal = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty)) * gstrt) / 100;
         }
-        Entrymodel.UOM = UOM;
         model.Entries.Add(Entrymodel);
         Entrymodel = new();
         SelectedItem = new();
@@ -299,6 +312,6 @@
     {
         SelectedItem = item;
         Entrymodel.ItemID = item?.InventoryItemID;
-        UOM = item?.UoM;
+        uoms = itemIservice.GetConversionUoM(item?.InventoryItemID).ToList();
     }
 }

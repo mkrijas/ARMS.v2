@@ -54,9 +54,6 @@ namespace ArmsModels.BaseModels
         public int? POID { get; set; } // Unique identifier for the purchase order
         public string PONo { get; }
         public bool GrnCreated { get; }
-        [Required]
-        [ValidateComplexType]
-        public BranchModel Branch { get; set; }
         public string Status
         {
             get
@@ -99,7 +96,7 @@ namespace ArmsModels.BaseModels
         public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
         [ValidateComplexType]
-        public List<CSItemEntryModel> Entries { get; set; } = new(); // List of inventory item entries
+        public List<CSPOItemEntryModel> Entries { get; set; } = new(); // List of inventory item entries
     }
 
     // Base model for inventory orders
@@ -117,10 +114,10 @@ namespace ArmsModels.BaseModels
     }
 
     // Model representing an entry for an inventory item
-    public class CSItemEntryModel
+    public class CSPOItemEntryModel
     {
-        public long? ItemEntryID { get; set; } // Unique identifier for the item entry
-        public long? RefID { get; set; }
+        public virtual long? POItemID { get; set; } // Unique identifier for the item entry
+        public long? POID { get; set; } // Unique identifier for the item entry
         [Required]
         public int? ItemID { get; set; }
         public virtual int? CoaID { get; set; }
@@ -130,8 +127,11 @@ namespace ArmsModels.BaseModels
         public virtual string PartNumber { get; set; }
         [Required]
         public decimal ItemQty { get; set; }
-        public virtual string UOM { get; set; }
+        [Required]
+        public string UoM { get; set; }
         public decimal? ItemRate { get; set; }
         public decimal? ItemGstVal { get; set; }
+        public virtual decimal? BaseQty { get; set; }
+        public virtual decimal? BaseRate { get; set; }
     }
 }
