@@ -526,9 +526,9 @@ namespace ArmsServices.DataServices
                 switch (NatureOfTransaction.ToLower())
                 {
                     case "deposit":
-                        return GetRenterRentCoaID(PartyID);
-                    case "rent":
                         return GetRenterDepositCoaID(PartyID);
+                    case "rent":
+                        return GetRenterRentCoaID(PartyID);
                     case "other":
                         return GetRenterOtherCoaID(PartyID);
                 }
