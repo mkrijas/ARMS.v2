@@ -55,6 +55,11 @@ using Core.BaseModels.User;
 using DAL.DataServices.User;
 using DAL.DataServices.Operations.ROI;
 using Core.IDataServices.Operations.ROI;
+using System.Net.Http;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Views
 {
@@ -78,20 +83,40 @@ namespace Views
             // Allow CORS
             services.AddCors(options =>
             {
-                options.AddDefaultPolicy( policy =>
+                options.AddDefaultPolicy(policy =>
                 {
                     //policy.WithOrigins("http://*ReportServer").SetIsOriginAllowedToAllowWildcardSubdomains()
-                     policy.SetIsOriginAllowed( origin => true )
-                           .AllowAnyMethod()
-                           .AllowAnyHeader()
-                           .AllowCredentials();
+                    policy.SetIsOriginAllowed(origin => true)
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials();
                 });
             });
 
+
+            services.AddHttpClient();
+
+            //services.AddHttpClient("SSRSClient", client =>
+            //{
+            //    client.BaseAddress = new Uri("http://10.200.90.30/ReportServer/");
+            //})
+            //   .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            //   {
+            //       Credentials = new CredentialCache
+            //       {
+            //        {
+            //            new Uri("http://10.200.90.30/ReportServer/"),
+            //            "NTLM",  // Or "Basic" if SSRS is set to Basic auth
+            //            new NetworkCredential("arms", "arms@123")
+            //        }
+            //       },
+            //       PreAuthenticate = true
+            //   });
+
             services.AddControllersWithViews();
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
-            
-            services.AddHttpClient();
+
+           // services.AddHttpClient();
             // 3rd party 
             services.AddMudServices(config =>
             {
@@ -117,12 +142,12 @@ namespace Views
                 config.AddPolicy("Limited_To_HO", policy => policy.RequireClaim("BranchID", "7"));
             });
 
-        #region ---------------DataBase Connection Name---------------
+            #region ---------------DataBase Connection Name---------------
 
             services.AddTransient<ICatalogNameProvider, CatalogNameProvider>();
-        #endregion
+            #endregion
 
-        #region ---------------Email_Sender---------------
+            #region ---------------Email_Sender---------------
 
             services.AddTransient<IEmailSender, EmailSender>();
             services.Configure<EmailSenderOptions>(options =>
@@ -138,20 +163,20 @@ namespace Views
                 options.Sender_EMail = "noreply_arms@teamthai.in";
                 options.Sender_Name = "ArmsV2";
             });
-        #endregion
+            #endregion
 
             services.AddSingleton<IDbService, DbService>();
 
-        #region  ------------Operation_Services---------------
+            #region  ------------Operation_Services---------------
 
-            services.AddSingleton<TruckDataArrayModel>();            
+            services.AddSingleton<TruckDataArrayModel>();
             services.AddSingleton<SqlTableDependencyService>();
             services.AddScoped<IBranchService, BranchService>();
             services.AddScoped<IBranchSettingsService, BranchSettingsService>();
             services.AddScoped<IPlaceService, PlaceService>();
             services.AddScoped<IRouteService, RouteService>();
             services.AddScoped<IConsigneeService, ConsigneeService>();
-            services.AddScoped<IDriverService, DriverService>();            
+            services.AddScoped<IDriverService, DriverService>();
             services.AddScoped<IDriverFaultService, DriverFaultService>();
             services.AddScoped<IDriverLeaveService, DriverLeaveService>();
             services.AddScoped<IDriverLicenceService, DriverLicenceService>();
@@ -168,12 +193,12 @@ namespace Views
             services.AddScoped<IGcService, GcService>();
             services.AddScoped<IAddressService, AddressService>();
             services.AddScoped<IContactService, ContactService>();
-            services.AddScoped<IBankAccountService, BankAccountService>();            
-            services.AddScoped<IPartyService, PartyService>();            
+            services.AddScoped<IBankAccountService, BankAccountService>();
+            services.AddScoped<IPartyService, PartyService>();
             services.AddScoped<IOpTranService, OpTranService>();
             services.AddScoped<IAssetDocumentService, AssetDocumentService>();
             services.AddScoped<IExpenseMappingServices, ExpenseMappingServices>();
-            services.AddScoped<IPushNotificationService, PushNotificationService>();            
+            services.AddScoped<IPushNotificationService, PushNotificationService>();
             services.AddScoped<ITripFuelService, TripFuelService>();
             services.AddScoped<ITripAdvanceService, TripAdvanceService>();
             services.AddScoped<IGeneralSettingsService, GeneralSettingsService>();
@@ -202,7 +227,7 @@ namespace Views
             services.AddScoped<IFinanceDashboardService, FinanceDashboardService>();
             #endregion
 
-        #region ------------FMS---------------
+            #region ------------FMS---------------
             services.AddScoped<IBreakdownService, BreakdownService>();
             services.AddScoped<IWorkshopService, WorkshopService>();
             services.AddScoped<IJobcardService, JobcardService>();
@@ -215,9 +240,9 @@ namespace Views
             services.AddScoped<IInsuranceClaimService, InsuranceClaimService>();
             services.AddScoped<IRoutineCheckListService, RoutineCheckListService>();
             //services.AddScoped<ITruckTransferService, TruckTransferService>();
-        #endregion
+            #endregion
 
-        #region ------------INVENTORY-------------------
+            #region ------------INVENTORY-------------------
             services.AddScoped<IInventoryGroupService, InventoryGroupService>();
             services.AddScoped<IInventoryGroup2Service, InventoryGroup2Service>();
             services.AddScoped<IInventoryItemGroupService, InventoryItemGroupService>();
@@ -232,17 +257,17 @@ namespace Views
             services.AddScoped<IStockTransferService, StockTransferService>();
             #endregion
 
-        #region ------------DATA AUTHENTICATION-------------------
+            #region ------------DATA AUTHENTICATION-------------------
             services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
             services.AddScoped<IDataAuthorizationService, DataAuthorizationService>();
             #endregion
 
-        #region ------------ASSETS-------------------
+            #region ------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetSettingsService, AssetSettingsService>();
             #endregion
 
-        #region ------------FINANCE-------------------
+            #region ------------FINANCE-------------------
             services.AddScoped<IChartOfAccountService, ChartOfAccountService>();
             services.AddScoped<ITdsRateService, TdsRateService>();
             services.AddScoped<ITdsAccountMappingService, TdsAccountMappingService>();
@@ -262,7 +287,7 @@ namespace Views
             //------------FINANCE TRANSACTIONS-------------------
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
-            services.AddScoped<IAccountInfoService, AccountInfoService>();           
+            services.AddScoped<IAccountInfoService, AccountInfoService>();
             services.AddScoped<IPaymentInitiatedService, PaymentInitiatedService>();
             services.AddScoped<IPaymentFinalizeService, PaymentFinalizeService>();
             services.AddScoped<IOutstandingBillsService, OutstandingBillsService>();
@@ -288,8 +313,8 @@ namespace Views
 
 
             //----IBASE GROUP
-            services.AddScoped<IbaseInterface<PaymentMemoModel> , PaymentService>();
-            services.AddScoped <IbaseInterface<TaxPurchaseModel> , TaxPurchaseService>();
+            services.AddScoped<IbaseInterface<PaymentMemoModel>, PaymentService>();
+            services.AddScoped<IbaseInterface<TaxPurchaseModel>, TaxPurchaseService>();
             services.AddScoped<IbaseInterface<SundryReceiptModel>, SundryReceiptService>();
             services.AddScoped<IbaseInterface<SundryPaymentModel>, SundryPaymentService>();
             services.AddScoped<IbaseInterface<SundryPaymentAssetModel>, SundryPaymentAssetService>();
@@ -352,7 +377,7 @@ namespace Views
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
             services.AddScoped<IAssetTransferService, AssetTransferService>();
-        #endregion
+            #endregion
 
             //------------General-------------------
             services.AddScoped<IConfigTable, ConfigTable>();
@@ -362,11 +387,11 @@ namespace Views
             services.AddScoped<IDeviceService, DeviceService>();
             services.AddScoped<IRoleService<RoleModel>, RoleStore>();
             services.AddTransient<IUserStore<UserModel>, UserStore>();
-            services.AddTransient<IRoleStore<RoleModel>, RoleStore>();            
+            services.AddTransient<IRoleStore<RoleModel>, RoleStore>();
             services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddDefaultTokenProviders()
                 .AddDefaultUI();
-            services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation > ();
+            services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation>();
             #endregion
         }
 
@@ -385,13 +410,19 @@ namespace Views
                 app.UseHsts();
             }
 
-            var cultureInfo = new CultureInfo("en-IN");            
+            var cultureInfo = new CultureInfo("en-IN");
             CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
             CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
             app.UseResponseCompression(); // SignalR Response compression
 
             app.UseHttpsRedirection();
+
+
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
 
             app.UseRouting();
             app.UseCors();
@@ -421,10 +452,10 @@ namespace Views
             //    });
             //});
 
-           
+
             //app.UseCors("AllowAnyOriginPolicy");
             //app.UseCors("CorsPolicy");
-           // app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+            // app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
             //app.UseStaticFiles(new StaticFileOptions()
             //{
@@ -446,7 +477,7 @@ namespace Views
                 endpoints.MapBlazorHub();
                 endpoints.MapHub<ServerSignalHub>("/chatHub");
                 endpoints.MapFallbackToPage("/_Host");
-                
+
             });
         }
     }

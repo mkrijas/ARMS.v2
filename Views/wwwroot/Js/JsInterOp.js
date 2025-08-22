@@ -22,25 +22,35 @@ function IFrameHightSetter() {
 
 }
 
-function runReport(url) {
-    var http = getHTTPObject();
-    /*var url = "http://rs-01/ReportServer/Pages/ReportViewer.aspx?%2fTEL+Wall+Thing%2fWallDash&rs:Command=Render";*/
-    http.onreadystatechange = function () {
-        if (http.readyState == 4) {
-            if (http.status == 401) {
-                runReport();
-            }
-            if (http.status == 200) {
-                document.location = url;
-            }
-        }
-    };
-    /*http.open("get", url, true);*/
-    http.open("get", url, true, _0x1751[0x0], _0x1751[0x1]);
-    http.send(null);
-    return false;
-}
+//function runReport(url) {
+//    var http = getHTTPObject();
+//    http.onreadystatechange = function () {
+//        if (http.readyState == 4) {
+//            if (http.status == 401) {
+//                runReport();
+//            }
+//            if (http.status == 200) {
+//                document.location = url;
+//            }
+//        }
+//    };
+//    http.open("get", url, true);
 
+//    http.send(null);
+//    return false;
+//}
+
+
+function runReport(url) {
+    var iframe = document.getElementById("PreviewClaim");
+    if (iframe) {
+        iframe.src = url;
+        return true;
+    } else {
+        console.error("Iframe with id 'PreviewClaim' not found.");
+        return false;
+    }
+}
 
 function focusElement(id) {
     const element = document.getElementById(id);
