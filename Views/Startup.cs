@@ -344,6 +344,7 @@ namespace Views
             services.AddScoped<IUnreconciledBankEntryService, UnreconciledBankEntryService>();
             services.AddScoped<IOperationPostingGroupService, OperationPostingGroupService>();
             services.AddScoped<ICancellationReasonCodeService, CancellationReasonCodeService>();
+            services.AddScoped<IChequeBookService, ChequeBookService>();
 
             //-----------FINANCE VIEWS GROUP---------------------
 

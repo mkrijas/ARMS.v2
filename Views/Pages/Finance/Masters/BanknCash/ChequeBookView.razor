@@ -1,0 +1,156 @@
+﻿@page "/chequebook/{ID:int}"
+@using System.Threading;
+@inject IChequeBookService Iservice
+@inject IBankAccountOwnService Ibankservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@attribute [Authorize]
+@inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject NavigationManager NavigationManager
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<ChequeBookModel, bool>(search)" @bind-place="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">@ownBank.BankAccountInfo.BankTitle | Cheque Book</MudText>
+                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(0, false, false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchPurchase" Placeholder="Search Purchase order... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.StartingChequeNo)">Cheque Book</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.CreatedDate)" InitialDirection="SortDirection.Descending">Created Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.PendingLeaves)">Pending</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.ActiveLeaves)">Active</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.CashedLeaves)">Cashed</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.CancelledLeaves)">Cancelled</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.DeletedLeaves)">Deleted</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="StartingChequeNo">@context.StartingChequeNo - @context.EndingChequeNo</MudTd>
+                <MudTd DataLabel="CreatedDate">@context.CreatedDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="PendingLeaves">@context.PendingLeaves</MudTd>
+                <MudTd DataLabel="ActiveLeaves">@context.ActiveLeaves</MudTd>
+                <MudTd DataLabel="CashedLeaves">@context.CashedLeaves</MudTd>
+                <MudTd DataLabel="CancelledLeaves">@context.CancelledLeaves</MudTd>
+                <MudTd DataLabel="DeletedLeaves">@context.DeletedLeaves</MudTd>
+                <MudTd DataLabel="">
+                    <MudIconButton OnClick="@(()=> OpenDialog(context.ChequeBookID, true, false))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelID != null)" OnClick="@(()=> OpenDialog(context.ChequeBookID, false, false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelID != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />                   
+                    @if (@context.AuthLevelID != 99)
+                    {
+                        <MudIconButton OnClick="@(()=> OpenDialog(context.ChequeBookID, true, true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                    }
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    [Parameter]
+    public int ID { get; set; }
+    private ChequeBookModel model = new ChequeBookModel();
+    private List<ChequeBookModel> collection = new List<ChequeBookModel>();
+    private OwnBankModel ownBank = new OwnBankModel();
+    private bool _busy;
+    private string searchPurchase = "";
+    public bool IsApproved { get; set; } = false;
+    public bool HasEditPermission { get; set; } = false;
+    public bool HasDeletePermission { get; set; } = false;
+    public int DocTypeID = 147;
+    public int OwnBankAccountID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasEditPermission = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasDeletePermission = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+        OwnBankAccountID = ID;
+        ownBank = Ibankservice.SelectByID(OwnBankAccountID);
+        model = new();
+        await GetAll(IsApproved);
+    }
+
+    async Task ApprovedChanged(bool value)
+    {
+        IsApproved = value;
+        await GetAll(IsApproved);
+    }
+
+    private async Task GetAll(bool val)
+    {
+        if (val)
+        {
+            collection = Iservice.SelectByApproved(ID).ToList();
+        }
+        else
+        {
+            collection = Iservice.SelectByUnapproved(ID).ToList();
+        }
+    }
+
+    private async Task OpenDialog(int? id, bool rdonly, bool verify)
+    {
+        NavigationManager.NavigateTo("/chequebookleaves/" + OwnBankAccountID + "/" + id.ToString() + "/" + rdonly + "/" + verify);
+    }
+
+    private async Task Delete(ChequeBookModel tds)
+    {
+        if (HasDeletePermission)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.StartingChequeNo + "-" + model.EndingChequeNo + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(tds.ChequeBookID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+                await GetAll(IsApproved);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to delete PurchaseOrder.");
+        }
+    }
+
+    private bool search(ChequeBookModel tds)
+    {
+        if (tds.StartingChequeNo != null && tds.StartingChequeNo.Contains(searchPurchase, StringComparison.OrdinalIgnoreCase) ||
+            tds.EndingChequeNo != null && tds.EndingChequeNo.Contains(searchPurchase, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (tds.StartingChequeNo == null || tds.EndingChequeNo != null)
+            return true;
+        return false;
+    }
+
+    private string TableRowStyle(ChequeBookModel cb, int index)
+    {
+        // if (cb.UserInfo.RecordStatus == 9)
+        // {
+        //     return "background-color:#ff8080";
+        // }
+        // if (cb.AuthLevelID == 99)
+        // {
+        //     return "background-color:#CCCCFF";
+        // }
+        return string.Empty;
+    }
+}

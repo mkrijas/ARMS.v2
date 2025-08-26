@@ -1,0 +1,335 @@
+﻿@page "/chequebookleaves/{OwnBankAccountID:int}/{ChequeBookID:int}/{Readonly:bool}/{Verify:bool}"
+@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject NavigationManager NavigationManager
+@inject IRoleService<RoleModel> Irole
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IChequeBookService Iservice
+
+<MudPaper Style="padding-bottom: 1px;">
+    <MudToolBar>
+        <MudText Typo="Typo.h6" Style="font-weight:500;">Cheque Book</MudText>
+        <MudSpacer></MudSpacer>
+    </MudToolBar>
+    <MudDivider />
+    <div Style="padding: 6px; background-color: whitesmoke; margin: 38px; padding-top: 12px; border-radius: 4px; box-shadow: inset 0px 0px 4px 0px rgba(0,0,0,0.3);">
+
+        <MudPaper Style="padding-bottom: 15px; min-width:min-content;">
+            <MudGrid>
+                <MudItem xs="12" Style="padding: 48px; padding-bottom: 32px;">
+                    <EditForm id="ChequeBookForm" OnValidSubmit="OnValidSubmit" Model="MainModel">
+                        <MudGrid>
+                            <MudItem xs="4">
+                                <MudTextField @bind-Value="@MainModel.StartingChequeNo" ReadOnly="@Readonly" Label="Starting Leaf Cheque No" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="First 6 Digit of Cheque NO" For="@(()=> MainModel.StartingChequeNo)" MaxLength="6"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="4">
+                                <MudTextField @bind-Value="@MainModel.EndingChequeNo" ReadOnly="@Readonly" Label="Ending Leaf Cheque No" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="First 6 Digit of Cheque NO" For="@(()=> MainModel.EndingChequeNo)" MaxLength="6"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="4">
+                                <MudDatePicker @bind-Date="@MainModel.CreatedDate" ReadOnly="@Readonly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" For="@(()=> MainModel.CreatedDate)" MaxDate="DateTime.Now" />
+                            </MudItem>
+                            <MudItem xs="12" Style="text-align: right; margin-top: 10px;">
+                                @if (!Readonly)
+                                {
+                                    <MudButton Style="min-width: 120px; margin-left:6px;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+                                    <MudButton Style="min-width: 120px; margin-left:6px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                                }
+                                else
+                                {
+                                    <MudButton Style="min-width: 120px; margin-left:6px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                                }
+                            </MudItem>
+                        </MudGrid>
+                        <ObjectGraphDataAnnotationsValidator />
+                        <ValidationSummary />
+                    </EditForm>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <div Style="margin-top:30px;">
+            <div class="fullborder" style="padding: 0px; overflow-x: auto; overflow-y: hidden;">
+                <MudGrid Spacing="4">
+                    <MudItem xs="12">
+                        <MudTable Items="@collection" Context="item" Filter="new Func<ChequeBookLeavesModel, bool>(search)" Dense="true" Hover="true" Striped="true" Elevation="10">
+                            <ToolBarContent>
+                                <MudText Typo="Typo.h6">Cheque Leaves</MudText>
+                                <MudSpacer></MudSpacer>
+                                <MudRadioGroup @bind-Value="@status" T="string" Style="padding-top: 8px;" SelectedOptionChanged="OnSelectedOptionChanged">
+                                    <MudRadio Value="@("Pending")" Color="Color.Primary">Pending</MudRadio>
+                                    <MudRadio Value="@("Active")" Color="Color.Primary">Active</MudRadio>
+                                    <MudRadio Value="@("Cashed")" Color="Color.Primary">Cashed</MudRadio>
+                                    <MudRadio Value="@("Cancelled")" Color="Color.Primary">Cancelled</MudRadio>
+                                </MudRadioGroup>
+                                <MudTextField @bind-Value="searchchequeno" Placeholder="Search Cheque No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0">
+                                </MudTextField>
+                            </ToolBarContent>
+                            <HeaderContent>                       
+                                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookLeavesModel, object>(x=> x.ChequeNo)" InitialDirection="SortDirection.Ascending">Cheque No</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookLeavesModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                                <MudTh>Actions</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="ChequeNo">@item.ChequeNo</MudTd>
+                                <MudTd DataLabel="Amount">
+                                    @if (item.UserInfo.RecordStatus == 1 && MainModel.AuthLevelID != null)
+                                    {                            
+                                        <MudTextField Style="width:80%; font-weight: bold;" @bind-Value="@item.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>                                                    
+                                    }
+                                    else
+                                    {
+                                        <MudText>@item.Amount</MudText>
+                                    }
+                                </MudTd>
+                                <MudTd DataLabel="">
+                                    @if (item.UserInfo.RecordStatus == 1)
+                                    {
+                                        <MudIconButton Disabled="@(MainModel.AuthLevelID == null)" OnClick="@(() => Submit(item))" Color="Color.Success" Icon="@Icons.Material.Filled.Save" Title="Save" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                                    }
+                                    @if (item.UserInfo.RecordStatus != 4)
+                                    {
+                                        <MudIconButton Disabled="@(MainModel.AuthLevelID == null)" OnClick="@(()=> CancelCheque(item))" Color="Color.Warning" Icon="@Icons.Material.Filled.CancelPresentation" Title="Cancel" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                                        <MudIconButton Disabled="@(Readonly && MainModel.AuthLevelID == null)" OnClick="@(()=> DeleteCheque(item))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Title="Delete" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                                    }
+                                </MudTd>
+                            </RowTemplate>
+                            <PagerContent>
+                                <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100, int.MaxValue }" />
+                            </PagerContent>
+                        </MudTable>
+                    </MudItem>
+                </MudGrid>
+            </div>
+        </div>
+        
+        @if (Verify || MainModel != null && MainModel.AuthLevelID == 99)
+        {
+            <div Style="margin-top:30px; text-align-last: center;">
+                <AutherizationStatusComponent CreatedBy="@MainModel.UserInfo" DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="MainModel.ChequeBookID" OnApprove="IsApproveData"></AutherizationStatusComponent>
+            </div>
+        }
+
+    </div>
+</MudPaper>
+
+@code {
+
+    private ChequeBookModel MainModel = new ChequeBookModel();
+    private List<ChequeBookLeavesModel> collection = new List<ChequeBookLeavesModel>();
+    private string searchchequeno = "";
+    private string status = "Pending";
+    private string UserID = null;
+
+    public bool HasEditPermission { get; set; } = false;
+    public bool HasApprovePermission { get; set; } = false;
+    [Parameter]
+    public string PageToRedirectLink { get; set; }
+    public string DocNumber { get; set; }
+    public DateTime? DocDate { get; set; }
+    public string DocType { get; set; }
+    public int DocTypeID = 147;
+    [Parameter]
+    public int OwnBankAccountID { get; set; }
+    [Parameter]
+    public int ChequeBookID { get; set; }
+    [Parameter]
+    public bool Readonly { get; set; }
+    [Parameter]
+    public bool Verify { get; set; }
+
+    // Lifecycle method called when the component is initialized
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasEditPermission = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasApprovePermission = await Irole.HasClaim(DocTypeID.ToString(), "Approve", ctc.Token);
+        if (ChequeBookID == 0)
+        {
+            MainModel = new ChequeBookModel();
+            collection = new List<ChequeBookLeavesModel>();
+            MainModel.OwnBankAccountID = OwnBankAccountID;
+        }
+        else
+        {
+            MainModel = Iservice.SelectByID(ChequeBookID);
+            LoadData();
+        }
+    }  
+
+    // Method to load data based on the current state
+    private async Task LoadData()
+    {
+
+        if (status == "Pending")
+        {
+            collection = Iservice.GetPendingLeaves(ChequeBookID).ToList();
+        }
+        else if (status == "Active")
+        {
+            collection = Iservice.GetActiveLeaves(ChequeBookID).ToList();
+        }
+        else if (status == "Cashed")
+        {
+            collection = Iservice.GetCashedLeaves(ChequeBookID).ToList();
+        }
+        else if (status == "Cancelled")
+        {
+            collection = Iservice.GetCancelledLeaves(ChequeBookID).ToList();
+        }        
+        DocType = "Cheque Book";
+    }
+
+    // Method to Approve an entry
+    protected async Task IsApproveData(DataApprovedStatus aprvd)
+    {
+        if (HasApprovePermission)
+        {
+            if (aprvd.IsApprove)
+            {
+                try
+                {
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    MainModel.UserInfo.UserID = user.Identity.Name;
+                    Iservice.Approve(MainModel.ChequeBookID.Value, MainModel.UserInfo.UserID, string.Empty);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Approve PurchaseOrder.");
+        }
+    }
+
+    public void OnSelectedOptionChanged(string value)
+    {       
+        LoadData();        
+    }
+
+    void Cancel()
+    {
+        NavigationManager.NavigateTo("/chequebook/" + OwnBankAccountID.ToString());
+    }
+
+    public async Task OnValidSubmit()
+    {
+        if (HasEditPermission)
+        {
+            try
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                UserID = user.Identity.Name;
+
+                MainModel.UserInfo.UserID = UserID;
+
+                // Call the service to update the process
+                Iservice.Update(MainModel);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                NavigationManager.NavigateTo("/chequebook/" + OwnBankAccountID.ToString());
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Edit FasTag.");
+        }
+    }
+
+    // Method to search for items based on the plate number
+    private bool search(ChequeBookLeavesModel model)
+    {
+        if (model.ChequeNo != null && model.ChequeNo.Contains(searchchequeno, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (model.ChequeNo == null)
+            return true;
+        return false;
+    }
+
+    private async Task Submit(ChequeBookLeavesModel model)
+    {
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.RecordStatus = 2;
+            model.UserInfo.UserID = user.Identity.Name;
+
+            Iservice.LeafUpdate(model);
+            snackbar.Add("Updated Successfully", Severity.Success);
+            LoadData();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task CancelCheque(ChequeBookLeavesModel model)
+    {
+        if (HasEditPermission)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to Cancel - " + model.ChequeNo + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                model.UserInfo.RecordStatus = 4;
+                model.UserInfo.UserID = user.Identity.Name;
+                Iservice.LeafUpdate(model);
+                snackbar.Add("Cancelled Successfully", Severity.Success);
+                LoadData();
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to cancel Cheque.");
+        }
+    }
+
+    private async Task DeleteCheque(ChequeBookLeavesModel model)
+    {
+        if (HasEditPermission)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to Delete - " + model.ChequeNo + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                model.UserInfo.RecordStatus = 0;
+                model.UserInfo.UserID = user.Identity.Name;
+                Iservice.LeafUpdate(model);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+                LoadData();
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to delete Cheque.");
+        }
+    }
+}
