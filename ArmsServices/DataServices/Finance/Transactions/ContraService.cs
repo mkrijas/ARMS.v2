@@ -185,7 +185,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BankCharges", model.BankCharges),
                new SqlParameter("@IsPayment", model.IsPayment),              
                new SqlParameter("@ChequeNumber", model.ChequeInfo.ChequeNumber),
-               //new SqlParameter("@ChequeDate", model.ChequeInfo.ChequeDate),
+               new SqlParameter("@ChequeDate", model.ChequeInfo.ChequeDate),
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@FilePath", model.FileName),
@@ -233,7 +233,7 @@ namespace ArmsServices.DataServices
                 IsInterBranch = dr.GetBoolean("IsInterBranch"),
                 ChequeInfo = new ChequeModel()
                 {
-                    //ChequeDate = dr.GetDateTime("ChequeDate"),
+                    ChequeDate = dr.GetDateTime("ChequeDate"),
                     ChequeNumber = dr.GetString("ChequeNumber"),
                 },               
                 DocumentDate = dr.GetDateTime("DocDate"),
