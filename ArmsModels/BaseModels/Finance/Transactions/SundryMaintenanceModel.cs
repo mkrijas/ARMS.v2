@@ -16,6 +16,8 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         [Required]
         public List<SundryMaintenanceEntryModel> Entries { get; set; } // List of entries associated with the maintenance
+        public decimal? TDS { get; set; }
+
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
