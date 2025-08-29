@@ -86,7 +86,7 @@ namespace DAL.DataServices.Finance.DayOpen
         }
 
         // Validates whether a day open request can be processed for a given date, document type, and branch.
-        public bool? ValidateDayOpen(DateTime? DocDate, int? DocTypeID, int? BranchID)
+        public bool? ValidateDayOpen(DateTime? DocDate, int? DocTypeID, int? BranchID, string UserID)
         {
             bool? result = false;
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -94,6 +94,7 @@ namespace DAL.DataServices.Finance.DayOpen
                new SqlParameter("@DocDate", DocDate),
                new SqlParameter("@DocTypeID", DocTypeID),
                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@UserID", UserID),
             };
             //int? result = Iservice.ExecuteNonQuery("[usp.entity.DayOpen.Validate]", parameters);
             //return result;
