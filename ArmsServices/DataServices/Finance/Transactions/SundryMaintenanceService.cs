@@ -207,6 +207,7 @@ namespace ArmsServices.DataServices
                 FileName = dr.GetString("FilePath"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
+                TDS = dr.GetDecimal("TDS"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
