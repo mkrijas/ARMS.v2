@@ -255,7 +255,7 @@ namespace MobileAPI.Controllers
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]        
         public async Task<IActionResult> UpdateMonthlyIncentive(MonthlyIncentiveModel updateModel)
         {            
-            if (updateModel.UserInfo.UserID == "HASEEBRAHMAN" || updateModel.UserInfo.UserID == "SOUMYA")
+            if (updateModel.UserInfo.UserID == "SURESH" || updateModel.UserInfo.UserID == "SOUMYA")
             {
                 var returnModel = _mobileNotificationService.UpdateMonthlyIncentive(updateModel);
                 if (returnModel != null)

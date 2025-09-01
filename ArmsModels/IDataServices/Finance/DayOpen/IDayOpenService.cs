@@ -11,6 +11,6 @@ namespace Core.IDataServices.Finance.DayOpen
         DayOpenRequestModel Update(DayOpenRequestModel model);  // Edit
         DayOpenRequestModel Approve(DayOpenRequestModel model);  // Approve
         DayOpenRequestModel RejectOrClose(DayOpenRequestModel model);  // Reject OR Close
-        bool? ValidateDayOpen(DateTime? DocDate, int? DocTypeID, int? BranchID);
+        bool? ValidateDayOpen(DateTime? DocDate, int? DocTypeID, int? BranchID, string UserID);
     }
 }

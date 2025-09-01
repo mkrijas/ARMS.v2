@@ -106,7 +106,7 @@ namespace Views.Data
 
         public async Task<bool> validate(T model)
         {
-            if (!DayOpenService.ValidateDayOpen(model.DocumentDate, DocInfo.DocumentTypeID, model.BranchID).Value)
+            if (!DayOpenService.ValidateDayOpen(model.DocumentDate, DocInfo.DocumentTypeID, model.BranchID, model.UserInfo.UserID).Value)
             {
                 bool? result = await dialogService.ShowMessageBox(
                     "Oops !",
@@ -129,6 +129,7 @@ namespace Views.Data
                 return;
             }
             _busy = true;
+            model.UserInfo.UserID = UserID;
             if (await validate(model))
             {
                 if (!EditPermission)
@@ -139,7 +140,6 @@ namespace Views.Data
                 {
                     try
                     {
-                        model.UserInfo.UserID = UserID;
                         int ID = await Update(model);
                         if (ID != 0)
                         {
