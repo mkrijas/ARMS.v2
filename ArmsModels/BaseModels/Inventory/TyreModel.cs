@@ -225,4 +225,16 @@ namespace ArmsModels.BaseModels
         public int? TyreBCurrentKM { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
+
+    public class TyreHistoryModel
+    {
+        public string Title  { get; set; }
+        public string Info { get; set; }
+        public string Position { get; set; }
+        public DateTime? DateFrom { get; set; }
+        public DateTime? DateTo { get; set; }
+        public int? KmFrom { get; set; }
+        public int? KmTo { get; set; }
+        public int? RunKM { get; set; }
+    }
 }
