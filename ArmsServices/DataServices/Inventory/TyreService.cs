@@ -676,6 +676,28 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
+
+        public IEnumerable<TyreHistoryModel> GetTyreHistory(int? TyreID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TyreID", TyreID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Mount.History]", parameters))
+            {
+                yield return new TyreHistoryModel()
+                {
+                    Title = dr.GetString("Title"),
+                    Info = dr.GetString("Info"),
+                    Position = dr.GetString("Position"),
+                    DateFrom = dr.GetDateTime("DateFrom"),
+                    DateTo = dr.GetDateTime("DateTo"),
+                    KmFrom = dr.GetInt32("KmFrom"),
+                    KmTo = dr.GetInt32("KmTo"),
+                    RunKM = dr.GetInt32("RunKM")
+                };
+            }
+        }
     }
 }
 
