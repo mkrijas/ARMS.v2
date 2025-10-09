@@ -67,6 +67,7 @@ namespace ArmsServices.DataServices
                 yield return new BillsPaidModel()
                 {
                     MID = dr.GetInt32("MID"),
+                    IsMemo = dr.GetBoolean("IsMemo"),
                     BpID = dr.GetInt32("BpID"),
                     PartyID = dr.GetInt32("PartyID"),
                     BranchID = dr.GetInt32("BranchID"),
