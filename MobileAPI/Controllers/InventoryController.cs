@@ -1,15 +1,7 @@
 ﻿using ArmsModels.BaseModels;
-using ArmsServices;
 using ArmsServices.DataServices;
-using ArmsServices.DataServices.Finance.Transactions;
-using Core.BaseModels.Finance.Transactions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using MobileAPI.Services;
-using System;
-using System.Numerics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MobileAPI.Controllers
 {

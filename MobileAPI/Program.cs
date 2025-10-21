@@ -4,6 +4,7 @@ using ArmsServices;
 using ArmsServices.DataServices;
 using ArmsServices.DataServices.Finance.Transactions;
 using ArmsServices.DataServices.General;
+using ArmsServices.DataServices.Inventory;
 using Core.IDataServices.Finance.DayOpen;
 using Core.IDataServices.Operations;
 using Core.IDataServices.Operations.ROI;
@@ -68,6 +69,15 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<IDistrictService, DistrictService>();
 builder.Services.AddScoped<IMobileNotificationService, MobileNotificationService>();
+builder.Services.AddScoped<IBreakdownService, BreakdownService>();
+builder.Services.AddScoped<IWorkshopService, WorkshopService>();
+builder.Services.AddScoped<IRepairWorkService, RepairWorkService>();
+builder.Services.AddScoped<IMechanicService, MechanicService>();
+builder.Services.AddScoped<IJobcardService, JobcardService>();
+builder.Services.AddScoped<IJobcardWorkshopService, JobcardWorkshopService>();
+builder.Services.AddScoped<IJobInProgressService, JobInProgressService>();
+builder.Services.AddScoped<IMechanicJobService, MechanicJobService>();
+builder.Services.AddScoped<IInventoryRequestService, InventoryRequestService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
