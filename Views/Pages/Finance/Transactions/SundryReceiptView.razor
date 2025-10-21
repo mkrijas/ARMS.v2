@@ -8,9 +8,11 @@
 @inject ITripAdvanceService Iadvance
 @inject ITripService ItripService
 @inject ITruckService ItruckService
+@inject ITruckAvailabilityService ItruckavailablityService
 @inject IDialogService DialogService
-@using Views.Shared;
-@using System.Transactions;
+@using Core.IDataServices.Operations;
+@using Views.Data
+@using System.Threading;
 
 @* @using System.Threading;
 @using ArmsModels.BaseModels.Finance.Transactions *@
@@ -179,7 +181,17 @@
             }
 
             var tripinfo = ItripService.GetTripInfo(data.First().TripID);
-
+            var transfer = ItruckavailablityService.SelectOutgoingRequests(Convert.ToInt32(data.First().TripID), BranchID);
+            var regNo = "";
+            if (data.First().DocType == "Transfer")
+            {
+                regNo = transfer.First().Truck.RegNo;
+            }
+            else
+            {
+                regNo = tripinfo.Truck;
+            }
+  
             TripAdvanceModel AdvaceReceiptModel = new TripAdvanceModel()
                 {
                     BranchID = BranchID,
@@ -187,7 +199,7 @@
                     DriverID = data.First().DriverID,
                     DocType = data.First().DocType,
                     Amount = data.Sum(x => x.Amount),
-                    Narration = string.Format("Receipt against Trip Number : {0}, Truck : {1}, Driver : {2}", data.First().TripNo, tripinfo.Truck, data.First().DriverName)
+                    Narration = string.Format("Receipt against Trip Number : {0}, Truck : {1}, Driver : {2}", data.First().TripNo, regNo, data.First().DriverName)
                 };
 
             foreach (var item in data)
