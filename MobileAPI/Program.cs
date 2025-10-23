@@ -5,6 +5,7 @@ using ArmsServices.DataServices;
 using ArmsServices.DataServices.Finance.Transactions;
 using ArmsServices.DataServices.General;
 using ArmsServices.DataServices.Inventory;
+using Core.IDataServices.Finance;
 using Core.IDataServices.Finance.DayOpen;
 using Core.IDataServices.Operations;
 using Core.IDataServices.Operations.ROI;
@@ -78,6 +79,7 @@ builder.Services.AddScoped<IJobcardWorkshopService, JobcardWorkshopService>();
 builder.Services.AddScoped<IJobInProgressService, JobInProgressService>();
 builder.Services.AddScoped<IMechanicJobService, MechanicJobService>();
 builder.Services.AddScoped<IInventoryRequestService, InventoryRequestService>();
+builder.Services.AddScoped<IOpeningBalanceService, OpeningBalanceService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
