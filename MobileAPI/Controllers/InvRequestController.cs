@@ -12,20 +12,32 @@ namespace MobileAPI.Controllers
     {
         private readonly IUserService IUserService; 
                          IInventoryRequestService _inventoryRequestService;
+        IInventoryItemService _inventoryItemService;
 
         public InvRequestController(
             IUserService userService,
-            IInventoryRequestService inventoryRequestService)
+            IInventoryRequestService inventoryRequestService,
+            IInventoryItemService inventoryItemService)
         {
             IUserService = userService;
             _inventoryRequestService = inventoryRequestService;
+            _inventoryItemService = inventoryItemService;
         }
 
         public bool HasPermissionEdit { get; set; } = false;
         public int DocTypeID = 67;
 
         CancellationTokenSource ctc = new CancellationTokenSource();
-                
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<InventoryItemModel> GetAllItems()
+        {
+            IEnumerable<InventoryItemModel> collection;
+            collection = _inventoryItemService.SelectByGroup(0).ToList();
+            return collection;
+        }
+
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
         public IEnumerable<InventoryItemEntryModel> GetInvRequestSub(int RequestID)
