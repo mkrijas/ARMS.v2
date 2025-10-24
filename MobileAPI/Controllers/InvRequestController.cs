@@ -101,17 +101,17 @@ namespace MobileAPI.Controllers
 
         [HttpPost("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IActionResult DeleteInvRequest([FromBody] InventoryRequestModel model)
+        public IActionResult DeleteInvRequest(int? requestId, int? branchId, string userId)
         {
-            HasPermissionEdit = IUserService.GetClaimsAsync(model.UserInfo.UserID, DocTypeID.ToString(), "Delete", model.BranchID, ctc.Token);
+            HasPermissionEdit = IUserService.GetClaimsAsync(userId, DocTypeID.ToString(), "Delete", branchId, ctc.Token);
             if (HasPermissionEdit)
             {
-                if (model == null)
+                if (requestId == null)
                     return BadRequest("Invalid data.");
 
                 try
                 {
-                    _inventoryRequestService.Delete(model.RequestID, model.UserInfo.UserID);
+                    _inventoryRequestService.Delete(requestId, userId);
                     return Ok(new { success = true, message = "Saved Successfully" });
                 }
                 catch (Exception ex)
