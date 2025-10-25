@@ -12,7 +12,7 @@ namespace MobileAPI.Controllers
     {
         private readonly IUserService IUserService; 
                          IInventoryRequestService _inventoryRequestService;
-        IInventoryItemService _inventoryItemService;
+                         IInventoryItemService _inventoryItemService;
 
         public InvRequestController(
             IUserService userService,
