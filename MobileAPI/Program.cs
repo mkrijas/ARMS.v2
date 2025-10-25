@@ -80,6 +80,7 @@ builder.Services.AddScoped<IJobInProgressService, JobInProgressService>();
 builder.Services.AddScoped<IMechanicJobService, MechanicJobService>();
 builder.Services.AddScoped<IInventoryRequestService, InventoryRequestService>();
 builder.Services.AddScoped<IOpeningBalanceService, OpeningBalanceService>();
+builder.Services.AddScoped<IInventoryItemService, InventoryItemService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
