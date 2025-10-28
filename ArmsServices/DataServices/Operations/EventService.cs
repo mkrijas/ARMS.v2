@@ -243,6 +243,17 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public int MoveToNonOperating(byte? eventTypeId, int? truckId, string userId)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@EventTypeID", eventTypeId),
+               new SqlParameter("@TruckID", truckId),
+               new SqlParameter("@UserID", userId),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Truck.Operating.Update]", parameters);
+        }
+
         ///////////////
     }
 }

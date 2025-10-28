@@ -26,5 +26,7 @@ namespace ArmsServices.DataServices
         EventModel GetNextEvent(long? EventID);
         IEnumerable<EventTypeModel> GetEventTypes();
         EventTypeModel GetEventType(int? EventTypeID);
+        int MoveToNonOperating(byte? eventTypeId, int? truckId, string userId);
+
     }
 }
