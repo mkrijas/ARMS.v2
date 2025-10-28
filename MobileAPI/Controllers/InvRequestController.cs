@@ -1,5 +1,6 @@
 ﻿using ArmsModels.BaseModels;
 using ArmsServices.DataServices;
+using ArmsServices.DataServices.Finance.Transactions;
 using ArmsServices.DataServices.Inventory;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,15 +14,18 @@ namespace MobileAPI.Controllers
         private readonly IUserService IUserService; 
                          IInventoryRequestService _inventoryRequestService;
                          IInventoryItemService _inventoryItemService;
+                         IInventoryReleaseService _inventoryReleaseService;
 
         public InvRequestController(
             IUserService userService,
             IInventoryRequestService inventoryRequestService,
-            IInventoryItemService inventoryItemService)
+            IInventoryItemService inventoryItemService,
+            IInventoryReleaseService inventoryReleaseService)
         {
             IUserService = userService;
             _inventoryRequestService = inventoryRequestService;
             _inventoryItemService = inventoryItemService;
+            _inventoryReleaseService = inventoryReleaseService;
         }
 
         public bool HasPermissionEdit { get; set; } = false;
@@ -44,6 +48,15 @@ namespace MobileAPI.Controllers
         {
             IEnumerable<InventoryItemEntryModel> collection;
             collection = _inventoryRequestService.GetSub(RequestID).ToList();
+            return collection;
+        }
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<InventoryReleaseSubViewModel> GetClosingRequestSub(int RequestID, int storeId)
+        {
+            IEnumerable<InventoryReleaseSubViewModel> collection;
+            collection = _inventoryReleaseService.GetRequstSub(RequestID, storeId).ToList();
             return collection;
         }
 
