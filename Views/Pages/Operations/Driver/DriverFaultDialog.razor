@@ -12,53 +12,108 @@
 
 <MudDialog>
     <TitleContent>
-        @if (model.FaultID == null || model.FaultID == 0)
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Driver Fault
-            </MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Driver Fault
-            </MudText>
-        }
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Driver Fault Management
+        </MudText>
     </TitleContent>
+
     <DialogContent>
-        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm id="formDefault" Model="@model" OnValidSubmit="Submit">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudGrid>
-                    <MudItem xs="12" md="6">
-                        @* <MudTextField Value="model.Driver.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField> *@
-                        <MudAutocomplete T="DriverModel" Label="Select Driver" @bind-Value="model.Driver" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary"
-                                         SearchFunc="SearchDriver" ToStringFunc="@(e => e == null ? null : $"{e.DriverCode} | {e.DriverName}")"></MudAutocomplete>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudDatePicker Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.FaultDate" DateFormat="dd/MM/yyyy" For="@(() => model.FaultDate)" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudSelect Label="Severity" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.Severity" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.TopCenter" AdornmentColor="Color.Secondary" For="@(() => model.Severity)">
-                            <MudSelectItem T="byte?" Value="1">Warning</MudSelectItem>
-                            <MudSelectItem T="byte?" Value="9">Blacklisted</MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudNumericField HideSpinButtons Label="Amount" @bind-Value="model.Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Amount)"></MudNumericField>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Detail" Label="Details" Variant="Variant.Outlined" Lines="3" Margin="Margin.Dense" For="@(() => model.Detail)"></MudTextField>
-                    </MudItem>
-                </MudGrid>
-            </EditForm>
-        </MudContainer>
+        <MudTabs @bind-ActivePanelIndex="_activeTabIndex">
+            <MudTabPanel Text="Fault">
+                <MudContainer Class="p-3" Style="max-height:400px; overflow-y:auto;">
+                    @if (model.Driver != null)
+                    {
+                        <MudText Typo="Typo.subtitle1" Class="mb-2">
+                            @model.Driver.DriverCode | @model.Driver.DriverName
+                        </MudText>
+                    }
+                    <MudTable Items="@driverFaultList" Hover="true" Dense="true" Bordered="true">
+                        <HeaderContent>
+                            <MudTh>Severity</MudTh>
+                            <MudTh>Date</MudTh>
+                            <MudTh>Amount</MudTh>
+                            <MudTh>Details</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@(context.Severity == 1 ? "Warning" : context.Severity == 9 ? "Blacklisted" : "N/A")</MudTd>
+                            <MudTd>@context.FaultDate?.ToString("dd/MM/yyyy")</MudTd>
+                            <MudTd>@context.Amount</MudTd>
+                            <MudTd>@context.Detail</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudContainer>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Add Fault">
+                <MudContainer Class="p-3" Style="max-height:400px; overflow-y:auto;">
+                    <EditForm id="formDefault" Model="@model" OnValidSubmit="Submit">
+                        <ObjectGraphDataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudAutocomplete T="DriverModel"
+                                                 ReadOnly="true"
+                                                 Label="Select Driver"
+                                                 @bind-Value="model.Driver"
+                                                 ResetValueOnEmptyText="true"
+                                                 Variant="Variant.Outlined"
+                                                 Margin="Margin.Dense"
+                                                 SearchFunc="SearchDriver"
+                                                 ToStringFunc="@(e => e == null ? null : $"{e.DriverCode} | {e.DriverName}")" />
+                            </MudItem>
+
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker Label="Date"
+                                               Variant="Variant.Outlined"
+                                               Margin="Margin.Dense"
+                                               DisableToolbar="true"
+                                               Editable="true"
+                                               @bind-Date="model.FaultDate"
+                                               DateFormat="dd/MM/yyyy" />
+                            </MudItem>
+
+                            <MudItem xs="12" md="6">
+                                <MudSelect Label="Severity"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Dense"
+                                           @bind-Value="model.Severity">
+                                    <MudSelectItem T="byte?" Value="1">Warning</MudSelectItem>
+                                    <MudSelectItem T="byte?" Value="9">Blacklisted</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+
+                            <MudItem xs="12" md="6">
+                                <MudNumericField HideSpinButtons
+                                                 Label="Amount"
+                                                 @bind-Value="model.Amount"
+                                                 Variant="Variant.Outlined"
+                                                 Margin="Margin.Dense" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="model.Detail"
+                                              Label="Details"
+                                              Variant="Variant.Outlined"
+                                              Lines="3"
+                                              Margin="Margin.Dense" />
+                            </MudItem>
+
+                        </MudGrid>
+                    </EditForm>
+                </MudContainer>
+            </MudTabPanel>
+        </MudTabs>
     </DialogContent>
     <DialogActions>
-        <MudButton Disabled="@_busy" form="formDefault" Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+        <MudButton OnClick="Cancel">Close</MudButton>
+        @if (_activeTabIndex == 1)
+        {
+            <MudButton Disabled="@_busy" form="formDefault" Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+        }
     </DialogActions>
 </MudDialog>
+
 
 @code {
 
@@ -67,10 +122,12 @@
     public DriverFaultModel model { get; set; } = new();
     [Parameter]
     public int? DriverID { get; set; }
+    private int _activeTabIndex = 0;
 
     int? BranchID { get; set; }
     private List<DriverModel> Driverlist = new();
     private DriverModel SelectedDriver = null;
+    private List<DriverFaultModel> driverFaultList = new();
 
     public bool HasPermissionDriverFaultServiceEditDriver { get; set; } = false;
     public int DocTypeID = 53;
@@ -92,6 +149,7 @@
             // Retrieve the list of drivers associated with the branch
             Driverlist = IDriverService.SelectByBranch(model?.BranchID ?? 0).ToList();
         }
+        driverFaultList = Iservice.Select(model.Driver.DriverID).ToList();
     }
 
     // Method to search for drivers based on a search string
