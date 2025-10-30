@@ -81,6 +81,10 @@ builder.Services.AddScoped<IMechanicJobService, MechanicJobService>();
 builder.Services.AddScoped<IInventoryRequestService, InventoryRequestService>();
 builder.Services.AddScoped<IOpeningBalanceService, OpeningBalanceService>();
 builder.Services.AddScoped<IInventoryItemService, InventoryItemService>();
+builder.Services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
+builder.Services.AddScoped<IAssetService, AssetService>();
+builder.Services.AddScoped<IAssetSettingsService, AssetSettingsService>();
+builder.Services.AddScoped<IAssetPostingGroupService, AssetPostingGroupService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
