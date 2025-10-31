@@ -85,6 +85,7 @@ builder.Services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>(
 builder.Services.AddScoped<IAssetService, AssetService>();
 builder.Services.AddScoped<IAssetSettingsService, AssetSettingsService>();
 builder.Services.AddScoped<IAssetPostingGroupService, AssetPostingGroupService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();

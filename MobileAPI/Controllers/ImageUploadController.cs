@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using ArmsServices.DataServices;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MobileAPI.Controllers
@@ -8,11 +9,15 @@ namespace MobileAPI.Controllers
     public class ImageUploadController : ControllerBase
     {
         private readonly string _mainProjectWwwRoot;
+        private readonly IFileStorageService _fileStorageService;
 
-        public ImageUploadController(IConfiguration configuration)
+        public ImageUploadController(IConfiguration configuration,
+            IFileStorageService fileStorageService)
         {
             _mainProjectWwwRoot = configuration["MainProjectSettings:WwwRootPath"];
+            _fileStorageService = fileStorageService;
         }
+
         [HttpPost("upload")]
         public async Task<IActionResult> Upload(IFormFile file)
         {
@@ -35,6 +40,20 @@ namespace MobileAPI.Controllers
             }
 
             return Ok(new { FileName = uniqueFileName, FilePath = path });
+        }
+
+        [HttpPost("UploadTruckFile")]
+        [RequestSizeLimit(100_000_000)] // 100MB
+        public async Task<IActionResult> UploadTruckFile(IFormFile file, int id)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("File not selected");
+
+            if (id <= 0)
+                return BadRequest("Invalid transfer ID");
+
+            var relativePath = await _fileStorageService.SaveTruckFileAsync(file, id);
+            return Ok(new { FilePath = relativePath });
         }
     }
 }
