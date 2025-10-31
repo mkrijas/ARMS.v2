@@ -155,6 +155,7 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 BranchName = dr.GetString("BranchName"),
                 BreakdownID = dr.GetInt32("BreakdownID"),
+                BreakdownType = dr.GetString("BreakdownType"),
                 CreatedOn = dr.GetDateTime("CreatedOn"),
                 JobcardNumber = dr.GetString("JobcardPrefix") + dr.GetInt32("JobcardNumber").ToString(),
                 TruckID = dr.GetInt32("TruckID"),

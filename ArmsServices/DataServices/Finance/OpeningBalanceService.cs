@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using Core.IDataServices.Finance;
 
@@ -69,12 +67,27 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", BranchID),
             };
 
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.OpeningBalance.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
+        }
 
+        IEnumerable<OpeningBalanceModel> IOpeningBalanceService.GetBalanceByArd(string BranchIDS, string ArdCode, DateTime Date)
+        {
+            DateTime nextDate = Date.AddDays(1);
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchIDS", BranchIDS),
+               new SqlParameter("@ArdCode", ArdCode),
+               new SqlParameter("@Date", nextDate),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[rptFinanceLedgerBalance]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
         // Helper method to map data record to OpeningBalanceModel

@@ -13,6 +13,7 @@
 @inject ITruckTypeService Itrucktype
 @inject IBranchService Ibranch
 @inject IDriverService Idriver
+@inject IEventService Ievent
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
@@ -87,6 +88,18 @@
             <MudTooltip Text="Driver">
                 <MudFab @onclick="@(()=> AssignDriver(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Size="Size.Small" IconSize="Size.Small" />
             </MudTooltip>
+            @if(context.CurrentEvent.EventTypeID == 6)
+            {
+                <MudTooltip Text="Move to Non-Operating">
+                    <MudFab @onclick="@(()=> Move(13, context))" Color="Color.Primary" Icon="@Icons.Material.Filled.MoveUp" Size="Size.Small" IconSize="Size.Small" />
+                </MudTooltip> 
+            }
+            @if (context.CurrentEvent.EventTypeID == 13)
+            {
+                <MudTooltip Text="Move to UnAssigned">
+                    <MudFab @onclick="@(()=> Move(6, context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Undo" Size="Size.Small" IconSize="Size.Small" />
+                </MudTooltip>
+            }
         </MudTd>
     </RowTemplate>
     <PagerContent>
@@ -109,13 +122,16 @@
 
     public bool HasPermissionITruckServiceEdit { get; set; } = false;
     public bool HasPermissionITruckServiceDelete { get; set; } = false;
+    public bool HasPermissionIEventServiceMove { get; set; } = false;
     public int DocTypeID = 37;
+    public int EventDocTypeID = 48;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionITruckServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionITruckServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionIEventServiceMove = await Irole.HasClaim(EventDocTypeID.ToString(), "Move", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -387,5 +403,31 @@
         }
         await Task.Delay(200);
         _busy = false;
+    }
+
+    private async Task Move(byte? eventTypeId, TruckModel model)
+    {
+        if (HasPermissionIEventServiceMove)
+        {
+            string eventName = eventTypeId == 6 ? "UnAssigned" : "Non-Operating";
+
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning!",
+                $"Are you sure, you want to move {model.RegNo} Truck to {eventName} event?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Ievent.MoveToNonOperating(eventTypeId, model.TruckID, user.Identity.Name);
+                snackbar.Add("Moved Successfully", Severity.Success);
+            }
+            GetAll();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Move Truck.");
+        }
     }
 }

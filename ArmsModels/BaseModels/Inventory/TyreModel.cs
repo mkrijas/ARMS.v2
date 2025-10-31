@@ -19,6 +19,7 @@ namespace ArmsModels.BaseModels
         public string Make { get; set; } // Hint: MRF , CEAT
         [Required]
         public int? InventoryItemID { get; set; }
+        public string ItemCode { get; set; }
         [Required]
         public long? InventoryBatchID { get; set; }
         [RequiredIf("ItemType", "Tyre")]

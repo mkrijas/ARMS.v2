@@ -30,6 +30,7 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public string BranchName { get; set; }
         public int? BreakdownID { get; set; }
+        public string BreakdownType { get; set; }
         [Required]
         public string workshop { get; set; }
         [Required]

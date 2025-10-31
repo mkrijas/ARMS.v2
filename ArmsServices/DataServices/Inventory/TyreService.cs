@@ -440,6 +440,7 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 InventoryBatchID = dr.GetInt64("InventoryBatchID"),
                 InventoryItemID = dr.GetInt32("InventoryItemID"),
+                ItemCode = dr.GetString("InventoryItemCode"),
                 Make = dr.GetString("make"),
                 Tubeless = dr["Tubeless"] != DBNull.Value ? (bool?)dr.GetBoolean("Tubeless") : null, // Handle NULL
                 TyreSize = dr.GetString("TyreSize"),

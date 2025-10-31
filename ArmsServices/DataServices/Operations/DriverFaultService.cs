@@ -92,6 +92,7 @@ namespace ArmsServices.DataServices
                 Driver = new DriverModel()
                 {
                     DriverID = dr.GetInt32("DriverID"),
+                    DriverCode = dr.GetString("DriverCode"),
                     DriverName = dr.GetString("DriverName"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
