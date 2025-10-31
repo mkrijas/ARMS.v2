@@ -46,7 +46,7 @@ namespace DAL.DataServices.Operations.ROI
                 yield return new ROIOrderTonnageModifierSubModel()
                 {
                     Wheels = dr.GetByte("wheels"),
-                    Modifier = dr.GetInt32("Modifier")
+                    Modifier = dr.GetDecimal("Modifier")
                 };
             }
         }
@@ -99,7 +99,7 @@ namespace DAL.DataServices.Operations.ROI
                     new ROIOrderTonnageModifierSubModel
                     {
                         Wheels = dr.GetByte("Wheels"),
-                        Modifier = dr.GetInt32("Modifier")
+                        Modifier = dr.GetDecimal("Modifier")
                     }
                 }
             };

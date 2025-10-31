@@ -28,7 +28,7 @@ namespace Core.BaseModels.Operations.ROI
         [Required]
         public byte? Wheels { get; set; }
         [Required]
-        public int? Modifier { get; set; }
+        public decimal? Modifier { get; set; }
         public virtual bool HideTextField { get; set; } = false;
     }
 }
