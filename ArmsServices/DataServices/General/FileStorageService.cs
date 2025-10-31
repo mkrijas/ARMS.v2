@@ -44,7 +44,7 @@ namespace ArmsServices.DataServices
             // Copy the file
             System.IO.File.Copy(filePath, destfilePath, true); // 'true' to overwrite if exists
 
-            return $"/Uploads/Truck/Transfer-{transferId}/{fileName}".Replace("\\", "/");
+            return $"/ArmsStaticFiles/Truck/Transfer-{transferId}/{fileName}".Replace("\\", "/");
         }
     }
 }
