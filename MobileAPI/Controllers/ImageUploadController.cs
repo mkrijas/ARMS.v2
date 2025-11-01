@@ -55,5 +55,24 @@ namespace MobileAPI.Controllers
             var relativePath = await _fileStorageService.SaveTruckFileAsync(file, id);
             return Ok(new { FilePath = relativePath });
         }
+
+        [HttpGet("GetTruckFile/{transferId}/{fileName}")]
+        public async Task<IActionResult> GetTruckFile(int transferId, string fileName)
+        {
+            try
+            {
+                var result = await _fileStorageService.GetTruckFileAsync(transferId, fileName);
+
+                return File(result.FileBytes, result.ContentType, result.FileName);
+            }
+            catch (FileNotFoundException)
+            {
+                return NotFound("File not found");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error retrieving file: {ex.Message}");
+            }
+        }
     }
 }

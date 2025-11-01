@@ -9,5 +9,6 @@ namespace ArmsServices.DataServices
     public interface IFileStorageService
     {
         Task<string> SaveTruckFileAsync(IFormFile file, int transferId);
+        Task<(byte[] FileBytes, string ContentType, string FileName)> GetTruckFileAsync(int transferId, string fileName);
     }
 }
