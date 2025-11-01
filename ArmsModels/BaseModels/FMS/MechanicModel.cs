@@ -29,4 +29,22 @@ namespace ArmsModels.BaseModels
         public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
+
+    public class MechanicTransferModel
+    {
+        public int? TransferID { get; set; } // Unique identifier for the driver transfer initiation (nullable)   
+        [Required]
+        public int? MechanicID { get; set; }
+        public virtual string MechanicName { get; set; }
+        [Required]
+        public int? CurrentWorkshopID { get; set; }
+        public virtual string CurrentWorkshopName { get; set; }
+        [Required]
+        public int? DestinationWorkshopID { get; set; }
+        public virtual string DestinationWorkshopName { get; set; }
+        [Required]
+        public DateTime? TransferredDate { get; set; } = DateTime.Now;
+        public string Remarks { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new UserInfoModel();
+    }
 }

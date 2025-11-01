@@ -1,0 +1,134 @@
+﻿@using System.Threading;
+@inject AuthenticationStateProvider auth
+@inject IMechanicService Iservice
+@inject IWorkshopService Iworkshop
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Mechanic Transfer
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Value="model.MechanicName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.TransferredDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Value="model.CurrentWorkshopName" Label="Current Workshop" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Label="Destination Workshop" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.DestinationWorkshopID" T="int?" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.TopCenter" AdornmentColor="Color.Secondary" Required>
+                            @foreach (WorkshopModel ditem in DestinationWorkshopList)
+                            {
+                                <MudSelectItem Value="@ditem.WorkshopID">@ditem.WorkshopName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>                    
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public MechanicModel mechanicModel { get; set; } = new();
+    public MechanicTransferModel model { get; set; } = new MechanicTransferModel();
+    private List<WorkshopModel> DestinationWorkshopList = new();
+    private bool _busy;
+    public bool HasPermissionMechanicServiceEdit { get; set; } = false;
+    public int MechanicTypeID = 78;
+
+    // Lifecycle method called when the component is initializedc
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionMechanicServiceEdit = await Irole.HasClaim(MechanicTypeID.ToString(), "Edit", ctc.Token);
+
+        model.MechanicID = mechanicModel.MechanicID;
+        model.MechanicName = mechanicModel.MechanicName;
+        model.CurrentWorkshopID = mechanicModel.WorkshopID;
+        model.CurrentWorkshopName = mechanicModel.WorkshopName;
+
+        DestinationWorkshopList = Iworkshop.Select(null).ToList();
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public async Task Submit()
+    {
+        if (_busy)
+        {
+            Snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+
+        if (model.MechanicID == null)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Please, Select Driver.",
+                yesText: "OK");
+            return;
+        }
+        if (model.DestinationWorkshopID == null)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Select workshop !.",
+                yesText: "OK");
+            return;
+        }
+
+        try
+        {
+            if (HasPermissionMechanicServiceEdit)
+            {
+                _busy = true;
+                var authprov = await auth.GetAuthenticationStateAsync();
+                model.UserInfo.UserID = authprov.User.Identity.Name;
+                
+                Iservice.Transfer(model);
+                Snackbar.Add("Transferred successfully", Severity.Success);
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You don't have any permission to Edit Mechanic.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            await Task.Delay(200);
+            _busy = false;
+        }
+        MudDialog.Close(model);
+    }
+}

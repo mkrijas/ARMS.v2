@@ -90,6 +90,21 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public int Transfer(MechanicTransferModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TransferID", model.TransferID),
+               new SqlParameter("@MechanicID", model.MechanicID),
+               new SqlParameter("@CurrentWorkshopID", model.CurrentWorkshopID),
+               new SqlParameter("@DestinationWorkshopID", model.DestinationWorkshopID),
+               new SqlParameter("@TransferredDate", model.TransferredDate),
+               new SqlParameter("@Remarks", model.Remarks),
+               new SqlParameter("@UserID", model.UserInfo.UserID)
+            };
+            return Iservice.ExecuteNonQuery("[usp.FMS.Workshop.Mechanic.Transfer.Update]", parameters);
+        }
+
         // Helper method to map data record to MechanicModel
         private MechanicModel GetModel(IDataRecord dr)
         {

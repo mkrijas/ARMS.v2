@@ -15,5 +15,6 @@ namespace ArmsServices.DataServices
         int Delete(int? MechanicID, string UserID);  //Delete
         IEnumerable<MechanicModel> Select();
         IEnumerable<MechanicModel> SelectByWorkshop(int? WorkshopID);
+        int Transfer(MechanicTransferModel model);
     }
 }
