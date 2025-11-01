@@ -1,4 +1,5 @@
 ﻿using ArmsModels.BaseModels;
+using ArmsServices.DataServices;
 using Core.IDataServices.Finance;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,22 @@ namespace MobileAPI.Controllers
     public class FinanceBalanceController : ControllerBase
     {
         private readonly IOpeningBalanceService _openingBalanceService;
+        private readonly IPartyService _partyService;
 
-        public FinanceBalanceController(IOpeningBalanceService openingBalanceService)
+        public FinanceBalanceController(IOpeningBalanceService openingBalanceService,
+            IPartyService partyService)
         {
             _openingBalanceService = openingBalanceService;
+            _partyService = partyService;
+        }
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<PartyModel> GetParty()
+        {
+            IEnumerable<PartyModel> collection;
+            collection = _partyService.Select(null).ToList();
+            return collection;
         }
 
         [HttpGet("[action]/")]
