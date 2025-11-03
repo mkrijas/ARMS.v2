@@ -24,6 +24,12 @@
                     <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEdit(new TyreModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
+                <MudRadioGroup @bind-Value="@selectedOption" T="string" Style="padding-top: 8px;" SelectedOptionChanged="OnSelectedOptionChanged">
+                    <MudRadio Value="@("All")" Color="Color.Primary">All</MudRadio>
+                    <MudRadio Value="@("Mounted")" Color="Color.Primary">Mounted</MudRadio>
+                    <MudRadio Value="@("UnMounted")" Color="Color.Primary">Un Mounted</MudRadio>
+                </MudRadioGroup>
+                <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search tyre..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
@@ -35,19 +41,19 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Status)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TotalExpectedLife)" InitialDirection="SortDirection.Ascending">Expected Life</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyrePosition)" InitialDirection="SortDirection.Ascending">Mounted Truck</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Tubeless)" > Tubeless </MudTableSortLabel></MudTh>
+                @* <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Tubeless)" > Tubeless </MudTableSortLabel></MudTh> *@
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Tyre">@context.TyreSerialNumber</MudTd>
                 <MudTd DataLabel="Make">@context.Make</MudTd>
-                <MudTd DataLabel="ItemType">@context.ItemType</MudTd>
-                <MudTd DataLabel="TyreType">@context.TyreType - @context.ItemCode</MudTd>
+                <MudTd DataLabel="ItemType">@context.ItemType - @context.ItemCode</MudTd>
+                <MudTd DataLabel="TyreType">@context.TyreType</MudTd>
                 <MudTd DataLabel="TyreSize">@context.TyreSize</MudTd>
                 <MudTd DataLabel="Status">@context.Status</MudTd>
                 <MudTd DataLabel="TotalExpectedLife">@context.TotalExpectedLife</MudTd>
                 <MudTd DataLabel="TyreSize">@context.TyrePosition</MudTd>
-                <MudTd DataLabel="Tubeless">@context.Tubeless</MudTd>
+                @* <MudTd DataLabel="Tubeless">@context.Tubeless</MudTd> *@
                 <MudTd DataLabel="Actions">
                     @if (string.IsNullOrEmpty(context.LockText))
                     {                         
@@ -58,12 +64,13 @@
                         <MudTooltip Text="Edit">
                             <MudIconButton @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
                         </MudTooltip>
+                        
                         <MudTooltip Text="Remove">
-                            <MudIconButton @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" />
+                            <MudIconButton Disabled="@(context.IsMounted)" @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" />
                         </MudTooltip>
-                        <MudTooltip Text="Km Reading">
+                        @* <MudTooltip Text="Km Reading">
                             <MudIconButton Disabled="@(context.ItemType != "Tyre")" @onclick="@(()=> OpenKmReading(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.AvTimer" Size="Size.Small" />
-                        </MudTooltip>
+                        </MudTooltip> *@
                        
                         <MudTooltip Text="@txt">
                             <MudIconButton @onclick="@(()=> TyreMountOrUnmount(context))" Color="@iconColor" Icon="@icon" Size="Size.Small" />
@@ -92,6 +99,8 @@
     string UserID;
     private bool _busy;
     private string searchTerm = "";
+    private string selectedOption = "All";
+    private int? BranchID;
 
     public bool HasPermissionTyreServiceDelete { get; set; } = false;
     public int DocTypeID = 63;
@@ -110,8 +119,24 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
-        var BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        collection = ITyreservice.SelectByBranch(BranchID).ToList();
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        OnSelectedOptionChanged(selectedOption);
+    }
+
+    public void OnSelectedOptionChanged(string value)
+    {
+        switch (value)
+        {
+            case "Mounted":
+                collection = ITyreservice.SelectByBranch(BranchID).Where(x => x.IsMounted).ToList();
+                break;
+            case "UnMounted":
+                collection = ITyreservice.SelectByBranch(BranchID).Where(x => !x.IsMounted).ToList();                
+                break;
+            default:
+                collection = ITyreservice.SelectByBranch(BranchID).ToList();
+                break;
+        }
     }
 
     private bool search(TyreModel model)

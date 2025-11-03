@@ -86,6 +86,11 @@ builder.Services.AddScoped<IAssetService, AssetService>();
 builder.Services.AddScoped<IAssetSettingsService, AssetSettingsService>();
 builder.Services.AddScoped<IAssetPostingGroupService, AssetPostingGroupService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IPartyService, PartyService>();
+builder.Services.AddScoped<IVendorPostingGroupService, VendorPostingGroupService>();
+builder.Services.AddScoped<ICustomerPostingGroupService, CustomerPostingGroupService>();
+builder.Services.AddScoped<IRenterPostingGroupService, RenterPostingGroupService>();
+builder.Services.AddScoped<ISisterPostingGroupService, SisterPostingGroupService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
