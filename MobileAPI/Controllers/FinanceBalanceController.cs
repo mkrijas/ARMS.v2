@@ -22,10 +22,10 @@ namespace MobileAPI.Controllers
 
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<PartyModel> GetParty()
+        public IEnumerable<PartyModel> GetParty(int? BranchId)
         {
             IEnumerable<PartyModel> collection;
-            collection = _partyService.Select(null).ToList();
+            collection = _partyService.SelectByBranch(BranchId).ToList();
             return collection;
         }
 
