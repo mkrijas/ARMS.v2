@@ -205,7 +205,7 @@ namespace MobileAPI.Controllers
 
         [HttpPost("[action]/")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public IActionResult Complete(List<AssetSettingsModel> context, int? id, int? odometer)
+        public IActionResult Complete(List<AssetSettingsModel> context, int? id, int? odometer, string userId)
         {
             RequestApprovalHistoryModel model = new();
            
@@ -218,6 +218,7 @@ namespace MobileAPI.Controllers
             model.RequestApprovalHistoryID = id;
             model.ClosingKM = odometer;
             model.RequestStatus = 2;
+            model.RespondedUserInfo.UserID = userId;
 
             try
             {
