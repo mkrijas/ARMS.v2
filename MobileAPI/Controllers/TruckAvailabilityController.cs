@@ -55,7 +55,7 @@ namespace MobileAPI.Controllers
             }
 
             model.RequestApprovalHistoryID = id;
-            model.TruckID = truckId;
+            model.Truck.TruckID = truckId;
             model.RequestedBranchID = BranchId;
             model.RequestedUserInfo.UserID = userId;
             model.RequestStatus = 0;
