@@ -22,7 +22,7 @@ namespace Core.BaseModels.Operations
         public string DocNumber {  get; set; }
         public int? TruckID { get; set; }
         public int? DriverID { get; set; }
-        public TruckModel Truck { get; set; } // Truck information associated with the request
+        public TruckModel Truck { get; set; } = new(); // Truck information associated with the request
         public int? RequestedBranchID { get; set; }
         public BranchModel RequestedBranch { get; set; }
         public DateTime? RequestedDate { get; set; }
