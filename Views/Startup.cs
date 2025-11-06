@@ -255,6 +255,7 @@ namespace Views
             services.AddScoped<IInventoryRequestService, InventoryRequestService>();
             services.AddScoped<IOpInventoryReleaseService, OpInventoryReleaseService>();
             services.AddScoped<IStockTransferService, StockTransferService>();
+            services.AddScoped<IInventoryItemLockService, InventoryItemLockService>();
             #endregion
 
             #region ------------DATA AUTHENTICATION-------------------

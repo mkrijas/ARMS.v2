@@ -112,7 +112,7 @@ namespace ArmsModels.BaseModels
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<InventoryItemModel>(Json);
+            return JsonConvert.DeserializeObject<JobCardTrackModel>(Json);
         }
         public JobCardTrackModel()
         {
@@ -132,5 +132,23 @@ namespace ArmsModels.BaseModels
         public virtual decimal? QtyAvailable { get; set; }
         public InventoryGroupModel Group { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; }
+    }
+
+    public class InventoryItemLockModel
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<InventoryItemLockModel>(Json);
+        }
+        public int? LockID { get; set; } // Unique identifier for the HSN code
+        [Required]
+        public int? ItemID { get; set; }
+        public virtual string ItemCode { get; set; }
+        public virtual string ItemGroupDescription { get; set; }
+        public virtual string ItemDescription { get; set; }
+        [Required]
+        public int? LockDays { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }

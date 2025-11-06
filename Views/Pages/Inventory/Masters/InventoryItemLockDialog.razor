@@ -1,0 +1,109 @@
+﻿@inject IInventoryItemLockService Iservice
+@inject IInventoryItemService itemService
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Item Lock days
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 450px">
+            <EditForm id="formlockday" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    <MudItem xs="6" md="6">
+                        <MudAutocomplete ReadOnly="model.LockID != null" Label="Select Item" Value="SelectedInventoryItem" ValueChanged=@((e) => OnchangeInventoryItem(e)) SearchFunc="SearchBanks" T="InventoryItemModel" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary"
+                                         ToStringFunc="@(e => (e == null) ? null : (e.InventoryItemID == null ? "" : string.Format("{0} | {1} - {2} ",e.InventoryItemCode, e.ItemGroup.ItemGroupDescription, e.ItemDescription)))"></MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudTextField @bind-Value="model.LockDays" Label="Lock Days" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LockDays)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Disabled="@_busy" form="formlockday" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public InventoryItemLockModel model { get; set; }
+    private List<InventoryItemModel> items = new();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    public InventoryItemModel SelectedInventoryItem = new();
+
+    private bool _busy;
+
+    // Lifecycle method called when the component is initialized
+    protected override void OnInitialized()
+    {
+        items = itemService.SearchByDescription(string.Empty).ToList();
+
+        SelectedInventoryItem.InventoryItemID = model.ItemID;
+        SelectedInventoryItem.InventoryItemCode = model.ItemCode;
+        SelectedInventoryItem.ItemGroup.ItemGroupDescription = model.ItemGroupDescription;
+        SelectedInventoryItem.ItemDescription = model.ItemDescription;
+    }
+
+    // Method to handle changes in the selected inventory item
+    void OnchangeInventoryItem(InventoryItemModel item)
+    {
+        SelectedInventoryItem = item;
+        model.ItemID = SelectedInventoryItem.InventoryItemID;
+    }
+
+    // Method to handle form submission when the form is valid
+    private async void OnValidSubmit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            Iservice.Update(model);
+            model = new();
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }        
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    // Method to search for inventory items based on a search string
+    private async Task<IEnumerable<InventoryItemModel>> SearchBanks(string searchString)
+    {
+        if (string.IsNullOrEmpty(searchString))
+            return items;
+
+        return await Task.FromResult(items.Where(x => x.InventoryItemCode.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)
+                                                   || x.ItemGroup.ItemGroupDescription.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)
+                                                   || x.ItemDescription.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
+
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

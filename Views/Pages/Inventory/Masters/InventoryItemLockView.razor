@@ -1,0 +1,114 @@
+﻿@page "/InventoryItemLock"
+@inject IInventoryItemLockService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<InventoryItemLockModel, bool>(search)" @bind-place="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Lock Inventory Items</MudText>
+                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchItem" Placeholder="Search Items... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemLockModel, object>(x=> x.ItemCode)" InitialDirection="SortDirection.Ascending">Item</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemLockModel, object>(x=> x.LockDays)" InitialDirection="SortDirection.Ascending">Lock Days</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ItemCode">@(context.ItemCode) | @(context.ItemGroupDescription)-@(context.ItemDescription)</MudTd>
+                <MudTd DataLabel="LockDays">@context.LockDays</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    private InventoryItemLockModel model = new InventoryItemLockModel();
+    private List<InventoryItemLockModel> collection = new List<InventoryItemLockModel>();
+    private string searchItem = "";
+    private bool _busy;
+
+    // Lifecycle method called when the component is initialized
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        Getcollection();
+    }
+
+    // Method to open the dialog for adding or editing a GST item
+    private async Task OpenDialog(InventoryItemLockModel tds)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        DialogOptions Width = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", tds.Clone());
+        var dialog = DialogService.Show<InventoryItemLockDialog>(tds.LockID == null ? "ADD" : "EDIT", parms, Width);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {                       
+            model = new InventoryItemLockModel();
+            Getcollection();            
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task Delete(InventoryItemLockModel model)
+    {        
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure, you want to delete Lock days of - " + model.ItemCode + " (" + model.ItemGroupDescription + ") ?");
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var value = Iservice.Delete(model.LockID.Value, user.Identity.Name); // Call service to delete the item
+            if (value != -1)
+            {
+                snackbar.Add("Deleted Successfully", Severity.Success);
+                Getcollection();
+            }
+        }        
+    }
+
+    private bool search(InventoryItemLockModel tds)
+    {
+        if (tds.ItemCode != null && tds.ItemCode.Contains(searchItem, StringComparison.OrdinalIgnoreCase)
+                                 || tds.ItemGroupDescription.Contains(searchItem, StringComparison.OrdinalIgnoreCase)
+                                 || tds.ItemDescription.Contains(searchItem, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (tds.ItemCode == null)
+            return true;
+        return false;
+    }
+
+    private void Getcollection()
+    {
+        collection = Iservice.Select().ToList();
+    }
+}
