@@ -188,6 +188,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
                new SqlParameter("@OtherBranchID", model.OtherBranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@JobcardID", model.JobcardID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryPayment.Update]", parameters))
             {

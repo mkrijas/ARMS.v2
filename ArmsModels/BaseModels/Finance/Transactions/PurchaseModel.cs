@@ -46,6 +46,7 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public List<AssetPOModel> Assets { get; set; } = new(); // List of assets associated with the purchase
         public decimal? TDS { get; set; }
+        public virtual int? JobcardID { get; set; }
 
         // Method to validate the model
         public override IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

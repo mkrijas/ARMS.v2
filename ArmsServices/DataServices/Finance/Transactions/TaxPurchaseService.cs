@@ -272,7 +272,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@Assets", model.Assets.ToDataTable()),
-               new SqlParameter("@TaxPurchaseType", model.TaxPurchaseType )
+               new SqlParameter("@TaxPurchaseType", model.TaxPurchaseType ),
+               new SqlParameter("@JobcardID", model.JobcardID )
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Update]", parameters))
             {

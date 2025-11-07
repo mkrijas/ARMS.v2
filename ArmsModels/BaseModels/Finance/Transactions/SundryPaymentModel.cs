@@ -41,6 +41,7 @@ namespace ArmsModels.BaseModels
         public string PayeeName { get; set; }
         [Required]
         public string PayeeContactNo { get; set; }
+        public virtual int? JobcardID { get; set; }
     }
 
     // Model representing an entry in a sundry payment transaction
