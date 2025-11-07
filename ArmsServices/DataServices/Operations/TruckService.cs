@@ -526,6 +526,7 @@ namespace ArmsServices.DataServices
                     TruckID = dr.GetInt32("TruckID"),
                     RegNo = dr.GetString("RegNo"),
                     EventTime = dr.GetDateTime("EventTime"),
+                    EventReading = dr.GetInt64("EventReading"),
                     EventDateTimeDiff = dr.GetString("EventDateTimeDiff"),
                     DriverSince = string.Format("{0} since {1}", dr.GetDateTime("DriverSince"), dr.GetString("DriverName"))
                 };

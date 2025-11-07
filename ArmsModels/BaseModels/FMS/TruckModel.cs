@@ -112,6 +112,7 @@ namespace ArmsModels.BaseModels
         public virtual DateTime? EventTime { get; set; }
         public virtual string? EventDateTimeDiff { get; set; }
         public string DriverSince { get; set; }
+        public virtual long? EventReading { get; set; }
     }
 
     public class NoDriverTruckModel
