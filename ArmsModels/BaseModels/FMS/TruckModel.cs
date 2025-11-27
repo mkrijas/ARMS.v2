@@ -119,5 +119,6 @@ namespace ArmsModels.BaseModels
     {
         public string RegNo { get; set; }
         public DateTime? AssignedTime { get; set; }
+        public string EventType { get; set; }
     }
 }

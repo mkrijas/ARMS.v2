@@ -545,7 +545,8 @@ namespace ArmsServices.DataServices
                 yield return new NoDriverTruckModel()
                 {
                     RegNo = dr.GetString("RegNO"),
-                    AssignedTime = dr.GetDateTime("AssignedTime")
+                    AssignedTime = dr.GetDateTime("AssignedTime"),
+                    EventType = dr.GetString("EventType")
                 };
             }
         }
