@@ -36,6 +36,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public byte? TollBooths { get; set; }    
         public decimal? DistanceInGps { get; set; }
+        public decimal? SettledKm { get; set; }
         public decimal? MileageModifierPercentage
         {
             get => MileageModifier.HasValue ? MileageModifier * 100 : null;
