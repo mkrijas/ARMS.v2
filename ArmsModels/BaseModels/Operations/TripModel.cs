@@ -66,6 +66,8 @@ namespace ArmsModels.BaseModels
         public decimal? Expenses { get; set; }
         public string Gcs { get; set; }
         public bool IsMileageOverride { get; set; }
+        public decimal? SettledKm { get; set; }
+
     }
 
     // Represents fuel-related information for a trip

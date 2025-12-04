@@ -9,10 +9,12 @@ using Core.IDataServices.Finance;
 using Core.IDataServices.Finance.DayOpen;
 using Core.IDataServices.Operations;
 using Core.IDataServices.Operations.ROI;
+using Core.IDataServices.User;
 using DAL.DataServices.Finance.DayOpen;
 using DAL.DataServices.Finance.Transactions;
 using DAL.DataServices.Operations;
 using DAL.DataServices.Operations.ROI;
+using DAL.DataServices.User;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication;
@@ -91,6 +93,7 @@ builder.Services.AddScoped<IVendorPostingGroupService, VendorPostingGroupService
 builder.Services.AddScoped<ICustomerPostingGroupService, CustomerPostingGroupService>();
 builder.Services.AddScoped<IRenterPostingGroupService, RenterPostingGroupService>();
 builder.Services.AddScoped<ISisterPostingGroupService, SisterPostingGroupService>();
+builder.Services.AddScoped<IDeviceService, DeviceService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();

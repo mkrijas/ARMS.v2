@@ -280,6 +280,7 @@ namespace ArmsServices.DataServices
                     Expenses = reader.GetDecimal("Expenses"),
                     Freight = reader.GetDecimal("Freight"),
                     IsMileageOverride = reader.GetBoolean("OverrideMileageShortage"),
+                    SettledKm = reader.GetDecimal("SettledKm"),
                 };
             }
             return null;

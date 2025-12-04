@@ -34,6 +34,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@SpeedLimit", model.SpeedLimit),
                new SqlParameter("@TollBooths", model.TollBooths),
                new SqlParameter("@DistanceInGps", model.DistanceInGps),
+               new SqlParameter("@SettledKm", model.SettledKm), 
                new SqlParameter("@Via", model.Via.PlaceID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -150,6 +151,7 @@ namespace ArmsServices.DataServices
                 SpeedLimit = dr.GetByte("SpeedLimit"),
                 TollBooths = dr.GetByte("TollBooths"),
                 DistanceInGps = dr.GetDecimal("DistanceInGps"),
+                SettledKm = dr.GetDecimal("SettledKm"),
                 Via = new PlaceModel
                 {
                     PlaceID = dr.GetInt32("Via")
