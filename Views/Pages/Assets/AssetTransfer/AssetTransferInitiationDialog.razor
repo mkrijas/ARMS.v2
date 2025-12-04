@@ -6,7 +6,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject IConfigTable config
-@using System.Threading;
+@using System.Threading
 @inject IRoleService<RoleModel> Irole
 @using Views.Pages.Finance.Transactions
 
@@ -30,9 +30,9 @@
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
-                    <MudItem xs="12" md="6">
+                    @*  <MudItem xs="12" md="6">
                         <AssetSelector Value="model.Asset" BranchID="BranchID" ValueChanged="AssetSelected" />
-                    </MudItem>
+                    </MudItem> *@
                     <MudItem xs="12" md="6">
                         <GstMechanismSelector ReadOnly="@ReadOnly" page="Asset" @bind-Value="@model.GstMechanism"></GstMechanismSelector>
                     </MudItem>
@@ -86,46 +86,67 @@
                             }
                         }
                     </MudGrid>
+                    <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
+                        <div class="d-flex align-items-center mb-2">
+                            <h6><u>Assets</u></h6>
+                            <MudSpacer />
+                            <MudButton OnClick="clearAllAssets" Variant="Variant.Outlined" Color="Color.Error" Disabled="@(ReadOnly || model.Items == null || !model.Items.Any())">Clear Assets</MudButton>
+                        </div>
+                        <div style="width: 1600px;" class="pb-3">
+                            <MudGrid Justify="Justify.Center">
+                                <MudItem xs="2" Class="d-flex align-items-center"><span class="HeadText"><b>Asset Name</b></span></MudItem>
+                                <MudItem xs="2" Class="d-flex align-items-center"><span class="HeadText"><b>Status</b></span></MudItem>
+                                <MudItem xs="1" Class="d-flex align-items-center"><span class="HeadText"><b>Book Value</b></span></MudItem>
+                                <MudItem xs="2" Class="d-flex align-items-center"><span class="HeadText"><b>Taxable value</b></span></MudItem>
+                                <MudItem xs="2" Class="d-flex align-items-center"><span class="HeadText"><b>Tax rate</b></span></MudItem>
+                                <MudItem xs="2" Class="d-flex align-items-center"><span class="HeadText"><b>Tax value</b></span></MudItem>
+                                <MudItem xs="1" Class="d-flex align-items-center">Actions</MudItem>
+
+                                @foreach (var item in model.Items)
+                                {
+                                    <MudItem xs="2" Class="d-flex align-items-center">@item.Description</MudItem>
+                                    <MudItem xs="2" Class="d-flex align-items-center">@item.AssetStatus</MudItem>
+                                    <MudItem xs="1" Class="d-flex align-items-center">@item.BookValue</MudItem>
+
+                                    <MudItem xs="2" Class="d-flex align-items-center">
+                                        <MudTextField ReadOnly="@ReadOnly" Disabled="@(item.BookValue == null)" @bind-Value="@item.TaxableValue"
+                                                      @onblur="@((e) => UpdateTaxValue(item))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="w-100" />
+                                    </MudItem>
+
+                                    <MudItem xs="2" Class="d-flex align-items-center">
+                                        <MudTextField ReadOnly="@ReadOnly" Disabled="@(item.BookValue == null)" @bind-Value="@item.TaxRate"
+                                                      @onblur="@((e) => UpdateTaxValue(item))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="w-100" />
+                                    </MudItem>
+
+                                    <MudItem xs="2" Class="d-flex align-items-center">
+                                        <MudTextField ReadOnly="@ReadOnly" Disabled="@(item.BookValue == null)" @bind-Value="@item.TaxValue"
+                                                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="w-100" />
+                                    </MudItem>
+
+                                    <MudItem xs="1" Class="d-flex align-items-center">
+                                        <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(() => Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                    </MudItem>
+                                }
+
+                                <MudItem xs="4" Class="d-flex align-items-center">
+                                    <AssetSelector Value="model.Asset" BranchID="BranchID" ValueChanged="AssetSelected" />
+                                </MudItem>
+                                <MudItem xs="1" Class="d-flex align-items-center">
+                                    @if(!ReadOnly)
+                                    {
+                                       <MudIconButton Title="Add" Color="Color.Primary" @onclick="Add" Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                                    }
+                                </MudItem>
+                                <MudItem xs="7" />
+                            </MudGrid>
+                        </div>
+                    </MudItem>
                 </MudGrid>
-                <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
-                    <h6> <u>Assets</u></h6>
-                    <div style="width: 1600px;" class="pb-3">
-                        <MudGrid Justify="Justify.Center">
-                            <MudItem xs="2"><span class="HeadText"><b>Asset Name</b></span></MudItem>
-                            <MudItem xs="2"><span class="HeadText"><b>Status</b></span></MudItem>
-                            <MudItem xs="1"><span class="HeadText"><b>Book Value</b></span></MudItem>
-                            <MudItem xs="2"><span class="HeadText"><b>Taxable value</b></span></MudItem>
-                            <MudItem xs="2"><span class="HeadText"><b>Tax rate</b></span></MudItem>
-                            <MudItem xs="2"><span class="HeadText"><b>Tax value</b></span></MudItem>
-                            <MudItem xs="1">Actions</MudItem>
-                            @foreach (var item in model.Items)
-                            {                        
-                                <MudItem xs="2">@item.Description</MudItem>
-                                <MudItem xs="2">@item.AssetStatus</MudItem>
-                                <MudItem xs="1">@item.BookValue</MudItem>
-                                <MudItem xs="2">
-                                    <MudTd DataLabel="TaxableValue"><MudTextField ReadOnly="@ReadOnly" @bind-Value="@item.TaxableValue" @onblur="@((e) => UpdateTaxValue(item))" Variant="Variant.Outlined" Margin="Margin.Dense" /></MudTd>
-                                </MudItem>
-                                <MudItem xs="2">
-                                    <MudTd DataLabel="TaxRate"><MudTextField ReadOnly="@ReadOnly" @bind-Value="@item.TaxRate" @onblur="@((e) => UpdateTaxValue(item))" Variant="Variant.Outlined" Margin="Margin.Dense" /></MudTd>
-                                </MudItem>
-                                <MudItem xs="2">
-                                    <MudTd DataLabel="TaxValue"><MudTextField ReadOnly="@ReadOnly" @bind-Value="@item.TaxValue" Variant="Variant.Outlined" Margin="Margin.Dense" /></MudTd>
-                                </MudItem>
-                                <MudItem xs="1">                                
-                                    <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />                                
-                                </MudItem>
-                            }                    
-                        </MudGrid>
-                    </div>
-                </MudItem>
             </EditForm>
-            <MudItem xs="12">
-                @if (ReadOnly)
-                {
-                    <AutherizationStatusComponent DocTypeID="@AssetTransferDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" DocumentID="model.AssetTransferID" CreatedBy="@model.UserInfo" OnApprove="Approve"></AutherizationStatusComponent>
-                }
-            </MudItem>
+            @if (ReadOnly)
+            {
+                <AutherizationStatusComponent DocTypeID="@AssetTransferDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" DocumentID="model.AssetTransferID" CreatedBy="@model.UserInfo" OnApprove="Approve"></AutherizationStatusComponent>
+            }
             <MudContainer Class="dialogInset">
                 @if (ReadOnly)
                 {
@@ -140,7 +161,7 @@
     <DialogActions>
         <MudText Align="Align.Start" Class="pl-3">Total : <b>@TotalValue</b></MudText>
         <MudSpacer></MudSpacer>
-        
+
         @if (ReadOnly)
         {
             <div style="padding-bottom:12px; padding-right:12px;">
@@ -247,7 +268,7 @@
         // Check if both TaxableValue and TaxRate are set
         if (item.TaxableValue.HasValue && item.TaxRate.HasValue)
         {
-            // Calculate TaxValue            
+            // Calculate TaxValue
             item.TaxValue = (item.TaxableValue.Value) / 100 * item.TaxRate.Value;
         }
         else
@@ -376,8 +397,8 @@
                               yesText: "OK");
                         _busy = false;
                         return;
-                    }                   
-                    
+                    }
+
                     _busy = true;
                     Iservice.UpdateOutgoing(model); // Update the status without truck ID
                     Snackbar.Add("Transferred successfully", Severity.Success);
@@ -403,21 +424,35 @@
     private void AssetSelected(AssetModel obj)
     {
         model.Asset = obj;
-        model.Items.Clear(); // Clear existing items before adding new ones
+    }
 
+    private void Add()
+    {
+
+        var obj = model.Asset;
+
+        // helper method to validate duplicate assets
+        bool validateDuplicate(AssetModel asset)
+        {
+            if (model.Items.Any(i => i.AssetID == asset.AssetID))
+                return false;
+            return true;
+        }
+
+        // This method can be used to add additional assets if needed
         if (obj != null)
         {
             // Check if the asset is complex
-            if (obj.IsComplex == false)
+            if (obj.IsComplex == false && validateDuplicate(obj))
             {
                 // Add the selected asset to the model.Items
                 model.Items.Add(new AssetTransferItemModel
-                    {
-                        AssetID = obj.AssetID,
-                        BookValue = obj.CurrentValue,
-                        Description = obj.Description,
-                        AssetStatus =obj.AssetStatus
-                    });
+                {
+                    AssetID = obj.AssetID,
+                    BookValue = obj.CurrentValue,
+                    Description = obj.Description,
+                    AssetStatus = obj.AssetStatus
+                });
             }
             else if (obj.IsComplex == true)
             {
@@ -429,16 +464,24 @@
                 // Add all child assets to the model.Items
                 foreach (var childAsset in ChildAssets)
                 {
-                    model.Items.Add(new AssetTransferItemModel
+                    if (validateDuplicate(childAsset))
+                {
+                        model.Items.Add(new AssetTransferItemModel
                         {
                             AssetID = childAsset.AssetID,
                             BookValue = childAsset.CurrentValue,
                             Description = childAsset.Description,
                             AssetStatus = childAsset.AssetStatus
                         });
+                    }
                 }
             }
         }
+    }
+
+    void clearAllAssets()
+    {
+        model.Items.Clear();
     }
 
     protected async Task Approve(DataApprovedStatus aprvd)
@@ -449,7 +492,7 @@
         {
             if (aprvd.IsApprove)
             {
-                model.UserInfo.UserID = User.Identity.Name; 
+                model.UserInfo.UserID = User.Identity.Name;
                 try
                 {
                     Iservice.ApproveOutgoing(model.AssetTransferID.Value, model.UserInfo.UserID);
@@ -457,7 +500,7 @@
                 }
                 catch (Exception ex)
                 {
-                Snackbar.Add(ex.Message, Severity.Error);
+                    Snackbar.Add(ex.Message, Severity.Error);
                 }
             }
         }
