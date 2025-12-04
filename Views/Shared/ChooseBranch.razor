@@ -1,30 +1,41 @@
 ﻿@inject IUserService iservice
 
-
-
-
-<MudDialog >
+<MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.SelectAll" Class="mr-3 mb-n1" />
+            <MudIcon Icon="@Icons.Material.Filled.SelectAll" class="mr-3 mb-n1" />
             Select Branch
         </MudText>
     </TitleContent>
-    <DialogContent>        
+
+    <DialogContent>
+
+        <MudTextField @bind-Value="searchText"
+                      Placeholder="Search branch..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Class="mb-2"
+                      Immediate="true"
+                      OnKeyUp="OnSearchChanged" />
+
+        
         <MudList Clickable="true" SelectedItem="@listItem" SelectedItemChanged="SetBranchRole">
-            @foreach (UserBranchRoleModel item in branches)
+            @foreach (var item in filteredBranches)
             {
-                <MudListItem Value="@item" Text="@item.Branch.BranchName" Icon="@Icons.Material.Filled.Inbox"  />
+                <MudListItem Value="@item"
+                             Text="@item.Branch.BranchName"
+                             Icon="@Icons.Material.Filled.Inbox" />
             }
         </MudList>
-        @if(branches == null || !branches.Any())
+
+        @if (filteredBranches.Count == 0)
         {
-            <MudText Color="Color.Error"><p>No branches allocated please contact admin.</p></MudText>
+            <MudText Color="Color.Error">
+                <p>No matching branches found.</p>
+            </MudText>
         }
-    </DialogContent>   
+    </DialogContent>
 </MudDialog>
-
-
 
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
@@ -32,18 +43,40 @@
     [Parameter]
     public string UserID { get; set; }
 
-    public string BranchName { get; set; }
+    private List<UserBranchRoleModel> branches = new();
+    private List<UserBranchRoleModel> filteredBranches = new();
 
+    private string searchText = "";
     MudListItem listItem;
 
-    private List<UserBranchRoleModel> branches = new();
-
-    protected override  void OnInitialized()
+    protected override void OnInitialized()
     {
         branches = iservice.GetBranchesNRoles(UserID).ToList();
-        if(branches.Count == 1)
+        filteredBranches = branches;
+
+        if (branches.Count == 1)
         {
             MudDialog.Close(DialogResult.Ok(branches.First()));
+        }
+    }
+
+    private void OnSearchChanged(KeyboardEventArgs args)
+    {
+        FilterBranches();
+    }
+
+    private void FilterBranches()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            filteredBranches = branches;
+        }
+        else
+        {
+            filteredBranches = branches
+                .Where(x => x.Branch.BranchName
+                    .Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
     }
 
@@ -52,7 +85,7 @@
         listItem = item;
         if (listItem != null)
         {
-            UserBranchRoleModel model = (UserBranchRoleModel)listItem?.Value;
+            var model = (UserBranchRoleModel)listItem.Value;
             MudDialog.Close(DialogResult.Ok(model));
         }
     }
