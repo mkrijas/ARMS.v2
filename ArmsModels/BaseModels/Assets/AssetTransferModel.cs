@@ -11,8 +11,7 @@ namespace ArmsModels.BaseModels
     // Model representing the initiation of an asset transfer
     public class AssetTransferInitiationModel
     {
-        public int? AssetTransferID { get; set; } // Unique identifier for the asset transfer
-        [Required]
+        public int? AssetTransferID { get; set; } // Unique identifier for the asset transfer        
         public AssetModel Asset { get; set; } // The asset being transferred
         [Required]
         public BranchModel InitiatedBranch { get; set; } // The branch initiating the transfer
