@@ -1,4 +1,4 @@
-﻿@using System.Threading;
+@using System.Threading;
 @using Operations.Place;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -13,9 +13,9 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             Add/Edit
-            <MudRadioGroup SelectedOption="model.Consignor" T="bool" SelectedOptionChanged="OnSelectedOptionChanged">
-                <MudRadio Option="true" Color="Color.Primary" Dense="true">Consignor</MudRadio>
-                <MudRadio Option="false" Color="Color.Secondary" Dense="false">Consignee</MudRadio>
+            <MudRadioGroup Value="model.Consignor" T="bool" ValueChanged="OnSelectedOptionChanged">
+                <MudRadio Value="true" Color="Color.Primary" Dense="true">Consignor</MudRadio>
+                <MudRadio Value="false" Color="Color.Secondary" Dense="false">Consignee</MudRadio>
             </MudRadioGroup>
         </MudText>
     </TitleContent>
@@ -33,7 +33,7 @@
                             <MudNumericField HideSpinButtons MaxLength="10" @bind-Value="model.Mobile" Label="Mobile" Variant="Variant.Outlined" For="@(() => model.Mobile)"></MudNumericField>
                          </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudAutocomplete T="PlaceModel" Label="Place" Value="Place" ValueChanged="PlaceSelected" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"
+                            <MudAutocomplete T="PlaceModel" Label="Place" Value="Place" ValueChanged="PlaceSelected" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"
                                              Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Rounded.Add" OnAdornmentClick="OpenPlaceDialog" Immediate="true" MaxItems="50">
                                  <NoItemsTemplate>
                                      Create new Place
@@ -41,7 +41,7 @@
                             </MudAutocomplete>
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudAutocomplete ReadOnly Disabled T="OrderModel" Label="Order" Value="Order" ValueChanged="OrderSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined" SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
+                            <MudAutocomplete ReadOnly Disabled T="OrderModel" Label="Order" Value="Order" ValueChanged="OrderSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined" SearchFunc="@(async (string s, CancellationToken t) => await SearchOrders(s, t))" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
                         </MudItem>
                     </MudGrid>
                 </MudTabPanel>
@@ -62,7 +62,7 @@
     public ConsigneeModel model { get; set; }
     [Parameter]
     public OrderModel Order { get; set; }
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     private PlaceModel Place = new PlaceModel();
     private List<PlaceModel> places = new List<PlaceModel>();
     private List<OrderModel> orders = new List<OrderModel>();
@@ -120,14 +120,14 @@
     }
 
     // Method to search for places based on a search string
-    private async Task<IEnumerable<PlaceModel>> Search(string searchString)
+    private async Task<IEnumerable<PlaceModel>> Search(string searchString, CancellationToken token)
     {
         return await Task.FromResult(
             places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
     // Method to search for orders based on a search string
-    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString, CancellationToken token)
     {
         var o = orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
         return await Task.FromResult(o);

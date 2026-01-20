@@ -1,4 +1,4 @@
-﻿@page "/ChartOfAccount"
+@page "/ChartOfAccount"
 @inject IChartOfAccountService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -27,16 +27,23 @@
                 <MudIconButton Style="margin-bottom:4px;" Icon="@Icons.Material.Filled.Add" Disabled="@_busy" Title="Add Ledger" Color="Color.Dark" Size="Size.Small" OnClick="@addledgerbyicon"></MudIconButton>
             </MudText>
             <MudDivider DividerType="DividerType.Middle"></MudDivider>
-            <MudTreeView Color="Color.Primary" 
-           
-            Items="TreeItems" T="TreeItemData" SelectedValueChanged="OnSelected">
+            <MudTreeView T="CoaTreeItem" Color="Color.Primary" Items="TreeItems" Hover="true" 
+                         SelectedValueChanged="@((CoaTreeItem i) => OnSelected(i))">
                 <ItemTemplate>
-                    <ContextMenuTrigger MenuId="@(context.SummaryAccount ? "myMenu" : "myeditMenu")" Data="@context">
-                        <MudTreeViewItem id="@context.ID" OnClick="@(()=> getcoordinates(context.ID))" @bind-Expanded="@context.IsExpanded" 
-                            TextClass="@(context.SummaryAccount?"":"subledger")" LoadingIconColor="Color.Info" Value="@context" Text="@context.Title" 
-                            Icon="@context.Icon" CanExpand="@(context.SummaryAccount? true : false)" Items="@context.TreeItems">
-                        </MudTreeViewItem>
-                    </ContextMenuTrigger>
+                    <MudTreeViewItem @bind-Expanded="@context.Expanded" Items="@context.Children" Value="@context.Value">
+                        <BodyContent Context="item">
+                            <ContextMenuTrigger MenuId="@(context.Value.SummaryAccount ? "myMenu" : "myeditMenu")" Data="@context">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" @onclick="@(()=> getcoordinates(context.Value.ID))">
+                                    <MudIcon Icon="@context.Icon" Color="Color.Default" Size="Size.Small" Class="mr-2"></MudIcon>
+                                    <MudText Typo="@(context.Value.SummaryAccount ? Typo.body1 : Typo.body2)" 
+                                             Style="@(context.Value.SummaryAccount ? "font-weight: 500;" : "")"
+                                             Class="@(context.Value.SummaryAccount?"":"subledger")">
+                                        @context.Text
+                                    </MudText>
+                                </MudStack>
+                            </ContextMenuTrigger>
+                        </BodyContent>
+                    </MudTreeViewItem>
                 </ItemTemplate>
             </MudTreeView>
 
@@ -52,13 +59,13 @@
         <MudPaper Width="350px" MaxHeight="494px" Class="overflow-y-auto" Elevation="1">
             <div>
                 <div style="height:30px">
-                    <MudCheckBox Style="height:60px" Checked="allSelected" CheckedChanged="((bool a)=>SelectAll(a))"><b>SELECT ALL</b></MudCheckBox>
+                    <MudCheckBox T="bool" Style="height:60px" Value="allSelected" ValueChanged="((bool a)=>SelectAll(a))"><b>SELECT ALL</b></MudCheckBox>
                 </div>
                 <hr style="margin-bottom:0px;">
                 @foreach (var item in AllocatedBranches)
                 {
                     <div style="height:40px; margin-bottom:0px;">
-                        <MudCheckBox Style="height:60px;" Checked="@item.IsSelected" Label="@item.BranchName" CheckedChanged="((bool value)=>BranchCheckedChanged(value,item))"></MudCheckBox>
+                        <MudCheckBox T="bool" Style="height:60px;" Value="@item.IsSelected" Label="@item.BranchName" ValueChanged="((bool value)=>BranchCheckedChanged(value,item))"></MudCheckBox>
                     </div>
                 }
             </div>
@@ -75,9 +82,9 @@
 
 @code {
 
-    private HashSet<TreeItemData> TreeItems { get; set; } = new HashSet<TreeItemData>();
-    TreeItemData ContextmenuSource = new();
-    TreeItemData SelectedValue;
+    private List<TreeItemData<CoaTreeItem>> TreeItems { get; set; } = new List<TreeItemData<CoaTreeItem>>();
+    TreeItemData<CoaTreeItem> ContextmenuSource = new();
+    TreeItemData<CoaTreeItem> SelectedValue;
     protected List<CoaBranchAvailabilityModel> AllocatedBranches = new();
     protected bool visible = true;
     private bool _busy;
@@ -89,15 +96,13 @@
     List<ChartOfAccountModel> collection;
 
     // Class representing tree item data
-    public class TreeItemData
+    public class CoaTreeItem
     {
         public string Title { get; set; }
         public string Icon { get; set; }
-        public bool IsExpanded { get; set; } = false;
         public bool SummaryAccount { get; set; } = false;
         public int? ID { get; set; }
         public string AccountCode { get; set; }
-        public HashSet<TreeItemData> TreeItems { get; set; }
     }
 
     // Class to hold element coordinates
@@ -123,57 +128,79 @@
 
         // Load all ledgers and populate the tree items
         collection = Iservice.AllLedgers().ToList();
-        var baseGroups = collection.Where(x=> x.ParentID == 0).ToList();
+        var baseGroups = collection.Where(x=> x.ParentID == 0).OrderBy(x => x.SummaryAccount).ThenBy(y => y.AccountName).ToList();
 
         foreach (var item in baseGroups)
         {
-            TreeItems.Add(new TreeItemData
-                {
+            var coaItem = new CoaTreeItem
+            {
                     ID = item.CoaID,
                     Title = item.AccountName,
                     SummaryAccount = item.SummaryAccount,
-                    Icon = item.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                    IsExpanded = true,  
-                    TreeItems = LoadServerData(item.CoaID),
-                });
+                    Icon = item.SummaryAccount ? null : Icons.Material.Filled.Description
+            };
+            
+            var hasChildren = collection.Any(x => x.ParentID == item.CoaID);
+            var treeItem = new TreeItemData<CoaTreeItem>
+            {
+                Value = coaItem,
+                Text = coaItem.Title,
+                Icon = coaItem.Icon,
+                Expanded = false,
+                Expandable = hasChildren,
+                Children = hasChildren ? LoadServerData(item.CoaID) : null
+            };
+            
+            TreeItems.Add(treeItem);
         }
     }
 
-    // Method to load server data for tree items
-    public HashSet<TreeItemData> LoadServerData(int? CoaID)
+    // Method to load server data for tree items (loads one level only)
+    public List<TreeItemData<CoaTreeItem>> LoadServerData(int? CoaID)
     {
-       //await Task.Delay(3);
-        var TreeItems = new HashSet<TreeItemData>();
+        var TreeItems = new List<TreeItemData<CoaTreeItem>>();
         var children = collection.Where(z => z.ParentID == CoaID).OrderBy(x => x.SummaryAccount).ThenBy(y => y.AccountName);
         foreach (var item in children)
         {
-            TreeItems.Add(new TreeItemData
+            var coaItem = new CoaTreeItem
                 {
                     ID = item.CoaID,
                     AccountCode = item.AccountCode,
                     Title = item.AccountName + (item.SummaryAccount ? "" : (" (" + item.AccountCode + ")")),
                     SummaryAccount = item.SummaryAccount,
-                    Icon = item.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                    TreeItems =  LoadServerData(item.CoaID),
-                    IsExpanded = true
-                });
+                    Icon = item.SummaryAccount ? null : Icons.Material.Filled.Description
+                };
+
+            var hasChildren = collection.Any(x => x.ParentID == item.CoaID);
+            var treeItem = new TreeItemData<CoaTreeItem>
+            {
+                Value = coaItem,
+                Text = coaItem.Title,
+                Icon = coaItem.Icon,
+                Expanded = false,
+                Expandable = hasChildren,
+                // Load immediate children only (one level) - they will load their children when expanded
+                Children = hasChildren ? LoadServerData(item.CoaID) : null
+            };
+
+            TreeItems.Add(treeItem);
         }
-        //parentNode.Icon = "";
         return TreeItems;
     }
 
     //Function to create group / ledger
 
     // Method to handle context menu clicks
+    // Method to handle context menu clicks
     protected async Task ContextMenuOnClick(ItemClickEventArgs e)
     {
-        ContextmenuSource = (TreeItemData)e.Data;
+        ContextmenuSource = (TreeItemData<CoaTreeItem>)e.Data; // e.Data comes from ContextMenuTrigger which is wrapper
         var authstate = await auth.GetAuthenticationStateAsync();
         var parameters = new DialogParameters
             {
                 ["model"] = new ChartOfAccountModel
                 {
-                    ParentID = ContextmenuSource.ID,
+                    ParentID = ContextmenuSource.Value.ID,
                     SummaryAccount = e.MenuItem.Id == "group",
                     UserInfo = { UserID = authstate.User.Identity.Name }
                 },
@@ -184,11 +211,11 @@
         switch (e.MenuItem.Id)
         {
             case "group":
-                dialog = DialogService.Show<AddLedgerDialog>("Add Group under - " + ContextmenuSource.Title, parameters);
+                dialog = DialogService.Show<AddLedgerDialog>("Add Group under - " + ContextmenuSource.Value.Title, parameters);
                 break;
 
             case "account":
-                dialog = DialogService.Show<AddSubledgerDialog>("Add Ledger under - " + ContextmenuSource.Title, parameters);
+                dialog = DialogService.Show<AddSubledgerDialog>("Add Ledger under - " + ContextmenuSource.Value.Title, parameters);
                 break;
         }
 
@@ -201,20 +228,31 @@
                 try
                 {
                     var newledger = Iservice.Update(UpdatedModel); // Update the ledger
-                    //ContextmenuSource.TreeItems = await LoadServerData(ContextmenuSource);
-                    ContextmenuSource = GetTreeItem(TreeItems, UpdatedModel.ParentID);
-                    if (ContextmenuSource.TreeItems == null)
+                    // Finding the parent node in TreeItems
+                    var parentNode = GetTreeItemData(TreeItems, UpdatedModel.ParentID);
+                    if (parentNode != null)
                     {
-                        ContextmenuSource.TreeItems = new HashSet<TreeItemData>();
+                          if (parentNode.Children == null) parentNode.Children = new List<TreeItemData<CoaTreeItem>>();
+                          
+                          var newCoaItem = new CoaTreeItem
+                            {
+                                ID = newledger.CoaID,
+                                Title = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
+                                SummaryAccount = newledger.SummaryAccount,
+                                Icon = newledger.SummaryAccount ? null : Icons.Material.Filled.Description,
+                            };
+                            
+                          var newNode = new TreeItemData<CoaTreeItem> 
+                          { 
+                              Value = newCoaItem,
+                              Text = newCoaItem.Title,
+                              Icon = newCoaItem.Icon,
+                              Expanded = true
+                          };
+                          
+                          parentNode.Children.Add(newNode);
+                          snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
                     }
-                    ContextmenuSource.TreeItems.Add(new TreeItemData
-                        {
-                            ID = newledger.CoaID,
-                            Title = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
-                            SummaryAccount = newledger.SummaryAccount,
-                            Icon = newledger.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                        });
-                    snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
                 }
                 catch (Exception a)
                 {
@@ -233,17 +271,17 @@
     // Method to handle context menu edit clicks
     protected async Task ContextEditMenuOnClick(ItemClickEventArgs e)
     {
-        TreeItemData item = (TreeItemData)e.Data;
-        if (!item.SummaryAccount)
+        var item = (TreeItemData<CoaTreeItem>)e.Data;
+        if (!item.Value.SummaryAccount)
         {
-            ChartOfAccountModel model = Iservice.SelectByID(item.ID); // Fetch the model for editing
-            ContextmenuSource = (TreeItemData)e.Data;
+            ChartOfAccountModel model = Iservice.SelectByID(item.Value.ID); // Fetch the model for editing
+            ContextmenuSource = item;
             var authstate = await auth.GetAuthenticationStateAsync();
             var parameters = new DialogParameters
                 {
                     ["model"] = model.Clone(),
                 };
-            var editledge = DialogService.Show<AddSubledgerDialog>("Edit Ledger - " + item.Title, parameters);
+            var editledge = DialogService.Show<AddSubledgerDialog>("Edit Ledger - " + item.Value.Title, parameters);
 
             if (HasPermissionChartOfAccountServiceEdit)
             {
@@ -252,9 +290,13 @@
                 if (!result.Canceled)
                 {
                     var newresult = Iservice.Update(UpdatedModel); // Update the ledger
-                    item.Title = newresult.AccountName + (newresult.SummaryAccount ? "" : (" (" + newresult.AccountCode + ")"));
-                    item.SummaryAccount = newresult.SummaryAccount;
-                    item.Icon = Icons.Material.Filled.Book;
+                    item.Value.Title = newresult.AccountName + (newresult.SummaryAccount ? "" : (" (" + newresult.AccountCode + ")"));
+                    item.Value.SummaryAccount = newresult.SummaryAccount;
+                    item.Value.Icon = Icons.Material.Filled.Description;
+                    
+                    item.Text = item.Value.Title;
+                    item.Icon = item.Value.Icon;
+                    
                     snackbar.Add(newresult.AccountName + " Edited successfully", Severity.Success);
                 }
             }
@@ -298,18 +340,38 @@
                 try
                 {
                     var newledger = Iservice.Update(UpdatedModel); // Update the ledger
-                    ContextmenuSource = GetTreeItem(TreeItems, UpdatedModel.ParentID);
-                    if (ContextmenuSource != null)
-                    {
-                        ContextmenuSource.TreeItems.Add(new TreeItemData
+                   
+                    // Finding the parent node in TreeItems
+                     var parentNode = GetTreeItemData(TreeItems, UpdatedModel.ParentID);
+                     
+                     var newCoaItem = new CoaTreeItem
                             {
                                 ID = newledger.CoaID,
                                 Title = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
                                 SummaryAccount = newledger.SummaryAccount,
-                                Icon = newledger.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                            });
-                        snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
-                    }
+                                Icon = newledger.SummaryAccount ? null : Icons.Material.Filled.Description,
+                            };
+                            
+                      var newNode = new TreeItemData<CoaTreeItem> 
+                          { 
+                              Value = newCoaItem,
+                              Text = newCoaItem.Title,
+                              Icon = newCoaItem.Icon,
+                              Expanded = true
+                          };
+                            
+                     if (parentNode != null)
+                     {
+                         if(parentNode.Children == null) parentNode.Children = new List<TreeItemData<CoaTreeItem>>();
+                         parentNode.Children.Add(newNode);
+                     }
+                     else if (UpdatedModel.ParentID == 0 || UpdatedModel.ParentID == null)
+                     {
+                         TreeItems.Add(newNode);
+                     }
+
+                     snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
+
                 }
                 catch (Exception a)
                 {
@@ -327,22 +389,11 @@
         _busy = false;
     }
 
-    //recursion through treeview
-
-    //void LoadTreeItem(HashSet<TreeItemData> itemTree,int? ID)
-    //{
-    //    var item = itemTree.First(x => x.ID == ID);
-    //    item.TreeItems = Task.Run(async () => await LoadServerData(item)).Result;
-    //    item.IsExpanded = true;
-    //}
-
-    //public bool allSelected { get; set; } = false;
-
     // Method to check if all branches are selected
     public bool allSelected { get { return AllocatedBranches.All(ab => ab.IsSelected); } }
     public int? AllSelectCoaId;
 
-    public void OnSelected(TreeItemData item)
+    public void OnSelected(CoaTreeItem item)
     {
         //if (item != null && !item.SummaryAccount)
         //{
@@ -417,29 +468,40 @@
     // Method to handle menu appearing events
     async Task OnAppearing(MenuAppearingEventArgs e)
     {
-        TreeItemData item = (TreeItemData)e.Data;
-        e.PreventShow = !item.SummaryAccount;
+        var item = (TreeItemData<CoaTreeItem>)e.Data;
+        e.PreventShow = !item.Value.SummaryAccount;
     }
 
-    // Recursive method to get a tree item by ID
-    TreeItemData GetTreeItem(HashSet<TreeItemData> tree, int? ID)
+    // Recursive method to get a CoaTreeItem by ID
+    TreeItemData<CoaTreeItem> GetTreeItemData(List<TreeItemData<CoaTreeItem>> tree, int? ID)
     {
         if (tree != null)
         {
             foreach (var i in tree)
             {
-                if (i.ID == ID)
+                if (i.Value.ID == ID)
                 {
                     return i;
                 }
-                else
+                else if (i.Children != null)
                 {
-                    var item = GetTreeItem(i.TreeItems, ID);
-                    if (item != null)
-                    {
-                        return item;
-                    }
+                    var result = GetTreeItemDataRecursive(i.Children, ID);
+                    if(result != null) return result;
                 }
+            }
+        }
+        return null;
+    }
+    
+    TreeItemData<CoaTreeItem> GetTreeItemDataRecursive(IList<TreeItemData<CoaTreeItem>> children, int? ID)
+    {
+        foreach(var child in children)
+        {
+            if (child.Value.ID == ID) return child;
+            if (child.Children != null)
+            {
+                var res = GetTreeItemDataRecursive(child.Children, ID);
+                if(res != null) return res;
             }
         }
         return null;

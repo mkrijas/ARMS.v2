@@ -52,7 +52,7 @@
                         <MudAutocomplete T="PaymentCodeModel"
                                          Value="SelectedArd"
                                          ValueChanged="OnAccountChanged"
-                                         SearchFunc="SearchAccounts"
+                                         SearchFunc="@(async (string s, CancellationToken t) => await SearchAccounts(s, t))"
                                          ToStringFunc="@(e =>
                                                             e == null
                                                                 ? string.Empty
@@ -95,7 +95,7 @@
                                         <td>@item.Reimbursement</td>
                                         @if (!ReadOnly)
                                         {
-                                            <td><MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /></td>
+                                            <td><MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" /></td>
                                         }
                                     </tr>
                                 }
@@ -109,7 +109,7 @@
                                                               CoerceValue
                                                       Value="opTranSubModel.OperationPostingGroupModel" ValueChanged="AddOperationPostingGroup"
                                                       ResetValueOnEmptyText="true" @ref="@OperationTitleControl"
-                                                      SearchFunc="@SearchOperationPostingGroup" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                      SearchFunc="@(async (string s, CancellationToken t) => await SearchOperationPostingGroup(s, t))" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                       ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} ",e.Title))"></MudAutocomplete>
                                  </MudItem>
                                  <MudItem xs="12" md="3" lg="3">
@@ -132,7 +132,7 @@
                                      <MudTextField @bind-Value="opTranSubModel.Unit" Label="Unit" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                                  </MudItem>
                                 <MudItem xs="12" md="2" lg="2" Class="d-flex align-content-center">
-                                    <MudCheckBox Label="Reimbursement" CheckedChanged="((bool value)=>ToggleData(value))" Checked="@opTranSubModel.IsReimbursed" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+                                    <MudCheckBox T="bool" Label="Reimbursement" ValueChanged="((bool value)=>ToggleData(value))" Value="@opTranSubModel.IsReimbursed" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
                                 </MudItem>
                                  <MudItem xs="12" md="1" lg="1" Class="d-flex align-content-center">
                                      <MudIconButton OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" Title="ADD" Edge="Edge.False" />
@@ -167,7 +167,7 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocNumber="@DocNumber" DocumentID="model.OpTranID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocNumber="@DocNumber" DocumentID="@model.OpTranID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
@@ -246,7 +246,7 @@
         }
     }
 
-    private async Task<IEnumerable<PaymentCodeModel>> SearchAccounts(string searchString)
+    private async Task<IEnumerable<PaymentCodeModel>> SearchAccounts(string searchString, CancellationToken token)
     {
         await Task.Delay(5);
         string search = searchString ?? string.Empty;
@@ -308,7 +308,7 @@
     }
 
     // Method to search for operation posting groups based on a search string
-    private async Task<IEnumerable<OperationPostingGroupModel>> SearchOperationPostingGroup(string searchString)
+    private async Task<IEnumerable<OperationPostingGroupModel>> SearchOperationPostingGroup(string searchString, CancellationToken token)
     {
         return await Task.FromResult(OperationPostingList.Where(x => x.ADCode.Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase) ||
                                                                 x.Title.Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase)));
@@ -360,7 +360,7 @@
             opTranSubModel = new() { OperationPostingGroupModel = null };
             //gstusge = new();
             SetTotal();
-            await OperationTitleControl.Clear();
+            await OperationTitleControl.ResetAsync();
             await OperationTitleControl.FocusAsync();
             //await JsRuntime.InvokeVoidAsync("resetHorizontalScrollbarForElement", ScrollableDiv);
         }
@@ -483,3 +483,4 @@
 
 
 }
+

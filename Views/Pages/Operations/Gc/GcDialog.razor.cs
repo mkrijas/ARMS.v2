@@ -27,7 +27,7 @@ namespace Views.Pages.Operations.Gc
         [Inject] MudBlazor.ISnackbar snackbar { get; set; }
         [Inject] AuthenticationStateProvider auth { get; set; }
         [Inject] IDialogService DialogService { get; set; }
-        [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+        [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
         [Parameter] public GcSetModel model { get; set; } = new GcSetModel();
         [Parameter] public OrderModel Order { get; set; }
 
@@ -97,25 +97,25 @@ namespace Views.Pages.Operations.Gc
         }
 
         // Method to search for consignees based on a search string
-        private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
+        private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString, CancellationToken token)
         {
             return await Task.FromResult(Consignees.Where(x => x.Consignor == false).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
         // Method to search for consignors based on a search string
-        private async Task<IEnumerable<ConsigneeModel>> SearchConsignor(string searchString)
+        private async Task<IEnumerable<ConsigneeModel>> SearchConsignor(string searchString, CancellationToken token)
         {
             return await Task.FromResult(Consignees.Where(x => x.Consignor == true).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
         // Method to search for orders based on a search string
-        private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+        private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString, CancellationToken token)
         {
             return await Task.FromResult(Orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
         // Method to search for routes based on a search string
-        private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
+        private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString, CancellationToken token)
         {
             return await Task.FromResult(Routes.Where(x => x.RouteName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }

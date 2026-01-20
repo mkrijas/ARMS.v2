@@ -31,10 +31,10 @@
         <MudTd DataLabel="TimeStampField">@context.UserInfo.TimeStampField</MudTd>
         <MudTd DataLabel="">
             <MudTooltip Text="Edit">
-                <MudFab style="font-size:5px" @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.EditNote" Size="Size.Small" IconSize="Size.Small" />
+                <MudFab style="font-size:5px" @onclick="@(()=> Edit(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.EditNote" Size="Size.Small" />
             </MudTooltip>
             @* <MudTooltip Text="Delete">
-            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" />
             </MudTooltip> *@
         </MudTd>
     </RowTemplate>
@@ -42,36 +42,6 @@
         <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
     </PagerContent>
 </MudTable>
-@* <br />
-<br />
-<MudGrid>
-    <MudItem xs="4" lg="3">
-        <MudPaper Width="100%" Class="p-2">
-            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
-                <MudListSubheader>
-                    Active Claims
-                </MudListSubheader>
-                @if (Collection?.Any() == true)
-                {
-                    @foreach (var item in Collection)
-                    {
-                        string regNo = Ibreakdown.SelectByID(item.BreakdownID).RegNo;
-                        <MudListItem Value="item">
-                            <MudText Typo=Typo.subtitle1> @regNo </MudText>
-                            <MudText Typo="Typo.overline">Since : @item.UserInfo.TimeStampField?.ToString("dd/MM/yy")</MudText>
-                        </MudListItem>
-                    }
-                }
-            </MudList>
-        </MudPaper>
-    </MudItem>
-    @if (@SelectedItem != null)
-    {
-        <MudItem xs="8" lg="9">
-            <ManageClaimDialog OnClaimAdded="AddClaims" Visible="@dialogVisible" ClaimList="@SelectedItem" Page="Claim" />
-        </MudItem>
-    }
-</MudGrid> *@
 
 @code {
 
@@ -82,7 +52,6 @@
     private List<InsuranceClaimEventStatusModel> ClaimEvents;
     private List<InsuranceClaimEventMasterModel> EventMasterSource;
     InsuranceClaimModel SelectedModel = new();
-    private MudListItem SelectedItem;
     private InsuranceClaimEventStatusModel UpdateStatusModel = new();
     private BreakdownModel Breakdown = new();
     MyFileUpload Mfu;
@@ -95,7 +64,7 @@
     public bool HasPermissionInsuranceClaimServiceUpdateList { get; set; } = false;
     public int InsuranceClaimDocTypeID = 83;
     [Parameter]
-    public EventCallback<MudListItem> OnClaimAdded { get; set; }
+    public EventCallback<InsuranceClaimModel> OnClaimAdded { get; set; } // Changed type
     private bool dialogVisible = false;
 
     // Lifecycle method that runs when the component is initialized
@@ -113,29 +82,15 @@
         Collection = Iservice.Select(null, brancID).ToList(); // Get claims for the branch
     }
 
-    // Method to handle the selection of an item from the list
-    protected async Task SelectedItemChanged(object obj)
+    // Method to handle the selection of an item 
+    protected async Task Edit(InsuranceClaimModel obj)
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionInsuranceClaimServiceEdit = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionInsuranceClaimServiceUpdateList = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "UpdateList", ctc.Token);
 
-        SelectedItem = (MudListItem)obj;
-        SelectedModel = (InsuranceClaimModel)SelectedItem.Value;
-        var e = await auth.GetAuthenticationStateAsync();
-        BreakdownModel breakdown = Ibreakdown.SelectByID(BreakdownID); // Get breakdown details
-        int TruckID = breakdown.TruckID.Value;
-        Truck = Itruck.SelectByID(TruckID);
-
-        // Fetch insurance document related to the truck
-        Insurance = IdocService.SelectByAsset(TruckID, false).FirstOrDefault(x => x.DocumentType.DocumentTypeName.ToUpper().Contains("INSURANCE") && IdocService.IsValid(x, breakdown.BreakdownTime));
-        ClaimEvents = Iservice.GetEventStatusList(SelectedModel.InsuranceClaimID).ToList(); // Get claim events
-        UpdateStatusModel = new()
-            {
-                InsuranceClaimID = SelectedModel.InsuranceClaimID,
-            };
-        dialogVisible = true;
-        SetEventMaster();
+        SelectedModel = obj;
+        await OpenEditDialog((InsuranceClaimModel)obj);
     }
 
     // Method to set up the event master data based on claim events
@@ -245,15 +200,15 @@
         SelectedModel.Images.Add(filePath);
     }
 
-    // Method to add claims to the list
-    async Task AddClaims(MudListItem MudListItem)
+    // Method to add claims - Signature updated/removed
+    async Task AddClaims(InsuranceClaimModel claim)
     {
-        SelectedItem = MudListItem;
-        //model.Assets.Add(MudListItem);
+       // SelectedItem = MudListItem; 
+       // Logic removed as MudListItem is gone.
     }
 
     // Method to edit an existing insurance claim
-    private async Task Edit(InsuranceClaimModel model)
+    private async Task OpenEditDialog(InsuranceClaimModel model)
     {
         InsuranceClaimModel Model = new();
         Breakdown = Ibreakdown.SelectByID(model.BreakdownID); // Get breakdown details
@@ -289,3 +244,4 @@
             return false;
     }
 }
+

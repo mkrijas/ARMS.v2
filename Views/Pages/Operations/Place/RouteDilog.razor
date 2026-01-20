@@ -1,4 +1,4 @@
-﻿@attribute [Authorize]
+@attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @using System.Threading;
 @inject IRouteService Iservice
@@ -9,7 +9,7 @@
 
 <MudDialog>
     <DialogContent>
-        <EditForm id="routeForm" Model="@routemodel" OnValidSubmit="OnValidSubmit">
+        <EditForm id="routeForm" Model="@routemodel" OnValidSubmit="SubmitRoute">
             <ObjectGraphDataAnnotationsValidator />
             <ValidationSummary />
             @if (ValidationMessageOrgin != null)
@@ -22,15 +22,15 @@
             }
             <MudGrid>
                 <MudItem xs="12" md="4">
-                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Origin" Value="@routemodel.Origin" ResetValueOnEmptyText="true" SearchFunc="@Search" ValueChanged="@ValidateOrgine" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
+                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Origin" Value="@routemodel.Origin" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ValueChanged="@ValidateOrgine" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
                                      Variant="Variant.Outlined" Immediate="true" MaxItems="50"></MudAutocomplete>
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Via" @bind-Value="@routemodel.Via" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
+                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Via" @bind-Value="@routemodel.Via" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
                                      Variant="Variant.Outlined" Immediate="true" MaxItems="50"></MudAutocomplete>
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Destination" Value="@routemodel.Destination" ResetValueOnEmptyText="true" SearchFunc="@Search" ValueChanged="@ValidateDestination" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
+                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Destination" Value="@routemodel.Destination" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ValueChanged="@ValidateDestination" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
                                      Variant="Variant.Outlined" Immediate="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add" OnAdornmentClick="AddPlace" AdornmentAriaLabel="Add Place" MaxItems="50"></MudAutocomplete>
                 </MudItem>                
                 <MudItem xs="12" md="4">
@@ -55,10 +55,10 @@
                     <MudNumericField ReadOnly="(!HasPermissionRouteServiceModify && routemodel.RouteID != null)" HideSpinButtons="true" @bind-Value="@routemodel.SettledKm" Label="Settled KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.SettledKm)"></MudNumericField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudRadioGroup @bind-SelectedOption="@routemodel.RouteType">
+                    <MudRadioGroup T="string" @bind-Value="@routemodel.RouteType">
                         @foreach (var rtype in RouteTypes)
                         {
-                            <MudRadio Option="@rtype" Color="Color.Primary">@rtype</MudRadio>
+                            <MudRadio T="string" Value="@rtype" Color="Color.Primary">@rtype</MudRadio>
                         }
                     </MudRadioGroup>
                 </MudItem>
@@ -74,7 +74,7 @@
 
     [Parameter]
     public RouteModel routemodel { get; set; }
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     public List<PlaceModel> places = new List<PlaceModel>();
     private List<string> RouteTypes = new List<string>() { "Highland", "City", "Highway", "Other" };
     private string searchRoute = "";
@@ -101,12 +101,12 @@
         }
     }
 
-    private async Task<IEnumerable<PlaceModel>> Search(string searchString)
+    private async Task<IEnumerable<PlaceModel>> Search(string searchString, CancellationToken token)
     {
         return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
-    private async Task OnValidSubmit(EditContext context)
+    private async Task SubmitRoute(EditContext context)
     {
         if (routemodel.Origin == null || routemodel.Origin.PlaceID == null || routemodel.Destination == null || routemodel.Destination.PlaceID == null)
         {
