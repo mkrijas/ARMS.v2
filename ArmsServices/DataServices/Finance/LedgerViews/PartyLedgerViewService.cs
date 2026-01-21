@@ -29,7 +29,7 @@ namespace DAL.DataServices.Finance.LedgerViews
                new SqlParameter("@ToDate", ToDate),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[rptFinanceReportLedgerSelectByArdCodeParty]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[rptFinanceLedgerByArdCode]", parameters))
             {
                 yield return new LedgerViewsModel()
                 {
