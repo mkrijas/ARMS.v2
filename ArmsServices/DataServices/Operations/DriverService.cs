@@ -135,13 +135,12 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@DriverID", DriverID),
                new SqlParameter("@Operation", "ByID"),
-            };
-            DriverModel model = new DriverModel();
+            };            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
             {
-                model = GetModel(dr);
+                return GetModel(dr);
             }
-            return model;
+           return null;
         }
 
         // Method to select driver data for Excel export
