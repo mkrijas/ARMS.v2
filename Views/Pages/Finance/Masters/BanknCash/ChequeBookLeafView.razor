@@ -8,110 +8,101 @@
 @inject IDialogService DialogService
 @inject IChequeBookService Iservice
 
-<MudPaper Style="padding-bottom: 1px;">
+<MudPaper Class="pa-4">
     <MudToolBar>
         <MudText Typo="Typo.h6" Style="font-weight:500;">Cheque Book</MudText>
         <MudSpacer></MudSpacer>
     </MudToolBar>
     <MudDivider />
-    <div Style="padding: 6px; background-color: whitesmoke; margin: 38px; padding-top: 12px; border-radius: 4px; box-shadow: inset 0px 0px 4px 0px rgba(0,0,0,0.3);">
-
-        <MudPaper Style="padding-bottom: 15px; min-width:min-content;">
-            <MudGrid>
-                <MudItem xs="12" Style="padding: 48px; padding-bottom: 32px;">
-                    <EditForm id="ChequeBookForm" OnValidSubmit="OnValidSubmit" Model="MainModel">
-                        <MudGrid>
-                            <MudItem xs="4">
-                                <MudTextField @bind-Value="@MainModel.StartingChequeNo" ReadOnly="@Readonly" Label="Starting Leaf Cheque No" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="First 6 Digit of Cheque NO" For="@(()=> MainModel.StartingChequeNo)" MaxLength="6"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="4">
-                                <MudTextField @bind-Value="@MainModel.EndingChequeNo" ReadOnly="@Readonly" Label="Ending Leaf Cheque No" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="First 6 Digit of Cheque NO" For="@(()=> MainModel.EndingChequeNo)" MaxLength="6"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="4">
-                                <MudDatePicker @bind-Date="@MainModel.CreatedDate" ReadOnly="@Readonly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" For="@(()=> MainModel.CreatedDate)" MaxDate="DateTime.Now" />
-                            </MudItem>
-                            <MudItem xs="12" Style="text-align: right; margin-top: 10px;">
-                                @if (!Readonly)
-                                {
-                                    <MudButton Style="min-width: 120px; margin-left:6px;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-                                    <MudButton Style="min-width: 120px; margin-left:6px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
-                                }
-                                else
-                                {
-                                    <MudButton Style="min-width: 120px; margin-left:6px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
-                                }
-                            </MudItem>
-                        </MudGrid>
-                        <ObjectGraphDataAnnotationsValidator />
-                        <ValidationSummary />
-                    </EditForm>
-                </MudItem>
-            </MudGrid>
-        </MudPaper>
-
-        <div Style="margin-top:30px;">
-            <div class="fullborder" style="padding: 0px; overflow-x: auto; overflow-y: hidden;">
-                <MudGrid Spacing="4">
-                    <MudItem xs="12">
-                        <MudTable Items="@collection" Context="item" Filter="new Func<ChequeBookLeavesModel, bool>(search)" Dense="true" Hover="true" Striped="true" Elevation="10">
-                            <ToolBarContent>
-                                <MudText Typo="Typo.h6">Cheque Leaves</MudText>
-                                <MudSpacer></MudSpacer>
-                                <MudRadioGroup Value="@status" T="string" Style="padding-top: 8px;" ValueChanged="OnSelectedOptionChanged">
-                                    <MudRadio Value="@("Pending")" Color="Color.Primary">Pending</MudRadio>
-                                    <MudRadio Value="@("Active")" Color="Color.Primary">Active</MudRadio>
-                                    <MudRadio Value="@("Cashed")" Color="Color.Primary">Cashed</MudRadio>
-                                    <MudRadio Value="@("Cancelled")" Color="Color.Primary">Cancelled</MudRadio>
-                                </MudRadioGroup>
-                                <MudTextField @bind-Value="searchchequeno" Placeholder="Search Cheque No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0">
-                                </MudTextField>
-                            </ToolBarContent>
-                            <HeaderContent>                       
-                                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookLeavesModel, object>(x=> x.ChequeNo)" InitialDirection="SortDirection.Ascending">Cheque No</MudTableSortLabel></MudTh>
-                                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookLeavesModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
-                                <MudTh>Actions</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd DataLabel="ChequeNo">@item.ChequeNo</MudTd>
-                                <MudTd DataLabel="Amount">
-                                    @if (item.UserInfo.RecordStatus == 1 && MainModel.AuthLevelID != null)
-                                    {                            
-                                        <MudTextField @bind-Value="@item.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>                                                    
-                                    }
-                                    else
-                                    {
-                                        <MudText>@item.Amount</MudText>
-                                    }
-                                </MudTd>
-                                <MudTd DataLabel="">
-                                    @if (item.UserInfo.RecordStatus == 1)
-                                    {
-                                        <MudIconButton Disabled="@(MainModel.AuthLevelID == null)" OnClick="@(() => Submit(item))" Color="Color.Success" Icon="@Icons.Material.Filled.Save" Title="Save" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                                    }
-                                    @if (item.UserInfo.RecordStatus != 4 && item.UserInfo.RecordStatus != 3)
-                                    {
-                                        <MudIconButton Disabled="@(MainModel.AuthLevelID == null)" OnClick="@(()=> CancelCheque(item))" Color="Color.Warning" Icon="@Icons.Material.Filled.CancelPresentation" Title="Cancel" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                                        <MudIconButton Disabled="@(Readonly && MainModel.AuthLevelID == null)" OnClick="@(()=> DeleteCheque(item))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Title="Delete" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                                    }
-                                </MudTd>
-                            </RowTemplate>
-                            <PagerContent>
-                                <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100, int.MaxValue }" />
-                            </PagerContent>
-                        </MudTable>
+    
+    <MudGrid Class="mt-4">
+        <MudItem xs="12">
+            <EditForm id="ChequeBookForm" OnValidSubmit="OnValidSubmit" Model="MainModel">
+                <MudGrid>
+                    <MudItem xs="4">
+                        <MudTextField @bind-Value="@MainModel.StartingChequeNo" ReadOnly="@Readonly" Label="Starting Leaf Cheque No" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="First 6 Digit of Cheque NO" For="@(()=> MainModel.StartingChequeNo)" MaxLength="6"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="4">
+                        <MudTextField @bind-Value="@MainModel.EndingChequeNo" ReadOnly="@Readonly" Label="Ending Leaf Cheque No" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="First 6 Digit of Cheque NO" For="@(()=> MainModel.EndingChequeNo)" MaxLength="6"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="4">
+                        <MudDatePicker @bind-Date="@MainModel.CreatedDate" ReadOnly="@Readonly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" For="@(()=> MainModel.CreatedDate)" MaxDate="DateTime.Now" />
+                    </MudItem>
+                    <MudItem xs="12" Class="d-flex justify-end mt-2">
+                        @if (!Readonly)
+                        {
+                            <MudButton Class="ml-2" Style="min-width: 120px;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+                            <MudButton Class="ml-2" Style="min-width: 120px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                        }
+                        else
+                        {
+                            <MudButton Class="ml-2" Style="min-width: 120px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                        }
                     </MudItem>
                 </MudGrid>
-            </div>
-        </div>
-        
-        @if (Verify || MainModel != null && MainModel.AuthLevelID == 99)
-        {
-            <div Style="margin-top:30px; text-align-last: center;">
-                <AutherizationStatusComponent CreatedBy="@MainModel.UserInfo" DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="MainModel.ChequeBookID" OnApprove="IsApproveData"></AutherizationStatusComponent>
-            </div>
-        }
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+            </EditForm>
+        </MudItem>
+    </MudGrid>
 
-    </div>
+    <MudGrid Class="mt-5" Spacing="4">
+        <MudItem xs="12">
+            <MudTable Items="@collection" Context="item" Filter="new Func<ChequeBookLeavesModel, bool>(search)" Dense="true" Hover="true" Striped="true" Elevation="10">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Cheque Leaves</MudText>
+                    <MudSpacer></MudSpacer>
+                    <MudRadioGroup Value="@status" T="string" Style="padding-top: 8px;" ValueChanged="OnSelectedOptionChanged">
+                        <MudRadio Value="@("Pending")" Color="Color.Primary">Pending</MudRadio>
+                        <MudRadio Value="@("Active")" Color="Color.Primary">Active</MudRadio>
+                        <MudRadio Value="@("Cashed")" Color="Color.Primary">Cashed</MudRadio>
+                        <MudRadio Value="@("Cancelled")" Color="Color.Primary">Cancelled</MudRadio>
+                    </MudRadioGroup>
+                    <MudTextField @bind-Value="searchchequeno" Placeholder="Search Cheque No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0">
+                    </MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookLeavesModel, object>(x=> x.ChequeNo)" InitialDirection="SortDirection.Ascending">Cheque No</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookLeavesModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="ChequeNo">@item.ChequeNo</MudTd>
+                    <MudTd DataLabel="Amount">
+                        @if (item.UserInfo.RecordStatus == 1 && MainModel.AuthLevelID != null)
+                        {
+                            <MudTextField @bind-Value="@item.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                        }
+                        else
+                        {
+                            <MudText>@item.Amount</MudText>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="">
+                        @if (item.UserInfo.RecordStatus == 1)
+                        {
+                            <MudIconButton Disabled="@(MainModel.AuthLevelID == null)" OnClick="@(() => Submit(item))" Color="Color.Success" Icon="@Icons.Material.Filled.Save" Title="Save" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                        }
+                        @if (item.UserInfo.RecordStatus != 4 && item.UserInfo.RecordStatus != 3 && item.UserInfo.RecordStatus != 0)
+                        {
+                            <MudIconButton Disabled="@(MainModel.AuthLevelID == null)" OnClick="@(()=> CancelCheque(item))" Color="Color.Warning" Icon="@Icons.Material.Filled.CancelPresentation" Title="Cancel" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                            <MudIconButton Disabled="@(Readonly && MainModel.AuthLevelID == null)" OnClick="@(()=> DeleteCheque(item))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Title="Delete" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                        }
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100, int.MaxValue }" />
+                </PagerContent>
+            </MudTable>
+        </MudItem>
+    </MudGrid>
+
+    @if (Verify || MainModel != null && MainModel.AuthLevelID == 99)
+    {
+        <div Style="margin-top:30px; text-align-last: center;">
+            <AutherizationStatusComponent CreatedBy="@MainModel.UserInfo" DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="MainModel.ChequeBookID" OnApprove="IsApproveData"></AutherizationStatusComponent>
+        </div>
+    }
 </MudPaper>
 
 @code {
