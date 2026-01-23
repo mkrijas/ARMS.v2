@@ -311,6 +311,23 @@ namespace ArmsServices.DataServices
             return DriverID;
         }
 
+        //DriverModel ITruckService.GetAssignedDriverModel(int? TruckID)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@TruckID", TruckID),
+        //    };
+        //    int? DriverID = null;
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Driver.Assignment.Select]", parameters))
+        //    {
+        //        if (dr.GetBoolean("AssignedStatus"))
+        //        {
+        //            DriverID = dr.GetInt32("DriverID");
+        //        }
+        //    }
+        //    return DriverID;
+        //}
+
         // Method to get the current trip for a truck
         public long? GetCurrentTrip(int? TruckID)
         {

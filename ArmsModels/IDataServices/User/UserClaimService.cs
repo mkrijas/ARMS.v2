@@ -49,9 +49,12 @@ namespace ArmsServices.DataServices
             //        newIdentity.RemoveClaim(item);
             //}
             IList<Claim> claims = await _role.GetClaimsAsync(userInfo.Role);
-            claims.Add(new Claim("BranchID", userInfo.Branch.BranchID.ToString()));
-            claims.Add(new Claim("BranchName", userInfo.Branch.BranchName));
-            claims.Add(new Claim(newIdentity.RoleClaimType, userInfo.Role.RoleID));            
+            if (!claims.Any(c => c.Type == "BranchID"))
+            {
+                claims.Add(new Claim("BranchID", userInfo.Branch.BranchID.ToString()));
+                claims.Add(new Claim("BranchName", userInfo.Branch.BranchName));
+                claims.Add(new Claim(newIdentity.RoleClaimType, userInfo.Role.RoleID));
+            }
             newIdentity.AddClaims(claims);
             return clone;
         }
