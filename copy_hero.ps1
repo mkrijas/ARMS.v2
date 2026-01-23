@@ -1,0 +1,1 @@
+Copy-Item "C:\Users\SWATI\.gemini\antigravity\brain\65526e3b-d6f4-4537-a020-c48bda3fbfc4\logistics_hero_1769056107957.png" -Destination "c:\Swati\Projects\Updated ARMS\ARMS.v2\Views\wwwroot\ArmsStaticFiles\LogisticsHero.png" -Force

@@ -115,7 +115,7 @@ namespace Views
             //   });
 
             services.AddControllersWithViews();
-            //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
+            services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
 
            // services.AddHttpClient();
             // 3rd party 
@@ -394,6 +394,11 @@ namespace Views
             services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddDefaultTokenProviders()
                 .AddDefaultUI();
+            
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.LoginPath = "/login";
+            });
             services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation>();
             #endregion
         }
