@@ -5,10 +5,11 @@
 
 <MudDialog DisableSidePadding="true" Class="login-dialog-transparent" Options="dialogOptions">
     <DialogContent>
-        <div class="rope-container @(isClosing ? "exiting" : "")">
-            <!-- Constrained Wrapper for Alignment -->
-            <div class="rope-align-wrapper">
-                <!-- Ropes -->
+        <!-- Rope Container - Clicks here trigger Cancel (Close Animation) -->
+        <div class="rope-container @(isClosing ? "exiting" : "")" @onclick="Cancel">
+            <!-- Constrained Wrapper for Alignment - Handles Horizontal Sway -->
+            <div class="rope-align-wrapper" @onclick:stopPropagation>
+                <!-- Ropes (Siblings for independent animation) -->
                 <div class="rope rope-left"></div>
                 <div class="rope rope-right"></div>
                 
@@ -78,8 +79,7 @@
 <style>
     /* 1. Overlay Fade In -> Now Transparent */
     .login-overlay {
-        background-color: transparent !important; /* Removed dark overlay so shadow hits the page */
-        /* animation: fadeIn 0.5s ease-out forwards; Removed fade since it's transparent */
+        background-color: transparent !important; 
     }
 
     /* Transparent Dialog Wrapper */
@@ -89,34 +89,37 @@
         overflow: visible !important;
     }
 
-    /* Rope Container - Fixed to Viewport to prevent gaps */
+    /* Rope Container - Fixed to Viewport */
     .rope-container {
-        position: fixed; /* Changed to fixed */
-        top: -100vh; /* Initial state */
+        position: fixed; 
+        top: 0; /* Align top 0 */
         left: 0;
         width: 100vw;
         height: 100vh;
         display: flex;
         justify-content: center;
-        pointer-events: none; /* Let clicks pass through to dialog overlay if missed */
-        z-index: 2000; /* Ensure on top */
-        animation: dropDown 1.5s cubic-bezier(0.10, 0.88, 0.22, 1.55) forwards;
+        pointer-events: none; 
+        z-index: 2000; 
     }
 
+    /* Wrapper handles Horizontal Sway (Trapeze effect) */
     .rope-align-wrapper {
         position: relative;
         width: 420px;
-        pointer-events: auto; /* Re-enable clicks for the card */
+        pointer-events: auto; 
+        /* Sway the whole assembly left/right */
+        animation: sway 2.5s ease-in-out infinite alternate;
+        animation-delay: 1.4s;
     }
 
-    /* The Hanging Card Wrapper */
+    /* The Hanging Card - Handles Vertical Drop & Tilt */
     .hanging-card {
         position: relative;
         width: 420px;
         transform-origin: top center;
-        /* Final settle sway */
-        animation: sway 3s ease-in-out infinite alternate;
-        animation-delay: 1.4s; 
+        /* Start above screen */
+        top: -100vh;
+        animation: dropDown 1.5s cubic-bezier(0.10, 0.88, 0.22, 1.55) forwards;
     }
 
     /* Ropes */
@@ -125,10 +128,12 @@
         width: 4px;
         background: #8e6e54; 
         background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px);
-        top: -200vh; /* Ultra Extended */
-        height: calc(200vh + 20px); /* Ensure it never breaks connection */
-        z-index: 15; 
+        top: -200vh; 
+        height: calc(200vh + 35px); 
+        z-index: 5; 
         border-radius: 0 0 2px 2px;
+        /* Sync stretch with card drop */
+        animation: ropeElastic 1.5s cubic-bezier(0.10, 0.88, 0.22, 1.55) forwards;
     }
     
     .rope-left { left: 40px; }
@@ -189,10 +194,10 @@
         }
     }
 
-    /* Continuous Sway after settle */
+    /* Continuous Horizontal Sway */
     @@keyframes sway {
-        0% { transform: rotate(1.5deg); }
-        100% { transform: rotate(-1.5deg); }
+        0% { transform: translateX(-5px); }
+        100% { transform: translateX(5px); }
     }
 
     /* --- Closing Animations --- */
@@ -215,9 +220,8 @@
 
     /* 3. Card Falls & Tilts */
     .exiting .hanging-card {
-        /* Override sway animation */
         animation: cardFall 1.2s cubic-bezier(0.6, 0.04, 0.98, 0.335) forwards !important;
-        transform-origin: top right; /* Pivot on right hook as left rope breaks first */
+        transform-origin: top right; 
     }
 
     @@keyframes cardFall {
@@ -227,16 +231,25 @@
             opacity: 1;
         }
         20% {
-            /* Left rope breaks, tilts right on remaining hook */
             transform: rotate(15deg);
             top: 60px;
         }
         100% {
-            /* Right rope breaks, falls down completely */
             top: 150vh;
             transform: rotate(80deg);
             opacity: 0;
         }
+    }
+
+    /* Synchronized Rope Stretch during Drop */
+    @@keyframes ropeElastic {
+        0% { height: calc(100vh - 15px); }
+        38% { height: calc(200vh + 235px); }
+        60% { height: calc(200vh - 35px); }
+        78% { height: calc(200vh + 65px); }
+        90% { height: calc(200vh + 25px); }
+        95% { height: calc(200vh + 40px); }
+        100% { height: calc(200vh + 35px); }
     }
 </style>
 
