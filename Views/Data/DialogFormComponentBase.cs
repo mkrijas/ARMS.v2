@@ -61,6 +61,15 @@ namespace Views.Data
         protected bool _busy;
         protected abstract DocumentInfoModel DocInfo { get; set; }
 
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+            if (model != null)
+            {
+                editContext = new EditContext(model);
+            }
+        }
+
         protected override async Task OnInitializedAsync()
         {
             await base.OnInitializedAsync();
