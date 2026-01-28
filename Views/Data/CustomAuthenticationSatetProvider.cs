@@ -49,9 +49,9 @@ namespace Views.Data
                          {
                             claims.Add(new System.Security.Claims.Claim("BranchName", currentRole.Branch.BranchName));
                          }
-                         if(currentRole.Role != null && !string.IsNullOrEmpty(currentRole.Role.RoleDesc))
+                         if(currentRole.Role != null && !string.IsNullOrEmpty(currentRole.Role.RoleID))
                          {
-                             claims.Add(new System.Security.Claims.Claim(ClaimTypes.Role, currentRole.Role.RoleDesc));
+                             claims.Add(new System.Security.Claims.Claim(ClaimTypes.Role, currentRole.Role.RoleID));
                          }
                     }
 
@@ -81,9 +81,9 @@ namespace Views.Data
                  {
                     claims.Add(new System.Security.Claims.Claim("BranchName", currentRole.Branch.BranchName));
                  }
-                 if(currentRole.Role != null && !string.IsNullOrEmpty(currentRole.Role.RoleDesc))
+                 if(currentRole.Role != null && !string.IsNullOrEmpty(currentRole.Role.RoleID))
                  {
-                     claims.Add(new System.Security.Claims.Claim(ClaimTypes.Role, currentRole.Role.RoleDesc));
+                     claims.Add(new System.Security.Claims.Claim(ClaimTypes.Role, currentRole.Role.RoleID));
                  }
             }
 

@@ -131,7 +131,8 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@BranchID", BranchID)
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "RevExp")
             };
             return GetChartData(parameters);
         }
@@ -140,7 +141,8 @@ namespace ArmsServices.DataServices
         private List<DashboardModel> GetChartData(List<SqlParameter> parameters)
         {
             List<DashboardModel> list = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Expenses.Select]", parameters))
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Overview.Select]", parameters))
             {
                 DashboardModel model = GetDashboardModel(dr);
                 list.Add(model);
@@ -153,10 +155,11 @@ namespace ArmsServices.DataServices
         {
             return new DashboardModel
             {
-                Label = dr.GetString("DataLabel"),
-                Data = dr.GetInt32("TotalData"),
+                Label = dr.GetString("Label"),
+                Data = dr.GetInt32("Data"),
                 DateList = dr?.GetDateTime("DateList"),
                 Total = dr.GetDecimal("Total"),
+                CumulativeTarget = dr.GetDecimal("CumulativeTarget")
             };
         }
     }

@@ -244,8 +244,8 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByPeriod"),
-               new SqlParameter("@begin", begin),
-               new SqlParameter("@end", end),
+               new SqlParameter("@FromDate", begin),
+               new SqlParameter("@ToDate", end),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
