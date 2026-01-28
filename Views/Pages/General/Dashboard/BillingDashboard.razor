@@ -1,0 +1,144 @@
+@page "/billingdashboard"
+@using ArmsModels.BaseModels
+@using ArmsServices.DataServices
+@inject IFreightBillingService BillingService
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider auth
+
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
+    <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight: 700; color: #5E5873;">Billing Overview</MudText>
+
+    <!-- 1. Summary Cards -->
+    <MudGrid Class="mb-4">
+        <!-- Pending Proforma -->
+        <MudItem xs="12" sm="6" md="3">
+             <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
+                 <div class="d-flex justify-space-between align-start">
+                     <MudText Typo="Typo.subtitle2" Style="color: #667085;">Pending Proforma</MudText>
+                     <MudIcon Icon="@Icons.Material.Filled.Description" Color="Color.Warning" Size="Size.Small" />
+                 </div>
+                 <MudText Typo="Typo.h4" Style="font-weight: 700; color: #FF9F43;">@PendingProformaCount</MudText>
+                 <MudText Typo="Typo.caption" Style="color: #667085;">Waiting for Approval</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Draft Bills -->
+        <MudItem xs="12" sm="6" md="3">
+             <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
+                 <div class="d-flex justify-space-between align-start">
+                     <MudText Typo="Typo.subtitle2" Style="color: #667085;">Draft Bills</MudText>
+                     <MudIcon Icon="@Icons.Material.Filled.EditNote" Color="Color.Primary" Size="Size.Small" />
+                 </div>
+                 <MudText Typo="Typo.h4" Style="font-weight: 700; color: #7367F0;">@DraftBillsCount</MudText>
+                 <MudText Typo="Typo.caption" Style="color: #667085;">Ready to Generate</MudText>
+            </MudPaper>
+        </MudItem>
+
+         <!-- Estimated Revenue -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
+                 <div class="d-flex justify-space-between align-start">
+                     <MudText Typo="Typo.subtitle2" Style="color: #667085;">Estimated Pending Rev.</MudText>
+                     <MudIcon Icon="@Icons.Material.Filled.MonetizationOn" Color="Color.Success" Size="Size.Small" />
+                 </div>
+                 <MudText Typo="Typo.h4" Style="font-weight: 700; color: #28C76F;">@EstimatedPendingRevenue.ToString("C0")</MudText>
+                 <MudText Typo="Typo.caption" Style="color: #667085;">From Pending Proformas</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid>
+        <!-- Pending Proforma Table -->
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-4" Elevation="2" Style="height: 100%; border-radius: 12px;">
+                <div class="d-flex justify-space-between align-center mb-4">
+                     <MudText Typo="Typo.h6" Style="font-weight: 600; color: #5E5873;">Pending Proforma Invoices</MudText>
+                     <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => NavManager.NavigateTo("/ProformaInvoice"))">View All</MudButton>
+                </div>
+                
+                <MudTable Items="@PendingProformaList" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>Doc #</MudTh>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Party</MudTh>
+                        <MudTh Style="text-align:right">Amount</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Doc">@context.DocumentNumber</MudTd>
+                        <MudTd DataLabel="Date">@context.DocumentDate?.ToString("dd MMM yyyy")</MudTd>
+                        <MudTd DataLabel="Party">@context.Party?.TradeName</MudTd>
+                        <MudTd DataLabel="Amount" Style="text-align:right">@context.TotalAmount?.ToString("N2")</MudTd>
+                        <MudTd DataLabel="Status">
+                             <MudChip T="string" Size="Size.Small" Color="Color.Warning">Pending</MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Draft Bill Status Chart -->
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="2" Style="height: 100%; border-radius: 12px;">
+                <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 600; color: #5E5873;">Invoice Pipeline</MudText>
+                 @if (ChartData.Sum() > 0)
+                {
+                     <MudChart ChartType="ChartType.Donut" InputData="@ChartData" InputLabels="@ChartLabels" Width="100%" Height="300px" />
+                }
+                else
+                {
+                     <div class="d-flex justify-center align-center" style="height: 300px;">
+                         <MudText Typo="Typo.body2" Color="Color.Secondary">No Data Available</MudText>
+                     </div>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private int BranchID;
+    
+    // Metrics
+    private int PendingProformaCount = 0;
+    private int DraftBillsCount = 0;
+    private decimal EstimatedPendingRevenue = 0;
+
+    // Data
+    private List<ProformaInvoiceModel> PendingProformaList = new();
+
+    // Chart
+    public double[] ChartData = { };
+    public string[] ChartLabels = { "Pending Proforma", "Draft Bills" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        var claim = User.Claims.FirstOrDefault(x => x.Type == "BranchID");
+        if (claim == null) return;
+        string BranchIDString = claim.Value;
+        BranchID = int.Parse(BranchIDString);
+
+        // 1. Pending Proforma Invoices
+        var pendingProformas = BillingService.SelectPendingProformaInvoiceList(BranchID, 100, "").ToList(); // Fetch top 100
+        PendingProformaCount = pendingProformas.Count;
+        EstimatedPendingRevenue = pendingProformas.Sum(x => x.TotalAmount ?? 0);
+        PendingProformaList = pendingProformas.Take(5).ToList();
+
+        // 2. Pending Draft Bills
+        // SelectPendingConsolidatedDraftBillList takes ID, BranchID. Passing ID=null to get all pending? 
+        // Need to check service definition again. The service: SelectPendingConsolidatedDraftBillList(int? ID, int? BranchID)
+        // If operation is PENDING, ID might be optional filter. Let's try passing 0 or null.
+        var pendingDrafts = BillingService.SelectPendingConsolidatedDraftBillList(0, BranchID).ToList();
+        DraftBillsCount = pendingDrafts.Count;
+
+        // 3. Chart Data
+        ChartData = new double[] { (double)PendingProformaCount, (double)DraftBillsCount };
+    }
+}

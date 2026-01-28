@@ -1,0 +1,244 @@
+@page "/maintenancedashboard"
+@using ArmsModels.BaseModels
+@using ArmsServices.DataServices
+@inject ITruckService TruckService
+@inject IJobcardService JobcardService
+@inject IBreakdownService BreakdownService
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider auth
+
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
+    <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight: 700; color: #5E5873;">Maintenance Overview</MudText>
+
+    <!-- 1. Summary Cards -->
+    <MudGrid Class="mb-4">
+        <!-- Total Vehicles -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
+                 <div class="d-flex justify-space-between align-start">
+                     <MudText Typo="Typo.subtitle2" Style="color: #667085;">Total Vehicles</MudText>
+                     <MudIcon Icon="@Icons.Material.Filled.DirectionsCar" Color="Color.Primary" Size="Size.Small" />
+                 </div>
+                 <MudText Typo="Typo.h4" Style="font-weight: 700; color: #367588;">@TotalVehicles</MudText>
+                 <MudText Typo="Typo.caption" Style="color: #667085;">Fleet Size</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Active Vehicles -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
+                 <div class="d-flex justify-space-between align-start">
+                     <MudText Typo="Typo.subtitle2" Style="color: #667085;">Active / On Road</MudText>
+                     <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                 </div>
+                 <MudText Typo="Typo.h4" Style="font-weight: 700; color: #28C76F;">@ActiveVehicles</MudText>
+                 <MudText Typo="Typo.caption" Style="color: #667085;">Available for Ops</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <!-- In Maintenance -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
+                 <div class="d-flex justify-space-between align-start">
+                     <MudText Typo="Typo.subtitle2" Style="color: #667085;">In Workshop</MudText>
+                     <MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Warning" Size="Size.Small" />
+                 </div>
+                 <MudText Typo="Typo.h4" Style="font-weight: 700; color: #FF9F43;">@InMaintenance</MudText>
+                 <MudText Typo="Typo.caption" Style="color: #667085;">Open Job Cards</MudText>
+            </MudPaper>
+        </MudItem>
+
+         <!-- Breakdown -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
+                 <div class="d-flex justify-space-between align-start">
+                     <MudText Typo="Typo.subtitle2" Style="color: #667085;">Breakdowns</MudText>
+                     <MudIcon Icon="@Icons.Material.Filled.ReportProblem" Color="Color.Error" Size="Size.Small" />
+                 </div>
+                 <MudText Typo="Typo.h4" Style="font-weight: 700; color: #EA5455;">@Breakdowns</MudText>
+                 <MudText Typo="Typo.caption" Style="color: #667085;">Pending Repairs</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid>
+        <!-- Secondary Metrics Row -->
+         <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4 mb-4" Elevation="1" Style="border-radius: 10px;">
+                <MudText Typo="Typo.subtitle2" Color="Color.Default">Maint. Cost (This Month)</MudText>
+                <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight: 600;">@MaintenanceCost.ToString("C0")</MudText>
+            </MudPaper>
+         </MudItem>
+          <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4 mb-4" Elevation="1" Style="border-radius: 10px;">
+                <MudText Typo="Typo.subtitle2" Color="Color.Default">Avg Downtime (Last 30 Days)</MudText>
+                <MudText Typo="Typo.h5" Color="Color.Warning" Style="font-weight: 600;">@AvgDowntime hrs</MudText>
+            </MudPaper>
+         </MudItem>
+          <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4 mb-4" Elevation="1" Style="border-radius: 10px;">
+                <MudText Typo="Typo.subtitle2" Color="Color.Default">Breakdown Rate</MudText>
+                <MudText Typo="Typo.h5" Color="Color.Error" Style="font-weight: 600;">@BreakdownRate %</MudText>
+            </MudPaper>
+         </MudItem>
+
+
+        <!-- Breakdown Reasons Chart -->
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="2" Style="height: 100%; border-radius: 12px;">
+                <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 600; color: #5E5873;">Breakdown Reasons</MudText>
+                @if (ReasonData.Sum() > 0)
+                {
+                     <MudChart ChartType="ChartType.Donut" InputData="@ReasonData" InputLabels="@ReasonLabels" Width="100%" Height="300px" />
+                }
+                else
+                {
+                     <div class="d-flex justify-center align-center" style="height: 300px;">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No Breakdown Data</MudText>
+                     </div>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <!-- Live Workshop Table -->
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-4" Elevation="2" Style="height: 100%; border-radius: 12px;">
+                <div class="d-flex justify-space-between align-center mb-4">
+                     <MudText Typo="Typo.h6" Style="font-weight: 600; color: #5E5873;">Live Workshop Status</MudText>
+                     <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => NavManager.NavigateTo("/JobCardView"))">View All</MudButton>
+                </div>
+                
+                <MudTable Items="@ActiveJobCards" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>JobCard #</MudTh>
+                        <MudTh>Vehicle</MudTh>
+                        <MudTh>Entry Date</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Code">@context.JobcardNumber</MudTd>
+                        <MudTd DataLabel="Vehicle">@context.RegNo</MudTd>
+                        <MudTd DataLabel="Date">@context.CreatedOn?.ToString("dd MMM yyyy")</MudTd>
+                        <MudTd DataLabel="Status">
+                             <MudChip T="string" Size="Size.Small" Color="Color.Warning">In Progress</MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Recent Breakdowns Table -->
+         <MudItem xs="12">
+            <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 12px;">
+                 <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 600; color: #5E5873;">Recent Breakdowns</MudText>
+                 <MudTable Items="@RecentBreakdowns" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Vehicle</MudTh>
+                        <MudTh>Type</MudTh>
+                        <MudTh>Details</MudTh>
+                         <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Date">@context.BreakdownTime?.ToString("dd MMM yyyy HH:mm")</MudTd>
+                        <MudTd DataLabel="Vehicle">@context.RegNo</MudTd>
+                        <MudTd DataLabel="Type">@context.BreakdownType</MudTd>
+                        <MudTd DataLabel="Details">@context.Detail</MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error">Reported</MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+         </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private int BranchID;
+    
+    // Metrics
+    private int TotalVehicles = 0;
+    private int ActiveVehicles = 0;
+    private int InMaintenance = 0;
+    private int Breakdowns = 0;
+    
+    private decimal MaintenanceCost = 0;
+    private double AvgDowntime = 0;
+    private double BreakdownRate = 0;
+
+    // Collections
+    private List<JobcardModel> ActiveJobCards = new();
+    private List<BreakdownModel> RecentBreakdowns = new();
+
+    // Charts
+    public double[] ReasonData = { };
+    public string[] ReasonLabels = { };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+         var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        var claim = User.Claims.FirstOrDefault(x => x.Type == "BranchID");
+        if (claim == null) return;
+        string BranchIDString = claim.Value;
+        BranchID = int.Parse(BranchIDString);
+
+        // 1. Total Fleet
+        var allTrucks = TruckService.SelectAllByBranch(true, BranchID, "All", "AllOperation").ToList();
+        TotalVehicles = allTrucks.Count;
+
+        // 2. In Maintenance (Active Job Cards)
+        // Assuming SelectByBranch with true gets active/open job cards
+        var activeJobs = JobcardService.SelectByBranch(BranchID, true).ToList();
+        InMaintenance = activeJobs.Count;
+        ActiveJobCards = activeJobs.OrderByDescending(x => x.CreatedOn).Take(5).ToList();
+
+        // 3. Breakdowns (Pending Breakdown)
+        var pendingBreakdowns = BreakdownService.SelectPending(BranchID).ToList();
+        Breakdowns = pendingBreakdowns.Count;
+        RecentBreakdowns = pendingBreakdowns.OrderByDescending(x => x.BreakdownTime).Take(5).ToList();
+
+        // 4. Active Vehicles
+        // Basic calculation: Total - (InMaint + Breakdowns)
+        // A vehicle could theoretically be in both if data is messy, but we'll assume exclusive for now or overlap is acceptable.
+        // Or we could check unique truck IDs.
+        var outOfServiceTruckIds = activeJobs.Select(x => x.TruckID).Union(pendingBreakdowns.Select(x => x.TruckID)).Distinct().ToList();
+        ActiveVehicles = TotalVehicles - outOfServiceTruckIds.Count();
+        if (ActiveVehicles < 0) ActiveVehicles = 0;
+
+
+        // 5. Breakdown Reasons Chart
+        var groupedReasons = pendingBreakdowns
+            .GroupBy(x => x.BreakdownType ?? "Unknown")
+            .Select(g => new { Reason = g.Key, Count = g.Count() })
+            .ToList();
+        
+        ReasonLabels = groupedReasons.Select(x => x.Reason).ToArray();
+        ReasonData = groupedReasons.Select(x => (double)x.Count).ToArray();
+
+        // 6. Advanced Metrics (Mock logic / Basic estimation as Services for these specific aggregations might not exist yet)
+        
+        // Maintenance Cost (This Month) - Need to fetch closed jobcards for cost? 
+        // JobCard Active=false implies history.
+        // Note: This might be heavy if getting ALL history. 
+        // For now, let's just set placeholder or try a limited fetch if possible.
+        // Since we don't have a specific "GetExpenseByMonth" service, we might skip heavy calc or just show 0 for now until specifically implemented.
+        MaintenanceCost = 0; // Placeholder
+
+        // Avg Downtime
+        AvgDowntime = 0; // Placeholder
+
+        // Breakdown Rate
+        if (TotalVehicles > 0)
+        {
+            BreakdownRate = Math.Round(((double)Breakdowns / TotalVehicles) * 100, 1);
+        }
+    }
+}
