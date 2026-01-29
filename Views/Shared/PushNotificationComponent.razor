@@ -16,13 +16,18 @@
 @inject IRoleService<RoleModel> Irole
 @inject IPushNotificationService IpushNotificationService
 @inject IConfiguration configuration
+@inject IJSRuntime JSRuntime
 
 
 
-<MudOverlay @bind-Visible="@IsOpen" OnClick="@OverlayVisibleChanged" DarkBackground="true" AutoClose></MudOverlay>
 
-<div class="d-inline-flex relative" style="padding: 8px;">
-    <MudBadge OnClick="@Toggle" Overlap="true" Content="@badgeContent" Color="Color.Error" Class="mx-6 my-4">
+
+<div @ref="notificationBadgeRef" class="d-inline-flex relative" style="padding: 8px;">
+    <MudBadge OnClick="@Toggle" 
+              Overlap="true" 
+              Content="@badgeContent" 
+              Color="Color.Error" 
+              Class="mx-6 my-4">
         <MudIcon Icon="@Icons.Material.Outlined.Notifications" Color="Color.Inherit" Size="Size.Medium" Title="Notifications" />
         
     </MudBadge>
@@ -44,14 +49,12 @@
     }
 </style>
 
-<MudPopover Open="@IsOpen"
+<MudPopover Open="@IsOpen" 
             AnchorOrigin="Origin.BottomRight"
             TransformOrigin="Origin.TopRight"
-            OverflowBehavior="OverflowBehavior.FlipOnOpen"
-            Paper="true"
-            Elevation="8"
-            Class="rounded-lg"
-            Style="width: 380px; max-width: 90vw; z-index: 1300;">
+            Fixed="true" 
+            Class="notification-popover"
+            Style="border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); width: 400px; max-width: 90vw; z-index: 1301 !important;">
 
     <!-- Header -->
     <div class="d-flex justify-space-between align-center px-4 py-3" style="background: #fff; border-bottom: 1px solid #f0f0f0;">
@@ -90,7 +93,18 @@
                                     View Details
                                 </MudButton>
                             }
-                            <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle" Size="Size.Small" OnClick="@(() => AknowledgedCurrentItem(nmObj.MessageID))" Color="Color.Success" Title="Mark as Read" />
+                            else
+                            {
+                                <div></div>
+                            }
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Success" 
+                                       Size="Size.Small" 
+                                       OnClick="@(() => AknowledgedCurrentItem(nmObj.MessageID))" 
+                                       StartIcon="@Icons.Material.Filled.CheckCircle"
+                                       Style="text-transform: none;">
+                                Mark as Read
+                            </MudButton>
                         </div>
                     </div>
                 }
@@ -109,21 +123,33 @@
     </div>
 
     <!-- Footer -->
-    @if (Take > 1 && currentNotificationMessages.Count() > 1)
+    @if (currentNotificationMessages.Count() > 0)
     {
         <div class="pa-2" style="background: #fff; border-top: 1px solid #eee;">
-            <MudButton OnClick="@AknowledgeAllInTheList" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="rounded-lg" DisableElevation="true">
-                Acknowledge All
+            <MudButton OnClick="@OpenAllNotificationsDrawer" 
+                       Variant="Variant.Outlined" 
+                       Color="Color.Primary" 
+                       FullWidth="true" 
+                       Class="rounded-lg" 
+                       StartIcon="@Icons.Material.Filled.List"
+                       Style="text-transform: none; font-weight: 600;">
+                View All Notifications
             </MudButton>
         </div>
     }
 </MudPopover>
+
+<AllNotificationsDialog IsDrawerOpen="@isAllNotificationsDrawerOpen"
+                        IsDrawerOpenChanged="@(async (bool value) => { isAllNotificationsDrawerOpen = value; if (!value) await JSRuntime.InvokeVoidAsync("freezeBodyScroll", false); })"
+                        AllNotifications="@currentNotificationMessages.ToList()"
+                        OnNotificationsChanged="@OnNotificationsDrawerChanged" />
 
     @code {
 
     [Parameter]
     public string BranchName { get; set; }
 
+    private ElementReference notificationBadgeRef;
     private string badgeContent;
 
     #region SignaIR Notification
@@ -136,11 +162,28 @@
     string UserID;
     int BranchID = 0;
     bool IsOpen;
+    private DateTime lastToggleTime = DateTime.MinValue;
 
     void Toggle()
     {
+        // Prevent rapid clicks (debounce)
+        var now = DateTime.Now;
+        if ((now - lastToggleTime).TotalMilliseconds < 300)
+        {
+            return;
+        }
+        lastToggleTime = now;
+        
+        // ONLY toggle the popover - never open the drawer from here
         IsOpen = !IsOpen;
-        Take = 5;
+        
+        // Ensure drawer is closed when toggling popover
+        if (IsOpen && isAllNotificationsDrawerOpen)
+        {
+            isAllNotificationsDrawerOpen = false;
+        }
+        
+        Take = 5; // Reset Take when popover is toggled
     }
 
     void OverlayVisibleChanged()
@@ -286,6 +329,34 @@
             }
             NavigationManager.NavigateTo(RedirectToLink);
         }
+    }
+
+    private bool isAllNotificationsDrawerOpen = false;
+
+    private async Task OpenAllNotificationsDrawer()
+    {
+        // Don't open if already opening or if popover isn't open
+        if (isAllNotificationsDrawerOpen || !IsOpen)
+        {
+            return;
+        }
+        
+        // Close the popover first
+        IsOpen = false;
+        await InvokeAsync(StateHasChanged);
+        
+        // Wait a bit to ensure popover is fully closed
+        await Task.Delay(150);
+        
+        // Open the drawer
+        isAllNotificationsDrawerOpen = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnNotificationsDrawerChanged()
+    {
+        getNotifications();
+        await InvokeAsync(StateHasChanged);
     }
     #endregion
 }
