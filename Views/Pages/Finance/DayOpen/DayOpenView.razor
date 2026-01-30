@@ -12,6 +12,18 @@
 @inject IDataAuthorizationSettingsService Iservice
 @inject IDayOpenService IDayOpenService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Day-Open Requests" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudTable Items="@ShowModel" Class="item-shadow" Filter="new Func<DayOpenRequestModel, bool>(search)" @bind-model="Model">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Day-Open Requests</MudText>
@@ -70,7 +82,12 @@
     </PagerContent>
 </MudTable>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     List<DocTypeModel> doctypelist = new List<DocTypeModel>();
     private List<DayOpenRequestModel> Model = new List<DayOpenRequestModel>();
@@ -89,6 +106,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionIDayOpenServiceEdit = await Irole.HasClaim(DayOpenDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionIDayOpenServiceApprove = await Irole.HasClaim(DayOpenDocTypeID.ToString(), "Approve", ctc.Token);
@@ -100,6 +118,17 @@
         BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
         await GetAll(NumberOfRecords);
         await Completed(IsCompleted);
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch all day open requests

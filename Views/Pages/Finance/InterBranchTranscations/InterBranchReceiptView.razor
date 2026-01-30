@@ -15,6 +15,18 @@
 @inject IDialogService DialogService
 @inject IPushNotificationService IpushNotificationService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading InterBranch Receipt" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
@@ -80,7 +92,12 @@
 </MudGrid>
 <br />
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private ReceiptModel model = new ReceiptModel();
     protected override List<ReceiptModel> collection { get; set; } = new List<ReceiptModel>();
@@ -133,6 +150,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {        
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionReceiptServiceDelete = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Edit", ctc.Token);
 
@@ -142,6 +160,17 @@
         if (id != null && collection != null && collection.Any(g => g.ReceiptID == id))
         {
             await OpenForm(collection.FirstOrDefault(s => s.ReceiptID == id), true, false);
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 

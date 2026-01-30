@@ -8,6 +8,18 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Places" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Elevation="10" Filter="new Func<PlaceModel, bool>(search)" @bind-place="model">
@@ -39,7 +51,12 @@
     </MudItem>
 </MudGrid>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private PlaceModel model = new PlaceModel();
     private List<PlaceModel> collection = new List<PlaceModel>();
@@ -53,11 +70,23 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionPlaceServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionPlaceServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     private async Task<IEnumerable<DistrictModel>> Search(string searchString)

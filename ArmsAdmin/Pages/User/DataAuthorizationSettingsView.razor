@@ -8,6 +8,18 @@
 @inject IDialogService DialogService
 
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Authorization Settings" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudTable Items="@doctypelist" Hover Bordered Striped Filter="new Func<DocTypeModel,bool>(Search)">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Authorization Settings for Documents</MudText>
@@ -34,7 +46,12 @@
     </PagerContent>
 </MudTable>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
 
     List<DataAuthorizationSettingsModel> collection = new List<DataAuthorizationSettingsModel>();
@@ -45,6 +62,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
@@ -52,6 +70,17 @@
         collection = Iservice.Select(0).ToList(); // Fetch existing authorization settings
         doctypelist = Iservice.GetDocTypesList().Where(x => x.AuthImplemented).ToList(); // Fetch document types with authorization implemented
         authTypelist = Iservice.GetAuthTypes().OrderBy(x => x.AuthLevelID).ToList(); // Fetch and order authorization types
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to filter document types based on search string

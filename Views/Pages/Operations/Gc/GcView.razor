@@ -11,6 +11,18 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading GCs" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudText Typo="Typo.h5" GutterBottom="true">
     UNASSIGNED CONSIGNMENTS
     <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@Add" Color="Color.Dark" Size="Size.Medium"></MudIconButton>
@@ -24,7 +36,12 @@
     }
 </MudGrid>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private int BranchID;
     private List<GcSetModel> collection = new();
@@ -40,6 +57,7 @@
     // Method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionGcServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionGCServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
@@ -49,6 +67,17 @@
         BranchID = int.Parse(BranchIDString);
 
         GetAll(BranchID);
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch all unassigned GcSetModels

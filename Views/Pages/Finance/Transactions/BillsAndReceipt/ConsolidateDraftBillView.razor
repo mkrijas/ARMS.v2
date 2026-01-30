@@ -11,20 +11,18 @@
 @inject IPushNotificationService IpushNotificationService
 @layout BillsLayout
 
-<style>
-    .selected {
-        background-color: #1E88E5 !important;
-    }
-
-        .selected > td {
-            color: white !important;
-        }
-
-            .selected > td .mud-input {
-                color: white !important;
-            }
-</style>
-
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Consolidated Bills" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" @bind-place="model" T="ConsolidatedDraftBillModel" Filter="new Func<ConsolidatedDraftBillModel, bool>(search)">
@@ -61,7 +59,12 @@
     </MudItem>
 </MudGrid>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private ConsolidatedDraftBillModel model = new ConsolidatedDraftBillModel();
     private List<ConsolidatedDraftBillModel> collection = new List<ConsolidatedDraftBillModel>();
@@ -97,6 +100,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionFreightBillingServiceEditProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "EditProformaInvoice", ctc.Token);
         HasPermissionFreightBillingServiceReverseConsolidatedDraftBill = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "ReverseConsolidatedDraftBill", ctc.Token);
@@ -111,6 +115,17 @@
         if (id != null && collection != null && collection.Any(g => g.DraftBillID == id))
         {
             await CreateProformaInvoice(collection.FirstOrDefault(s => s.DraftBillID == id));
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 

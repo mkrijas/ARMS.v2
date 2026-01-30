@@ -13,6 +13,18 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Routine Check Lists" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
@@ -49,7 +61,12 @@
     </MudItem>
 </MudGrid>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private RoutineCheckListModel model = new();
     private List<RoutineCheckListModel> collection = new();
@@ -64,6 +81,7 @@
     // Lifecycle method that runs when the component is initialized
     protected async override Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionRoutineCheckListServiceDelete = await Irole.HasClaim(RoutineCheckListDocTypeID.ToString(), "Delete", ctc.Token);
 
@@ -76,6 +94,17 @@
         ItemList = IserviceRoutineMaster.SelectItemByBranch(int.Parse(brancIDString)).ToList();
 
         await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to open a dialog for creating or editing a routine checklist

@@ -18,6 +18,17 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+@if (_isLoading)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Asset Transfers" 
+                        SubText="Please wait..." />
+    </div>
+}
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="px-4 py-6">
@@ -145,7 +156,12 @@
     </MudItem>
 </MudGrid>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     int CurrentBranchId = 0;
     private List<BranchModel> BranchList = new();
@@ -174,6 +190,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionAssetTransferServiceDelete = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Delete", ctc.Token);
 
@@ -186,6 +203,17 @@
         await signalRService.StartAsync();
 
         await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
         
     //Method to retrieve all outgoing and incoming asset transfers

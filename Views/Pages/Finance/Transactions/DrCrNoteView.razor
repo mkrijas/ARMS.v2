@@ -5,6 +5,18 @@
 @inject IDrCrNoteService Iservice
 @inject ICancellationReasonCodeService IcancellationReasonCodeService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Debit/Credit Notes" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
@@ -61,7 +73,12 @@
     </MudItem>
 </MudGrid>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     protected override List<DrCrNoteModel> collection{ get; set; } = new List<DrCrNoteModel>();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
@@ -73,10 +90,22 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         await base.OnInitializedAsync();
         if (id != null && collection != null && collection.Any(g => g.DrCrNoteID == id))
         {
             await OpenForm(collection.FirstOrDefault(s => s.DrCrNoteID == id), true);
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }    
 

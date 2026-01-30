@@ -8,6 +8,18 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Workshops" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudTable Items="@collection" Elevation="10" Filter="new Func<WorkshopModel, bool>(search)" @bind-model="model">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Workshops</MudText>
@@ -35,7 +47,12 @@
     </PagerContent>
 </MudTable>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private WorkshopModel model;
     private List<WorkshopModel> collection = new();
@@ -51,12 +68,24 @@
     // Lifecycle method that runs when the component is initializedc
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionWorkshopServiceEdit = await Irole.HasClaim(WorkshopDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionWorkshopServiceDelete = await Irole.HasClaim(WorkshopDocTypeID.ToString(), "Delete", ctc.Token);
 
         model = new();
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to retrieve all workshops from the service

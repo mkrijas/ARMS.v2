@@ -14,6 +14,18 @@
 @inject IAssetLedgerViewService AssetLedgerViewService
 @inject IAssetService Iasset
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Asset Ledger" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
@@ -62,7 +74,12 @@
     </MudItem>
 </MudGrid>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     public DateTime? StartDate { get; set; } = DateTime.Now.AddMonths(-1);
     public DateTime? EndDate { get; set; } = DateTime.Now;
@@ -76,6 +93,7 @@
     // Lifecycle method called when the component is initialized        
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(brancIDString);
@@ -95,6 +113,17 @@
             {
                 collection = result.ToList();
             }
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 

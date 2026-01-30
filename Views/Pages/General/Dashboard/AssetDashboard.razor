@@ -6,6 +6,18 @@
 @inject NavigationManager NavManager
 @inject AuthenticationStateProvider auth
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 500px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="large" 
+                        LoadingText="Loading Asset Dashboard" 
+                        SubText="Fetching asset data..." />
+    </div>
+}
+else
+{
 <MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
     <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight: 700; color: #5E5873;">Asset Overview</MudText>
 
@@ -138,8 +150,11 @@
 
     </MudGrid>
 </MudContainer>
+}
 
 @code {
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
     private int BranchID;
     private List<AssetModel> AllAssets = new();
     private List<AssetModel> HighValueAssets = new();
@@ -155,7 +170,19 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         await LoadData();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     private async Task LoadData()

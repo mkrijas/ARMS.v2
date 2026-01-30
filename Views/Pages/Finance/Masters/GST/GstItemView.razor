@@ -7,6 +7,17 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
+@if (_isLoading)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading GST Items" 
+                        SubText="Please wait..." />
+    </div>
+}
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<GstItemModel, bool>(search)" @bind-place="model">
@@ -43,7 +54,11 @@
     </MudItem>
 </MudGrid>
 
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private GstItemModel model = new GstItemModel();
     private List<GstItemModel> collection = new List<GstItemModel>();
@@ -58,12 +73,24 @@
     // Lifecycle method called when the component is initialized 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionGstItemServiceEdit = await Irole.HasClaim(GstItemDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionGstItemServiceDelete = await Irole.HasClaim(GstItemDocTypeID.ToString(), "Delete", ctc.Token);
 
         model = new();
         GstItemToggled(false);
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to open the dialog for adding or editing a GST item

@@ -11,6 +11,18 @@
 @inject IPushNotificationService IpushNotificationService
 @using Inventory
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Sales" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
@@ -72,7 +84,12 @@
     </MudItem>
 </MudGrid>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private SaleModel model = new SaleModel();
     private List<SaleModel> collection = new List<SaleModel>();
@@ -104,6 +121,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionSaleServiceDelete = await Irole.HasClaim(SaleDocTypeID.ToString(), "Delete", ctc.Token);
         model = new();
@@ -115,6 +133,17 @@
         if (id != null && collection != null && collection.Any(g => g.SID == id))
         {
             await OpenDialog(collection.FirstOrDefault(s => s.SID == id), true);
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 

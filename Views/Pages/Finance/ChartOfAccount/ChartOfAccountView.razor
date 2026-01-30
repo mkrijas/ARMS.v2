@@ -19,6 +19,18 @@
     }
 
 </style>
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Chart of Accounts" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid>
     <MudItem xs="12" md="6">
         <MudPaper Class="p-5">
@@ -88,9 +100,12 @@
 <ContextMenu Id="myeditMenu">
     <Item OnClick="@ContextEditMenuOnClick">Edit Ledger</Item>
 </ContextMenu>
+}
 
 @code {
 
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
     private List<TreeItemData<ChartOfAccountModel>> TreeItems { get; set; } = new();
     TreeItemData<ChartOfAccountModel> ContextmenuSource = new();
     TreeItemData<ChartOfAccountModel> SelectedValue;
@@ -122,6 +137,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionChartOfAccountServiceEdit = await Irole.HasClaim(ChartOfAccountDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionChartOfAccountServiceUpdateSelect = await Irole.HasClaim(ChartOfAccountDocTypeID.ToString(), "UpdateSelect", ctc.Token);
@@ -142,6 +158,17 @@
                 Children = null // Do not load children yet
             };
             TreeItems.Add(treeItem);
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
    

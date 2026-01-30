@@ -85,8 +85,12 @@
 {
     <UnReconciledBankEntryView bankModel="unRecounciledBankEntry" @ref="child" />
 }
+}
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private OwnBankModel model = new OwnBankModel();
     private List<OwnBankModel> collection = new List<OwnBankModel>();
@@ -99,11 +103,23 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionBankAccountOwnServiceEdit = await Irole.HasClaim(BankAccountOwnDocTypeID.ToString(), "Edit", ctc.Token);
 
         model = new();
         await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch all bank accounts

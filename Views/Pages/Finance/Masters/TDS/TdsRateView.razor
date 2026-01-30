@@ -7,6 +7,17 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
+@if (_isLoading)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading TDS Rates" 
+                        SubText="Please wait..." />
+    </div>
+}
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<TdsRateModel, bool>(search)" @bind-place="model">
@@ -41,8 +52,12 @@
         </MudTable>
     </MudItem>
 </MudGrid>
+}
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private TdsRateModel model = new TdsRateModel();
     private List<TdsRateModel> collection = new List<TdsRateModel>();
@@ -56,12 +71,24 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTdsRateServiceEdit = await Irole.HasClaim(TdsRateDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionTdsRateServiceDelete = await Irole.HasClaim(TdsRateDocTypeID.ToString(), "Delete", ctc.Token);
 
         model = new();
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch all TDS rates

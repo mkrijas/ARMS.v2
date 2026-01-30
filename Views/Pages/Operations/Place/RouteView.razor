@@ -8,6 +8,18 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Routes" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<RouteModel, bool>(search)" @bind-model="model">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Manage Routes</MudText>
@@ -53,7 +65,12 @@
     </PagerContent>
 </MudTable>
 
+
+
     @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private RouteModel model = new RouteModel();
     private List<RouteModel> collection = new List<RouteModel>();
@@ -69,12 +86,24 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionRouteServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionRouteServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         places = Iplace.Select(0, null).ToList();
         await GetAll(IsDisabled);
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     private async Task<IEnumerable<PlaceModel>> Search(string searchString)

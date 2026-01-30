@@ -7,6 +7,18 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading InterBranch Account Mapping" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Filter="new Func<InterBranchMappingModel,bool>(search)" Dense="true" Hover="true" Striped="true" Elevation="10">
@@ -48,7 +60,12 @@
     </MudItem>
 </MudGrid>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private InterBranchMappingModel model = new InterBranchMappingModel();
     private List<InterBranchMappingModel> collection = new List<InterBranchMappingModel>();
@@ -114,10 +131,22 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionInterBranchMappingServiceDelete = await Irole.HasClaim(InterBranchMappingDocTypeID.ToString(), "Delete", ctc.Token);
 
         GetAll(NumberOfRecords);
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch all inter-branch mappings

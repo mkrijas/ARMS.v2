@@ -10,6 +10,18 @@
 @inject IStockTransferService IStockTransferService
 @inject IRoleService<RoleModel> Irole
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Stock Transfers" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="px-4 py-6">
@@ -152,7 +164,12 @@
     </MudItem>
 </MudGrid>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<StockTransferInitiationModel> collectionOutGoing = new();
     private List<StockTransferInitiationModel> CompleteOutgoing = new();
@@ -169,6 +186,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionStockTransferServiceCancel = await Irole.HasClaim(DocTypeID.ToString(), "Cancel", ctc.Token);
         HasPermissionStockTransferServiceReject = await Irole.HasClaim(DocTypeID.ToString(), "Reject", ctc.Token);
@@ -178,6 +196,17 @@
         model = new();
 
         await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     private async Task GetAll()

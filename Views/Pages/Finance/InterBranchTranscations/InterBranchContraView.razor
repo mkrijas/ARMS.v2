@@ -15,6 +15,18 @@
 @inject IDialogService DialogService
 @inject IPushNotificationService IpushNotificationService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Inter Branch Contra" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
@@ -74,7 +86,12 @@
     </MudItem>
 </MudGrid>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private ContraModel model = new ContraModel();
     public bool IsApproved { get; set; } = false;
@@ -128,6 +145,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionContraServiceDelete = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
         HasPermissionContraServiceApprove = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Approve", ctc.Token);
@@ -139,6 +157,17 @@
         if (id != null && collection != null && collection.Any(g => g.ContraID == id))
         {
             await OpenForm(collection.FirstOrDefault(s => s.ContraID == id), false, false);
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 
