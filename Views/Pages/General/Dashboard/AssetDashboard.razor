@@ -63,12 +63,12 @@
     <!-- 2. Charts and Tables -->
     <MudGrid>
         <!-- Asset Composition Chart -->
-        <MudItem xs="12" md="4">
+        <MudItem xs="12" md="5">
             <MudPaper Class="pa-4" Elevation="2" Style="height: 100%; border-radius: 12px;">
                 <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 600; color: #5E5873;">Asset Sub-Classes</MudText>
                 @if (CategoryData.Sum() > 0)
                 {
-                     <MudChart ChartType="ChartType.Donut" InputData="@CategoryData" InputLabels="@CategoryLabels" Width="100%" Height="300px" />
+                     <MudChart LegendPosition="Position.Right" ChartType="ChartType.Donut" InputData="@CategoryData" InputLabels="@CategoryLabels" Width="100%" Height="300px" />
                 }
                 else
                 {
@@ -80,7 +80,7 @@
         </MudItem>
 
         <!-- Top High Value Assets Table -->
-        <MudItem xs="12" md="8">
+        <MudItem xs="12" md="7">
             <MudPaper Class="pa-4" Elevation="2" Style="height: 100%; border-radius: 12px;">
                 <div class="d-flex justify-space-between align-center mb-4">
                      <MudText Typo="Typo.h6" Style="font-weight: 600; color: #5E5873;">High Value Assets</MudText>
@@ -160,7 +160,7 @@
 
     private async Task LoadData()
     {
-         var authprov = await auth.GetAuthenticationStateAsync();
+        var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         var claim = User.Claims.FirstOrDefault(x => x.Type == "BranchID");
         if (claim == null) return;
@@ -168,12 +168,15 @@
         BranchID = int.Parse(BranchIDString);
 
         // Fetch Assets (Active and Scrapped)
+
         var activeAssets = AssetService.SelectByBranch(BranchID, false, 5000, "").ToList();
         var scrappedAssets = AssetService.SelectByBranch(BranchID, true, 5000, "").ToList();
-        
+
         AllAssets = new List<AssetModel>();
         AllAssets.AddRange(activeAssets);
         AllAssets.AddRange(scrappedAssets);
+
+        activeAssets = activeAssets.Where(z => z.IsSold == false).ToList();
 
         // --- FIX: Populate missing SubClass Names ---
         try
@@ -230,12 +233,12 @@
 
         // Calculate Summaries
         TotalAssets = AllAssets.Count;
-        TotalValue = AllAssets.Sum(x => x.BookValue ?? 0);
+        TotalValue = AllAssets.Sum(x => x.CurrentValue ?? 0);
         ActiveAssets = activeAssets.Count;
         ScrappedAssets = scrappedAssets.Count;
 
         // Top High Value (from active only? or all? usually active)
-        HighValueAssets = activeAssets.OrderByDescending(x => x.BookValue).Take(5).ToList();
+        HighValueAssets = activeAssets.OrderByDescending(x => x.CurrentValue).Take(5).ToList();
 
         // Recent Assets (from all)
         RecentAssets = AllAssets.OrderByDescending(x => x.UserInfo?.TimeStampField).Take(5).ToList();
