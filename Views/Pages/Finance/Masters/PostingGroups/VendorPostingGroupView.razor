@@ -11,6 +11,17 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
+@if (_isLoading)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Vendor Posting Groups" 
+                        SubText="Please wait..." />
+    </div>
+}
+
 <MudGrid>
     <MudItem xs="4" lg="4">
         <MudPaper Width="100%" Class="p-2">
@@ -76,8 +87,12 @@
 <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
     <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Group</Item>
 </ContextMenu>
+}
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     VendorPostingGroupModel model = new VendorPostingGroupModel();
     private MudListItem<VendorPostingGroupModel> SelectedItem;
@@ -95,10 +110,22 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionVendorPostingGroupServiceEdit = await Irole.HasClaim(VendorPostingGroupDocTypeID.ToString(), "Edit", ctc.Token);
 
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to handle changes in the selected item

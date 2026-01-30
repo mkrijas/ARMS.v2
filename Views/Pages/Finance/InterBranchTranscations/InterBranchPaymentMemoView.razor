@@ -6,20 +6,18 @@
 @inject IPaymentInitiatedService IinitiateService
 @inject IDialogService DialogService
 
-@*<style>
-        .selected {
-            background-color: #1E88E5 !important;
-        }
-
-            .selected > td {
-                color: white !important;
-            }
-
-                .selected > td .mud-input {
-                    color: white !important;
-                }
-    </style>*@
-
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading InterBranch Payment Memo" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" T="PaymentMemoModel">
@@ -90,7 +88,12 @@
     </MudItem>
 </MudGrid>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     protected override List<PaymentMemoModel> collection { get; set; } = new List<PaymentMemoModel>();
 
@@ -103,6 +106,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         interbranch = true;
         await base.OnInitializedAsync();       
 
@@ -113,7 +117,17 @@
         {
             await OpenForm(collection.FirstOrDefault(s => s.PaymentMemoID == id), true);
         }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
 
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to open the dialog for adding or editing a payment memo

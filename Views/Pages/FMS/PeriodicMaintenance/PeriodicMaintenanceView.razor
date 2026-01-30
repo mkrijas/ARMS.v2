@@ -11,6 +11,18 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Maintenance Reminders" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudGrid Spacing="4">
     <MudItem xs="12" md="12">
         <MudGrid Spacing="4">
@@ -92,7 +104,12 @@
     </MudItem>
 </MudGrid>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<PeriodicMaintenanceInitiateModel> PmList = new();
     private TruckModel SelectedTruck;
@@ -109,6 +126,7 @@
     // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         if (id != null)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
@@ -130,6 +148,17 @@
                 }
             }
             StateHasChanged();
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 

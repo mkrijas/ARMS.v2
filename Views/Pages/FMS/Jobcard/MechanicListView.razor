@@ -7,6 +7,18 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Mechanics" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudTable Items="@collection" Elevation="10" Filter="new Func<MechanicModel, bool>(search)" @bind-model="model">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Mechanics</MudText>
@@ -35,7 +47,12 @@
     </PagerContent>
 </MudTable>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private MechanicModel model;
     private List<MechanicModel> collection = new();
@@ -48,11 +65,23 @@
     // Initialization logic for the component
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionMechanicServiceDelete = await Irole.HasClaim(MechanicTypeID.ToString(), "Delete", ctc.Token);
 
         model = new();
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to retrieve all mechanics from the service

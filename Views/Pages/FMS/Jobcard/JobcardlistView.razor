@@ -9,6 +9,18 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Jobcards" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudTable Items="@collection" Elevation="10" Filter="new Func<JobcardModel, bool>(search)" @bind-model="model">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Jobcards</MudText>
@@ -37,7 +49,12 @@
     </PagerContent>
 </MudTable>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private JobcardModel model;
     private List<JobcardModel> collection = new();
@@ -49,11 +66,23 @@
     // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionJobcardServiceDelete = await Irole.HasClaim(JobcardDocTypeID.ToString(), "Edit", ctc.Token);
 
         model = new();
         await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch job cards based on the user's branch ID

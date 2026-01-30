@@ -8,6 +8,18 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Initiated Payments" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
@@ -50,7 +62,12 @@
     </MudItem>
 </MudGrid>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<PaymentInitiatedModel> collection = new List<PaymentInitiatedModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
@@ -73,6 +90,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionPaymentInitiatedServiceReverse = await Irole.HasClaim(PaymentInitiatedDocTypeID.ToString(), "Reverse", ctc.Token);
 
@@ -80,6 +98,17 @@
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = authprov.User.Identity.Name;
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to select payment memos

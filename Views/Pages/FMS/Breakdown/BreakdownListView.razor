@@ -3,6 +3,18 @@
 @inject AuthenticationStateProvider auth
 @inject IBreakdownService IBreakdown
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Breakdowns" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudPaper Style="padding-bottom: 1px;">
     <MudToolBar>
         <MudText Typo="Typo.h6">Reported Breakdowns/Accidents</MudText>
@@ -16,14 +28,31 @@
     }
 </MudPaper>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<BreakdownModel> BreakdownList = new();
 
     // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         await LoadBreakdowns();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to load pending breakdowns for the current user's branch

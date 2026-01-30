@@ -17,6 +17,18 @@
 @using OfficeOpenXml.Style;
 @inject IJSRuntime JSRuntime
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Freight Booking" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudPaper Class="p-4">
     <MudGrid>
         <MudItem xs="12" md="4">
@@ -105,8 +117,12 @@
     </MudItem>
 </MudGrid>
 <br />
+}
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<GcTariffModel> collection = new List<GcTariffModel>();
     private List<OrderModel> Orders = new();
@@ -156,6 +172,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionFreightBillingServiceEditConsolidatedDraftBill = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "EditConsolidatedDraftBill", ctc.Token);
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -173,6 +190,17 @@
                 GcTypeName = "All"
             };
         GcTypes.Add(GcTypeAll);
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch data based on the action type

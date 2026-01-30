@@ -5,6 +5,18 @@
 @inject IDriverSalaryPayableService Iservice
 @inject IDialogService DialogService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Driver Salary Payable" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Driver Salary Payable </MudText>
@@ -58,7 +70,12 @@
     </PagerContent>
 </MudTable>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     protected override List<DriverSalaryPayableModel> collection { get; set; } = new();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
@@ -70,6 +87,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         await base.OnInitializedAsync();
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -77,6 +95,17 @@
         if (id != null && collection != null && collection.Any(g => g.ID == id))
         {
             await OpenForm(collection.FirstOrDefault(s => s.ID == id), true);
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 

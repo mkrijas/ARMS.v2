@@ -6,6 +6,18 @@
 @inject NavigationManager NavigationManager
 @inject IFastTagService IFTService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading FasTag Process List" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudTable Items="@MainModel" Class="item-shadow" Filter="new Func<FastTagTollModel, bool>(search)" @bind-model="model">
     <ToolBarContent>
         <MudText Typo="Typo.h6">FasTag Process List</MudText>
@@ -62,7 +74,12 @@
     </PagerContent>
 </MudTable>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<FastTagTollModel> MainModel = new List<FastTagTollModel>();
     private TruckModel model = new TruckModel();
@@ -80,11 +97,23 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         branchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
 
         GetCollection();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to retrieve the collection of FastTag toll models

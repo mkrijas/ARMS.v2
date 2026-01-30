@@ -11,6 +11,18 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Active Claims" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudTable Items="@Collection" Elevation="8" Filter="new Func<InsuranceClaimModel, bool>(search)" @bind-Model="model">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Active Claims</MudText>
@@ -43,7 +55,12 @@
     </PagerContent>
 </MudTable>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     [Parameter] public int? BreakdownID { get; set; }
     private TruckModel Truck = new();
@@ -70,7 +87,19 @@
     // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch all insurance claims based on the user's branch ID

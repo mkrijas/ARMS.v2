@@ -7,6 +7,18 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Insurance Claim Events" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudForm @bind-IsValid="@formValid" @ref="form">
     <MudTable Items="@ClaimEventList" Hover="true" CanCancelEdit="true" Filter="new Func<InsuranceClaimEventMasterModel,bool>(FilterFunc)" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted">
         <ToolBarContent>
@@ -70,7 +82,12 @@
     </MudTable>
 </MudForm>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     MudForm form;
     bool formValid;
@@ -91,12 +108,24 @@
     // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionInsuranceClaimServiceUpdateList = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "UpdateList", ctc.Token);
         HasPermissionInsuranceClaimServiceUpdateOrder = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "UpdateList", ctc.Token);
 
         // Load the initial list of claim eventsc
         ClaimEventList = Iservice.GetEventList(null).ToList();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to move an event up in the order

@@ -10,6 +10,17 @@
 @inject IDialogService DialogService
 
 
+@if (_isLoading)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Asset Holders" 
+                        SubText="Please wait..." />
+    </div>
+}
+
 <MudGrid Spacing="4">
    <MudItem xs="12">
         <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
@@ -62,14 +73,32 @@
     </MudGrid>
 
 
+}
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
      private AssetHolderModel model = new AssetHolderModel();
     private List<AssetHolderModel> collection = new List<AssetHolderModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         model = new();
-        GetAll();
+        await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
       private  async Task GetAll()
     {

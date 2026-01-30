@@ -15,6 +15,18 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Tyres" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<TyreModel,bool>(search)">
@@ -93,7 +105,12 @@
     </MudItem>
 </MudGrid>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<TyreModel> collection = new();
     string UserID;
@@ -107,10 +124,22 @@
 
     protected async override Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTyreServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     private async Task GetAll()

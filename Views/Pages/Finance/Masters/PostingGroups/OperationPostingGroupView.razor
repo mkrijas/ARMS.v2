@@ -7,6 +7,17 @@
 @inject IOperationPostingGroupService IOperationPostingGroupService
 @inject MudBlazor.ISnackbar snackbar
 
+@if (_isLoading)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Operation Posting Groups" 
+                        SubText="Please wait..." />
+    </div>
+}
+
 <MudForm @bind-IsValid="@formValid" @ref="form">
     <MudTable Items="@OperationPostingList" Hover="true" CanCancelEdit="true" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted">
         <ToolBarContent>
@@ -56,8 +67,12 @@
         </FooterContent>
     </MudTable>
 </MudForm>
+}
 
  @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     MudForm form;
     bool formValid;
@@ -68,8 +83,20 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         // Load all operation posting groups from the service
         OperationPostingList = IOperationPostingGroupService.Select().ToList();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to backup the original values of an item before editing

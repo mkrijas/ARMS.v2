@@ -11,6 +11,18 @@
 @inject SignalRService signalRService
 @inject IPushNotificationService IpushNotificationService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading GRNs" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<InventoryGrnModel, bool>(search)" @bind-place="model">
@@ -85,7 +97,12 @@
     </MudItem>
 </MudGrid>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private InventoryGrnModel model = new InventoryGrnModel();
     private List<InventoryGrnModel> collection = new List<InventoryGrnModel>();
@@ -108,6 +125,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionInventoryGrnServiceDelete = await Irole.HasClaim(InventoryGrnDocTypeID.ToString(), "Delete", ctc.Token);
         HasPermissionInventoryGrnServiceReverse = await Irole.HasClaim(InventoryGrnDocTypeID.ToString(), "Reverse", ctc.Token);
@@ -121,7 +139,17 @@
         {
             await OpenDialog(collection.FirstOrDefault(s => s.GrnID == id), true,false);
         }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
 
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     async Task ApprovedChanged(bool value)

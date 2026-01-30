@@ -11,6 +11,18 @@
 @inject IDialogService DialogService
 @inject IPushNotificationService IpushNotificationService
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Contra Entries" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
@@ -69,7 +81,12 @@
     </MudItem>
 </MudGrid>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     public bool IsApproved { get; set; } = false;
     protected override List<ContraModel> collection { get; set; } = new List<ContraModel>();
@@ -122,6 +139,7 @@
     // Method to reload the table with data
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionContraServiceDelete = await Irole.HasClaim(ContraDocTypeID.ToString(), "Delete", ctc.Token);
 
@@ -131,6 +149,17 @@
         if (id != null && collection != null && collection.Any(g => g.ContraID == id))
         {
             await OpenForm(collection.FirstOrDefault(s => s.ContraID == id), true);
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 

@@ -24,6 +24,18 @@
     }
 </style>
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Drivers" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudGrid Spacing="4">
     <MudItem xs="12" md="12">
         <MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="10" Filter="new Func<DriverModel, bool>(search)">
@@ -100,7 +112,12 @@
     </MudItem>
 </MudGrid>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     IBrowserFile driverImage;
     IBrowserFile adhaarImage;
@@ -138,6 +155,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionDriverTransferEdit = await Irole.HasClaim(DocTypeIDDriverTransfer.ToString(), "Edit", ctc.Token);
         HasPermissionDriverServiceEdit = await Irole.HasClaim(DocTypeIDDriver.ToString(), "Edit", ctc.Token);
@@ -153,6 +171,17 @@
         await signalRService.StartAsync();
 
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to retrieve all drivers for the current branch

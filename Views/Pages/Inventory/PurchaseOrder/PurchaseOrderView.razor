@@ -11,6 +11,18 @@
 @inject IPushNotificationService IpushNotificationService
 
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Purchase Orders" 
+                        SubText="Please wait..." />
+    </div>
+}
+
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<PurchaseOrderModel, bool>(search)" @bind-place="model">
@@ -53,7 +65,12 @@
     </MudItem>
 </MudGrid>
 
+
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private PurchaseOrderModel model = new PurchaseOrderModel();
     private List<PurchaseOrderModel> collection = new List<PurchaseOrderModel>();
@@ -74,6 +91,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionPurchaseOrderServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionPurchaseOrderServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
@@ -85,6 +103,17 @@
         if (id != null && collection != null && collection.Any(g => g.POID == id))
         {
             await OpenDialog(collection.FirstOrDefault(s => s.POID == id), true, false);
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 

@@ -8,6 +8,18 @@
 @inject IGstUsageIDService Iusage
 @inject IConfigTable Iconfig
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Sundry Payments" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Sundry Payment </MudText>
@@ -67,7 +79,12 @@
     </PagerContent>
 </MudTable>
 
+}
+
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     protected override List<SundryPaymentModel> collection { get; set; } = new();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
@@ -81,6 +98,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         await base.OnInitializedAsync();
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -89,6 +107,17 @@
         if (id != null && collection != null && collection.Any(g => g.SundryPaymentID == id))
         {
             await OpenForm(collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 

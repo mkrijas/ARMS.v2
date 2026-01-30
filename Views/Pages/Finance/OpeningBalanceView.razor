@@ -10,6 +10,18 @@
 @inject NavigationManager Navigation
 @inject IRoleService<RoleModel> Irole
 
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Opening Balance" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
 <MudPaper Class="pl-5" Elevation="4">
     <MudGrid Spacing="3">
         <MudItem xs="12" md="6">
@@ -90,7 +102,11 @@
 
 
 
+}
+
 @code {
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
     private List<OpeningBalanceModel> collection = new();
     private List<PeriodModel> Periods = new();
     private int? PeriodID;
@@ -106,6 +122,7 @@
     // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionOpeningBalanceSeriviceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
@@ -115,6 +132,17 @@
 
         // Fetch the list of periods
         Periods = Iservice.GetPeriods().ToList();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch balances based on the selected period
