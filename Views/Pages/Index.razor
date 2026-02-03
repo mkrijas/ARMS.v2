@@ -19,13 +19,13 @@
 <AuthorizeView>
     <Authorized>
         <!-- Background Layer -->
-        <div class="fixed-background-light">
+        <div class="fixed-background-light" @key="@("bg-auth")">
             <div class="mesh-gradient"></div>
             <div class="pattern-overlay"></div>
         </div>
 
         <!-- Content Container -->
-        <div class="dashboard-wrapper">
+        <div class="dashboard-wrapper" @key="@("content-auth")">
 
 
              <!-- Main Grid Content -->
@@ -145,7 +145,7 @@
     
     <NotAuthorized>
          <!-- Re-use existing landing hero if needed, or update if user wants specific change here too. For now keeping existing. -->
-       <div class="landing-hero" style="height: 100vh; width: 100%; background-color: #F8F9FA; display: flex; align-items: center; position: relative; overflow: hidden;">
+       <div class="landing-hero" @key="@("not-authorized")" style="height: 100vh; width: 100%; background-color: #F8F9FA; display: flex; align-items: center; position: relative; overflow: hidden;">
             <!-- Landing Text Content -->
             <div style="position: relative; z-index: 1; width: 45%; padding-left: 8%; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; height: 100%;">
                  <div class="d-flex align-center mb-4">
@@ -309,21 +309,73 @@
     .landing-hero { font-family: 'Inter', sans-serif; }
 </style>
 
+@implements IAsyncDisposable
+
 @code {
+    private DotNetObjectReference<Index>? _objRef;
+    private bool _isDialogOpen = false;
+
     protected override async Task OnInitializedAsync()
     {
         base.OnInitialized();
     }
 
-    private void OpenLoginDialog()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("BlazorHelpers.addEnterKeyListener", _objRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnEnterKeyPressed()
+    {
+        // Guard 1: Verify user is not already logged in
+        var authState = await auth.GetAuthenticationStateAsync();
+        if (authState.User.Identity.IsAuthenticated) return;
+
+        // Guard 2: Prevent opening if already open
+        if (_isDialogOpen) return;
+
+        await OpenLoginDialog();
+    }
+
+    private async Task OpenLoginDialog()
+    {
+        if (_isDialogOpen) return;
+        _isDialogOpen = true;
+
         var options = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, FullScreen = true, CloseButton = false }; 
-        DialogService.Show<Views.Pages.UserAccount.LoginDialog>("", options);
+        var dialog = DialogService.Show<Views.Pages.UserAccount.LoginDialog>("", options);
+        var result = await dialog.Result;
+
+        _isDialogOpen = false;
     }
 
     private void OpenRegisterDialog()
     {
         var options = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, FullScreen = true, CloseButton = false };
         DialogService.Show<Views.Pages.UserAccount.RegisterDialog>("", options);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Use try-catch for robustness, but awaiting ensures the call is tracked
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("BlazorHelpers.removeEnterKeyListener");
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException || ex is OperationCanceledException)
+        {
+            // Expected exceptions when the user navigates away or closes the tab
+        }
+        catch (Exception)
+        {
+            // Silently ignore other errors during disposal
+        }
+        
+        _objRef?.Dispose();
     }
 }

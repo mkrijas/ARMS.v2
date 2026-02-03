@@ -61,6 +61,33 @@ function focusElement(id) {
 window.BlazorHelpers = {
     RedirectTo: function (path) {
         $.post(path);
+    },
+    addEnterKeyListener: function (dotNetHelper) {
+        // Ensure we don't have duplicate listeners
+        if (window.enterKeyListener) {
+            document.removeEventListener('keydown', window.enterKeyListener);
+        }
+
+        window.enterKeyListener = function (e) {
+            // Ignore if the event originated from an input, textarea, select, or button
+            const tagName = e.target.tagName;
+            if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT' || tagName === 'BUTTON') {
+                return;
+            }
+
+            if (e.key === "Enter") {
+                // Also prevent default to avoid scrolling/other side effects on body
+                e.preventDefault();
+                dotNetHelper.invokeMethodAsync('OnEnterKeyPressed');
+            }
+        };
+        document.addEventListener('keydown', window.enterKeyListener);
+    },
+    removeEnterKeyListener: function () {
+        if (window.enterKeyListener) {
+            document.removeEventListener('keydown', window.enterKeyListener);
+            window.enterKeyListener = null; // Clear the reference
+        }
     }
 };
 
