@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
 
         //CancellationReasonCodesByDocumentType UpdateReverseEntry(CancellationReasonCodesByDocumentType model);
         bool? IsAlreadyReversed(int? DocumentID, int? DocumentTypeID);
+        public int TDSReverse(int? ID);
         CancellationReasonCodesByDocumentType GetReverseEntryDetailsByDocumentTypeAndDocumentID(int? DocumentID, int? DocumentTypeID);
         CancellationReasonCodesByDocumentType TDSReverseUpdate(CancellationReasonCodesByDocumentType model);
     }
