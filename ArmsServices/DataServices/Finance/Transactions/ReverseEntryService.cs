@@ -129,6 +129,15 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public int TDSReverse(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ReverseEntryID", ID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transaction.TDSReverse.Update]", parameters);
+        }
+
         // Method to update TDS reverse entry
         public CancellationReasonCodesByDocumentType TDSReverseUpdate(CancellationReasonCodesByDocumentType model)
         {
