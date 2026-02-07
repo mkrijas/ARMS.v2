@@ -106,7 +106,6 @@
                 </div>
             </MudPaper>
         </MudItem>
-
     </MudGrid>
 
     <!-- 2. Charts Row (Pro Visuals) -->
@@ -126,7 +125,7 @@
                 </div>
 
                 <!-- Combined Line Chart -->
-                <MudChart ChartOptions="@ChartOptions" LegendPosition="Position.Start" ChartType="ChartType.Line" ChartSeries="@RevExpSeries" XAxisLabels="@TrendLabels" Width="100%" Height="350px"></MudChart>
+                <MudChart ChartOptions="@_ChartOptions"  LegendPosition="Position.Start" ChartType="ChartType.Line" ChartSeries="@RevExpSeries" XAxisLabels="@TrendLabels" Width="100%" Height="350px"></MudChart>
             </MudPaper>
         </MudItem>
 
@@ -284,10 +283,10 @@
 
 
     //chartOptions
-    ChartOptions ChartOptions = new ChartOptions() { ShowLegend = false , ChartPalette = new string[] { "#0000FF", "#FF0000" } };
+    ChartOptions _ChartOptions = new ChartOptions() { ShowLegend = false , ChartPalette = new string[] { "#0000FF", "#FF0000" } };
 
     protected override async Task OnInitializedAsync()
-    {
+    {        
         await LoadData();
     }
 
@@ -370,7 +369,7 @@
         TotalCashBalance = CashAccountBalanceList.Sum(x => x.Amount ?? 0);
         LiquidityData = new double[] { (double)TotalBankBalance, (double)TotalCashBalance };
     }  
-    
+
     public async Task GetExpensesAndRevenue()
     {
         DateTime today = DateTime.Today;
@@ -412,14 +411,37 @@
 
         for (DateTime i = InitialDay; i <= yesterday; i = i.AddDays(1))
         {
-             labels.Add(i.Day.ToString());          
-             revSeries.Add(dailyRevenue.ContainsKey(i.Day)?(double)dailyRevenue[i.Day] : 0);            
-             expSeries.Add(dailyExpenses.ContainsKey(i.Day)?(double)dailyExpenses[i.Day] : 0);            
+            labels.Add(i.Day.ToString());          
+            revSeries.Add(dailyRevenue.ContainsKey(i.Day)?(double)dailyRevenue[i.Day] : 0);            
+            expSeries.Add(dailyExpenses.ContainsKey(i.Day)?(double)dailyExpenses[i.Day] : 0);            
         }
 
         TrendLabels = labels.ToArray();
         RevExpSeries.Clear();
         RevExpSeries.Add(new ChartSeries() { Name ="Revenue",  Data = revSeries.ToArray() , });
         RevExpSeries.Add(new ChartSeries() { Name = "Expenses", Data = expSeries.ToArray() });
+
+        var maxVal = (int)Math.Max(revSeries.Max(), expSeries.Max());
+        // var highestTick = (int)Math.Floor(Math.Log10(Math.Abs((double)maxVal)) + 1);
+
+        // var tick = Math.Pow(10,highestTick-1);
+        _ChartOptions.YAxisTicks = GetSeriesValue(maxVal)/10;
+    }
+
+
+    static int GetSeriesValue(int number)
+    {
+        if (number <= 5)
+            return 5;
+
+        int magnitude = (int)Math.Pow(10, Math.Floor(Math.Log10(number)));
+
+        if (number <= magnitude)
+            return magnitude;
+
+        if (number <= magnitude * 5)
+            return magnitude * 5;
+
+        return magnitude * 10;
     }
 }

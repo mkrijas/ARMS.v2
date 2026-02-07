@@ -10,74 +10,171 @@
 @inject IDialogService DialogService
 @using Microsoft.JSInterop
 
-<MudPaper>
-    <MudToolBar>
-        <MudText Typo="Typo.h5" Style="font-weight:500;">DASHBOARD</MudText>
-        <MudSpacer />
-        <MudButton EndIcon="@Icons.Material.Outlined.Refresh" Variant="Variant.Outlined" OnClick="@(() => Refresh())">Refresh</MudButton>
-    </MudToolBar>
-    <MudDivider />
+
+
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 500px;">
+        <LoaderComponent IsFullScreen="false"
+                         ShowLogo="false"
+                         Size="large"
+                         LoadingText="Loading Logistics Dashboard"
+                         SubText="Fetching Logistics data..." />
+    </div>
+}
+else
+{
+
     <MudGrid Style="padding:36px; padding-bottom: 22px;">
-        <MudItem sm="12">
+        <MudItem md="8">
             <MudPaper Style=" box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
                 <MudToolBar Style="justify-content:left;">
-                    <MudText Style="width:500px;" Typo="Typo.h6">CONSIGNMENT TONNAGE GRAPH</MudText>
-                    <MudSelect Style="padding-left:80%;" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" Variant="Variant.Outlined" Value="@SelectedPeriod" T="int" ValueChanged="(Value) => SelectedValueChanged(Value)">
+                    <MudText Typo="Typo.h6">Tonnage in @ConsignmentTitle</MudText>
+                    <MudSpacer></MudSpacer>
+                    <MudSelect Style="AnchorOrigin=" Origin.BottomCenter" Margin="Margin.Dense" Variant="Variant.Outlined" Value="@SelectedPeriod" T="int" ValueChanged="(Value) => SelectedValueChanged(Value)">
                         <MudSelectItem Value="1">Last 10 Days</MudSelectItem>
                         <MudSelectItem Value="2">Current Month</MudSelectItem>
                         <MudSelectItem Value="3">Last Month</MudSelectItem>
                     </MudSelect>
                 </MudToolBar>
-                <MudItem id="BarGraph" style="padding:20px; padding-bottom:0px; width:100%;"></MudItem>
+                <MudChart ChartType="ChartType.Bar" ChartOptions="@_barOptions" ChartSeries="@BarSeries" XAxisLabels="@BarLabels" Width="100%" Height="420px">
+                </MudChart>
                 <MudText Align="Align.Center" Style="padding:12px; font-weight:500;">Consignment in @ConsignmentTitle</MudText>
             </MudPaper>
         </MudItem>
-        <MudItem sm="6">
-            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
+        <MudItem md="4">
+
+            <MudGrid Class="mb-6" @key="@("metrics")">
+                <!-- Revenue Card -->
+                <MudItem xs="6">
+                    <MudPaper Class="pa-4 stat-card" Elevation="2">
+                        <div class="d-flex flex-column gap-1">
+                            <div class="d-flex justify-space-between align-start">
+                                <MudText Typo="Typo.subtitle2" Style="color: #667085;">Trips Initiated</MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" />
+                            </div>
+                            <MudText Typo="Typo.h4" Style="font-weight: 700;">@dict["CountOfTrips"].ToString()</MudText>
+                            <div class="d-flex align-center gap-2 mt-2">
+                                <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text" Icon="@Icons.Material.Filled.Cancel">
+                                    Cancelled: @dict["CountOfCancelledTrips"].ToString()
+                                </MudChip>
+                            </div>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudPaper Class="pa-4 stat-card" Elevation="2">
+                        <div class="d-flex flex-column gap-1">
+                            <div class="d-flex justify-space-between align-start">
+                                <MudText Typo="Typo.subtitle2" Style="color: #667085;">Mileage Settlement Pending </MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.Calculate" Color="Color.Success" Size="Size.Small" />
+                            </div>
+                            <MudText Typo="Typo.h4" Style="font-weight: 700;">@dict["FuelSettlementPending"].ToString()</MudText>
+                            <div class="d-flex align-center gap-2 mt-2">
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Icon="@Icons.Material.Filled.LocalGasStation">Not yet fueled: @dict["FuelPending"].ToString()</MudChip>
+                            </div>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);  padding-top:20px; ">
+                       @*  <MudToolBar Style="justify-content:center;">
+                            <MudText Style="width:500px;" Typo="Typo.h6">Driver allocated to trucks</MudText>  
+                        </MudToolBar> *@
+                        <MudChart LegendPosition="Position.Bottom" ChartOptions="@_noDriverChartOptions" ChartType="ChartType.Donut" InputData="@NoDriverData" InputLabels="@NoDriverLabels" Height="300" Width="300" >
+                            <CustomGraphics>
+                                <text class="donut-inner-text" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="20">No Driver</text>
+                                <text class="donut-inner-text" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="50">  @noDriverPercent.ToString("P2")</text>
+                            </CustomGraphics>
+                        </MudChart>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+
+            @*  <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
+                <MudChart ChartType="ChartType.Line" ChartOptions="@_lineOptions" ChartSeries="@LineSeries" XAxisLabels="@Linelabels" Width="100%" Height="420px">
+                </MudChart>
+                <MudText Align="Align.Center" Style="padding:12px; font-weight:500;">Cumulative Freight in @FreightMonth</MudText>
+            </MudPaper> *@
+        </MudItem>
+        <MudItem md="6">
+            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);   padding-bottom:20px;">
                 <MudToolBar Style="justify-content:left;">
                     <MudText Style="width:500px;" Typo="Typo.h6">TRUCK STATUS</MudText>
                     <MudSpacer />
                     <b>@CurrentDateTime.Value.ToString("dd/MM/yyyy hh:mm tt")</b>
                 </MudToolBar>
-                <MudItem id="DonutChartTruck" style="padding:20px; width: 100%; height: auto;"></MudItem>
+                <MudChart LegendPosition="Position.Right" ChartType="ChartType.Donut" InputData="@TruckData" InputLabels="@TruckLabels" Height="300" Width="300" SelectedIndex="@SelectedTruckChartIndex" SelectedIndexChanged="@SelectedTruckChartIndexChanged">
+                    <CustomGraphics>
+                        <text class="donut-inner-text" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="20">Trucks</text>
+                        <text class="donut-inner-text" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="50">@TruckData.Sum().ToString()</text>
+                    </CustomGraphics>
+                </MudChart>
+                @* <MudItem id="DonutChartTruck" style="padding:20px; width: 100%; height: auto;"></MudItem> *@
             </MudPaper>
         </MudItem>
-        <MudItem sm="6">
-            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
+        <MudItem md="6">
+            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);  padding-bottom:20px; ">
                 <MudToolBar Style="justify-content:left;">
                     <MudText Style="width:500px;" Typo="Typo.h6">DRIVER STATUS</MudText>
                     <MudSpacer />
                     <b>@CurrentDateTime.Value.ToString("dd/MM/yyyy hh:mm tt")</b>
                 </MudToolBar>
-                <MudItem id="DonutChartDriver" style="padding:20px; width: 100%; height: auto;"></MudItem>
-            </MudPaper>
-        </MudItem>
-        <MudItem sm="12">
-            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
-                <MudToolBar Style="justify-content:left;">
-                    <MudText Style="width:500px;" Typo="Typo.h6">FREIGHT STATUS</MudText>
-                </MudToolBar>
-                <MudItem id="LineGraph" style="padding:20px; width:100%;"></MudItem>
-                <MudText Align="Align.Center" Style="padding:12px; font-weight:500;">Cumulative Freight in @FreightMonth</MudText>
+                <MudChart LegendPosition="Position.Right" ChartType="ChartType.Donut" InputData="@DriverData" InputLabels="@DriverLabels" Height="300" Width="300" SelectedIndex="@SelectedDriverChartIndex" SelectedIndexChanged="@SelectedDriverChartIndexChanged">
+                    <CustomGraphics>
+                        <text class="donut-inner-text" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="20">Drivers</text>
+                        <text class="donut-inner-text" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="50">@DriverData.Sum().ToString()</text>
+                    </CustomGraphics>
+                </MudChart>
             </MudPaper>
         </MudItem>
     </MudGrid>
-</MudPaper>
+
+
+    <MudButton EndIcon="@Icons.Material.Outlined.Refresh" Variant="Variant.Outlined" OnClick="@(() => Refresh())">Refresh</MudButton>
+}
+
+<style>
+    .wide_chart svg {
+        width: 100% !important;
+        height: 100% !important;
+    }
+</style>
+
 
 @code {
 
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
+
+    public List<ChartSeries> BarSeries = new List<ChartSeries>();
+    string[] BarLabels;
+    ChartOptions _barOptions = new ChartOptions();
+
+    public List<ChartSeries> LineSeries = new List<ChartSeries>();
+    string[] Linelabels;
+    ChartOptions _lineOptions = new ChartOptions();
+
     string ConsignmentTitle = "";
     string FreightMonth = "";
-    string[] PieLabels;
-    double[] PieData;
-    string[] BarLabels;
-    string[] BarData;
-    string[] DonutLabels;
-    int?[] DonutData;
-    string[] Linelabels;
-    decimal?[] Linedata;
-    decimal?[] LineCumulativedata;
+
+    string[] TruckLabels;
+    double[] TruckData;
+    int SelectedTruckChartIndex;
+
+    string[] DriverLabels;
+    double[] DriverData;
+    int SelectedDriverChartIndex;
+
+    string[] NoDriverLabels;
+    double[] NoDriverData;
+    double noDriverPercent;
+    ChartOptions _noDriverChartOptions = new ChartOptions();
+
     private int BranchID;
+    Dictionary<string, decimal> dict = new Dictionary<string, decimal>();
     DateTime? FromDate = null;
     DateTime? ToDate = null;
     DateTime? CurrentDateTime = DateTime.Now;
@@ -96,46 +193,61 @@
         var User = authprov.User;
         string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(BranchIDString);
+        await Refresh();
+        _isLoading = false;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            await Refresh();
-        }
+
     }
 
-    private async Task Refresh()
+    async Task Refresh()
     {
         CurrentDateTime = DateTime.Now;
+        dict = DashboardService.Collection(BranchID);
         await SelectedValueChanged(1);
         await TruckStatus();
         await DriverStatus();
-        await FreightStatus();
-        StateHasChanged();
+        //await FreightStatus();
+        await DriverAssignStatusChart();
     }
 
-    public async Task ConsignmentLoad(DateTime? From, DateTime? To)
+    async Task ConsignmentLoad(DateTime? From, DateTime? To)
     {
         ConsignmentLoadData = DashboardService.SelectChartData(BranchID, From, To).ToList();
+        var BarData = ConsignmentLoadData.Select(x => (double)x.Total.Value).ToArray();
 
-        BarLabels = ConsignmentLoadData.Select(x => x.DateList.Value.ToString("dd MMM yyyy")).ToArray();
-        BarData = ConsignmentLoadData.Select(x => (x.Total.Value.ToString())).ToArray();
+        BarSeries.Clear();
+        BarLabels = ConsignmentLoadData.Select(x => x.DateList.Value.ToString("dd")).ToArray();
+        BarSeries.Add(new ChartSeries() { Name = "Tonnage", Data = BarData });
 
-        await JSRuntime.InvokeVoidAsync("ChartResult.BarGraph", BarLabels, BarData);
-        StateHasChanged();
+        _barOptions.YAxisTicks = GetSeriesValue((int)BarData.Max()) / 10;
+        _barOptions.ShowLegend = false;
     }
 
-    public async Task TruckStatus()
-    {
-        //TruckStatusData = TruckService.GetTruckStatus(BranchID).ToList();
-        TruckStatusData = DashboardService.SelectTruckDonutData(BranchID).ToList();
 
-        PieLabels = TruckStatusData.Select(x => x.Label + " - " + x.Data).ToArray();
-        PieData = TruckStatusData.Select(x => (double)x.Data).ToArray();
-        var objRef = DotNetObjectReference.Create(this);
-        await JSRuntime.InvokeVoidAsync("ChartResult.DonutChartTruck", PieLabels, PieData, objRef);
+    async Task DriverAssignStatusChart()
+    {
+        double DriverAssigned = TruckData.Sum() - (double)dict["NodriverTrucks"];
+        NoDriverLabels = new string[]{ "Driver Assigned", "No Driver" };
+        NoDriverData = new double[] { DriverAssigned, (double)dict["NodriverTrucks"] };
+        noDriverPercent = ((double)dict["NodriverTrucks"]) / TruckData.Sum();
+        _noDriverChartOptions.ChartPalette = new string[] { "#00c864", "#FF0000" };
+    }
+
+    async Task TruckStatus()
+    {
+        TruckStatusData = DashboardService.SelectTruckDonutData(BranchID).ToList();
+        TruckLabels = TruckStatusData.Select(x => x.Label + " - " + x.Data).ToArray();
+        TruckData = TruckStatusData.Select(x => (double)x.Data).ToArray();
+    }
+
+    async Task SelectedTruckChartIndexChanged(int index)
+    {
+        SelectedTruckChartIndex = index;
+        var val = TruckLabels[index];
+        await HandleSelectedData(val);
     }
 
     [JSInvokable]
@@ -143,39 +255,35 @@
     {
         string result = selectedValue;
         string extractedNumber = result.Substring(result.LastIndexOf(" ") + 1);
-        // if (selectedValue.Contains("Loaded"))
-        // {
-        //     int lastIndex = selectedValue.LastIndexOf("Loaded");
-        //     if (lastIndex >= 0)
-        //     {
-        //         result = selectedValue.Substring(0, lastIndex);
-        //     }
-        // }
-        // else
-        // {
+
         int lastSpaceIndex = selectedValue.LastIndexOf('-');
         if (lastSpaceIndex >= 0)
         {
             result = selectedValue.Substring(0, lastSpaceIndex);
         }
-        //}
 
         DialogOptions MediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("BranchId", BranchID);
         parms.Add("SelectedValue", result);
         parms.Add("Count", extractedNumber);
-        var dialog = DialogService.Show<TruckStatusView>("TruckStatusList", parms, MediumWidth);
+        var dialog = await DialogService.ShowAsync<TruckStatusView>("TruckStatusList", parms, MediumWidth);
     }
 
     public async Task DriverStatus()
     {
         DriverStatusData = DashboardService.SelectDriverDonutData(BranchID);
+        DriverLabels = DriverStatusData.Select(x => x.Label + " : " + x.Data).ToArray();
+        DriverData = DriverStatusData.Select(x => (double)x.Data).ToArray();
+        //var objRef = DotNetObjectReference.Create(this);
+        //await JSRuntime.InvokeVoidAsync("ChartResult.DonutChartDriver", DonutLabels, DonutData, objRef);
+    }
 
-        DonutLabels = DriverStatusData.Select(x => x.Label + " : " + x.Data).ToArray();
-        DonutData = DriverStatusData.Select(x => x.Data).ToArray();
-        var objRef = DotNetObjectReference.Create(this);
-        await JSRuntime.InvokeVoidAsync("ChartResult.DonutChartDriver", DonutLabels, DonutData, objRef);
+    async Task SelectedDriverChartIndexChanged(int index)
+    {
+        SelectedDriverChartIndex = index;
+        var val = DriverLabels[index];
+        await HandleSelectedDriverData(val);
     }
 
     [JSInvokable]
@@ -202,7 +310,7 @@
         parms.Add("BranchId", BranchID);
         parms.Add("SelectedValue", result);
         parms.Add("Count", extractedNumber);
-        var dialog = DialogService.Show<DriverStatusView>("DriverStatusList", parms, mediumWidth);
+        var dialog = await DialogService.ShowAsync<DriverStatusView>("DriverStatusList", parms, mediumWidth);
     }
 
     public async Task FreightStatus()
@@ -211,16 +319,37 @@
         FreightMonth = today.ToString("MMMM");
         FreightStatusData = DashboardService.SelectLineChart(BranchID, today).ToList();
 
-        Linelabels = FreightStatusData.Select(x => x.DateList.Value.ToString("dd")).ToArray();
-        Linedata = FreightStatusData.Select(x => x.Total).ToArray();
-        LineCumulativedata = FreightStatusData.Select(x => x.CumulativeTarget).ToArray();
+        var TargetFreightSeries = FreightStatusData.Select(x => (double)x.CumulativeTarget / 100000).ToArray();
+        var ActualFreightSeries = FreightStatusData.Select(x => (double)x.Total / 100000).ToArray();
 
-        await JSRuntime.InvokeVoidAsync("ChartResult.LineGraph", Linelabels, Linedata, LineCumulativedata);
+
+
+        LineSeries.Add(new ChartSeries { Name = "Target Freight", Data = TargetFreightSeries });
+        LineSeries.Add(new ChartSeries { Name = "Actual Freight", Data = ActualFreightSeries });
+        Linelabels = FreightStatusData.Select(x => x.DateList.Value.ToString("dd")).ToArray();
+
+        _lineOptions.YAxisFormat = "0.##L";
+        _lineOptions.YAxisTicks = GetSeriesValue((int)TargetFreightSeries.Max()) / 10;
+    }
+
+    static int GetSeriesValue(int number)
+    {
+        if (number <= 5)
+            return 5;
+
+        int magnitude = (int)Math.Pow(10, Math.Floor(Math.Log10(number)));
+
+        if (number <= magnitude)
+            return magnitude;
+
+        if (number <= magnitude * 5)
+            return magnitude * 5;
+
+        return magnitude * 10;
     }
 
     public async Task SelectedValueChanged(int val)
     {
-        StateHasChanged();
         SelectedPeriod = val;
         DateTime? From = null, To = null;
         DateTime today = DateTime.Today;
@@ -246,6 +375,8 @@
                 break;
         }
         await ConsignmentLoad(From, To);
-        StateHasChanged();
+
+
+
     }
 }
