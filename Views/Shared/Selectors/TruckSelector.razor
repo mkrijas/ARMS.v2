@@ -14,6 +14,8 @@ else
     <MudText> Loading..... </MudText>
 }
 
+
+
 @code {
     private List<TruckModel> TruckList = new();
 
@@ -23,7 +25,7 @@ else
     [Parameter]
     public EventCallback<TruckModel> ValueChanged { get; set; }
 
-     private TruckModel _value
+    private TruckModel _value
     {
         get => Value;
         set
@@ -33,8 +35,6 @@ else
             ValueChanged.InvokeAsync(value);
         }
     }
-    
-
 
     [Parameter]
     public bool IsDisabled { get; set; } = false;
@@ -49,11 +49,9 @@ else
     [Parameter]
     public List<int?> TruckIDsToRemove { get; set; } = null;
 
+    int? previousBranchID;
 
-
-   
-
-    private bool IsLoaded = false;
+    private bool IsLoaded = true;
     [Parameter]
     public MudBlazor.Variant VariantParameter { get; set; } = MudBlazor.Variant.Outlined;
     [Parameter]
@@ -66,34 +64,26 @@ else
     }
 
 
-    protected override void OnInitialized()
+    protected override async Task OnParametersSetAsync()
     {
-        var Result = Itruck.SelectByBranch(BranchID, Filter, HomeOrOperation).ToList();
-        if (TruckIDsToRemove != null && Result.Any(g => TruckIDsToRemove.Any(d=> d == g.TruckID)))
+        if ((previousBranchID != BranchID && BranchID != 0) || TruckList.Count == 0)
         {
-            if (Result.Any(g => !TruckIDsToRemove.Any(d => d == g.TruckID)))
+            IsLoaded = false;
+            var Result = Itruck.SelectByBranch(BranchID, Filter, HomeOrOperation).ToList();
+            if (TruckIDsToRemove != null && Result.Any(g => TruckIDsToRemove.Any(d => d == g.TruckID)))
             {
-                TruckList = Result.Where(g => !TruckIDsToRemove.Any(d => d == g.TruckID)).ToList();
-
+                if (Result.Any(g => !TruckIDsToRemove.Any(d => d == g.TruckID)))
+                {
+                    TruckList = Result.Where(g => !TruckIDsToRemove.Any(d => d == g.TruckID)).ToList();
+                }
             }
-        }
-        else
-        {
-            TruckList = Result;
-        }
-        IsLoaded = true;
+            else
+            {
+                TruckList = Result;
+            }
+            previousBranchID = BranchID;
+            IsLoaded = true;
+        }       
 
-        // if (VariantParameter == null)
-        // {
-        //     VariantParameter = MudBlazor.Variant.Outlined;
-        // }
-        // if (MarginParameter == null)
-        // {
-        //     MarginParameter = MudBlazor.Margin.Dense;
-        // }
-        // if (IsDisabled == null)
-        // {
-        //     IsDisabled = false;
-        // }
     }
 }

@@ -107,5 +107,24 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
+        public Dictionary<string, decimal> Collection(int? BranchID)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "General"),
+               new SqlParameter("@BranchID", BranchID),               
+            };
+            Dictionary<string, decimal> dict = new Dictionary<string, decimal>();
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.DashBoard.ChartData.Select]",parameters))
+            {
+                string key = dr.GetString("key");
+                decimal? value = (decimal?)dr.GetInt32("value");
+                dict.Add(key, value??0);
+            }
+            return dict;
+        }
     }
 }
