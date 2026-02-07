@@ -16,10 +16,11 @@ function getHTTPObject() {
 
 function IFrameHightSetter() {
     let frame = document.getElementById("PreviewClaim");
-    let scrollHeight = frame?.contentWindow?.document?.body?.scrollHeight;
-    frame.style.height = (scrollHeight ?? '3000') + 'px';
+    if (frame && frame.contentWindow && frame.contentWindow.document && frame.contentWindow.document.body) {
+        let scrollHeight = frame.contentWindow.document.body.scrollHeight;
+        frame.style.height = (scrollHeight ?? '3000') + 'px';
+    }
     return false;
-
 }
 
 //function runReport(url) {
@@ -54,9 +55,10 @@ function runReport(url) {
 
 function focusElement(id) {
     const element = document.getElementById(id);
-    element.focus();
+    if (element) {
+        element.focus();
+    }
 }
-
 
 window.BlazorHelpers = {
     RedirectTo: function (path) {
@@ -120,7 +122,9 @@ function saveAsFile(filename, bytesBase64) {
     link.href = "data:application/octet-stream;base64," + bytesBase64;
     document.body.appendChild(link); // Needed for Firefox
     link.click();
-    document.body.removeChild(link);
+    if (link.parentNode) {
+        link.parentNode.removeChild(link);
+    }
 }
 
 
