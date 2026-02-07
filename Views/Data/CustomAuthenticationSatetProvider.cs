@@ -10,7 +10,7 @@ using ArmsModels.BaseModels;
 
 namespace Views.Data
 {
-    public class CustomAuthenticationSatetProvider : AuthenticationStateProvider
+    public class CustomAuthenticationSatetProvider : AuthenticationStateProvider, ICustomAuthenticationService
     {
         private ISessionStorageService _storage;
         private IUserService _userService;
@@ -88,6 +88,14 @@ namespace Views.Data
             }
 
             var identity = new ClaimsIdentity(claims, "apiauth_type");
+            var user = new ClaimsPrincipal(identity);
+            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
+        }
+
+        public async Task Logout()
+        {
+            await _storage.RemoveItemAsync("userID");
+            var identity = new ClaimsIdentity();
             var user = new ClaimsPrincipal(identity);
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
         }

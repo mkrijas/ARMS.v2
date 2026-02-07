@@ -5,15 +5,14 @@
 {
     @foreach (var item in GetAll())
     {
-        <NavMenuGroup MenuItem="@item" />
+        <NavMenuGroup @key="item.ID" MenuItem="@item" />
     }
 }
 else
 {
-    Reset();
     @foreach (var item in Filter(FilterText, navlist))
     {
-        <NavMenuGroup MenuItem="@item" />
+        <NavMenuGroup @key="item.ID" MenuItem="@item" />
     }
 }
 
@@ -49,18 +48,56 @@ else
 
     private IEnumerable<NavMenuModel> Filter(string txt, List<NavMenuModel> items)
     {
+        if (string.IsNullOrWhiteSpace(txt))
+        {
+            foreach (var item in items)
+            {
+                    item.Expanded = false;
+                    yield return item;
+            }
+            yield break;
+        }
+
         foreach (var item in items)
         {
-            item.Expanded = false; 
-           
-            var filteredChildren = Filter(txt, item.navItems).ToList();
+            // Create a conceptual copy or check logic without modifying the original if possible,
+            // but for simple expand/collapse behavior on the existing model (which is bound),
+            // ensure we don't return partial trees that confuse Blazor.
+            
+            // Note: If we really want to filter safely, we should probably yield deeply cloned items 
+            // OR just rely on visibility. But for now, fixing the structure:
+
+            var filteredChildren = Filter(txt, item.navItems ?? new List<NavMenuModel>()).ToList();
         
-            bool isMatching = !item.IsGroup && item.Title.Contains(txt, StringComparison.OrdinalIgnoreCase);
-            if (isMatching || filteredChildren.Any())
+            bool isMatching = !item.IsGroup && (item.Title?.Contains(txt, StringComparison.OrdinalIgnoreCase) ?? false);
+            bool hasMatchingChildren = filteredChildren.Any();
+
+            if (isMatching || hasMatchingChildren)
             {
-                item.Expanded = true;
-                item.navItems = filteredChildren;
-                yield return item;
+                // We usually shouldn't modify state inside a projection (Filter), 
+                // but if we are just setting Expanded it might be okay IF we don't mess up the render tree keys.
+                // The fatal error usually comes from the iterator changing the collection or removing items 
+                // that Blazor is tracking.
+                item.Expanded = true; 
+                // item.navItems = filteredChildren; // <--- THIS IS THE CULPRIT. Modifying the list properties in place.
+                
+                // Instead of modifying item.navItems, we should return a new model or just the item itself 
+                // and let the recursive call handle it. 
+                // However, the UI iterates children. If we don't modify children, the UI shows all children.
+
+                // SAFE FIX: Return a NEW NavMenuModel (shallow copy) with filtered children
+                var newItem = new NavMenuModel 
+                {
+                     ID = item.ID,
+                     Title = item.Title,
+                     Icon = item.Icon,
+                     IconColor = item.IconColor,
+                     href = item.href,
+                     IsGroup = item.IsGroup,
+                     Expanded = true,
+                     navItems = filteredChildren // Use the new filtered list
+                };
+                yield return newItem;
             }
         }
     }
@@ -73,7 +110,7 @@ else
             navItems = new()
             {
             new NavMenuModel(){ID = 101,  Title = "Dashboard",  href = "/dashboard" ,Icon = Icons.Material.Outlined.Workspaces,IconColor = Color.Inherit  },
-            new NavMenuModel(){ID = 102,  Title = "Activity Screen",  href = "/operations" ,IconColor = Color.Tertiary  },
+            new NavMenuModel(){ID = 102,  Title = "Activity Screen",  href = "/operations" ,IconColor = Color.Primary  },
             new NavMenuModel(){ID = 103,  Title = "Manage Contracts",  href = "/order" ,Icon = Icons.Material.Outlined.Hvac,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 104,  Title = "UnAssigned GCs",  href = "/gc" ,Icon = Icons.Material.Filled.Today,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 105,  Title = "Trucks",  href = "/trucks" ,Icon = Icons.Material.Filled.DirectionsBusFilled,IconColor = Color.Inherit  },
@@ -93,12 +130,13 @@ else
             new NavMenuModel(){ID = 11105,  Title = "Truck Models",  href = "/truckType" ,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 11106,  Title = "Project Tonnage",  href = "/ProjectTonnage" ,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 11107,  Title = "DFC",  href = "/dfc" ,IconColor = Color.Inherit  },
+            new NavMenuModel(){ID = 11108,  Title = "Tariff Types",  href = "/TariffTypes" ,IconColor = Color.Inherit  },
             }},
             new NavMenuModel(){ID = 112,  IsGroup = true, Title = "ROI",Icon = Icons.Material.Filled.Group,IconColor = Color.Inherit, Expanded = false,
             navItems = new()
             {
-            new NavMenuModel(){ID = 11101,  Title = "ROI Settings", href = "/ROITonnage", Icon = Icons.Material.Filled.Settings, IconColor = Color.Info  },
-            new NavMenuModel(){ID = 11101,  Title = "ROI Reports", href = "/ROIReport", Icon = Icons.Material.Filled.PendingActions, IconColor = Color.Info  },
+            new NavMenuModel(){ID = 11201,  Title = "ROI Settings", href = "/ROITonnage", Icon = Icons.Material.Filled.Settings, IconColor = Color.Info  },
+            new NavMenuModel(){ID = 11202,  Title = "ROI Reports", href = "/ROIReport", Icon = Icons.Material.Filled.PendingActions, IconColor = Color.Info  },
             }},
 
             new NavMenuModel(){ID = 113, IsGroup = true, Title = "Reports",Icon = Icons.Material.Filled.PendingActions,IconColor = Color.Inherit, Expanded = false,
@@ -142,7 +180,7 @@ else
             new NavMenuModel(){ID = 20201,  Title = "Asset Purchase",  href = "/AssetPurchase" ,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 20202,  Title = "Purchase",  href = "/TaxPurchase" ,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 20203,  Title = "Book Freight",  href = "/FreightBooking" ,IconColor = Color.Inherit  },
-            new NavMenuModel(){ID = 20223,  Title = "Asset Sales",  href = "/AssetSale" ,IconColor = Color.Inherit  },
+            new NavMenuModel(){ID = 20231,  Title = "Asset Sales",  href = "/AssetSale" ,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 20204,  Title = "Sales Invoice",  href = "/Sale" ,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 20205,  Title = "Credit/Debit Note",  href = "/DrCrNoteView" ,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 20206,  Title = "Credit/Debit Transfer",  href = "/CreditDebitTransfer" ,IconColor = Color.Inherit  },
@@ -194,7 +232,7 @@ else
                  new NavMenuModel(){ID = 20407,  Title = "Cost Center",  href = "/CostCenter" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20408,  Title = "Dimension",  href = "/Diamension" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20409,  Title = "Cancellation Reason Code",  href = "/CancellationReasonCodeView" ,IconColor = Color.Inherit  },
-                 new NavMenuModel(){ID = 20409,  Title = "Opening Balance",  href = "/OpeningBalance" ,IconColor = Color.Inherit  },
+                 new NavMenuModel(){ID = 20410,  Title = "Opening Balance",  href = "/OpeningBalance" ,IconColor = Color.Inherit  },
 
                 }},
 
@@ -230,9 +268,9 @@ else
                  new NavMenuModel(){ID = 20606,  Title = "Party Ledger Report",  href = "/PartyLedgerReport" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20607,  Title = "Bank Ledger Report",  href = "/BankLedgerReport" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20608,  Title = "Cash Ledger Report",  href = "/CashLedgerReport" ,IconColor = Color.Inherit  },
-                 new NavMenuModel(){ID = 20606,  Title = "Asset Ledger Report",  href = "/AssetLedgerReport" ,IconColor = Color.Inherit  },
+                 new NavMenuModel(){ID = 20609,  Title = "Asset Ledger Report",  href = "/AssetLedgerReport" ,IconColor = Color.Inherit  },
                  
-                 new NavMenuModel(){ID = 20609,  Title = "Stockists Freight Collected Report",  href = "/StockistFreightCollectedReport" ,IconColor = Color.Inherit  },
+                 new NavMenuModel(){ID = 20630,  Title = "Stockists Freight Collected Report",  href = "/StockistFreightCollectedReport" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20610,  Title = "Purchase Register Report",  href = "/PurchaseRegisterReport" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20611,  Title = "Party Balance Summary Report",  href = "/PartyBalanceSummaryReport" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20612,  Title = "Fund Balance Summary Report",  href = "/FundBalanceSummery" ,IconColor = Color.Inherit  },
@@ -242,7 +280,7 @@ else
                  new NavMenuModel(){ID = 20616,  Title = "Sales Register Report",  href = "/SalesRegisterReport" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20617,  Title = "Jobcard Purchase Report",  href = "/JobCardPurchaseReport" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20618,  Title = "Outstanding Bills Report",  href = "/OutstandingBills" ,IconColor = Color.Inherit  },
-                 new NavMenuModel(){ID = 20618,  Title = "Pending Payments",  href = "/PendingMemos" ,IconColor = Color.Inherit  },
+                 new NavMenuModel(){ID = 20625,  Title = "Pending Payments",  href = "/PendingMemos" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20619,  Title = "UnApproved Documents Report",  href = "/UnApprovedDocumentsReport" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20620,  Title = "Driver Salary Payable Report",  href = "/DriverSalaryPayableReport" ,IconColor = Color.Inherit  },
                  new NavMenuModel(){ID = 20621,  Title = "Payment to Supplier Report",  href = "/FinanceReport" ,IconColor = Color.Inherit  },
@@ -254,7 +292,7 @@ else
             navItems = new()
             {
                 new NavMenuModel(){ID = 301,  Title = "Dashboard",  href = "/assetdashboard" ,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 301,  Title = "Asset Register",  href = "/AssetRegisterReport" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 310,  Title = "Asset Register",  href = "/AssetRegisterReport" ,IconColor = Color.Inherit  },
                 new NavMenuModel(){ID = 302,  Title = "Scrap Asset",  href = "/ScrapAssetView" ,IconColor = Color.Inherit  },
                 new NavMenuModel(){ID = 303,  Title = "Transfer Asset",  href = "/AssetTransferView" ,IconColor = Color.Inherit  },
                 new NavMenuModel(){ID = 304,  Title = "Documents",  href = "/Document" , Icon=Icons.Material.Filled.Pages ,IconColor = Color.Inherit  },
@@ -265,7 +303,7 @@ else
                 new NavMenuModel(){ID = 30601,  Title = "Asset Classification",  href = "/AssetSubClass" ,IconColor = Color.Inherit  },
                 new NavMenuModel(){ID = 30602,  Title = "Document Types",  href = "/DocumentType" ,IconColor = Color.Inherit  },
             }},
-            new NavMenuModel(){ID = 304,  Title = "Asset Status History",  href = "/AssetSatatusHistory" ,IconColor = Color.Inherit  },
+            new NavMenuModel(){ID = 311,  Title = "Asset Status History",  href = "/AssetSatatusHistory" ,IconColor = Color.Inherit  },
             }},
             new NavMenuModel(){ID = 4, IsGroup = true, Title = "Inventory",Icon = Icons.Material.Filled.Inventory,IconColor = Color.Inherit, Expanded = false,
             navItems = new()
@@ -290,7 +328,7 @@ else
              new NavMenuModel(){ID = 410, IsGroup = true, Title = "Reports",Icon = Icons.Material.Filled.PendingActions,IconColor = Color.Inherit, Expanded = false,
             navItems = new()
             {
-                new NavMenuModel(){ID = 40901,  Title = "Inventory Summary Report",  href = "/InventorySummaryReport" ,IconColor = Color.Inherit  },
+            new NavMenuModel(){ID = 40901,  Title = "Inventory Summary Report",  href = "/InventorySummaryReport" ,IconColor = Color.Inherit  },
                 new NavMenuModel(){ID = 40902,  Title = "Truck Wise Tyre Report",  href = "/TruckWiseTyreReport" ,IconColor = Color.Inherit  },
                 new NavMenuModel(){ID = 40903,  Title = "Tyre Master Report",  href = "/TyreMasterReport" ,IconColor = Color.Inherit  },
                 new NavMenuModel(){ID = 40904,  Title = "Tyre Resole Report",  href = "/TyreResoleReport" ,IconColor = Color.Inherit  },
@@ -304,31 +342,31 @@ else
             new NavMenuModel(){ID = 512, IsGroup = true, Title = "Jobcard",Icon = Icons.Material.Filled.Devices,IconColor = Color.Inherit, Expanded = false,
             navItems = new()
             {
-                new NavMenuModel(){ID = 501,  Title = "Active JobCards",  href = "/jobcards" ,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 501,  Title = "Select JobCard",  href = "/jobcard" ,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 501,  Title = "Completed JobCard",  href = "/completedjobcard" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 51201,  Title = "Active JobCards",  href = "/jobcards" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 51202,  Title = "Select JobCard",  href = "/jobcard" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 51203,  Title = "Completed JobCard",  href = "/completedjobcard" ,IconColor = Color.Inherit  },
 
             }},
-                new NavMenuModel(){ID = 501,  Title = "Periodic Maintenance",  href = "/reminders" ,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 501,  Title = "Active Insurance Claims",  href = "/ManageClaims" ,  Icon=Icons.Material.Filled.Security ,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 501,  Title = "Update Checklist",  href = "/RoutineCheckListView" ,IconColor = Color.Inherit  },
-            new NavMenuModel(){ID = 512, IsGroup = true, Title = "Masters",Icon = Icons.Material.Filled.Devices,IconColor = Color.Inherit, Expanded = false,
+                new NavMenuModel(){ID = 502,  Title = "Periodic Maintenance",  href = "/reminders" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 503,  Title = "Active Insurance Claims",  href = "/ManageClaims" ,  Icon=Icons.Material.Filled.Security ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 504,  Title = "Update Checklist",  href = "/RoutineCheckListView" ,IconColor = Color.Inherit  },
+            new NavMenuModel(){ID = 513, IsGroup = true, Title = "Masters",Icon = Icons.Material.Filled.Devices,IconColor = Color.Inherit, Expanded = false,
             navItems = new()
             {
-                new NavMenuModel(){ID = 501,  Title = "Job Master",  href = "/jobs" ,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 501,  Title = "Mechanics",  href = "/mechanics" ,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 501,  Title = "Workshops",  href = "/workshop" ,IconColor = Color.Inherit  },
-                 new NavMenuModel(){ID = 501,  Title = "Insurance Events Master",  href = "/InsClaimMaster" ,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 501,  Title = "CheckList Master",  href = "/RoutineCheckListMasterView" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 51301,  Title = "Job Master",  href = "/jobs" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 51302,  Title = "Mechanics",  href = "/mechanics" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 51303,  Title = "Workshops",  href = "/workshop" ,IconColor = Color.Inherit  },
+                 new NavMenuModel(){ID = 51304,  Title = "Insurance Events Master",  href = "/InsClaimMaster" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 51305,  Title = "CheckList Master",  href = "/RoutineCheckListMasterView" ,IconColor = Color.Inherit  },
 
             }},
-             new NavMenuModel(){ID = 512, IsGroup = true, Title = "Reports",Icon = Icons.Material.Filled.PendingActions,IconColor = Color.Inherit, Expanded = false,
+             new NavMenuModel(){ID = 514, IsGroup = true, Title = "Reports",Icon = Icons.Material.Filled.PendingActions,IconColor = Color.Inherit, Expanded = false,
             navItems = new()
             {
-                new NavMenuModel(){ID = 501,  Title = "Insurance Status Report",  href = "/InsuranceStatusReport" ,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 502,  Title = "Job Maintenance Report",  href = "/JobMaintenanceReport" ,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 503,  Title = "Truck Maintenance Report",  href = "/TruckMaintenanceReport" ,IconColor = Color.Inherit  },
-                 new NavMenuModel(){ID = 503,  Title = "Mechanic Work Report",  href = "/MechanicWorkReport" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 51401,  Title = "Insurance Status Report",  href = "/InsuranceStatusReport" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 51402,  Title = "Job Maintenance Report",  href = "/JobMaintenanceReport" ,IconColor = Color.Inherit  },
+                new NavMenuModel(){ID = 51403,  Title = "Truck Maintenance Report",  href = "/TruckMaintenanceReport" ,IconColor = Color.Inherit  },
+                 new NavMenuModel(){ID = 51404,  Title = "Mechanic Work Report",  href = "/MechanicWorkReport" ,IconColor = Color.Inherit  },
             }},
             }},
             new NavMenuModel(){ID = 601, Title = "Help Center",  href = "/HelpCenter",Icon = Icons.Material.Filled.HelpCenter ,IconColor = Color.Inherit  },
