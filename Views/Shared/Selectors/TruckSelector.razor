@@ -1,18 +1,13 @@
 @inject ITruckService Itruck
 @using System.Threading
 
-@if (IsLoaded)
-{
-    <MudAutocomplete SelectValueOnTab Clearable ResetValueOnEmptyText Strict T="TruckModel" CoerceValue
-                 Variant="@VariantParameter" Margin="@MarginParameter" Label="Select Truck"
-                 @bind-Value="_value" SearchFunc="SearchTruck" Class="@Class" Disabled="@IsDisabled"
-                 ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
-
-}
-else
-{
-    <MudText> Loading..... </MudText>
-}
+    <div style="position: relative;">
+        <MudAutocomplete SelectValueOnTab Clearable ResetValueOnEmptyText Strict T="TruckModel" CoerceValue
+                     Variant="@VariantParameter" Margin="@MarginParameter" Label="Select Truck"
+                     @bind-Value="_value" SearchFunc="SearchTruck" Class="@Class" Disabled="@IsDisabled"
+                     ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="absolute-loader" Style="@($"position: absolute; bottom: 0; left: 0; right: 0; height: 3px; visibility: {(_isLoading ? "visible" : "hidden")}; pointer-events: none;")" />
+    </div>
 
 
 
@@ -50,8 +45,7 @@ else
     public List<int?> TruckIDsToRemove { get; set; } = null;
 
     int? previousBranchID;
-
-    private bool IsLoaded = true;
+    private bool _isLoading = false;
     [Parameter]
     public MudBlazor.Variant VariantParameter { get; set; } = MudBlazor.Variant.Outlined;
     [Parameter]
@@ -60,30 +54,48 @@ else
     private async Task<IEnumerable<TruckModel>> SearchTruck(string searchString, CancellationToken token)
     {
         await Task.Delay(3);
-        return TruckList.Where(x => (x.RegNo== null && string.IsNullOrWhiteSpace(searchString))  ||  x.RegNo!= null && x.RegNo.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+        if (TruckList == null)
+            return new List<TruckModel>();
+
+        if (string.IsNullOrWhiteSpace(searchString))
+            return TruckList;
+
+        return TruckList.Where(x => x.RegNo != null && x.RegNo.Contains(searchString, StringComparison.InvariantCultureIgnoreCase));
     }
 
 
     protected override async Task OnParametersSetAsync()
     {
-        if ((previousBranchID != BranchID && BranchID != 0) || TruckList.Count == 0)
+        try
         {
-            IsLoaded = false;
-            var Result = Itruck.SelectByBranch(BranchID, Filter, HomeOrOperation).ToList();
-            if (TruckIDsToRemove != null && Result.Any(g => TruckIDsToRemove.Any(d => d == g.TruckID)))
+            if ((previousBranchID != BranchID && BranchID != 0) || TruckList.Count == 0 || (TruckList.Count == 0 && !string.IsNullOrEmpty(Filter)))
             {
-                if (Result.Any(g => !TruckIDsToRemove.Any(d => d == g.TruckID)))
-                {
-                    TruckList = Result.Where(g => !TruckIDsToRemove.Any(d => d == g.TruckID)).ToList();
-                }
-            }
-            else
-            {
-                TruckList = Result;
-            }
-            previousBranchID = BranchID;
-            IsLoaded = true;
-        }       
+                _isLoading = true;
+                StateHasChanged(); // Show loader immediately
+                
+                await Task.Yield(); // Use Yield to allow UI update before blocking work if synchronous, though Itruck is likely synchronous-looking here
 
+                var Result = Itruck.SelectByBranch(BranchID, Filter, HomeOrOperation)?.ToList() ?? new List<TruckModel>();
+                
+                if (TruckIDsToRemove != null && Result.Any())
+                {
+                   TruckList = Result.Where(g => !TruckIDsToRemove.Contains(g.TruckID)).ToList();
+                }
+                else
+                {
+                    TruckList = Result;
+                }
+                previousBranchID = BranchID;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading trucks: {ex.Message}");
+            TruckList = new List<TruckModel>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 }

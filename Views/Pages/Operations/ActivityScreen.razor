@@ -26,81 +26,171 @@
 @inject IBranchSettingsService branchSettingsService
 @inject IRoleService<RoleModel> Irole
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudPaper Style="padding:20px;">
-            <TruckSelector Class="bg-white" Value="SelectedTruck" BranchID="BranchID" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" />
-        </MudPaper>
-    </MudItem>
-    @if (SelectedTruck != null)
-    {
+<div class="dashboard-container pa-4">
+    <MudGrid Spacing="4">
+        <!-- Truck Selection Section -->
         <MudItem xs="12">
-            <MudPaper Style="padding:20px;">
-                <MudItem xs="12" Class="d-flex">
-                    @if (CurrentTrip != null)
+            <div class="dashboard-card">
+                <div class="dashboard-header d-flex align-center justify-space-between">
+                    <MudText Typo="Typo.h6" Color="Color.Primary"><b>Vehicle Operations</b></MudText>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">@DateTime.Now.ToString("dd MMM yyyy")</MudChip>
+                </div>
+                <div class="pa-4">
+                     <MudGrid>
+                        <MudItem xs="12" md="5" lg="4">
+                            <TruckSelector Class="bgWhite" Value="SelectedTruck" BranchID="BranchID" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" />
+                        </MudItem>
+                    </MudGrid>
+                </div>
+            </div>
+        </MudItem>
+
+        @if (SelectedTruck != null)
+        {
+            <!-- Operational Details Section -->
+            <MudItem xs="12">
+                <div class="dashboard-card">
+                    <div class="dashboard-header">
+                        <MudText Typo="Typo.subtitle1" Class="section-title">Current Operation Status</MudText>
+                    </div>
+
+                    <div class="pa-4">
+                        <MudGrid>
+                            <!-- Trip Information -->
+                            <MudItem xs="12" md="4" Class="border-r border-solid border-gray-200">
+                                <MudText Class="section-title">Trip Details</MudText>
+                                @if (CurrentTrip != null)
+                                {
+                                    <div class="d-flex align-center mt-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.ModeOfTravel" Color="Color.Primary" Size="Size.Large" Class="mr-3" />
+                                        <div>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Trip Number</MudText>
+                                            <div class="info-value">@CurrentTrip.TripNumberDisplay</div>
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(CurrentEvent?.OriginName) && !string.IsNullOrEmpty(CurrentEvent?.DestinationName))
+                                    {
+                                        <div class="d-flex align-center mt-3 ml-2">
+                                            <MudText Typo="Typo.body2">@CurrentEvent.OriginName</MudText>
+                                            <MudIcon Icon="@Icons.Material.Filled.ArrowRightAlt" Class="mx-2" Color="Color.Default" />
+                                            <MudText Typo="Typo.body2">@CurrentEvent.DestinationName</MudText>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="highlight-box mt-2">
+                                        <MudText Typo="Typo.body2" Color="Color.Default">No active trip currently associated.</MudText>
+                                    </div>
+                                }
+                            </MudItem>
+
+                            <!-- Driver Information -->
+                            <MudItem xs="12" md="4" Class="border-r border-solid border-gray-200">
+                                <MudText Class="section-title">Driver Information</MudText>
+                                @if (AssignedDriver != null)
+                                {
+                                    <div class="driver-info mt-2">
+                                        <MudAvatar Size="Size.Large" Class="driver-avatar">
+                                            @AssignedDriver.DriverName?.Substring(0, 1).ToUpper()
+                                        </MudAvatar>
+                                        <div>
+                                            <div class="info-value">@AssignedDriver.DriverName</div>
+                                            <div class="d-flex align-center mt-1">
+                                                <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Color="Color.Secondary" Class="mr-1" />
+                                                <MudText Typo="Typo.body2" Color="Color.Secondary">@AssignedDriver.Mobile</MudText>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @if (!AssignedDriver.HasValidLicense)
+                                    {
+                                        <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2" NoIcon="false">Invalid License</MudAlert>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="highlight-box mt-2" style="border-left-color: #d32f2f; background-color: #ffebee;">
+                                        <MudText Typo="Typo.body2" Color="Color.Error"><b>UNASSIGNED</b></MudText>
+                                        <MudText Typo="Typo.caption">Please assign a driver to proceed.</MudText>
+                                    </div>
+                                }
+                            </MudItem>
+
+                            <!-- Event/Location Status -->
+                            <MudItem xs="12" md="4">
+                                <MudText Class="section-title">Current Status</MudText>
+                                @if (HideControls)
+                                {
+                                    <div class="status-chip-container mt-2" style="justify-content: flex-start;">
+                                        <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Icon="@Icons.Material.Filled.EventBusy" Label="true">
+                                            @EventType?.EventStatusText
+                                        </MudChip>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="highlight-box mt-2" style="border-left-color: #43a047; background-color: #e8f5e9;">
+                                        <MudText Typo="Typo.caption" Color="Color.Success">Active Event</MudText>
+                                        <div class="info-value d-flex flex-column align-start">
+                                            <span>@CurrentEvent?.OriginName</span>
+                                            @if(!string.IsNullOrEmpty(CurrentEvent?.DestinationName))
+                                            {
+                                                 <div class="d-flex align-center w-100">
+                                                    <MudIcon Icon="@Icons.Material.Filled.South" Size="Size.Small" Class="my-1 ml-2" />
+                                                 </div>
+                                                 <span>@CurrentEvent?.DestinationName</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+
+                    <!-- Action Bar -->
+                    @if (!HideControls)
                     {
-                        <MudText hidden="@HideStatus" Typo="Typo.h5" Class="mr-5"><MudIcon Icon="@Icons.Material.Filled.ModeOfTravel" Title="Trip Number" Color="Color.Primary" /> @(CurrentTrip?.TripNumberDisplay)</MudText>
-                    }
-                    @if (SelectedTruck != null && AssignedDriver == null)
-                    {
-                        <MudText Typo="Typo.h5" Color="Color.Error"><MudIcon Icon="@Icons.Material.Outlined.AirlineSeatReclineNormal" Title="Driver" /> UNASSAIGNED</MudText>
-                    }
-                    else if (SelectedTruck != null && AssignedDriver != null)
-                    {
-                        <MudText Typo="Typo.h5">
-                            <MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Color="Color.Primary" Title="Driver" /> @AssignedDriver.DriverName
-                            <MudIcon Icon="@Icons.Material.Filled.Phone" Color="Color.Primary" Title="Mobile" /> @AssignedDriver.Mobile
-                        </MudText>
-                        @if (!AssignedDriver.HasValidLicense)
-                        {
-                            <MudText Typo="Typo.caption" Color="Color.Error"> (Invalid Licence)</MudText>
-                        }
-                    }
-                    <MudSpacer></MudSpacer>
-                    @if (HideControls && SelectedTruck != null)
-                    {
-                        <MudText Typo="Typo.h5" Color="Color.Error">@EventType?.EventStatusText</MudText>
-                    }
-                    else if (!HideControls)
-                    {
-                        <div style="padding: 6px 26px; background-color: #e0e0e0; border-radius: 6px;">
-                            <MudText Typo="Typo.h5" Color="Color.Primary"> @CurrentEvent?.OriginName - @CurrentEvent?.DestinationName</MudText>
-                        </div>
-                    }
-                </MudItem>
-                <br>
-                @if (!HideControls)
-                {
-                    <MudItem xs="12" md="12">
-                        <MudButtonGroup Color="Color.Surface" Variant="Variant.Filled">
-                            <MudButton StartIcon="@Icons.Material.Filled.AddTask" Disabled="@(AssignedDriver == null ||(AssignDriver != null && !AssignedDriver.HasValidLicense))" OnClick="UpdateEvent" IconColor="Color.Default">@EventButtonLabel</MudButton>
+                        <div class="action-bar">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddTask" 
+                                       Disabled="@(AssignedDriver == null ||(AssignDriver != null && !AssignedDriver.HasValidLicense))" 
+                                       OnClick="UpdateEvent" Class="mr-2">
+                                @EventButtonLabel
+                            </MudButton>
+
                             @if (CurrentEvent?.EventTypeID == 2)
                             {
-                                <MudButton StartIcon="@Icons.Material.Outlined.AddTask" OnClick="AddConsignment" IconColor="Color.Tertiary">Load Consignment</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" StartIcon="@Icons.Material.Outlined.AddTask" OnClick="AddConsignment">Load Consignment</MudButton>
                             }
-                            <MudButton StartIcon="@Icons.Material.Outlined.PersonAddAlt1" OnClick="AssignDriver" IconColor="Color.Primary">@AssignDriverLabel</MudButton>
+
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.PersonAddAlt1" OnClick="AssignDriver">@AssignDriverLabel</MudButton>
+
+                            <MudSpacer />
+
+                            <MudMenu Label="More Options" Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" Color="Color.Secondary">
+                                <MudMenuItem Icon="@Icons.Material.Filled.Checklist" OnClick="OpenCheckList">Routine Check List</MudMenuItem>
+                                @if (CurrentTrip != null)
+                                {
+                                    <MudMenuItem Icon="@Icons.Material.Outlined.Details" OnClick="OpenTripCard">View Details</MudMenuItem>
+                                }
+                                @if (CurrentTrip != null && !CurrentTrip.Closed)
+                                {
+                                     <MudMenuItem Icon="@Icons.Material.Filled.Money" OnClick="OpenTripAdvance">Trip Advance</MudMenuItem>
+                                     <MudDivider />
+                                     <MudMenuItem Icon="@Icons.Material.Outlined.Cancel" OnClick="CancelTrip" IconColor="Color.Error"><span style="color:var(--mud-palette-error)">Cancel Trip</span></MudMenuItem>
+                                }
+                            </MudMenu>
+                            
                             @if (ShowReportBreakdownButton)
                             {
-                                <MudButton StartIcon="@Icons.Material.Filled.ReportProblem" OnClick="ReportBreakDown" IconColor="Color.Secondary">Breakdown/Accident</MudButton>
-
+                                <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.ReportProblem" OnClick="ReportBreakDown" Class="ml-2">Report Issue</MudButton>
                             }
-                            @if (CurrentTrip != null && !CurrentTrip.Closed)
-                            {
-                                <MudButton StartIcon="@Icons.Material.Outlined.Cancel" OnClick="CancelTrip" IconColor="Color.Error">Cancel Trip</MudButton>
-                                <MudButton StartIcon="@Icons.Material.Filled.Money" OnClick="OpenTripAdvance" IconColor="Color.Success">Trip Advance</MudButton>
-                            }
-                            @if (CurrentTrip != null)
-                            {
-                                <MudButton StartIcon="@Icons.Material.Outlined.Details" OnClick="OpenTripCard" IconColor="Color.Primary">View Details</MudButton>
-                            }
-                            <MudButton StartIcon="@Icons.Material.Filled.Checklist" OnClick="OpenCheckList" IconColor="Color.Primary">Routine Check List</MudButton>
-                        </MudButtonGroup>
-                    </MudItem>
-                }
-            </MudPaper>
-        </MudItem>
-    }
-</MudGrid>
+                        </div>
+                    }
+                </div>
+            </MudItem>
+        }
+    </MudGrid>
+</div>
 @if (SelectedTruck != null)
 {
     <TripViewComponent Trip="CurrentTrip" OnTripStatusUpdated="@TripStatusUpdated" @ref="@TripViewRef"></TripViewComponent>
