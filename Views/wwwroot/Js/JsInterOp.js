@@ -122,8 +122,12 @@ function saveAsFile(filename, bytesBase64) {
     link.href = "data:application/octet-stream;base64," + bytesBase64;
     document.body.appendChild(link); // Needed for Firefox
     link.click();
-    if (link.parentNode) {
-        link.parentNode.removeChild(link);
+    try {
+        if (link.parentNode) {
+            link.parentNode.removeChild(link);
+        }
+    } catch (e) {
+        console.warn("Retrying removing child after download failed:", e);
     }
 }
 
