@@ -11,9 +11,10 @@ namespace ArmsServices.DataServices
         string GetMessageTitle(string DocType, string DocNumber, string Varification);
         string GetMessageBody(string DocType, string DocNumber, string Varification, DateTime? DocDate);
         PushNotificationModel UpdatePushNotification(PushNotificationModel model);
-        IEnumerable<PushNotificationModel> SelectActiveNotifications(int? BranchID, string UserID = null);
+        //IEnumerable<PushNotificationModel> SelectActiveNotifications(int? BranchID, string UserID = null);
         public IEnumerable<PushNotificationModel> SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(int? ID, int? DocumentID, int? DocumentTypeID);
         public IEnumerable<PushNotificationModel> SelectActiveNotifications();
+        public NotificationWrapper SelectActiveNotifications(int? BranchID, string UserID = null, int Limit = 5);
         int AknowledgedSelectedItems(string MessageIDs, string UserID);
         int AknowledgedCurrentItem(int? MessageID, string UserID);
         IEnumerable<PushNotificationGroupModel> GetAllGroupList();

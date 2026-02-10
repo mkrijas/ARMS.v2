@@ -28,7 +28,7 @@
               Content="@badgeContent" 
               Color="Color.Error" 
               Class="mx-6 my-4">
-        <MudIcon Icon="@Icons.Material.Outlined.Notifications" Color="Color.Inherit" Size="Size.Medium" Title="Notifications" />
+        <MudIcon Icon="@Icons.Material.Outlined.Notifications" onclick="@Toggle" Color="Color.Inherit" Size="Size.Medium" Title="Notifications" />
         
     </MudBadge>
 </div>
@@ -173,16 +173,16 @@
             return;
         }
         lastToggleTime = now;
-        
+
         // ONLY toggle the popover - never open the drawer from here
         IsOpen = !IsOpen;
-        
+
         // Ensure drawer is closed when toggling popover
         if (IsOpen && isAllNotificationsDrawerOpen)
         {
             isAllNotificationsDrawerOpen = false;
         }
-        
+
         Take = 5; // Reset Take when popover is toggled
     }
 
@@ -234,26 +234,29 @@
             });
             await hubConnection.StartAsync();
 
-            
+
         }
 
 
-      
+
     }
 
+    private int notiCount;
     private void getNotifications()
     {
         if (BranchID != 0)
         {
             CancellationTokenSource ctc = new CancellationTokenSource();
-            currentNotificationMessages = IpushNotificationService.SelectActiveNotifications(BranchID, UserID).ToList();
+            var noti = IpushNotificationService.SelectActiveNotifications(BranchID, UserID);
+            currentNotificationMessages =  noti.notifications;
 
-            if (currentNotificationMessages.Count > 0)
+            notiCount = noti.NotificationsCount;
+            if (noti.NotificationsCount > 0)
             {
                 // <span class="absolute d-flex align-center justify-center rounded-pill"
                 //       style="top: 2px; right: 0px; background-color: #ff3d00; color: white; font-size: 0.65rem; font-weight: 700; min-width: 20px; padding: 0 6px; height: 18px; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite;">
                 //     @(
-                badgeContent = currentNotificationMessages.Count > 99 ? "99+" : currentNotificationMessages.Count.ToString();
+                badgeContent = notiCount > 99 ? "99+" : notiCount.ToString();
 
                 // </span>
             }
@@ -343,12 +346,10 @@
         
         // Close the popover first
         IsOpen = false;
-        await InvokeAsync(StateHasChanged);
-        
-        // Wait a bit to ensure popover is fully closed
-        await Task.Delay(150);
-        
-        // Open the drawer
+
+        var noti = IpushNotificationService.SelectActiveNotifications(BranchID, UserID,notiCount);
+        currentNotificationMessages = noti.notifications;        // Open the drawer
+
         isAllNotificationsDrawerOpen = true;
         await InvokeAsync(StateHasChanged);
     }

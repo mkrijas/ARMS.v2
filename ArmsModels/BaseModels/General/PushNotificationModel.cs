@@ -1,8 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ArmsModels.BaseModels.General
 {
     // Model representing a push notification
+    public class NotificationWrapper
+    {
+        public int NotificationsCount { get; set; }
+        public List<PushNotificationModel> notifications { get; set; }
+
+    }
     public class PushNotificationModel
     {
         public int MSgId { get; set; } = 0; // Unique identifier for the message, initialized to 0
