@@ -217,5 +217,22 @@ namespace ArmsServices.DataServices
             };
         }
 
+        IEnumerable<InventoryItemStockModel> IInventoryItemService.GetCurrentStock(int? StoreID, int? ItemID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@StoreID", StoreID),
+               new SqlParameter("@ItemID", ItemID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Inventory.Item.InhandQty.Select]", parameters))
+            {
+                yield return new InventoryItemStockModel()
+                {
+                    AvailableQty = dr.GetDecimal("AvailableQty"),
+                    UsedQty = dr.GetDecimal("UsedQty"),
+                    TotalInhandQty = dr.GetDecimal("TotalInhandQty"),
+                };
+            }
+        }
     }
 }
