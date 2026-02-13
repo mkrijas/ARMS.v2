@@ -268,28 +268,45 @@
 
     protected async Task IsApproveData(DataApprovedStatus aprvd)
     {
-        if (HasPermissionInventoryGrnServiceApprove)
+        if (!HasPermissionInventoryGrnServiceApprove)
         {
-            if (aprvd.IsApprove)
-            {
-                try
-                {
-                    model.UserInfo.UserID = UserID;
-                    Iservice.Approve(model.GrnID.Value, model.UserInfo.UserID, string.Empty);
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
+            await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You don't have any permission to Approve InventoryGrn.");
+                "You don't have any permission to Approve PurchaseOrder.");
+            return;
         }
+
+        if (!aprvd.IsApprove)
+            return;
+
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity?.Name;
+
+            // 🔹 Check if entry date is backdated
+            bool isBackDate = model.EntryDate < DateTime.Today;
+
+            if (isBackDate)
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Back Date Warning!",
+                    $"Are you sure you want to approve entry with date - {model.EntryDate:dd-MM-yyyy} ?");
+
+                if (result != true)
+                    return;
+            }
+
+            // 🔹 Approve directly if not backdated
+            Iservice.Approve(model.GrnID.Value, model.UserInfo.UserID, string.Empty);
+
+            snackbar.Add("Approved Successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }        
     }
 
     private void Cancel()

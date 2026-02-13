@@ -151,4 +151,11 @@ namespace ArmsModels.BaseModels
         public int? LockDays { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
+
+    public class InventoryItemStockModel
+    {
+        public decimal? AvailableQty { get; set; }
+        public decimal? UsedQty { get; set; }
+        public decimal? TotalInhandQty { get; set; }
+    }
 }
