@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System;
 using ArmsModels.BaseModels;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 
 namespace ArmsServices.DataServices.Finance.Transactions

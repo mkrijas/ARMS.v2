@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Data.Common;
+using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
@@ -150,7 +151,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Query", "IsClosed"),
             };
 
-            SqlParameter result = new SqlParameter("@result", SqlDbType.Bit);
+            SqlParameter result = new SqlParameter("@result", DbType.Boolean);
             result.Direction = ParameterDirection.Output;
             parameters.Add(result);
             Iservice.ExecuteNonQuery("[usp.Operation.Trip.Query]", parameters);
@@ -190,8 +191,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Query", "IsSettled"),
             };
 
-            SqlParameter result = new SqlParameter("@result", SqlDbType.Bit);
+            // Use System.Data.DbType to avoid ambiguous SqlDbType references from multiple assemblies
+            SqlParameter result = new SqlParameter("@result", DbType.Boolean);
             result.Direction = ParameterDirection.Output;
+            parameters.Add(result);
+
             Iservice.ExecuteNonQuery("[usp.Operation.Trip.Query]", parameters);
             return (bool)result.Value;
         }
