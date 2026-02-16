@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using ArmsServices; 
 
 namespace Views.Data

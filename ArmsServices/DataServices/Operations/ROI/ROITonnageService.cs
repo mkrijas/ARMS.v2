@@ -2,7 +2,7 @@
 using Core.BaseModels.Finance.Transactions;
 using Core.IDataServices.Operations.ROI;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using Core.BaseModels.Operations.ROI;
 using System;

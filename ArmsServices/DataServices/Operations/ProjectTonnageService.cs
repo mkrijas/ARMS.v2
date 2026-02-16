@@ -1,7 +1,7 @@
 ﻿using ArmsModels.BaseModels;
 using ArmsServices;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using Core.BaseModels.Operations;
 using ArmsModels.SharedModels;

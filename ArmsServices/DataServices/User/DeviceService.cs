@@ -2,7 +2,7 @@
 using ArmsServices;
 using Core.BaseModels.User;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using Core.IDataServices.User;
 using System.Threading.Tasks;

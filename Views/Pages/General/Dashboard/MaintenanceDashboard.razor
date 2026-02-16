@@ -1,6 +1,7 @@
 @page "/maintenancedashboard"
 @using ArmsModels.BaseModels
 @using ArmsServices.DataServices
+@inject IDashboardService DashboardService
 @inject ITruckService TruckService
 @inject IJobcardService JobcardService
 @inject IBreakdownService BreakdownService
@@ -11,8 +12,7 @@
 {
     <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 500px;">
         <LoaderComponent IsFullScreen="false" 
-                        ShowLogo="false" 
-                        Size="large" 
+                        ShowLogo="false" Size="large" 
                         LoadingText="Loading Maintenance Dashboard" 
                         SubText="Fetching maintenance data..." />
     </div>
@@ -172,13 +172,13 @@ else
     private bool _isLoading = true;
     private DateTime _loadStartTime;
     private int BranchID;
-    
+
     // Metrics
     private int TotalVehicles = 0;
     private int ActiveVehicles = 0;
     private int InMaintenance = 0;
     private int Breakdowns = 0;
-    
+
     private decimal MaintenanceCost = 0;
     private double AvgDowntime = 0;
     private double BreakdownRate = 0;
@@ -190,6 +190,8 @@ else
     // Charts
     public double[] ReasonData = { };
     public string[] ReasonLabels = { };
+
+    private Dictionary<string, decimal> dict = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -217,8 +219,10 @@ else
         string BranchIDString = claim.Value;
         BranchID = int.Parse(BranchIDString);
 
+        dict = DashboardService.MaintenanceCollection(BranchID);
+
         // 1. Total Fleet
-        var allTrucks = TruckService.SelectAllByBranch(true, BranchID, "All", "AllOperation").ToList();
+        var allTrucks = TruckService.SelectAllByBranch(true, BranchID, "AvailableForBranch", "Operation").ToList();
         TotalVehicles = allTrucks.Count;
 
         // 2. In Maintenance (Active Job Cards)
@@ -257,10 +261,10 @@ else
         // Note: This might be heavy if getting ALL history. 
         // For now, let's just set placeholder or try a limited fetch if possible.
         // Since we don't have a specific "GetExpenseByMonth" service, we might skip heavy calc or just show 0 for now until specifically implemented.
-        MaintenanceCost = 0; // Placeholder
+        MaintenanceCost = dict["CostOfMaintenance"]; // Placeholder
 
         // Avg Downtime
-        AvgDowntime = 0; // Placeholder
+        AvgDowntime = (double)dict["AvgDownTime"]; // Placeholder
 
         // Breakdown Rate
         if (TotalVehicles > 0)

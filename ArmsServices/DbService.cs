@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,15 +39,26 @@ namespace ArmsServices
             this._logger = logger;
             _config = configuration;
 
-            //var userID =   usrmgr.GetUserId;
-           
+            //var userID =   usrmgr.GetUserId;           
 
-            this.ConnectionString = configuration.GetConnectionString("ArmsDB");
+            var connStr = configuration.GetConnectionString("ArmsDB");
+            var builder = new SqlConnectionStringBuilder(connStr ?? string.Empty)
+            {
+                // Microsoft.Data.SqlClient defaults to encrypting connections. If the server
+                // uses a certificate that isn't trusted (common in dev), allow trusting it.
+                TrustServerCertificate = true
+            };
+            this.ConnectionString = builder.ToString();
         }
 
         public void ChangeConnectionString(string _ConnectionString)
         {
-            this.ConnectionString = _config.GetConnectionString(_ConnectionString) ;
+            var connStr = _config.GetConnectionString(_ConnectionString);
+            var builder = new SqlConnectionStringBuilder(connStr ?? string.Empty)
+            {
+                TrustServerCertificate = true
+            };
+            this.ConnectionString = builder.ToString();
         }
 
         public async IAsyncEnumerable<IDataRecord> GetDataReaderAsync(string procedureName, List<SqlParameter> parameters)

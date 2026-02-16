@@ -1,6 +1,6 @@
 ﻿using ArmsModels.BaseModels;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System;
 using System.Data;
 
@@ -123,6 +123,25 @@ namespace ArmsServices.DataServices
                 string key = dr.GetString("key");
                 decimal? value = (decimal?)dr.GetInt32("value");
                 dict.Add(key, value??0);
+            }
+            return dict;
+        }
+
+
+        public Dictionary<string, decimal> MaintenanceCollection(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "General"),
+               new SqlParameter("@BranchID", BranchID),
+            };
+            Dictionary<string, decimal> dict = new Dictionary<string, decimal>();
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.MaintenanceDashBoard.ChartData.Select]", parameters))
+            {
+                string key = dr.GetString("key");
+                decimal? value = (decimal?)dr.GetDecimal("value");
+                dict.Add(key, value ?? 0);
             }
             return dict;
         }
