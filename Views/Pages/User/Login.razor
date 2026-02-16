@@ -5,6 +5,16 @@
 @inject NavigationManager nav
 @inject ISessionStorageService sessionStorage
 
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using ArmsModels.BaseModels
+
+@inject AuthenticationStateProvider auth
+@inject NavigationManager nav
+@inject ISessionStorageService sessionStorage
+@inject UserManager<UserModel> _userManager
+@inject MudBlazor.ISnackbar snackbar
+
 <div style="height: 100vh; width: 100vw; overflow: hidden; display: flex;">
     
     <!-- Left Side: Branding & Image (Hidden on mobile) -->
@@ -42,7 +52,7 @@
             </div>
 
             <div class="mb-8">
-                <MudText Typo="Typo.h4" Style="font-weight: 700; color: #5E5873;" Class="mb-2">Welcome to ARMS! 👋</MudText>
+                <MudText Typo="Typo.h4" Style="font-weight: 700; color: #5E5873;" Class="mb-2">Welcome to ARMS! 👋 (v2.1)</MudText>
                 <MudText Typo="Typo.body1" Style="color: #6E6B7B;">Please sign-in to your account and start the adventure</MudText>
             </div>
 
@@ -56,7 +66,8 @@
                               Adornment="Adornment.End"
                               AdornmentColor="Color.Primary"
                               FullWidth="true" 
-                              Style="background-color: #F8F8F8;" />
+                              Style="background-color: #F8F8F8;"
+                              For="@(() => user.UserID)" />
                 
                 <MudTextField InputType="InputType.Password" 
                               @bind-Value="user.Password" 
@@ -66,7 +77,8 @@
                               Adornment="Adornment.End" 
                               AdornmentIcon="@Icons.Material.Filled.VisibilityOff"
                               FullWidth="true" 
-                              Style="background-color: #F8F8F8;" />
+                              Style="background-color: #F8F8F8;" 
+                              For="@(() => user.Password)" />
                 
                 <div class="d-flex justify-space-between align-center mb-6">
                     <MudCheckBox T="bool" Label="Remember Me" Color="Color.Primary" Dense="true" Style="font-size: 0.9rem;" />
@@ -90,7 +102,7 @@
             </div>
             
             <!-- Social Login Divider -->
-            <div class="d-flex align-center my-8">
+            @* <div class="d-flex align-center my-8">
                 <MudDivider Class="flex-grow-1" />
                 <MudText Typo="Typo.caption" Class="mx-4" Style="color: #B9B9C3;">OR</MudText>
                 <MudDivider Class="flex-grow-1" />
@@ -101,7 +113,7 @@
                 <MudIconButton Icon="@Icons.Custom.Brands.Twitter" Color="Color.Inherit" Style="color: #1da1f2;" />
                 <MudIconButton Icon="@Icons.Custom.Brands.Google" Color="Color.Inherit" Style="color: #db4437;" />
                 <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Style="color: #333333;" />
-            </div>
+            </div> *@
 
         </div>
     </div>
@@ -116,19 +128,43 @@
         return base.OnInitializedAsync();
     }
 
-    private async Task<bool> OnValidSubmit()
+    private async Task OnValidSubmit()
     {
-        ((CustomAuthenticationSatetProvider)auth).AuthenticateUser(user.UserID);
-        nav.NavigateTo("/");
-        await sessionStorage.SetItemAsync("userID", user.UserID);
+        Console.WriteLine($"Attempting login for user: {user.UserID}");
+        var appUser = await _userManager.FindByIdAsync(user.UserID);
+        
+        if (appUser == null)
+        {
+            Console.WriteLine("User not found.");
+            snackbar.Add("Invalid Username or Password", Severity.Error);
+            return;
+        }
 
-        return await Task.FromResult(true);
+        var checkPassword = await _userManager.CheckPasswordAsync(appUser, user.Password);
+        Console.WriteLine($"Password check result: {checkPassword}");
+
+        if (checkPassword)
+        {
+            Console.WriteLine("Login successful.");
+            ((CustomAuthenticationSatetProvider)auth).AuthenticateUser(user.UserID);
+            await sessionStorage.SetItemAsync("userID", user.UserID);
+            nav.NavigateTo("/");
+        }
+        else
+        {
+            Console.WriteLine("Login failed: Invalid password.");
+            snackbar.Add("Invalid Username or Password", Severity.Error);
+        }
     }
 
     class User
     {
+        [Required(ErrorMessage = "Username is required")]
         public string UserID { get; set; }
+        
+        [Required(ErrorMessage = "Password is required")]
         public string Password { get; set; }
+        
         public string UserName { get; set; }
         public List<int> branches { get; set; }
     }
