@@ -1,0 +1,193 @@
+
+
+    /* Rope Container - Fixed to Viewport */
+    /* Use ::deep if this component is used inside another and needs to break out, 
+       but for a Dialog, these are usually top-level or global. 
+       However, CSS isolation scopes to the component. 
+       For MudDialog, the content is inside the component, but the overlay/dialog itself might be outside.
+       Since 'login-dialog-transparent' is a class on MudDialog, it might need ::deep or be global.
+       But let's try standard isolation first.
+       
+       Wait, MudDialog renders into a Portal (MudDialogProvider). 
+       Scoped CSS might NOT apply to the dialog container itself if it's rendered elsewhere in the DOM.
+       
+       Actually, MudBlazor dialogs are rendered in `MudDialogProvider`. 
+       Child content is rendered there.
+       
+       If these styles are targeting elements *inside* the `DialogContent` (like .rope-container, .hanging-card), 
+       CSS isolation works fine because those elements are in this Razor file.
+       
+       But `.login-overlay` and `.login-dialog-transparent` are passed to `Options` and `Class` of `MudDialog`.
+       Since `MudDialog` component is *used* here, the classes usually need to be global OR we need to use `::deep` 
+       if the HTML structure allows it.
+       
+       However, `MudDialog` renders at the root. Scoped CSS from `LoginDialog.razor` adds an attribute to elements *defined in* `LoginDialog.razor`.
+       The `MudDialog` tag itself gets the attribute.
+       But the *actual rendered HTML* of the dialog (the overlay, the panel) might not carry that attribute 
+       if MudBlazor doesn't forward it, or if it renders unrelated DOM elements.
+       
+       User asked to "move all styles... to respective pagename.css".
+       I will move them. If it breaks, I might need to adjust (e.g., use ::deep).
+    */
+
+    .rope-container {
+        position: fixed; 
+        top: 0; /* Align top 0 */
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        pointer-events: none; 
+        z-index: 2000; 
+    }
+
+    /* Wrapper handles Horizontal Sway (Trapeze effect) */
+    .rope-align-wrapper {
+        position: relative;
+        width: 420px;
+        pointer-events: auto; 
+        /* Sway the whole assembly left/right */
+        animation: sway 2.5s ease-in-out infinite alternate;
+        animation-delay: 1.4s;
+    }
+
+    /* The Hanging Card - Handles Vertical Drop & Tilt */
+    .hanging-card {
+        position: relative;
+        width: 420px;
+        transform-origin: top center;
+        /* Start above screen */
+        top: -100vh;
+        animation: dropDown 1.5s cubic-bezier(0.10, 0.88, 0.22, 1.55) forwards;
+    }
+
+    /* Ropes */
+    .rope {
+        position: absolute;
+        width: 4px;
+        background: #8e6e54; 
+        background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px);
+        top: -200vh; 
+        height: calc(200vh + 35px); 
+        z-index: 5; 
+        border-radius: 0 0 2px 2px;
+        /* Sync stretch with card drop */
+        animation: ropeElastic 1.5s cubic-bezier(0.10, 0.88, 0.22, 1.55) forwards;
+    }
+    
+    .rope-left { left: 40px; }
+    .rope-right { right: 40px; }
+
+    /* Hooks (Rings) */
+    .hook {
+        position: absolute;
+        top: -15px;
+        width: 30px;
+        height: 30px;
+        border: 4px solid #555; 
+        border-radius: 50%;
+        background: transparent;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .hook-left { left: 27px; }
+    .hook-right { right: 27px; }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    /* Elastic Drop + Tilt + Scale Animation */
+    @keyframes dropDown {
+        0% {
+            top: -100vh;
+            transform: rotate(-6deg) scale(0.92);
+            opacity: 0;
+        }
+        38% {
+            top: 250px; 
+            transform: rotate(3deg) scale(1.03);
+            opacity: 1;
+        }
+        60% {
+            top: -20px; 
+            transform: rotate(-2deg) scale(0.99);
+        }
+        78% {
+            top: 80px; 
+            transform: rotate(1.4deg) scale(1.01);
+        }
+        90% {
+            top: 40px; 
+            transform: rotate(-0.8deg) scale(1.00);
+        }
+        95% {
+            top: 55px; 
+            transform: rotate(0.5deg) scale(1.0);
+        }
+        100% {
+            top: 50px; 
+            transform: rotate(0deg) scale(1.0);
+        }
+    }
+
+    /* Continuous Horizontal Sway */
+    @keyframes sway {
+        0% { transform: translateX(-5px); }
+        100% { transform: translateX(5px); }
+    }
+
+    /* --- Closing Animations --- */
+    
+    /* 1. Left Rope Snaps Up */
+    .exiting .rope-left {
+        animation: ropeSnap 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+    }
+
+    /* 2. Right Rope Snaps Up (Delayed) */
+    .exiting .rope-right {
+        animation: ropeSnap 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) 0.3s forwards;
+    }
+
+    /* Rope Snap Keyframes */
+    @keyframes ropeSnap {
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(-200vh); opacity: 0; }
+    }
+
+    /* 3. Card Falls & Tilts */
+    .exiting .hanging-card {
+        animation: cardFall 1.2s cubic-bezier(0.6, 0.04, 0.98, 0.335) forwards !important;
+        transform-origin: top right; 
+    }
+
+    @keyframes cardFall {
+        0% {
+            top: 50px;
+            transform: rotate(0deg);
+            opacity: 1;
+        }
+        20% {
+            transform: rotate(15deg);
+            top: 60px;
+        }
+        100% {
+            top: 150vh;
+            transform: rotate(80deg);
+            opacity: 0;
+        }
+    }
+
+    /* Synchronized Rope Stretch during Drop */
+    @keyframes ropeElastic {
+        0% { height: calc(100vh - 15px); }
+        38% { height: calc(200vh + 235px); }
+        60% { height: calc(200vh - 35px); }
+        78% { height: calc(200vh + 65px); }
+        90% { height: calc(200vh + 25px); }
+        95% { height: calc(200vh + 40px); }
+        100% { height: calc(200vh + 35px); }
+    }
