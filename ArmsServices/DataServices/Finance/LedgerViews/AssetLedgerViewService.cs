@@ -1,7 +1,7 @@
 ﻿using ArmsServices;
 using Core.BaseModels.Finance.LedgerViews;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System;
 using Core.IDataServices.Finance.LedgerViews;

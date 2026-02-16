@@ -3,7 +3,7 @@ using ArmsServices.DataServices.General;
 using ArmsServices;
 using Core.BaseModels.Finance.Transactions;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using Core.IDataServices.Finance.Transactions;
 using ArmsModels.BaseModels;
