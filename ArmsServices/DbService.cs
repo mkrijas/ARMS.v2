@@ -10,6 +10,7 @@ using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 
 namespace ArmsServices
@@ -45,8 +46,7 @@ namespace ArmsServices
             var builder = new SqlConnectionStringBuilder(connStr ?? string.Empty)
             {
                 // Microsoft.Data.SqlClient defaults to encrypting connections. If the server
-                // uses a certificate that isn't trusted (common in dev), allow trusting it.
-                TrustServerCertificate = true
+                // uses a certificate that isn't trusted (common in dev), allow trusting it.   
             };
             this.ConnectionString = builder.ToString();
         }
@@ -65,7 +65,7 @@ namespace ArmsServices
         {
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {
-                await connection.OpenAsync();
+                await connection.OpenAsync(SqlConnectionOverrides.OpenWithoutRetry, CancellationToken.None);
                 using (SqlCommand cmd = new SqlCommand(procedureName, connection))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
@@ -96,7 +96,7 @@ namespace ArmsServices
                 {
                     cmd.Parameters.AddRange(parameters.ToArray());
                 }
-                await connection.OpenAsync();
+                await connection.OpenAsync(CancellationToken.None);
                 return await cmd.ExecuteNonQueryAsync();
             }
         }

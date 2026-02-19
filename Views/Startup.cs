@@ -77,6 +77,8 @@ namespace Views
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            AppContext.SetSwitch("Switch.Microsoft.Data.SqlClient.UseManagedNetworkingOnWindows", true);
+
             services.AddRazorPages();
             services.AddServerSideBlazor()
     .AddCircuitOptions(options => { options.DetailedErrors = true; });
