@@ -11,7 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
 using System.Transactions;
-using TableDependency.SqlClient.Base;
 
 namespace Core.BaseModels.Finance.Transactions
 {

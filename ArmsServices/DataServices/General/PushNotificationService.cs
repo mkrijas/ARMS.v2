@@ -174,7 +174,7 @@ namespace ArmsServices.DataServices.General
 
             NotificationWrapper noti = new() {notifications = new List<PushNotificationModel>() };
 
-            var pTotal = new SqlParameter("@TotalNotifications", DbType.Int32)
+            var pTotal = new SqlParameter("@TotalNotifications", SqlDbType.Int)
             {
                 Direction = ParameterDirection.Output
             };

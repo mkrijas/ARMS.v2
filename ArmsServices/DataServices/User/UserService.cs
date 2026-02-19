@@ -547,7 +547,7 @@ namespace ArmsServices.DataServices
                new SqlParameter
                {
                    ParameterName = "@result",
-                   DbType = DbType.Boolean,
+                   SqlDbType = SqlDbType.Bit,
                    Direction = ParameterDirection.Output
                }
             };

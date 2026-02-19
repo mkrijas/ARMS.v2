@@ -6,6 +6,10 @@ using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+//using newSqlDbType = ModernSql::Microsoft.Data.SqlClient.common;
+
+
+
 
 
 namespace ArmsServices.DataServices
@@ -151,7 +155,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Query", "IsClosed"),
             };
 
-            SqlParameter result = new SqlParameter("@result", DbType.Boolean);
+            SqlParameter result = new SqlParameter("@result", SqlDbType.Bit);
             result.Direction = ParameterDirection.Output;
             parameters.Add(result);
             Iservice.ExecuteNonQuery("[usp.Operation.Trip.Query]", parameters);
@@ -192,7 +196,7 @@ namespace ArmsServices.DataServices
             };
 
             // Use System.Data.DbType to avoid ambiguous SqlDbType references from multiple assemblies
-            SqlParameter result = new SqlParameter("@result", DbType.Boolean);
+            SqlParameter result = new SqlParameter("@result", SqlDbType.Bit);
             result.Direction = ParameterDirection.Output;
             parameters.Add(result);
 
