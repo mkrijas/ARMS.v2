@@ -367,7 +367,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@FilePath", model.FileName),
                //new SqlParameter("@BookedGcs", model.BookedGCs.ToDataTable()),
-               new SqlParameter("@BookedGcs", SqlDbType.Structured)
+               new SqlParameter("@BookedGcs", DbType.Object)
                     {
                         TypeName = "dbo.GcTariffEntryTableType",
                         Value = model.BookedGCs.ToDataTable()

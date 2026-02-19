@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using Microsoft.Data.SqlClient;
 using System.Reflection.Metadata;
 
@@ -173,7 +174,7 @@ namespace ArmsServices.DataServices.General
 
             NotificationWrapper noti = new() {notifications = new List<PushNotificationModel>() };
 
-            var pTotal = new SqlParameter("@TotalNotifications", SqlDbType.Int)
+            var pTotal = new SqlParameter("@TotalNotifications", DbType.Int32)
             {
                 Direction = ParameterDirection.Output
             };

@@ -547,7 +547,7 @@ namespace ArmsServices.DataServices
                new SqlParameter
                {
                    ParameterName = "@result",
-                   SqlDbType = SqlDbType.Bit,
+                   DbType = DbType.Boolean,
                    Direction = ParameterDirection.Output
                }
             };
@@ -555,9 +555,9 @@ namespace ArmsServices.DataServices
             Iservice.ExecuteScalar("[usp.user.UserClaims.Select]", parameters);
 
             var resultParam = parameters.Find(p => p.ParameterName == "@result");
-            if (resultParam.Value == DBNull.Value)
+            if (resultParam == null || resultParam.Value == DBNull.Value)
             {
-                return false; // or handle the default value as needed
+                return false;
             }
             return (bool)resultParam.Value;
         }

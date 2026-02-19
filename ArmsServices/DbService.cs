@@ -107,7 +107,7 @@ namespace ArmsServices
 
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {
-                connection.Open();
+                connection.Open(SqlConnectionOverrides.OpenWithoutRetry);
                 using (SqlCommand cmd = new SqlCommand(procedureName, connection))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
