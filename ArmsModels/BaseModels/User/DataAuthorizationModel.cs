@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
         public int? AuthLevelID { get; set; }
         public string Remarks { get; set; }
         public string ClaimValue { get; set; }
+        public virtual string DocType { get; set; }
         public virtual string AuthType { get; set; }
         public virtual bool IsCompleted { get; set; } = false;
         public virtual string DisplayString { get { return string.Concat(UserInfo?.UserID, " at ", UserInfo?.TimeStampField?.ToString("dd-MM-yy hh:mm tt")); } }

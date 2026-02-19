@@ -103,6 +103,16 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+
+        public IEnumerable<DataAuthorizationModel> GetAll()
+        {           
+            DataAuthorizationModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Select]", null))
+            {
+                yield return GetModel(dr);
+            }            
+        }
+
         // Method to update a data authorization entry
         public DataAuthorizationModel Update(DataAuthorizationModel model)
         {
@@ -129,8 +139,10 @@ namespace ArmsServices.DataServices
             {
                 ID = (int?)dr.GetInt64("ID"),
                 DocumentID = dr.GetInt32("DocumentID"),
-                DocTypeID = dr.GetInt32("DTid"),
+                AuthType = dr.GetString("AutherizationType"),
                 AuthLevelID = dr.GetInt32("AuthLevelID"),
+                DocType =  dr.GetString("DocType"),
+                DocTypeID = dr.GetInt32("DTid"),                
                 Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

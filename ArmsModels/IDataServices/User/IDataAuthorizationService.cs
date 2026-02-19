@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
         IEnumerable<DataAuthorizationModel> SelectByDocument(int? DocTypeID, int? DocumentID);
         IEnumerable<DataAuthorizationModel> SelectByDocument(string DocType, int? DocumentID);
         int Delete(int? ID, string UserID);
+        IEnumerable<DataAuthorizationModel> GetAll();
         IEnumerable<DataAuthorizationModel> GetAuthStatus(int? DocTypeID, int? DocumentID);
     }
 }
