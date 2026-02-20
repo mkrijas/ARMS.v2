@@ -39,7 +39,7 @@
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <StoreSelector IsDisabled="ReadOnly" @bind-Value="model.Store" VariantParameter="Variant.Outlined" MarginParameter="Margin.Dense" BranchID="@branchID.Value"></StoreSelector>
+                        <StoreSelector IsDisabled="ReadOnly" @bind-Value="model.Store" VariantParameter="Variant.Outlined" MarginParameter="Margin.Dense" BranchID="@(branchID ?? 0)"></StoreSelector>
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
@@ -109,7 +109,7 @@
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        <MudText Align="Align.Start" Class="marleft-10">TOTAL : <b>@model.TotalValue.Value.ToString("c")</b></MudText>
+        <MudText Align="Align.Start" Class="marleft-10">TOTAL : <b>@(model.TotalValue?.ToString("c") ?? 0.ToString("c"))</b></MudText>
         <MudSpacer></MudSpacer>
         <div class="marright-10">
             @if (!ReadOnly)
@@ -180,7 +180,7 @@
         branchID = int.Parse(brancIDString);
         var user = authprov.User;
         UserID = user.Identity.Name;
-        store = storeIservice.SelectByBranch(branchID.Value).ToList();
+        store = storeIservice.SelectByBranch(branchID ?? 0).ToList();
         if (store.Any(s => s.StoreID == model.StoreID))
         {
             model.Store = store.FirstOrDefault(s => s.StoreID == model.StoreID);
@@ -275,8 +275,11 @@
                 try
                 {
                     model.UserInfo.UserID = UserID;
-                    Iservice.Approve(model.GrnID.Value, model.UserInfo.UserID, string.Empty);
-                    snackbar.Add("Approved Successfully", Severity.Success);
+                    if (model.GrnID != null)
+                    {
+                        Iservice.Approve(model.GrnID.Value, model.UserInfo.UserID, string.Empty);
+                        snackbar.Add("Approved Successfully", Severity.Success);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -301,8 +304,11 @@
     {
         if (HasPermissionPurchaseOrderServiceCancel)
         {
-            pIservice.CancelOrder(model.POID.Value, UserID, string.Empty);
-            MudDialog.Close(model);
+            if (model.POID != null)
+            {
+                pIservice.CancelOrder(model.POID.Value, UserID, string.Empty);
+                MudDialog.Close(model);
+            }
         }
         else
         {
@@ -370,13 +376,16 @@
         Entrymodel.ItemGstVal = 0;
         try
         {
-            gstrt = getgstrate(Entrymodel.ItemID.Value);
+            if (Entrymodel.ItemID != null)
+            {
+                gstrt = getgstrate(Entrymodel.ItemID.Value);
+            }
         }
         catch { }
 
         if (gstrt != 0 && IsTaxable)
         {
-            Entrymodel.ItemGstVal = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty)) * gstrt) / 100;
+            Entrymodel.ItemGstVal = (((Entrymodel.ItemRate ?? 0m) * (Entrymodel.ItemQty)) * gstrt) / 100;
         }
         Entrymodel.UOM = UOM;
         model.Entries.Add(Entrymodel);
@@ -407,19 +416,22 @@
         decimal gstrt = 0;
         try
         {
-        gstrt = getgstrate(entryModel.ItemID.Value);
+            if (entryModel.ItemID != null)
+            {
+                gstrt = getgstrate(entryModel.ItemID.Value);
+            }
         }
-        catch{}
+        catch { }
 
         if (gstrt != 0 && IsTaxable)
         {
-            entryModel.ItemGstVal = (((entryModel.ItemRate.Value) * (entryModel.ItemQty)) * gstrt) / 100;
+            entryModel.ItemGstVal = (((entryModel.ItemRate ?? 0m) * (entryModel.ItemQty)) * gstrt) / 100;
         }
         foreach (var item in model.Entries)
         {
-            model.TotalValue += (item.ItemQty * item.ItemRate) + item.ItemGstVal;
+            model.TotalValue += (item.ItemQty * item.ItemRate) + (item.ItemGstVal ?? 0);
         }
-        return entryModel.ItemGstVal.Value;
+        return entryModel.ItemGstVal ?? 0;
     }
 }
 

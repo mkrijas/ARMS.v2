@@ -192,13 +192,16 @@
                         // Calculate TDS based on the party and item
                         var tdsRate = tdsService.GetTdsRate(Tmodel.PurchaseModel.PartyInfo.PartyID ?? 0, item.CoaID ?? 0);
                         item.TDS = Math.Round((item.Amount ?? 0) * tdsRate / 100, MidpointRounding.AwayFromZero);
-                        Tmodel.Amount = item.Amount + (item.CGST??0) + (item.SGST??0) + (item.IGST??0);
+                        Tmodel.Amount = item.Amount + (item.CGST ?? 0m) + (item.SGST ?? 0m) + (item.IGST ?? 0m);
 
                         Tmodel.PurchaseModel.TaxPurchaseType = "Fuel";
 
                         // Update the purchase model
                         Tmodel.PurchaseModel = taxPurchase.Update(Tmodel.PurchaseModel);
-                        notiService.CreateAuthNotifications(branchID, 9, Tmodel.PurchaseModel.PID.Value);
+                        if (Tmodel.PurchaseModel.PID != null)
+                        {
+                            notiService.CreateAuthNotifications(branchID, 9, Tmodel.PurchaseModel.PID.Value);
+                        }
 
 
                     }
@@ -267,8 +270,16 @@
         }
 
         // Retrieve fuel group and AdBlue group IDs from configuration
-        int.TryParse(IConfig.GetByInventoryFuelGroupID().ValueString, out FuelGroupID);
-        int.TryParse(IConfig.GetByInventoryAdBlueGroupID().ValueString, out AdBlueGroupID);
+        var fuelGroupConfig = IConfig.GetByInventoryFuelGroupID();
+        if (fuelGroupConfig != null)
+        {
+            int.TryParse(fuelGroupConfig.ValueString, out FuelGroupID);
+        }
+        var adBlueGroupConfig = IConfig.GetByInventoryAdBlueGroupID();
+        if (adBlueGroupConfig != null)
+        {
+            int.TryParse(adBlueGroupConfig.ValueString, out AdBlueGroupID);
+        }
 
 
         if (Tmodel.ItemType == null)

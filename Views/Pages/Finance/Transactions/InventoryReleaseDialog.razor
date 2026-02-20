@@ -24,7 +24,7 @@
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="4">
-                        <StoreSelector @bind-Value="@model.Store" BranchID="@branchID.Value" IsDisabled="@IsDisableStore"></StoreSelector>
+                        <StoreSelector @bind-Value="@model.Store" BranchID="@(branchID ?? 0)" IsDisabled="@IsDisableStore"></StoreSelector>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDatePicker Disabled Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
@@ -213,7 +213,7 @@
         JobcardList = IJobcardService.SelectByBranch(branchID, true).ToList();
         InventoryRequestList = IInventoryRequestservice.SelectByStore(model?.Store?.StoreID ?? null, branchID).Where(d => !((((d.IsCompletelyReleased != null && d.IsCompletelyReleased.Value) || d.IsClosed) && d.RequestID != model.RequestID))).ToList();
         TruckList = Itruck.SelectByBranch(branchID, "All", "Home").ToList();
-        StoreList = storeIservice.SelectByBranch(branchID.Value).ToList();
+        StoreList = storeIservice.SelectByBranch(branchID ?? 0).ToList();
         if (model.RequestID != null && model.RequestID != 0 && InventoryRequestList.Any(s => s.RequestID == model.RequestID))
         {
             SelectInventoryRequest = InventoryRequestList.FirstOrDefault(s => s.RequestID == model.RequestID);
@@ -432,7 +432,7 @@
                             {
                                 ItemEntryID = item.ItemEntryID,
                                 ItemID = item.ItemID,
-                                ItemQty = item.ItemQty.Value
+                                ItemQty = item.ItemQty ?? 0m
                             });
                     }
                 }
@@ -464,10 +464,10 @@
     {
         if (model.Items.Exists(x => x.ItemID == ItemDetails.ItemID))
         {
-            decimal total = (((ItemDetails.ItemQty) * (ItemDetails.ItemRate.Value)));
+            decimal total = (ItemDetails.ItemQty * (ItemDetails.ItemRate ?? 0m));
             int rowIndex = model.Items.IndexOf(ItemDetails);
             model.Items.RemoveAt(rowIndex);
-            model.TotalAmount = model.TotalAmount - total;
+            model.TotalAmount = (model.TotalAmount ?? 0m) - total;
         }
     }
 
@@ -487,7 +487,10 @@
                 {
                     model.UserInfo.UserID = UserID;
                     Iservice.Approve(model.RID, model.UserInfo.UserID, aprvd.Remarks); // Call the service to approve the inventory release
-                    notiService.AcknowledgeAuthNotification(99, 97, model.RID.Value, UserID);
+                    if (model.RID != null)
+                    {
+                        notiService.AcknowledgeAuthNotification(99, 97, model.RID.Value, UserID);
+                    }
                     model.UserInfo.UserID = UserIDTemp;
                     snackbar.Add("Approved Successfully", Severity.Success);
                 }
