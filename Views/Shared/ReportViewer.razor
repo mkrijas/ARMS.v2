@@ -42,6 +42,7 @@ else
     public string ReportName { get; set; }
     [Parameter]
     public Dictionary<string, string> Parameters { get; set; }
+
     private string URL { get; set; } = string.Empty;
     bool progress = false;
     private string _ReportName;
@@ -129,16 +130,25 @@ else
         if (_ReportName != null)
         {
             progress = true;
-            string encodedUsername = Uri.EscapeDataString("arms");
-            string encodedPassword = Uri.EscapeDataString("arms@123");
-            URL = $"http://10.200.90.30/ReportServer/Pages/ReportViewer.aspx?%2fARMS_V2%2fARMS_Reports%2f{_ReportName}";
-            URL += $"&rc:showbackbutton=true";
-            URL += $"&rc:Parameters=false&rs:Command=Render&rc:Format=EXCELOPENXML&rs:embed=true";
-           
+            
+            // SSRS report path
+            var reportPath = $"ARMS_V2/ARMS_Reports/{_ReportName}";
+            
+            // Base URL with common parameters - use %2f as prefix and separators
+            var encodedPath = reportPath.Replace("/", "%2f");
+            
+            // WE MUST USE /ssrs-proxy to avoid the username/password prompt.
+            // This URL tunnels your credentials to the production server automatically.
+            URL = $"/ssrs-proxy/Pages/ReportViewer.aspx?%2f{encodedPath}";
+            URL += $"&rc:showbackbutton=true&rc:Parameters=false&rs:Command=Render&rc:Format=HTML4.0&rs:embed=true";
+            
             foreach (var item in Parameters)
             {
-                URL = URL + "&" + item.Key + "=" + item.Value;
+                URL = URL + "&" + item.Key + "=" + Uri.EscapeDataString(item.Value);
             }
+
+            await JSRuntime.InvokeVoidAsync("console.log", $"Final Report URL (with {Parameters.Count} params): {URL}");
+
             bool success = await JSRuntime.InvokeAsync<bool>("runReport", URL);
 
             progress = false;            

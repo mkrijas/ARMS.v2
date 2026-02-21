@@ -94,8 +94,8 @@ window.BlazorHelpers = {
 };
 
 
-let element = document.getElementById("treeviewitem")
-console.log(element);
+// let element = document.getElementById("treeviewitem")
+// console.log(element);
 
 
 async function getElementCoordinates(item, targetBox) {

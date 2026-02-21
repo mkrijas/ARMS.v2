@@ -4,88 +4,331 @@ using System;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Net;
-using Microsoft.JSInterop;
-using System.Security.Policy;
 using Microsoft.Extensions.Configuration;
+using System.Linq;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
+using System.IO;
 
-
-    namespace Views.Controllers
+namespace Views.Controllers
+{
+    [ApiController]
+    public class SsrsProxyController : ControllerBase
     {
-        [Route("ssrs-proxy/{**ssrsPath}")]
-        [ApiController]
-        public class SsrsProxyController : ControllerBase
-        {
-            private readonly IHttpClientFactory _httpClientFactory;
-            private readonly IConfiguration _configuration;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _configuration;
 
-            public SsrsProxyController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public SsrsProxyController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        {
+            _httpClientFactory = httpClientFactory;
+            _configuration = configuration;
+        }
+
+        [HttpGet("/ssrs-proxy/{**ssrsPath}")]
+        [HttpGet("/ReportServer/{**ssrsPath}")]
+        [HttpPost("/ssrs-proxy/{**ssrsPath}")]
+        [HttpPost("/ReportServer/{**ssrsPath}")]
+        [HttpGet("/ScriptResource.axd")]
+        [HttpGet("/WebResource.axd")]
+        [HttpPost("/ScriptResource.axd")]
+        [HttpPost("/WebResource.axd")]
+        [HttpGet("/Reserved.ReportViewerWebControl.axd")]
+        [HttpPost("/Reserved.ReportViewerWebControl.axd")]
+        [HttpGet("/ai.2.min.js")]
+        [IgnoreAntiforgeryToken]
+        public async Task Proxy(string? ssrsPath)
+        {
+            // USE LOW-LEVEL RESPONSE ACCESS TO BYPASS MIDDLEWARE INTERFERENCE
+            
+            if (string.IsNullOrEmpty(ssrsPath))
             {
-                _httpClientFactory = httpClientFactory;
-                _configuration = configuration;
+                ssrsPath = Request.Path.Value?.TrimStart('/') ?? string.Empty;
             }
 
-            [HttpGet]
-            public async Task<IActionResult> Proxy(string ssrsPath)
+            if (ssrsPath.StartsWith("ssrs-proxy/", StringComparison.OrdinalIgnoreCase))
+                ssrsPath = ssrsPath.Substring("ssrs-proxy/".Length);
+            
+            if (ssrsPath.StartsWith("ReportServer/", StringComparison.OrdinalIgnoreCase))
+                ssrsPath = ssrsPath.Substring("ReportServer/".Length);
+
+            // 1. IMPROVED AJAX DETECTION
+            bool isAjax = Request.Headers.ContainsKey("X-MicrosoftAjax") || 
+                         Request.Headers.ContainsKey("X-Requested-With") ||
+                         Request.QueryString.Value?.Contains("Delta=true", StringComparison.OrdinalIgnoreCase) == true ||
+                         Request.Headers["Accept"].ToString().Contains("text/html; charset=utf-8") && Request.Method == "POST"; // Some SSRS AJAX posts don't have standard headers
+
+            Console.WriteLine($"[SSRS Proxy] {Request.Method} request to: {Request.Path}{Request.QueryString} (IsAjax: {isAjax})");
+
+            // 2. PREVENT EXTERNAL URL MANGLING (Fix for ai.2.min.js)
+            if (ssrsPath.Contains("//") || ssrsPath.Contains("js.monitor.azure.com"))
             {
-                if (string.IsNullOrWhiteSpace(ssrsPath))
-                    return BadRequest("Invalid SSRS path.");
+                Response.StatusCode = 404;
+                return;
+            }
 
-                // Get credentials from configuration
-                var ssrsUser = _configuration["SSRS:User"];
-                var ssrsPassword = _configuration["SSRS:Password"];
-                var ssrsDomain = _configuration["SSRS:Domain"];
-                var ssrsBaseUrl = _configuration["SSRS:BaseUrl"] ?? "http://10.200.90.30";                
+            var ssrsUser = _configuration["SSRS:User"];
+            var ssrsPassword = _configuration["SSRS:Password"];
+            var ssrsDomain = _configuration["SSRS:Domain"];
+            var ssrsBaseUrl = (_configuration["SSRS:BaseUrl"] ?? "http://10.200.90.30").TrimEnd('/');
 
-                var trimmedPath = ssrsPath.TrimEnd('/');
-                if (!trimmedPath.StartsWith("/"))
-                    trimmedPath = "/" + trimmedPath;             
+            var query = Request.QueryString.Value ?? string.Empty;
+            string fullUrl;
+            
+            // 2. ROBUST URL BUILDING
+            bool isResourceHandler = ssrsPath.Contains(".axd", StringComparison.OrdinalIgnoreCase);
+            bool isPages = ssrsPath.StartsWith("Pages/", StringComparison.OrdinalIgnoreCase);
 
-                var query =  Request.QueryString.Value ?? string.Empty;                   
-                var fullUrl = $"{ssrsBaseUrl}/ReportServer?{trimmedPath}{query.Replace("?", "&")}";
+            if (isResourceHandler || isPages)
+            {
+                // Ensure we don't duplicate the slash before Pages/
+                string cleanPath = ssrsPath.TrimStart('/');
+                fullUrl = $"{ssrsBaseUrl}/ReportServer/{cleanPath}{query}";
+            }
+            else if (string.IsNullOrEmpty(ssrsPath))
+            {
+                fullUrl = $"{ssrsBaseUrl}/ReportServer/{query}";
+            }
+            else
+            {
+                string trimmedPath = ssrsPath.Trim('/');
+                // SSRS ?/ format
+                fullUrl = $"{ssrsBaseUrl}/ReportServer?/{trimmedPath}{query.Replace("?", "&")}";
+            }
+
+            Console.WriteLine($"[SSRS Proxy] Forwarding to: {fullUrl}");
 
             var clientHandler = new HttpClientHandler
-                {
-                    UseDefaultCredentials = false,
-                    PreAuthenticate = true,
-                    Credentials = new NetworkCredential(ssrsUser, ssrsPassword, ssrsDomain)
+            {
+                Credentials = new NetworkCredential(ssrsUser, ssrsPassword, ssrsDomain),
+                PreAuthenticate = true,
+                AllowAutoRedirect = false,
+                UseCookies = false,
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            };
+
+            try
+            {
+                using var client = new HttpClient(clientHandler);
+                var request = new HttpRequestMessage(new HttpMethod(Request.Method), fullUrl);
+
+                // Header Proxying
+                var restrictedHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) 
+                { 
+                    "Content-Type", "Content-Length", "Host", "Connection", "Accept-Encoding", "Referer", "Origin"
                 };
 
-                try
+                foreach (var header in Request.Headers)
                 {
-                    using var client = new HttpClient(clientHandler);
-                    var request = new HttpRequestMessage(HttpMethod.Get, fullUrl);
-                    var response = await client.SendAsync(request);
-
-                    Console.WriteLine($"Resolved SSRS Path: {ssrsPath}");
-                    Console.WriteLine($"Resolved Full URL: {fullUrl}");
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        var errorText = await response.Content.ReadAsStringAsync();
-                        return Content(errorText, "text/html");
-                    }
-
-                    var contentType = response.Content.Headers.ContentType?.ToString() ?? "text/html";
-
-                    if (contentType.StartsWith("text/html"))
-                    {
-                        var content = await response.Content.ReadAsStringAsync();
-                        content = content.Replace("src=\"/", $"src=\"{ssrsBaseUrl}/");
-                        content = content.Replace("href=\"/", $"href=\"{ssrsBaseUrl}/");
-                        content = content.Replace("action=\"/", $"action=\"{ssrsBaseUrl}/");
-                        return Content(content, contentType);
-                    }
-
-                    var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "report";
-                    var stream = await response.Content.ReadAsStreamAsync();
-                    return File(stream, contentType, fileName);
+                    if (!restrictedHeaders.Contains(header.Key))
+                        request.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
                 }
-                catch (Exception ex)
+
+                var ssrsUri = new Uri(ssrsBaseUrl);
+                request.Headers.Host = ssrsUri.Host;
+                
+                string? incomingReferer = Request.Headers["Referer"].ToString();
+                if (!string.IsNullOrEmpty(incomingReferer))
                 {
-                    Console.WriteLine($"Error proxying SSRS request: {ex.Message}");
-                    return StatusCode(500, "Error proxying SSRS request.");
+                    string mappedReferer = incomingReferer.Replace(Request.Host.ToString(), ssrsUri.Host, StringComparison.OrdinalIgnoreCase);
+                    mappedReferer = mappedReferer.Replace("/ssrs-proxy", "/ReportServer", StringComparison.OrdinalIgnoreCase);
+                    request.Headers.TryAddWithoutValidation("Referer", mappedReferer);
+                }
+                else
+                {
+                    request.Headers.Referrer = new Uri(ssrsBaseUrl + "/ReportServer");
+                }
+
+                if (!string.IsNullOrEmpty(Request.Headers["Origin"]))
+                {
+                    request.Headers.TryAddWithoutValidation("Origin", ssrsBaseUrl);
+                }
+
+                if (Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    using var ms = new MemoryStream();
+                    await Request.Body.CopyToAsync(ms);
+                    var bodyBytes = ms.ToArray();
+                    
+                    if (bodyBytes.Length > 0)
+                    {
+                        string bodyPreview = System.Text.Encoding.UTF8.GetString(bodyBytes.Take(100).ToArray());
+                        Console.WriteLine($"[SSRS Proxy] POST Body ({bodyBytes.Length} bytes): {bodyPreview}");
+                    }
+                    
+                    request.Content = new ByteArrayContent(bodyBytes);
+                    if (Request.ContentType != null)
+                        request.Content.Headers.TryAddWithoutValidation("Content-Type", Request.ContentType);
+                }
+
+                var response = await client.SendAsync(request);
+                Response.StatusCode = (int)response.StatusCode;
+                
+                var contentType = response.Content.Headers.ContentType?.ToString() ?? "text/html";
+                var contentLength = response.Content.Headers.ContentLength ?? 0;
+
+                Console.WriteLine($"[SSRS Proxy] Received: {Response.StatusCode} | {contentType} | {contentLength} bytes");
+
+                // ... (rest of header proxying)
+
+                // 5. Response Header Proxying
+                var transportHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "Content-Encoding", "Transfer-Encoding", "Vary", "Server", "X-Powered-By", "Content-Length"
+                };
+                
+                // ... (rest of header proxying remains same, but I need to make sure I don't break the loop)
+                foreach (var header in response.Headers)
+                {
+                    if (transportHeaders.Contains(header.Key)) continue;
+
+                    if (header.Key.Equals("Location", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var location = header.Value.FirstOrDefault();
+                        if (!string.IsNullOrEmpty(location) && location.Contains(ssrsBaseUrl, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var updatedLocation = location.Replace(ssrsBaseUrl + "/ReportServer", "/ssrs-proxy", StringComparison.OrdinalIgnoreCase);
+                            updatedLocation = updatedLocation.Replace(ssrsBaseUrl, "/ssrs-proxy", StringComparison.OrdinalIgnoreCase);
+                            Response.Headers["Location"] = updatedLocation;
+                        }
+                        else
+                        {
+                            Response.Headers[header.Key] = header.Value.ToArray();
+                        }
+                    }
+                    else if (header.Key.Equals("Set-Cookie", StringComparison.OrdinalIgnoreCase))
+                    {
+                        foreach (var cookie in header.Value)
+                        {
+                            string updatedCookie = cookie;
+                            if (updatedCookie.Contains("path=", StringComparison.OrdinalIgnoreCase))
+                            {
+                                int pathIndex = updatedCookie.IndexOf("path=", StringComparison.OrdinalIgnoreCase);
+                                int nextSemicolon = updatedCookie.IndexOf(";", pathIndex);
+                                if (nextSemicolon == -1)
+                                    updatedCookie = updatedCookie.Substring(0, pathIndex) + "path=/";
+                                else
+                                    updatedCookie = updatedCookie.Substring(0, pathIndex) + "path=/" + updatedCookie.Substring(nextSemicolon);
+                            }
+                            else
+                            {
+                                updatedCookie += "; path=/";
+                            }
+                            Response.Headers.Append("Set-Cookie", updatedCookie);
+                        }
+                    }
+                    else
+                    {
+                        Response.Headers[header.Key] = header.Value.ToArray();
+                    }
+                }
+
+                foreach (var header in response.Content.Headers)
+                {
+                    if (!transportHeaders.Contains(header.Key) && header.Key != "Content-Type")
+                        Response.Headers[header.Key] = header.Value.ToArray();
+                }
+
+                Response.ContentType = contentType;
+                Response.Headers["Content-Encoding"] = "identity";
+                Response.Headers["X-Content-Type-Options"] = "nosniff";
+
+                bool shouldRewrite = contentType.Contains("text/html") || 
+                                   contentType.Contains("text/plain") ||
+                                   contentType.Contains("javascript") || 
+                                   contentType.Contains("text/css");
+                
+                if (contentType.Contains("font") || contentType.Contains("image") || fullUrl.Contains(".woff", StringComparison.OrdinalIgnoreCase))
+                    shouldRewrite = false;
+
+                if (shouldRewrite)
+                {
+                    string content = await response.Content.ReadAsStringAsync();
+                    
+                    if (Response.StatusCode == 200 && !isAjax)
+                    {
+                         string trace = content.Length > 1000 ? content.Substring(0, 1000) : content;
+                         Console.WriteLine($"[SSRS Proxy] CONTENT TRACE (First 1000 chars of {content.Length}):\n{trace}");
+                         
+                         if (content.Contains("rsProcessingAborted", StringComparison.OrdinalIgnoreCase))
+                             Console.WriteLine("[SSRS Proxy] !!! DETECTED SSRS PROCESSING ABORTED !!!");
+                         if (content.Contains("An error occurred during report processing", StringComparison.OrdinalIgnoreCase))
+                             Console.WriteLine("[SSRS Proxy] !!! DETECTED REPORT PROCESSING ERROR !!!");
+                         if (content.Contains("0 of 0", StringComparison.OrdinalIgnoreCase))
+                             Console.WriteLine("[SSRS Proxy] !!! DETECTED 0 of 0 PAGES (Empty Result) !!!");
+                    }
+
+                    // 6. ENHANCED AJAX INTERCEPTION (Silencing Full HTML to prevent Parser Errors)
+                    // If it's a known AJAX request, we MUST NOT return a full HTML page.
+                    if (isAjax)
+                    {
+                        string trimmed = content.TrimStart();
+                        bool isFullDoc = trimmed.StartsWith("<!DOCTYPE", StringComparison.OrdinalIgnoreCase) || 
+                                          trimmed.StartsWith("<html", StringComparison.OrdinalIgnoreCase);
+
+                        // If it's an error OR a full HTML doc (which causes client-side parser crashes)
+                        if (Response.StatusCode >= 400 || isFullDoc)
+                        {
+                            string snippet = content.Length > 200 ? content.Substring(0, 200) : content;
+                            Console.WriteLine($"[SSRS Proxy] SILENCING AJAX {(isFullDoc ? "Full HTML" : "Error")} for {fullUrl}. Length: {content.Length}. Content Trace: {snippet}");
+                            Response.StatusCode = 200;
+                            Response.ContentType = "text/plain";
+                            Response.Headers["Content-Encoding"] = "identity";
+                            await Response.WriteAsync("");
+                            return;
+                        }
+                    }
+
+                    // 7. Apply Replacements (ONLY for non-AJAX requests)
+                    // We must NOT rewrite AJAX responses because they use length-prefixed encoding 
+                    // (ScriptManager format) which breaks if we change the string length.
+                    if (!string.IsNullOrEmpty(ssrsBaseUrl) && !isAjax)
+                    {
+                        content = content.Replace(ssrsBaseUrl + "/ReportServer", "/ssrs-proxy");
+                        content = content.Replace(ssrsBaseUrl, "/ssrs-proxy");
+                    }
+                    
+                    if (!isAjax)
+                    {
+                        content = content.Replace("\"/ReportServer/", "\"/ssrs-proxy/");
+                        content = content.Replace("='/ReportServer/", "'/ssrs-proxy/");
+                        content = content.Replace("=\"/ReportServer/", "=\"/ssrs-proxy/");
+                        content = content.Replace("='/ReportServer/", "='/ssrs-proxy/");
+                        
+                        content = content.Replace("\"/Reserved.ReportViewerWebControl.axd", "\"/ssrs-proxy/Reserved.ReportViewerWebControl.axd");
+                        content = content.Replace("='/Reserved.ReportViewerWebControl.axd", "'/ssrs-proxy/Reserved.ReportViewerWebControl.axd");
+                        content = content.Replace("=\"/Reserved.ReportViewerWebControl.axd", "=\"/ssrs-proxy/Reserved.ReportViewerWebControl.axd");
+                        
+                        content = content.Replace("\"/ScriptResource.axd", "\"/ssrs-proxy/ScriptResource.axd");
+                        content = content.Replace("='/ScriptResource.axd", "'/ssrs-proxy/ScriptResource.axd");
+                        content = content.Replace("=\"/ScriptResource.axd", "=\"/ssrs-proxy/ScriptResource.axd");
+                        
+                        content = content.Replace("\"/WebResource.axd", "\"/ssrs-proxy/WebResource.axd");
+                        content = content.Replace("='/WebResource.axd", "'/ssrs-proxy/WebResource.axd");
+                        content = content.Replace("=\"/WebResource.axd", "=\"/ssrs-proxy/WebResource.axd");
+
+                        content = content.Replace("var baseUrl = \"/ReportServer\";", "var baseUrl = \"/ssrs-proxy\";");
+                        content = content.Replace("'baseUrl': '/ReportServer'", "'baseUrl': '/ssrs-proxy'");
+                    }
+
+                    await Response.WriteAsync(content);
+                }
+                else
+                {
+                    // For non-rewritable streams (images, fonts), copy directly
+                    await response.Content.CopyToAsync(Response.Body);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SSRS Proxy] ERROR [{fullUrl}]: {ex.Message}");
+                if (!Response.HasStarted)
+                {
+                    Response.StatusCode = 200; 
+                    Response.ContentType = "text/plain";
+                    Response.Headers["Content-Encoding"] = "identity";
+                    await Response.WriteAsync(isAjax ? "" : $"Proxy error: {ex.Message}");
                 }
             }
         }
     }
-
+}
