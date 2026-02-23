@@ -11,7 +11,7 @@
 </style>
 
 <MudPaper Style="padding: 22px 22px 18px 22px;">
-    @* src set exclusively via JS to avoid Blazor re-renders causing double requests *@
+    @* src set exclusively via JS in OnAfterRenderAsync — never via Blazor binding *@
     <iframe id="PreviewClaim" class="rptStyle" scrolling="auto"></iframe>
 </MudPaper>
 
@@ -23,9 +23,17 @@
     [Parameter]
     public Dictionary<string, string> Parameters { get; set; }
 
+    // URL queued by RenderReport(); consumed by OnAfterRenderAsync
+    private string _pendingUrl = string.Empty;
     private string _lastRenderedUrl = string.Empty;
 
     public void setReportName(string RepName) { /* kept for backward compat */ }
+
+    /// <summary>
+    /// Called by the parent page when it wants to display a report.
+    /// Queues the URL and triggers a Blazor re-render so OnAfterRenderAsync
+    /// can safely invoke JS after Blazor has committed the DOM.
+    /// </summary>
 
     public async Task RenderReport()
     {
@@ -34,37 +42,39 @@
 
         // ── URL STRATEGY ─────────────────────────────────────────────────────────────
         // Use the SSRS DIRECT RENDER URL (not Pages/ReportViewer.aspx).
-        //
-        // Pages/ReportViewer.aspx requires an AJAX Delta POST cycle:
-        //   GET → viewer shell (0 of 0) → ScriptManager Delta POST → rendered report
-        // This cycle cannot be proxied reliably (ScriptManager errors / infinite loops).
-        //
-        // The DIRECT RENDER URL returns the full rendered report HTML in a SINGLE GET:
-        //   /ssrs-proxy/{reportPath}?rs:Command=Render&rs:Format=HTML4.0&rc:Toolbar=true
-        // Proxy maps this to:
-        //   http://ssrs-server/ReportServer?/{reportPath}&rs:Command=Render&rs:Format=HTML4.0
-        // SSRS returns the rendered HTML directly — no AJAX, no ScriptManager, no loop.
+        // The proxy maps:
+        //   /ssrs-proxy/{reportPath}?rs:Command=Render&rs:Format=HTML4.0
+        // → http://ssrs-server/ReportServer?/{reportPath}&rs:Command=Render&rs:Format=HTML4.0
+        // SSRS returns fully-rendered HTML in a single GET — no AJAX, no ScriptManager.
         // ─────────────────────────────────────────────────────────────────────────────
         var reportPath = $"ARMS_V2/ARMS_Reports/{ReportName}";
-
-        var url = $"/ssrs-proxy/{reportPath}";
-        url += $"?rs:Command=Render&rs:Format=HTML4.0&rc:Toolbar=false&rc:Parameters=false";
+        var url = $"/ssrs-proxy/{reportPath}?rs:Command=Render&rs:Format=HTML4.0&rc:Toolbar=false&rc:Parameters=false";
 
         if (Parameters != null)
         {
             foreach (var item in Parameters)
-            {
                 url += $"&{item.Key}={Uri.EscapeDataString(item.Value)}";
-            }
         }
 
-        // Deduplicate — skip if URL unchanged (prevents double-fire from Blazor re-renders)
         if (url == _lastRenderedUrl)
             return;
 
-        _lastRenderedUrl = url;
+        // Queue the URL — OnAfterRenderAsync will pick it up after the next render
+        _pendingUrl = url;
+        StateHasChanged(); // request a re-render so OnAfterRenderAsync fires
+    }
 
-        await JSRuntime.InvokeVoidAsync("console.log", $"[ReportViewer] Loading: {url}");
-        await JSRuntime.InvokeVoidAsync("runReport", url);
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!string.IsNullOrEmpty(_pendingUrl))
+        {
+            var url = _pendingUrl;
+            _pendingUrl = string.Empty;   // clear before await to prevent double-fire
+            _lastRenderedUrl = url;
+
+            await JSRuntime.InvokeVoidAsync("console.log", $"[ReportViewer] Loading: {url}");
+            await JSRuntime.InvokeVoidAsync("runReport", url);
+        }
     }
 }
+
