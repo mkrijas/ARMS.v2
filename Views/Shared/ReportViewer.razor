@@ -4,10 +4,12 @@
 
 <style>
     .rptStyle {
+        width: 100%;
         height: 800px;
         background-color: white;
         border: 1px solid #D5D5D5;
-        border-radius: 6px;
+        border-radius: 0 0 6px 6px;
+        display: block;
     }
     .report-loader-wrapper {
         height: 800px;
@@ -15,12 +17,152 @@
         align-items: center;
         justify-content: center;
         border: 1px solid #D5D5D5;
-        border-radius: 6px;
-        overflow: hidden;   /* ensure loader stays within this box */
+        border-radius: 0 0 6px 6px;
+        overflow: hidden;
+    }
+    /* ─── Toolbar ─────────────────────────────────────────────── */
+    .ssrs-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: #f0f0f0;
+        border: 1px solid #D5D5D5;
+        border-bottom: 2px solid #c8c8c8;
+        border-radius: 6px 6px 0 0;
+        padding: 3px 8px;
+        flex-wrap: nowrap;
+        min-height: 34px;
+    }
+    .ssrs-toolbar .tb-sep {
+        width: 1px; height: 20px;
+        background: #c0c0c0;
+        margin: 0 4px;
+        flex-shrink: 0;
+    }
+    .ssrs-toolbar .tb-label {
+        font-size: 13px; color: #333;
+        white-space: nowrap; user-select: none;
+    }
+    .ssrs-toolbar .tb-page-input {
+        width: 42px; height: 24px;
+        text-align: center;
+        border: 1px solid #bbb; border-radius: 3px;
+        padding: 0 2px; font-size: 13px;
+        -moz-appearance: textfield;
+    }
+    .ssrs-toolbar .tb-page-input::-webkit-outer-spin-button,
+    .ssrs-toolbar .tb-page-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .ssrs-toolbar .tb-select {
+        height: 24px; font-size: 13px;
+        border: 1px solid #bbb; border-radius: 3px;
+        padding: 0 4px; background: white; cursor: pointer;
+    }
+    .ssrs-toolbar .tb-ibtn {
+        background: none; border: none;
+        padding: 2px 3px; cursor: pointer;
+        border-radius: 3px;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: #333; line-height: 1;
+    }
+    .ssrs-toolbar .tb-ibtn:hover:not([disabled]) { background: #ddd; }
+    .ssrs-toolbar .tb-ibtn[disabled] { opacity: 0.38; cursor: default; }
+    .ssrs-toolbar .tb-tbtn {
+        background: none; border: 1px solid transparent;
+        padding: 2px 7px; cursor: pointer; border-radius: 3px;
+        font-size: 13px; color: #0078d4;
+    }
+    .ssrs-toolbar .tb-tbtn:hover { background: #ddd; border-color: #bbb; }
+    .ssrs-toolbar .tb-find-input {
+        width: 110px; height: 24px;
+        border: 1px solid #bbb; border-radius: 3px;
+        padding: 0 4px; font-size: 13px;
     }
 </style>
 
 <MudPaper Style="padding: 22px 22px 18px 22px;">
+
+    @* ── Custom toolbar (hidden until first report loads) ── *@
+    @if (_reportLoaded || _isLoading)
+    {
+        <div class="ssrs-toolbar">
+
+            @* --- Page navigation --- *@
+            <MudIconButton Icon="@Icons.Material.Filled.FirstPage"
+                           Size="Size.Small" Variant="Variant.Text"
+                           Disabled="@(_currentPage <= 1 || _isLoading)"
+                           Title="First Page" OnClick="GoFirst" />
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                           Size="Size.Small" Variant="Variant.Text"
+                           Disabled="@(_currentPage <= 1 || _isLoading)"
+                           Title="Previous Page" OnClick="GoPrev" />
+
+            <input type="number" class="tb-page-input"
+                   min="1" max="@(_totalPages > 0 ? _totalPages : 9999)"
+                   value="@_currentPage"
+                   @onchange="OnPageInputChange" />
+            <span class="tb-label">of @(_totalPages > 0 ? _totalPages.ToString() : "?")</span>
+
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                           Size="Size.Small" Variant="Variant.Text"
+                           Disabled="@((_totalPages > 0 && _currentPage >= _totalPages) || _isLoading)"
+                           Title="Next Page" OnClick="GoNext" />
+            <MudIconButton Icon="@Icons.Material.Filled.LastPage"
+                           Size="Size.Small" Variant="Variant.Text"
+                           Disabled="@((_totalPages <= 0 || _currentPage >= _totalPages) || _isLoading)"
+                           Title="Last Page" OnClick="GoLast" />
+
+            <div class="tb-sep"></div>
+
+            @* --- Refresh --- *@
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                           Size="Size.Small" Variant="Variant.Text"
+                           Disabled="@_isLoading" Title="Refresh"
+                           OnClick="Refresh" />
+
+            <div class="tb-sep"></div>
+
+            @* --- Zoom --- *@
+            <select class="tb-select" title="Zoom"
+                    value="@_zoom"
+                    @onchange="OnZoomChanged">
+                <option value="75">75%</option>
+                <option value="100">100%</option>
+                <option value="125">125%</option>
+                <option value="150">150%</option>
+                <option value="200">200%</option>
+            </select>
+
+            <div class="tb-sep"></div>
+
+            @* --- Export --- *@
+            <select class="tb-select" title="Export / Save as..."
+                    value=""
+                    @onchange="OnExportChanged">
+                <option value="" disabled hidden>Save As...</option>
+                <option value="PDF">📄 PDF</option>
+                <option value="Excel">📊 Excel</option>
+                <option value="Word">📝 Word</option>
+                <option value="CSV">📋 CSV</option>
+            </select>
+
+            @* --- Print --- *@
+            <MudIconButton Icon="@Icons.Material.Filled.Print"
+                           Size="Size.Small" Variant="Variant.Text"
+                           Title="Print" OnClick="PrintReport" />
+
+            <div class="tb-sep"></div>
+
+            @* --- Find --- *@
+            <input type="text" class="tb-find-input" placeholder="Find..."
+                   @bind="_findText" @bind:event="oninput"
+                   @onkeydown="OnFindKeyDown" />
+            <button class="tb-tbtn" @onclick="FindText">Find</button>
+            <button class="tb-tbtn" @onclick="FindNextText">Next</button>
+
+        </div>
+    }
+
+    @* ── Loader (shown while report is fetching) ── *@
     @if (_isLoading)
     {
         <div class="report-loader-wrapper">
@@ -32,12 +174,16 @@
         </div>
     }
 
-    @* iframe always in DOM; visually hidden while loader is active *@
-    <iframe id="PreviewClaim"
-            class="rptStyle"
-            scrolling="auto"
-            style="@(_isLoading ? "display:none;" : "")">
-    </iframe>
+    @* ── iframe – always in DOM once report requested; hidden while loading ── *@
+    @if (_reportLoaded || _isLoading)
+    {
+        <iframe id="PreviewClaim"
+                class="rptStyle"
+                scrolling="auto"
+                style="@(_isLoading ? "display:none;" : "")">
+        </iframe>
+    }
+
 </MudPaper>
 
 @code {
@@ -45,30 +191,33 @@
     [Parameter] public string ReportName  { get; set; }
     [Parameter] public Dictionary<string, string> Parameters { get; set; }
 
-    // ── State ─────────────────────────────────────────────────────────────────
+    // ── State ──────────────────────────────────────────────────────────────────
     private bool   _renderRequested = false;
     private string _pendingUrl      = string.Empty;
+    private string _baseReportUrl   = string.Empty;
     private bool   _isLoading       = false;
+    private bool   _reportLoaded    = false;
+    private int    _currentPage     = 1;
+    private int    _totalPages      = 0;
+    private int    _zoom            = 100;
+    private string _findText        = string.Empty;
     private DotNetObjectReference<ReportViewer> _dotNetRef;
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // ── Lifecycle ──────────────────────────────────────────────────────────────
 
     protected override void OnInitialized()
     {
         _dotNetRef = DotNetObjectReference.Create(this);
     }
 
-    /// <summary>
-    /// Runs AFTER Blazor propagates fresh [Parameter] values.
-    /// Builds the URL when _renderRequested is true and a valid ReportName is available.
-    /// This handles the case where the parent doesn't provide an explicit name override.
-    /// </summary>
     protected override Task OnParametersSetAsync()
     {
         if (_renderRequested && !string.IsNullOrEmpty(ReportName))
         {
             _renderRequested = false;
-            _pendingUrl = BuildUrl(ReportName);
+            _currentPage    = 1;
+            _baseReportUrl  = BuildBaseUrl(ReportName);
+            _pendingUrl     = _baseReportUrl;
         }
         return Task.CompletedTask;
     }
@@ -83,36 +232,26 @@
         }
     }
 
-    // ── Public API ────────────────────────────────────────────────────────────
+    // ── Public API ─────────────────────────────────────────────────────────────
 
     public void setReportName(string RepName) { }   // backward compat
 
-    /// <summary>
-    /// Called by the parent page on "View Report" click.
-    /// 
-    /// Two modes:
-    ///   1. No arg (default):  sets _renderRequested=true; OnParametersSetAsync builds
-    ///      the URL once Blazor has propagated the fresh ReportName parameter.
-    ///      Works for all pages except those that reset ReportName=null after this call.
-    ///
-    ///   2. reportNameOverride provided:  URL is built immediately using this value
-    ///      + the current Parameters dictionary. Use this for pages that set
-    ///      ReportName=null after calling RenderReport().
-    /// </summary>
     public async Task RenderReport(string reportNameOverride = null)
     {
-        _isLoading  = true;
-        _pendingUrl = string.Empty;   // clear any stale request
+        _isLoading    = true;
+        _reportLoaded = false;
+        _pendingUrl   = string.Empty;
+        _currentPage  = 1;
+        _totalPages   = 0;
 
         if (!string.IsNullOrEmpty(reportNameOverride))
         {
-            // Build immediately — caller has the correct name right now
             _renderRequested = false;
-            _pendingUrl = BuildUrl(reportNameOverride);
+            _baseReportUrl  = BuildBaseUrl(reportNameOverride);
+            _pendingUrl     = _baseReportUrl;
         }
         else
         {
-            // Wait for Blazor to propagate the [Parameter] ReportName via OnParametersSetAsync
             _renderRequested = true;
         }
 
@@ -121,22 +260,117 @@
     }
 
     [JSInvokable]
-    public void OnIframeLoadComplete()
+    public async void OnIframeLoadComplete()
     {
-        _isLoading = false;
+        _isLoading    = false;
+        _reportLoaded = true;
+        _currentPage  = 1;
+        // initReportPages: hides pages 2..N, returns total page count
+        try
+        {
+            _totalPages = await JSRuntime.InvokeAsync<int>("initReportPages", "PreviewClaim");
+        }
+        catch { _totalPages = 1; }
         StateHasChanged();
     }
 
-    public void Dispose()
+    public void Dispose() => _dotNetRef?.Dispose();
+
+    // ── Toolbar actions ─────────────────────────────────────────────────────────
+
+    // Page navigation — client-side show/hide, no iframe reload
+    private async Task GoFirst()
     {
-        _dotNetRef?.Dispose();
+        if (_currentPage > 1) { _currentPage = 1; await ShowPage(_currentPage); }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private string BuildUrl(string reportName)
+    private async Task GoPrev()
     {
-        var url = $"/ssrs-proxy/ARMS_V2/ARMS_Reports/{reportName}?rs:Command=Render&rs:Format=HTML4.0&rc:Toolbar=false&rc:Parameters=false";
+        if (_currentPage > 1) { _currentPage--; await ShowPage(_currentPage); }
+    }
+
+    private async Task GoNext()
+    {
+        if (_totalPages == 0 || _currentPage < _totalPages) { _currentPage++; await ShowPage(_currentPage); }
+    }
+
+    private async Task GoLast()
+    {
+        if (_totalPages > 0 && _currentPage < _totalPages) { _currentPage = _totalPages; await ShowPage(_currentPage); }
+    }
+
+    private async Task OnPageInputChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int pg) && pg >= 1)
+        {
+            _currentPage = _totalPages > 0 ? Math.Min(pg, _totalPages) : pg;
+            await ShowPage(_currentPage);
+        }
+    }
+
+    // ShowPage: instant client-side — just toggles display in the already-loaded iframe
+    private async Task ShowPage(int page)
+    {
+        await JSRuntime.InvokeVoidAsync("showReportPage", "PreviewClaim", page);
+        StateHasChanged();
+    }
+
+    // Refresh: server round-trip to reload the full report
+    private async Task Refresh()
+    {
+        _isLoading  = true;
+        _pendingUrl = _baseReportUrl + $"&rc:Zoom={_zoom}";
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    // Zoom: server round-trip (changes server-side rendering scale)
+    private async Task OnZoomChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int z)) _zoom = z;
+        _isLoading  = true;
+        _pendingUrl = _baseReportUrl + $"&rc:Zoom={_zoom}";
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task OnExportChanged(ChangeEventArgs e)
+    {
+        var format = e.Value?.ToString();
+        if (string.IsNullOrEmpty(format)) return;
+        // Export opens in a new tab — use base URL with format swapped
+        var exportUrl = _baseReportUrl.Replace("&rs:Format=HTML4.0", $"&rs:Format={format}");
+        await JSRuntime.InvokeVoidAsync("open", exportUrl, "_blank");
+    }
+
+    private async Task PrintReport()
+    {
+        await JSRuntime.InvokeVoidAsync("printIframe", "PreviewClaim");
+    }
+
+    private async Task FindText()
+    {
+        if (!string.IsNullOrEmpty(_findText))
+            await JSRuntime.InvokeVoidAsync("findInIframe", "PreviewClaim", _findText, false);
+    }
+
+    private async Task FindNextText()
+    {
+        if (!string.IsNullOrEmpty(_findText))
+            await JSRuntime.InvokeVoidAsync("findInIframe", "PreviewClaim", _findText, true);
+    }
+
+    private async Task OnFindKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await FindText();
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────────
+
+    private string BuildBaseUrl(string reportName)
+    {
+        // No rc:StartPage — all pages fetched at once; JS hides pages 2..N
+        var url = $"/ssrs-proxy/ARMS_V2/ARMS_Reports/{reportName}?rs:Command=Render&rs:Format=HTML4.0&rc:Toolbar=false&rc:Parameters=false&rc:Zoom={_zoom}";
         if (Parameters != null)
             foreach (var item in Parameters)
                 url += $"&{item.Key}={Uri.EscapeDataString(item.Value)}";

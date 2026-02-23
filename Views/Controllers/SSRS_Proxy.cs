@@ -381,6 +381,7 @@ namespace Views.Controllers
 
                     }
 
+
                     await Response.WriteAsync(content);
                 }
                 else
