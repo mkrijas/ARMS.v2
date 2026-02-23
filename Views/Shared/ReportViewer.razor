@@ -1,160 +1,70 @@
-@using System.Net;
+@using System.Net
 @inject IJSRuntime JSRuntime
-
 
 <style>
     .rptStyle {
-        /*  float: left;
-        right: 5px;
-        top: 65px; */
         height: 800px;
         background-color: white;
         border: 1px solid #D5D5D5;
         border-radius: 6px
-        /* padding-left: 20px;
-        padding-right: 20px; */
     }
 </style>
 
 <MudPaper Style="padding: 22px 22px 18px 22px;">
-    <iframe id="PreviewClaim" class="rptStyle" src="@URL" scrolling="no"></iframe>
-    @*  <iframe id="PreviewClaim" class="rptStyle" src="http://10.200.90.30/ReportServer/Pages/ReportViewer.aspx?/ARMS_V2%2FARMS_Reports%2FFinanceTrialBalance&rc:embed=true&rc:showbackbutton=true&rs:Command=Render&rc:Parameters=false&ShowAllHeads=False&BranchIDS=7&BranchName=CORPORATE&StartDate=2025-07-21&EndDate=2025-07-21"></iframe> *@
+    @* src set exclusively via JS to avoid Blazor re-renders causing double requests *@
+    <iframe id="PreviewClaim" class="rptStyle" scrolling="auto"></iframe>
 </MudPaper>
-
-@* @if (progress)
-{
-    <MudPaper>
-        <MudItem xs="12" Style="padding: 1px 26px 1px 26px;">
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
-        </MudItem>
-    </MudPaper>
-}
-else
-{ *@
-
-@* } *@
 
 @code {
 
-    // URL = $"ssrs-proxy/Pages/ReportViewer.aspx?%2fARMS_V2%2fARMS_Reports%2f{_ReportName}"
-
     [Parameter]
     public string ReportName { get; set; }
+
     [Parameter]
     public Dictionary<string, string> Parameters { get; set; }
 
-    private string URL { get; set; } = string.Empty;
-    bool progress = false;
-    private string _ReportName;
+    private string _lastRenderedUrl = string.Empty;
 
-
-    protected override void OnParametersSet()
-    {
-        setReportName(ReportName);
-
-        // if (ReportName is not null)
-        // {
-        //     // Build the report path
-        //     var reportPath = $"ARMS_V2/ARMS_Reports/{_ReportName}";
-
-
-        //     // Build query string
-        //     var baseParams = new List<string>
-        // {
-        //     "rc:embed=true",
-        //     "rc:showbackbutton=true",
-        //     "rs:Command=Render",
-        //     "rc:Parameters=false"
-        // };
-
-        //     if (Parameters != null)
-        //     {
-        //         foreach (var kv in Parameters)
-        //         {
-        //             baseParams.Add($"{kv.Key}={Uri.EscapeDataString(kv.Value)}");
-        //         }
-        //     }
-        //     var queryString = string.Join("&", baseParams);
-
-        //     // Set the URL for the iframe
-        //     URL = $"/ssrs-proxy/{reportPath}?{queryString}";
-        // }
-    }
-
-
-    public void setReportName(string RepName)
-    {
-        _ReportName = RepName;
-    }
-
-    // public async Task RenderReport()
-    // {
-    //     progress = true;
-
-    //     // SSRS report path (NOT URL encoded for path, only for query values)
-    //     var reportPath = $"ARMS_V2/ARMS_Reports/{_ReportName}";
-
-    //     // Base command & render parameters
-    //     var baseParams = new List<string>
-    // {
-    //     "rc:embed=true",
-    //     "rc:showbackbutton=true",
-    //     "rs:Command=Render",
-    //     "rc:Parameters=false"
-    // };
-
-    //     // Add your report parameters
-    //     foreach (var kv in Parameters)
-    //     {
-    //         baseParams.Add($"{kv.Key}={Uri.EscapeDataString(kv.Value)}");
-    //     }
-
-    //     var queryString = string.Join("&", baseParams);
-
-    //     // Final URL - DO NOT encode path, only encode query values
-    //     URL = $"/ssrs-proxy/{reportPath}?{queryString}";
-
-    //     await JSRuntime.InvokeVoidAsync("console.log", $"Report URL: {URL}");
-
-    //     //await JSRuntime.InvokeAsync<bool>("runReport", URL);
-
-    //     progress = false;
-    // }
+    public void setReportName(string RepName) { /* kept for backward compat */ }
 
     public async Task RenderReport()
     {
-        if (_ReportName == null)
+        if (string.IsNullOrEmpty(ReportName))
+            return;
+
+        // ── URL STRATEGY ─────────────────────────────────────────────────────────────
+        // Use the SSRS DIRECT RENDER URL (not Pages/ReportViewer.aspx).
+        //
+        // Pages/ReportViewer.aspx requires an AJAX Delta POST cycle:
+        //   GET → viewer shell (0 of 0) → ScriptManager Delta POST → rendered report
+        // This cycle cannot be proxied reliably (ScriptManager errors / infinite loops).
+        //
+        // The DIRECT RENDER URL returns the full rendered report HTML in a SINGLE GET:
+        //   /ssrs-proxy/{reportPath}?rs:Command=Render&rs:Format=HTML4.0&rc:Toolbar=true
+        // Proxy maps this to:
+        //   http://ssrs-server/ReportServer?/{reportPath}&rs:Command=Render&rs:Format=HTML4.0
+        // SSRS returns the rendered HTML directly — no AJAX, no ScriptManager, no loop.
+        // ─────────────────────────────────────────────────────────────────────────────
+        var reportPath = $"ARMS_V2/ARMS_Reports/{ReportName}";
+
+        var url = $"/ssrs-proxy/{reportPath}";
+        url += $"?rs:Command=Render&rs:Format=HTML4.0&rc:Toolbar=false&rc:Parameters=false";
+
+        if (Parameters != null)
         {
-            await Task.Delay(500);
-        }
-        if (_ReportName != null)
-        {
-            progress = true;
-            
-            // SSRS report path
-            var reportPath = $"ARMS_V2/ARMS_Reports/{_ReportName}";
-            
-            // Base URL with common parameters - use %2f as prefix and separators
-            var encodedPath = reportPath.Replace("/", "%2f");
-            
-            // WE MUST USE /ssrs-proxy to avoid the username/password prompt.
-            // This URL tunnels your credentials to the production server automatically.
-            URL = $"/ssrs-proxy/Pages/ReportViewer.aspx?%2f{encodedPath}";
-            URL += $"&rc:showbackbutton=true&rc:Parameters=false&rs:Command=Render&rc:Format=HTML4.0&rs:embed=true";
-            
             foreach (var item in Parameters)
             {
-                URL = URL + "&" + item.Key + "=" + Uri.EscapeDataString(item.Value);
+                url += $"&{item.Key}={Uri.EscapeDataString(item.Value)}";
             }
-
-            await JSRuntime.InvokeVoidAsync("console.log", $"Final Report URL (with {Parameters.Count} params): {URL}");
-
-            bool success = await JSRuntime.InvokeAsync<bool>("runReport", URL);
-
-            progress = false;            
         }
+
+        // Deduplicate — skip if URL unchanged (prevents double-fire from Blazor re-renders)
+        if (url == _lastRenderedUrl)
+            return;
+
+        _lastRenderedUrl = url;
+
+        await JSRuntime.InvokeVoidAsync("console.log", $"[ReportViewer] Loading: {url}");
+        await JSRuntime.InvokeVoidAsync("runReport", url);
     }
-
 }
-
-

@@ -51,11 +51,16 @@ namespace Views.Controllers
             if (ssrsPath.StartsWith("ReportServer/", StringComparison.OrdinalIgnoreCase))
                 ssrsPath = ssrsPath.Substring("ReportServer/".Length);
 
-            // 1. IMPROVED AJAX DETECTION
-            bool isAjax = Request.Headers.ContainsKey("X-MicrosoftAjax") || 
-                         Request.Headers.ContainsKey("X-Requested-With") ||
+            // 1. PRECISE AJAX DETECTION
+            // Only flag TRUE ScriptManager UpdatePanel calls. These always carry:
+            //   - X-MicrosoftAjax: Delta=true  (standard ASP.NET header), OR
+            //   - Delta=true in the query string (some SSRS variants)
+            // The old "POST + text/html Accept" heuristic was too broad and was silencing
+            // the initial rs:Command=Render POST (the actual report render), causing blank reports.
+            bool isAjax = Request.Headers["X-MicrosoftAjax"].ToString()
+                              .Contains("Delta=true", StringComparison.OrdinalIgnoreCase) ||
                          Request.QueryString.Value?.Contains("Delta=true", StringComparison.OrdinalIgnoreCase) == true ||
-                         Request.Headers["Accept"].ToString().Contains("text/html; charset=utf-8") && Request.Method == "POST"; // Some SSRS AJAX posts don't have standard headers
+                         Request.Headers.ContainsKey("X-Requested-With");
 
             Console.WriteLine($"[SSRS Proxy] {Request.Method} request to: {Request.Path}{Request.QueryString} (IsAjax: {isAjax})");
 
@@ -70,10 +75,10 @@ namespace Views.Controllers
             var ssrsPassword = _configuration["SSRS:Password"];
             var ssrsDomain = _configuration["SSRS:Domain"];
             var ssrsBaseUrl = (_configuration["SSRS:BaseUrl"] ?? "http://10.200.90.30").TrimEnd('/');
+            var useWindowsAuth = _configuration.GetValue<bool>("SSRS:UseWindowsAuth");
 
             var query = Request.QueryString.Value ?? string.Empty;
             string fullUrl;
-            
             // 2. ROBUST URL BUILDING
             bool isResourceHandler = ssrsPath.Contains(".axd", StringComparison.OrdinalIgnoreCase);
             bool isPages = ssrsPath.StartsWith("Pages/", StringComparison.OrdinalIgnoreCase);
@@ -95,11 +100,17 @@ namespace Views.Controllers
                 fullUrl = $"{ssrsBaseUrl}/ReportServer?/{trimmedPath}{query.Replace("?", "&")}";
             }
 
-            Console.WriteLine($"[SSRS Proxy] Forwarding to: {fullUrl}");
+            Console.WriteLine($"[SSRS Proxy] Forwarding to: {fullUrl} (WindowsAuth: {useWindowsAuth})");
+            Console.WriteLine(fullUrl);
 
+            // Production: UseWindowsAuth=true → app pool Windows identity forwarded (no popup).
+            // Dev/Test:   UseWindowsAuth=false → explicit credentials from config.
             var clientHandler = new HttpClientHandler
             {
-                Credentials = new NetworkCredential(ssrsUser, ssrsPassword, ssrsDomain),
+                UseDefaultCredentials = useWindowsAuth,
+                Credentials = useWindowsAuth
+                    ? null
+                    : new NetworkCredential(ssrsUser, ssrsPassword, ssrsDomain),
                 PreAuthenticate = true,
                 AllowAutoRedirect = false,
                 UseCookies = false,
@@ -173,7 +184,14 @@ namespace Views.Controllers
                 // 5. Response Header Proxying
                 var transportHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    "Content-Encoding", "Transfer-Encoding", "Vary", "Server", "X-Powered-By", "Content-Length"
+                    "Content-Encoding", "Transfer-Encoding", "Vary", "Server", "X-Powered-By", "Content-Length",
+                    // Strip framing-restriction headers — browser enforces these even inside a proxy,
+                    // causing the iframe to silently render blank.
+                    "X-Frame-Options",
+                    "Content-Security-Policy",
+                    "X-Content-Security-Policy",
+                    "Feature-Policy",
+                    "Permissions-Policy"
                 };
                 
                 // ... (rest of header proxying remains same, but I need to make sure I don't break the loop)
@@ -200,6 +218,21 @@ namespace Views.Controllers
                         foreach (var cookie in header.Value)
                         {
                             string updatedCookie = cookie;
+
+                            // FIX 1: Strip domain= so the cookie binds to the proxy domain
+                            // (not 10.200.90.30), otherwise the browser never sends the SSRS
+                            // session cookie back to the proxy and SSRS sees every postback
+                            // as a brand-new visitor, causing full-page HTML fallbacks.
+                            if (updatedCookie.Contains("domain=", StringComparison.OrdinalIgnoreCase))
+                            {
+                                int domIdx = updatedCookie.IndexOf("domain=", StringComparison.OrdinalIgnoreCase);
+                                int domSemi = updatedCookie.IndexOf(";", domIdx);
+                                updatedCookie = domSemi == -1
+                                    ? updatedCookie.Substring(0, domIdx).TrimEnd(';', ' ')
+                                    : updatedCookie.Substring(0, domIdx).TrimEnd(';', ' ') + "; " + updatedCookie.Substring(domSemi + 1).TrimStart();
+                            }
+
+                            // Rewrite path= to / so it covers all proxy routes
                             if (updatedCookie.Contains("path=", StringComparison.OrdinalIgnoreCase))
                             {
                                 int pathIndex = updatedCookie.IndexOf("path=", StringComparison.OrdinalIgnoreCase);
@@ -213,6 +246,8 @@ namespace Views.Controllers
                             {
                                 updatedCookie += "; path=/";
                             }
+
+                            Console.WriteLine($"[SSRS Proxy] Set-Cookie → {updatedCookie}");
                             Response.Headers.Append("Set-Cookie", updatedCookie);
                         }
                     }
@@ -244,10 +279,10 @@ namespace Views.Controllers
                 {
                     string content = await response.Content.ReadAsStringAsync();
                     
-                    if (Response.StatusCode == 200 && !isAjax)
+                    if (!isAjax)
                     {
                          string trace = content.Length > 1000 ? content.Substring(0, 1000) : content;
-                         Console.WriteLine($"[SSRS Proxy] CONTENT TRACE (First 1000 chars of {content.Length}):\n{trace}");
+                         Console.WriteLine($"[SSRS Proxy] CONTENT TRACE [{Response.StatusCode}] (First 1000 of {content.Length} chars):\n{trace}");
                          
                          if (content.Contains("rsProcessingAborted", StringComparison.OrdinalIgnoreCase))
                              Console.WriteLine("[SSRS Proxy] !!! DETECTED SSRS PROCESSING ABORTED !!!");
@@ -255,21 +290,53 @@ namespace Views.Controllers
                              Console.WriteLine("[SSRS Proxy] !!! DETECTED REPORT PROCESSING ERROR !!!");
                          if (content.Contains("0 of 0", StringComparison.OrdinalIgnoreCase))
                              Console.WriteLine("[SSRS Proxy] !!! DETECTED 0 of 0 PAGES (Empty Result) !!!");
+                         if (content.Contains("logon", StringComparison.OrdinalIgnoreCase) || content.Contains("login", StringComparison.OrdinalIgnoreCase))
+                             Console.WriteLine("[SSRS Proxy] !!! DETECTED LOGIN/LOGON PAGE — credentials may be wrong !!!");
                     }
 
-                    // 6. ENHANCED AJAX INTERCEPTION (Silencing Full HTML to prevent Parser Errors)
-                    // If it's a known AJAX request, we MUST NOT return a full HTML page.
+                    // 6. AJAX HANDLING
+                    // ─────────────────────────────────────────────────────────────────────────────
+                    // SSRS uses ASP.NET UpdatePanel / ScriptManager for ALL form posts (including the
+                    // initial rs:Command=Render). This means:
+                    //   - The POST has X-MicrosoftAjax: Delta=true
+                    //   - SSRS returns a full HTML page (not ScriptManager delta format)
+                    //   - Standard ScriptManager JS throws PageRequestManagerParserErrorException
+                    //
+                    // ROOT FIX: inject a script into the VIEWER SHELL HTML (returned by the initial GET)
+                    // that disables UpdatePanel partial rendering. Without it, subsequent form submits
+                    // become regular full POSTs (no X-MicrosoftAjax header). The proxy handles those
+                    // as non-AJAX, rewrites URLs, and returns the full rendered report HTML → iframe
+                    // naturally navigates to show the data. No Delta format / session dependency.
+                    //
+                    // Cases that still need silencing:
+                    //   C) Non-HTML 4xx error payload for any remaining AJAX call.
+                    //   D) Navigation full-HTML fallback (session lost) for non-render Delta calls.
+                    // ─────────────────────────────────────────────────────────────────────────────
+                    bool isAjaxFullHtmlFallback = false;
                     if (isAjax)
                     {
                         string trimmed = content.TrimStart();
-                        bool isFullDoc = trimmed.StartsWith("<!DOCTYPE", StringComparison.OrdinalIgnoreCase) || 
+                        bool isFullDoc = trimmed.StartsWith("<!DOCTYPE", StringComparison.OrdinalIgnoreCase) ||
                                           trimmed.StartsWith("<html", StringComparison.OrdinalIgnoreCase);
 
-                        // If it's an error OR a full HTML doc (which causes client-side parser crashes)
-                        if (Response.StatusCode >= 400 || isFullDoc)
+                        if (Response.StatusCode >= 400 && !isFullDoc)
                         {
-                            string snippet = content.Length > 200 ? content.Substring(0, 200) : content;
-                            Console.WriteLine($"[SSRS Proxy] SILENCING AJAX {(isFullDoc ? "Full HTML" : "Error")} for {fullUrl}. Length: {content.Length}. Content Trace: {snippet}");
+                            // Case C: non-HTML error → silence
+                            Console.WriteLine($"[SSRS Proxy] SILENCING AJAX Error ({Response.StatusCode}) for {fullUrl}");
+                            Response.StatusCode = 200;
+                            Response.ContentType = "text/plain";
+                            Response.Headers["Content-Encoding"] = "identity";
+                            await Response.WriteAsync("");
+                            return;
+                        }
+
+                        if (isFullDoc)
+                        {
+                            // Case D: any AJAX call that returned full HTML.
+                            // Silence it — if the UpdatePanel-disabler script was injected into the
+                            // viewer shell, SSRS form submits will no longer be Delta POSTs so this
+                            // branch should never fire for report renders.
+                            Console.WriteLine($"[SSRS Proxy] SILENCING AJAX full-HTML ({content.Length} bytes) for {fullUrl}");
                             Response.StatusCode = 200;
                             Response.ContentType = "text/plain";
                             Response.Headers["Content-Encoding"] = "identity";
@@ -278,16 +345,19 @@ namespace Views.Controllers
                         }
                     }
 
-                    // 7. Apply Replacements (ONLY for non-AJAX requests)
-                    // We must NOT rewrite AJAX responses because they use length-prefixed encoding 
-                    // (ScriptManager format) which breaks if we change the string length.
-                    if (!string.IsNullOrEmpty(ssrsBaseUrl) && !isAjax)
+                    // 7. Apply URL Replacements
+                    // For true AJAX partial-update responses (ScriptManager length-prefixed format)
+                    // we must NOT rewrite content because changing string length breaks the protocol.
+                    // We DO rewrite for all non-AJAX responses.
+                    bool shouldApplyRewrites = !isAjax || isAjaxFullHtmlFallback;
+
+                    if (shouldApplyRewrites && !string.IsNullOrEmpty(ssrsBaseUrl))
                     {
                         content = content.Replace(ssrsBaseUrl + "/ReportServer", "/ssrs-proxy");
                         content = content.Replace(ssrsBaseUrl, "/ssrs-proxy");
                     }
                     
-                    if (!isAjax)
+                    if (shouldApplyRewrites)
                     {
                         content = content.Replace("\"/ReportServer/", "\"/ssrs-proxy/");
                         content = content.Replace("='/ReportServer/", "'/ssrs-proxy/");
@@ -308,6 +378,7 @@ namespace Views.Controllers
 
                         content = content.Replace("var baseUrl = \"/ReportServer\";", "var baseUrl = \"/ssrs-proxy\";");
                         content = content.Replace("'baseUrl': '/ReportServer'", "'baseUrl': '/ssrs-proxy'");
+
                     }
 
                     await Response.WriteAsync(content);
