@@ -74,9 +74,18 @@
                                            Color="Color.Primary" 
                                            Size="Size.Large" 
                                            FullWidth="true" 
+                                           Disabled="@_loading"
                                            Class="py-2"
                                            Style="font-weight: 700; box-shadow: 0 4px 14px 0 rgba(255, 159, 67, 0.39);">
-                                    Login
+                                    @if (_loading)
+                                    {
+                                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                        <MudText Class="ms-2">Logging in...</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText>Login</MudText>
+                                    }
                                 </MudButton>
                             </EditForm>
                         </div>
@@ -109,29 +118,51 @@
         }
     }
 
+    private bool _loading = false;
+
     private async Task<bool> OnValidSubmit()
     {
-        var appUser = await _userManager.FindByIdAsync(user.UserID);
-        
-        if (appUser == null)
+        _loading = true;
+        StateHasChanged();
+
+        try
         {
-            snackbar.Add("Invalid Username or Password", Severity.Error);
+            var appUser = await _userManager.FindByIdAsync(user.UserID);
+            
+            if (appUser == null)
+            {
+                snackbar.Add("Invalid Username or Password", Severity.Error);
+                _loading = false;
+                return false;
+            }
+
+            var checkPassword = await _userManager.CheckPasswordAsync(appUser, user.Password);
+
+            if (!checkPassword)
+            {
+                snackbar.Add("Invalid Username or Password", Severity.Error);
+                _loading = false;
+                return false;
+            }
+
+            ((CustomAuthenticationSatetProvider)auth).AuthenticateUser(user.UserID);
+            await sessionStorage.SetItemAsync("userID", user.UserID);
+            MudDialog.Close(DialogResult.Ok(true));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add("Error during login: " + ex.Message, Severity.Error);
+            _loading = false;
             return false;
         }
-
-        var checkPassword = await _userManager.CheckPasswordAsync(appUser, user.Password);
-
-        if (!checkPassword)
+        finally
         {
-            snackbar.Add("Invalid Username or Password", Severity.Error);
-            return false;
+            // Note: If success, dialog closes, so no need to set _loading=false here usually, 
+            // but for safety in case of non-exceptional failures:
+            _loading = false;
+            StateHasChanged();
         }
-
-        ((CustomAuthenticationSatetProvider)auth).AuthenticateUser(user.UserID);
-        await sessionStorage.SetItemAsync("userID", user.UserID);
-        MudDialog.Close(DialogResult.Ok(true));
-        // nav.NavigateTo("/", false); // Removed to prevent race condition with AuthorizeView, trusting state change update
-        return true;
     }
 
     private async Task Cancel()
