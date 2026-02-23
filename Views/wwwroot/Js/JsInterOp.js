@@ -53,6 +53,28 @@ function runReport(url) {
     }
 }
 
+// Reliable version: registers onload callback BEFORE setting src so the event
+// is never missed, then calls back into Blazor via DotNetObjectReference.
+// The iframe is already hidden via display:none by Blazor before this runs,
+// so no stale content flash — no need for an about:blank intermediate step.
+function runReportWithCallback(url, dotNetRef) {
+    var iframe = document.getElementById("PreviewClaim");
+    if (!iframe) {
+        console.error("[runReportWithCallback] PreviewClaim iframe not found.");
+        return false;
+    }
+    // Register load handler BEFORE setting src (same JS tick — event never missed)
+    iframe.onload = function () {
+        iframe.onload = null;   // fire once only
+        if (dotNetRef) {
+            dotNetRef.invokeMethodAsync("OnIframeLoadComplete")
+                     .catch(function (e) { console.warn("[runReportWithCallback] callback error:", e); });
+        }
+    };
+    iframe.src = url;
+    return true;
+}
+
 function focusElement(id) {
     const element = document.getElementById(id);
     if (element) {
