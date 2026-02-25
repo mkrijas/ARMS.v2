@@ -3,6 +3,9 @@
 @inject AuthenticationStateProvider auth
 @inject NavigationManager nav
 @inject ISessionStorageService sessionStorage
+@inject UserManager<UserModel> UserManager
+@inject SignInManager<UserModel> SignInManager
+@inject ISnackbar Snackbar
 
 <MudDialog DisableSidePadding="true" Class="login-dialog-transparent" Options="dialogOptions">
     <DialogContent>
@@ -92,9 +95,18 @@
                                            Color="Color.Primary" 
                                            Size="Size.Large" 
                                            FullWidth="true" 
+                                           Disabled="@_loading"
                                            Class="py-2 mt-2"
                                            Style="font-weight: 700; box-shadow: 0 4px 14px 0 rgba(255, 159, 67, 0.39);">
-                                    Sign Up
+                                    @if (_loading)
+                                    {
+                                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                        <MudText Class="ms-2">Signing Up...</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText>Sign Up</MudText>
+                                    }
                                 </MudButton>
                             </EditForm>
                         </div>
@@ -287,12 +299,64 @@
     private DialogOptions dialogOptions = new DialogOptions() { NoHeader = true, BackgroundClass = "login-overlay", MaxWidth = MaxWidth.Small };
     private bool isClosing = false;
 
-    private async Task<bool> OnValidSubmit()
+    private bool _loading = false;
+
+    private async Task OnValidSubmit()
     {
-        // Simulate registration logic
-        await Task.Delay(1000); 
-        await Cancel(); // Close dialog with animation on success
-        return true;
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Check if user exists
+            var existingUser = await UserManager.FindByIdAsync(registerModel.UserID);
+            if (existingUser != null)
+            {
+                Snackbar.Add("User ID already exists", Severity.Error);
+                _loading = false;
+                return;
+            }
+
+            var existingEmail = await UserManager.FindByEmailAsync(registerModel.Email);
+            if (existingEmail != null)
+            {
+                Snackbar.Add("Email already exists", Severity.Error);
+                _loading = false;
+                return;
+            }
+
+            var user = new UserModel 
+            { 
+                UserName = registerModel.UserID, 
+                UserID = registerModel.UserID, 
+                PhoneNumber = registerModel.Phone, 
+                Email = registerModel.Email 
+            };
+
+            var result = await UserManager.CreateAsync(user, registerModel.Password);
+            if (result.Succeeded)
+            {
+                Snackbar.Add("Registration successful!", Severity.Success);
+                await Task.Delay(1000); // Give time for snackbar
+                await Cancel(); // Close dialog with animation on success
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    Snackbar.Add(error.Description, Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("An error occurred: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
     }
 
     private async Task Cancel()
