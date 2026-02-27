@@ -64,6 +64,19 @@
         --skew-angle-content: 54deg;
         --li-angle-content: 18deg;
         --circle-rotate: 108deg;
+        --glass-bg: rgba(54, 117, 136, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.2);
+    }
+
+    @@keyframes pulse-glow {
+        0% { box-shadow: 0 0 0 0 rgba(54, 117, 136, 0.4); }
+        70% { box-shadow: 0 0 0 15px rgba(54, 117, 136, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(54, 117, 136, 0); }
+    }
+
+    @@keyframes fan-in {
+        from { transform: scale(0.1) rotate(150deg); opacity: 0; }
+        to { transform: scale(1) rotate(var(--rotation, 10deg)); opacity: 1; }
     }
 
     html, body {
@@ -99,11 +112,18 @@
         height: var(--menu-toggle-size);
         border-radius: 50%;
         background: var(--menu-color);
-        border: none;
+        border: 2px solid var(--glass-border);
         cursor: pointer;
         display: block;
-        z-index: 50; /* always on top */
-        box-shadow: rgba(0, 0, 0, 0.7) 0 3px 12px;
+        z-index: 50;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        animation: pulse-glow 3s infinite;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .menu__toggle:hover {
+        transform: scale(1.05);
+        background: #3d869c;
     }
 
     .icon {
@@ -157,9 +177,15 @@
         height: calc(var(--menu-toggle-size) * 2);
         border-radius: 50%;
         transform: scale(0.1) rotate(150deg);
-        transition: transform var(--anim);
+        opacity: 0;
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
         z-index: 10;
-        box-shadow: rgba(0, 0, 0, 0.7) 0 3px 12px;
+        pointer-events: none;
+    }
+
+    .menu--circle.open .menu__listings {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .circle {
@@ -176,16 +202,24 @@
         box-shadow: rgba(0, 0, 0, 0.7) 0 3px 12px;
     }
 
-        .circle li {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 50%;
-            height: 50%;
-            transform-origin: 0 100%;
-            background: var(--menu-color);
-            pointer-events: none;
-        }
+    .circle li {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 50%;
+        height: 50%;
+        transform-origin: 0 100%;
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        pointer-events: none;
+        transition: background 0.3s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .circle li:hover {
+        background: rgba(54, 117, 136, 0.9);
+    }
 
             .circle li:nth-child(1) {
                 transform: rotate(calc(0 * var(--li-angle))) skewY(var(--skew-angle));
@@ -246,14 +280,29 @@
         font-size: 2.3em;
         background: transparent;
         border: none;
-        color: var(--background-color);
+        color: rgba(255, 255, 255, 0.7);
         cursor: pointer;
         pointer-events: auto;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.4s ease, filter 0.4s ease;
+        display: inline-block;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        transform: rotate(var(--icon-rotation, 0deg));
     }
 
-        .menu-btn:hover {
-            color: var(--icon-hover-color);
-        }
+    .menu-btn.active {
+        color: #FFFFFF !important;
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+    }
+
+    .menu-btn:hover {
+        color: #FFFFFF !important;
+        transform: rotate(var(--icon-rotation, 0deg)) scale(1.3) translateY(-3px);
+        filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.9));
+    }
+
+    .menu-btn:active {
+        transform: scale(0.95);
+    }
 
     .menu__arrowBtn {
         position: absolute;
@@ -288,7 +337,7 @@
 
     /* Open state */
     .menu--circle.open .menu__listings {
-        transform: scale(1) rotate(10deg);
+        /* Handled by inline style in Blazor now */
     }
 
     .menu--circle.open .menu__toggle {
@@ -343,130 +392,140 @@
         position: relative;
     }
 
-    /* Global Tooltip Styles */
+    /* Global Tooltip Styles - Modern Glassmorphism */
     #global-tooltip {
         position: fixed;
         display: none;
-        background: rgba(0, 0, 0, 0.9);
+        background: rgba(20, 26, 70, 0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         color: #fff;
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 14px;
-        font-weight: bold;
+        padding: 8px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
         white-space: nowrap;
         pointer-events: none;
         z-index: 10000;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.1);
+        transform: scale(0.9) translateY(5px);
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
+        opacity: 0;
+    }
+
+    #global-tooltip.visible {
+        opacity: 1;
+        transform: scale(1) translateY(0);
     }
 </style>
-<section class="menu--circle" id="menu">
-    <button class="menu__toggle" id="toggleBtn" type="button" aria-label="Toggle menu">
+<section class="menu--circle @(_isOpen ? "open" : "")" id="menu">
+    <button class="menu__toggle" id="toggleBtn" type="button" aria-label="Toggle menu" @onclick="ToggleMenu">
         <div class="icon">
             <div class="hamburger"><span></span></div>
         </div>
     </button>
 
-    <button class="menu__arrowBtn" id="arrowBtnForward" type="button" aria-label="Rotate menu forward">
+    <button class="menu__arrowBtn" id="arrowBtnForward" type="button" aria-label="Rotate menu forward" @onclick="RotateForward">
         <i class="fa-solid fa-angle-up"></i>
     </button>
     
-    <button class="menu__arrowBtn backward" id="arrowBtnBackward" type="button" aria-label="Rotate menu backward">
+    <button class="menu__arrowBtn backward" id="arrowBtnBackward" type="button" aria-label="Rotate menu backward" @onclick="RotateBackward">
         <i class="fa-solid fa-angle-down"></i>
     </button>
 
-    <div class="menu__listings" id="listings">
+    <div class="menu__listings" id="listings" style="@ListingsStyle">
         <ul class="circle">
-            <li>
+            <li style="transition-delay: @(GetDelay(0))">
                 <div class="placeholder">
                     <div class="upside">
-                        <a href="/Userhome" class="menu-btn" type="button" data-tooltip="Users">
-                            <i class="fa-solid fa-user"></i>
+                        <a href="/Userhome" class="menu-btn @(IsActive("/Userhome"))" style="--icon-rotation: @(GetCounterRotation(0))" type="button" data-tooltip="User Management">
+                            <i class="fa-solid fa-users-gear"></i>
                         </a>
                     </div>
                 </div>
             </li>
-            <li>
+            <li style="transition-delay: @(GetDelay(1))">
                 <div class="placeholder">
                     <div class="upside">
-                        <a href="/" class="menu-btn" type="button" data-tooltip="Exit Admin">
-                            <i class="fa-solid fa-house-chimney-user"></i>
+                        <a href="/" class="menu-btn" style="--icon-rotation: @(GetCounterRotation(1))" type="button" data-tooltip="Exit to Application">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
                         </a>
                     </div>
                 </div>
             </li>
-            <li>
+            <li style="transition-delay: @(GetDelay(2))">
                 <div class="placeholder">
                     <div class="upside">
-                        <a href="/DataAuthorizationSettingsView" class="menu-btn" type="button" data-tooltip="Extra">
-                            <i class="fa-solid fa-star"></i>
+                        <a href="/admin" class="menu-btn @(IsActive("/admin"))" style="--icon-rotation: @(GetCounterRotation(2))" type="button" data-tooltip="Admin Dashboard">
+                            <i class="fa-solid fa-gauge-high"></i>
                         </a>
                     </div>
                 </div>
             </li>
-            <li>
+            <li style="transition-delay: @(GetDelay(3))">
                 <div class="placeholder">
                     <div class="upside">
-                        <a href="/branch" class="menu-btn" type="button" data-tooltip="Branches">
-                            <i class="fa-solid fa-code-branch"></i>
+                        <a href="/branch" class="menu-btn @(IsActive("/branch"))" style="--icon-rotation: @(GetCounterRotation(3))" type="button" data-tooltip="Branch Management">
+                            <i class="fa-solid fa-building-columns"></i>
                         </a>
                     </div>
                 </div>
             </li>
-            <li>
+            <li style="transition-delay: @(GetDelay(4))">
                 <div class="placeholder">
                     <div class="upside">
-                        <a href="/DataAuthorizationSettingsView" class="menu-btn" type="button" data-tooltip="Authorization Settings">
-                            <i class="fa-sharp fa-solid fa-file-shield"></i>
+                        <a href="/DataAuthorizationSettingsView" class="menu-btn @(IsActive("/DataAuthorizationSettingsView"))" style="--icon-rotation: @(GetCounterRotation(4))" type="button" data-tooltip="Authorization Matrix">
+                            <i class="fa-solid fa-user-lock"></i>
                         </a>
                     </div>
                 </div>
             </li>
-            <li>
+            <li style="transition-delay: @(GetDelay(5))">
                 <div class="placeholder">
                     <div class="upside">
-                        <a href="/GeneralSettings" class="menu-btn" type="button" data-tooltip="General Settings">
-                            <i class="fa-duotone fa-solid fa-gear"></i>
+                        <a href="/GeneralSettings" class="menu-btn @(IsActive("/GeneralSettings"))" style="--icon-rotation: @(GetCounterRotation(5))" type="button" data-tooltip="System Configuration">
+                            <i class="fa-solid fa-gears"></i>
                         </a>
                     </div>
                 </div>
             </li>
-            <li>
+            <li style="transition-delay: @(GetDelay(6))">
                 <div class="placeholder">
                     <div class="upside">
-                        <button type="button" class="menu-btn" @onclick="Logout" data-tooltip="Logout">
-                            <i class="fa-solid fa-right-from-bracket"></i>
+                        <button type="button" class="menu-btn" style="--icon-rotation: @(GetCounterRotation(6))" @onclick="Logout" data-tooltip="Secure Logout">
+                            <i class="fa-solid fa-power-off"></i>
                         </button>
                     </div>
                 </div>
             </li>
-            <li>
-
-            <div class="placeholder">
-                    <div class="upside">
-                        <a href="/Devices" class="menu-btn" type="button" data-tooltip="Devices">
-                            <i class="fa-solid fa-mobile"></i>
-                        </a>
-                    </div>
-                </div>
-                
-            </li>
-            <li>
+            <li style="transition-delay: @(GetDelay(7))">
                 <div class="placeholder">
                     <div class="upside">
-                        <a href="/admin" class="menu-btn" type="button" data-tooltip="Home">
-                            <i class="fa-solid fa-user-shield"></i>
+                        <a href="/Devices" class="menu-btn @(IsActive("/Devices"))" style="--icon-rotation: @(GetCounterRotation(7))" type="button" data-tooltip="Device Registry">
+                            <i class="fa-solid fa-microchip"></i>
                         </a>
                     </div>
                 </div>
             </li>
-            <li>
+            <li style="transition-delay: @(GetDelay(8))">
                 <div class="placeholder">
                     <div class="upside">
-                        <a href="/userrole" class="menu-btn" type="button" data-tooltip="Roles">
-                            <i class="fa-sharp fa-solid fa-shield"></i>
+                        <a href="/userrole" class="menu-btn @(IsActive("/userrole"))" style="--icon-rotation: @(GetCounterRotation(8))" type="button" data-tooltip="Role & Permissions">
+                            <i class="fa-solid fa-shield-halved"></i>
                         </a>
                     </div>
                 </div>              
+            </li>
+            <li style="transition-delay: @(GetDelay(9))">
+                <div class="placeholder">
+                    <div class="upside">
+                        <a href="/admin" class="menu-btn" style="--icon-rotation: @(GetCounterRotation(9))" type="button" data-tooltip="Home">
+                            <i class="fa-solid fa-house-chimney"></i>
+                        </a>
+                    </div>
+                </div>
             </li>
         </ul>
     </div>
@@ -475,81 +534,101 @@
 <div id="global-tooltip">Tooltip</div>
 
 <script>
-    const menu = document.getElementById("menu");
-    const toggleBtn = document.getElementById("toggleBtn");
-    const arrowBtnForward = document.getElementById("arrowBtnForward");
-    const arrowBtnBackward = document.getElementById("arrowBtnBackward");
-    const listings = document.getElementById("listings");
+    // Simplified Global Tooltip Logic for Blazor
+    function initAdminMenuTooltips() {
+        const tooltip = document.getElementById("global-tooltip");
+        const menuBtns = document.querySelectorAll(".menu-btn");
 
-    let rotation = 10;
-    const step = 36 * 3; // Move 3 items at a time
-
-    toggleBtn.addEventListener("click", () => {
-      const willOpen = !menu.classList.contains("open");
-
-      if (willOpen) {
-        menu.classList.add("open");
-        listings.style.transform = `scale(1) rotate(${rotation}deg)`;
-      } else {
-        menu.classList.remove("open");
-        listings.style.transform = ""; // IMPORTANT: remove inline transform
-        rotation = 10; // optional reset
-      }
-    });
-
-    arrowBtnForward.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (!menu.classList.contains("open")) return;
-
-      rotation += step;
-      listings.style.transform = `scale(1) rotate(${rotation}deg)`;
-    });
-
-    arrowBtnBackward.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (!menu.classList.contains("open")) return;
-
-      rotation -= step;
-      listings.style.transform = `scale(1) rotate(${rotation}deg)`;
-    });
-
-    // Global Tooltip Logic
-    const tooltip = document.getElementById("global-tooltip");
-    const menuBtns = document.querySelectorAll(".menu-btn");
-
-    function updateTooltipPosition(btn) {
-         if (tooltip.style.display === 'block') {
+        function updatePosition(btn) {
             const rect = btn.getBoundingClientRect();
-            // Position to the right of the button with a small gap
-            tooltip.style.left = (rect.right + 15) + "px";
-            // Center vertically relative to the button
+            tooltip.style.left = (rect.right + 20) + "px";
             tooltip.style.top = (rect.top + (rect.height / 2) - (tooltip.offsetHeight / 2)) + "px";
-         }
+        }
+
+        menuBtns.forEach(btn => {
+            btn.addEventListener("mouseenter", () => {
+                const text = btn.getAttribute("data-tooltip");
+                if (text) {
+                    tooltip.textContent = text;
+                    tooltip.style.display = "block";
+                    // Add a tiny delay to ensure offsetHeight is calculated
+                    requestAnimationFrame(() => {
+                        updatePosition(btn);
+                        tooltip.classList.add("visible");
+                    });
+                }
+            });
+            btn.addEventListener("mouseleave", () => {
+                tooltip.classList.remove("visible");
+                setTimeout(() => {
+                    if (!tooltip.classList.contains("visible")) {
+                         tooltip.style.display = "none";
+                    }
+                }, 200);
+            });
+        });
+    }
+</script>
+@inject IJSRuntime JSRuntime
+
+@code {
+    private bool _isOpen = false;
+    private int _rotation = 10;
+    private const int Step = 36 * 3;
+
+    private string GetCounterRotation(int index)
+    {
+        int totalStatic = 108 + 18 + 180 + (36 * index);
+        return $"{-(_rotation + totalStatic)}deg;";
     }
 
-    menuBtns.forEach(btn => {
-        btn.addEventListener("mouseenter", () => {
-            const text = btn.getAttribute("data-tooltip");
-            if (text) {
-                tooltip.textContent = text;
-                tooltip.style.display = "block";
-                updateTooltipPosition(btn);
-            }
-        });
+    private string GetDelay(int index)
+    {
+        return _isOpen ? $"{(index * 0.05).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}s" : "0s";
+    }
 
-        btn.addEventListener("mouseleave", () => {
-            tooltip.style.display = "none";
-        });
-        
-        // Ensure position updates if the menu is rotating while hovering (though mouseleave usually fires)
-        // We can just rely on hover for now.
-    });
-</script>
-@code {
+    private string IsActive(string href)
+    {
+        var currentUri = NavigationManager.Uri;
+        return currentUri.Contains(href, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    }
+
+    private string ListingsStyle => _isOpen 
+        ? $"transform: scale(1) rotate({_rotation}deg);" 
+        : "";
+
+    private void ToggleMenu()
+    {
+        _isOpen = !_isOpen;
+        if (!_isOpen)
+        {
+            _rotation = 10; // Reset rotation on close
+        }
+    }
+
+    private void RotateForward()
+    {
+        if (_isOpen)
+        {
+            _rotation += Step;
+        }
+    }
+
+    private void RotateBackward()
+    {
+        if (_isOpen)
+        {
+            _rotation -= Step;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Re-initialize tooltips after every render to ensure they bind correctly
+        // especially after navigation or state changes.
+        await JSRuntime.InvokeVoidAsync("initAdminMenuTooltips");
+    }
+
     private async Task Logout()
     {
         if (AuthStateProvider is ICustomAuthenticationService customAuthProvider)
