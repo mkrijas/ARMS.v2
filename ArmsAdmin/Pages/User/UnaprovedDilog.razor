@@ -8,33 +8,55 @@
 @using System.Globalization
 @using Microsoft.AspNetCore.Identity
 
-<div style="height:400px;overflow-y:scroll">
-    <MudDialog>
-        <TitleContent><MudIconButton OnClick="Cancel" Icon=@Icons.Material.Filled.Close></MudIconButton></TitleContent>
-        <DialogContent>
-            <h3>Approval Pending</h3>
-            <MudItem>
-                <MudTable Items="@collection" Dense="true" Filter="new Func<UserModel, bool>(search)" @bind-SelectedItem="model">
-                    <HeaderContent>
-                        <MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.UserID)" InitialDirection="SortDirection.Ascending">UserID</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.UserName)" InitialDirection="SortDirection.Ascending">UserName</MudTableSortLabel></MudTh>
-                        <MudTh>Actions</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="UserID">@context.UserID</MudTd>
-                        <MudTd DataLabel="UserName">@context.UserName</MudTd>
-                        <MudTd DataLabel="">
-                            <MudFab style="font-size:5px" @onclick="@(()=> Approve(context.UserID))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddTask" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTd>
-                    </RowTemplate>
-                    <PagerContent>
-                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                    </PagerContent>
-                </MudTable>
-            </MudItem>
-        </DialogContent>
-    </MudDialog>
-</div>
+<MudDialog Class="admin-dialog-glass">
+    <DialogContent>
+        <div class="header-section mb-6">
+            <div class="d-flex align-center">
+                <div class="icon-badge primary-badge mr-4">
+                    <MudIcon Icon="@Icons.Material.Filled.HowToReg" Size="Size.Large" />
+                </div>
+                <div>
+                    <MudText Typo="Typo.h5" Class="admin-title"><b>Approval Pending</b></MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">
+                        Review and authorize new user registrations.
+                    </MudText>
+                </div>
+            </div>
+            <div class="title-accent mt-4"></div>
+        </div>
+
+        <div class="admin-glass-card pa-4" style="max-height: 500px; overflow-y: auto;">
+            <MudTable Items="@collection" Elevation="0" Dense="true" Hover="true" FixedHeader="true" 
+                      Filter="new Func<UserModel, bool>(search)" @bind-SelectedItem="model" 
+                      Class="modern-admin-table">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.UserID)" InitialDirection="SortDirection.Ascending">UserID</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.UserName)" InitialDirection="SortDirection.Ascending">UserName</MudTableSortLabel></MudTh>
+                    <MudTh Style="width: 100px; text-align: center;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="UserID">
+                        <MudText Typo="Typo.body2" Style="font-weight: 600; color: #141A46;">@context.UserID</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="UserName">@context.UserName</MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: center;">
+                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Success" 
+                                       OnClick="@(()=> Approve(context.UserID))" Size="Size.Medium" 
+                                       Class="action-btn-primary" Title="Approve User" />
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-2">
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Color="Color.Default" Class="px-8">Close</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
 
@@ -77,7 +99,14 @@
         await Usmg.UpdateAsync(usrmdl); // Update the user in the database
         collection.Remove(usrmdl);
         snackbar.Add("User Approved", Severity.Success);
-        void Cancel() => MudDialog.Cancel();
+        if (collection.Count == 0)
+        {
+            MudDialog.Cancel();
+        }
+        else
+        {
+            StateHasChanged();
+        }
     }
 
     // Method to delete (disable) a user
@@ -85,24 +114,26 @@
     {
         bool? result = await DialogService.ShowMessageBox(
             "Warning !",
-            "Are you sure, you want to disable User ?");
+            "Are you sure, you want to disable User ?",
+            yesText: "Disable", cancelText: "Cancel");
         if (result == true)
         {
             var usrmdl = collection.First(x => x.UserID == id); // Find the user in the collection
             await Usmg.DeleteAsync(usrmdl); // Delete the user from the databas
             snackbar.Add("Disabled User", Severity.Success);
+            GetAll();
+            StateHasChanged();
         }
-        GetAll();
     }
 
     // Method to filter users based on the search input
     private bool search(UserModel users)
     {
+        if (string.IsNullOrWhiteSpace(searchTruck)) return true;
         if (users.UserID != null && users.UserID.Contains(searchTruck, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
-        else if (users.UserID == null) return true;
         return false;
     }
 }

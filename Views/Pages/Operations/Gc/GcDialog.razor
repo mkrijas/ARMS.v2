@@ -1,134 +1,172 @@
 @attribute [Authorize]
 @using System.Threading;
 
-<MudDialog>
+<MudDialog Class="admin-dialog-glass">
     <DialogContent>
-        <MudContainer Style="min-height:300px;max-height: 800px;">
-            <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-@if (IsLoading)
-{
-    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
-        <LoaderComponent IsFullScreen="false" 
-                        ShowLogo="false" 
-                        Size="medium" 
-                        LoadingText="Loading GC Details" 
-                        SubText="Please wait..." />
-    </div>
-}
-else
-{
-    <div @key="@("content")">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="12" md="6">
-                            <MudAutocomplete Clearable="true" Variant="Variant.Outlined" T="OrderModel" Label="Order" ResetValueOnEmptyText="true" ValueChanged="OrderSelected" Value="Order"
-                                             SearchFunc="@(async (string s, CancellationToken t) => await SearchOrders(s, t))" ToStringFunc="@(e=> e==null?null : $"{e.OrderName}")"></MudAutocomplete>
-                        </MudItem>
-                        @if (Order?.OrderID > 0)
-                        {
-                            <MudItem xs="12" md="6">
-                                <MudAutocomplete T="RouteModel" Variant="Variant.Outlined" Label="Route" Value="Route" ValueChanged="RouteChanged" ResetValueOnEmptyText="true"
-                                                 SearchFunc="@(async (string s, CancellationToken t) => await SearchRoutes(s, t))" ToStringFunc="@(e => e == null ? null : $"{e.RouteName}")"></MudAutocomplete>
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudAutocomplete T="ConsigneeModel" Variant="Variant.Outlined" Label="Consignor" Value="Consignor" ValueChanged="ConsignorChanged" ResetValueOnEmptyText="true"
-                                                 SearchFunc="@(async (string s, CancellationToken t) => await SearchConsignor(s, t))" ToStringFunc="@(e => e == null ? null : $"{e.ConsigneeName}")"
-                                                 Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add" OnAdornmentClick="AddConsignee_Consignor" AdornmentAriaLabel="Add Consignee Consignor">
-                                </MudAutocomplete>
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudAutocomplete T="ConsigneeModel" Variant="Variant.Outlined" Label="Consignee" Value="Consignee" ValueChanged="ConsigneeChanged" ResetValueOnEmptyText="true"
-                                                 SearchFunc="@(async (string s, CancellationToken t) => await SearchConsignee(s, t))" ToStringFunc="@(e => e == null ? null : $"{e.ConsigneeName}")"
-                                                 Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add" OnAdornmentClick="AddConsignee_Consignor" AdornmentAriaLabel="Add Consignee Consignor"></MudAutocomplete>
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudTextField Label="Order Time" Format="s" Variant="Variant.Outlined" @bind-Value="@model.OrderTime" InputType="InputType.DateTimeLocal"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudTextField Label="LR Date" Format="yyyy-MM-dd" Variant="Variant.Outlined" @bind-Value="@model.LRDate" InputType="InputType.Date"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="12">
-                                <MudTabs @bind-ActivePanelIndex="@_tabIndex" Rounded="true" ApplyEffectsToContainer="true">
-                                    <ChildContent>
-                                        @foreach (var wrapperitem in model.Gcs.Select((value, i) => new { i, value }))
-                                        {
-                                            var item = wrapperitem.value;
-                                            string head = item.GcID > 0 ? item.GcPrefix + item.GcNumber : "New " + (wrapperitem.i + 1);
-                                            <MudTabPanel Text="@head" Tag="@item">
-                                                <MudGrid Spacing="2">
-                                                    <MudItem xs="12" md="4">
-                                                        <MudDatePicker Label="Bill Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="item.BillDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
-                                                    </MudItem>
-                                                    <MudItem xs="12" md="4">
-                                                        <MudTextField @bind-Value="item.BillNumber" Label="Bill Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.BillNumber)"></MudTextField>
-                                                    </MudItem>
-                                                    <MudItem xs="12" md="4">
-                                                        <MudTextField Value="item.BillQuantity" T="decimal?" ValueChanged="((e)=>QtyChanged(e,item))" Label="Bill Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.BillQuantity)" Adornment="Adornment.End" AdornmentText="@(Order?.Content?.PrimaryUnit)"> </MudTextField>
-                                                    </MudItem>
-                                                    <MudItem xs="12" md="3">
-                                                        <MudSelect Label="Select Type" @bind-Value="item.GcType" Variant="Variant.Outlined" Margin="Margin.Dense"  AdornmentColor="Color.Secondary">
-                                                            @foreach (var ditem in GcTypes)
-                                                            {
-                                                                <MudSelectItem Value="@ditem.GcTypeID">@ditem.GcTypeName</MudSelectItem>
-                                                            }
-                                                        </MudSelect>
-                                                    </MudItem>
-                                                    <MudItem xs="12" md="3">
-                                                        <MudTextField @bind-Value="item.PassNumber" Label="Pass Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.PassNumber)"></MudTextField>
-                                                    </MudItem>
-                                                    <MudItem xs="12" md="3">
-                                                        <MudTextField @bind-Value="item.LRNo" Label="LR Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.LRNo)"></MudTextField>
-                                                    </MudItem>
-                                                    <MudItem xs="12" md="3">
-                                                        <MudTextField Value="item.Freight" T="decimal?" ValueChanged="((e)=>FrChanged(e,item))" Label="FREIGHT" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.Freight)"></MudTextField>
-                                                    </MudItem>
-                                                </MudGrid>
-                                            </MudTabPanel>
-                                        }
-                                    </ChildContent>
-                                    <Header Context="HeaderContext">
-                                        <MudButtonGroup>
-                                            <MudTooltip Text="Add More Invoices">
-                                                <MudButton EndIcon="@Icons.Material.Filled.Add" OnClick="@( () => AddMoreInvoice() )">ADD</MudButton>
-                                            </MudTooltip>
-                                        </MudButtonGroup>
-                                    </Header>
-                                    <TabPanelHeader Context="PanelHeadContext">
-                                        @if (model.Gcs.Count > 1)
-                                        {
-                                            <MudTooltip Text="Remove Tab">
-                                                <MudIconButton Class="ml-2 pa-1" Color="Color.Dark" Icon="@Icons.Material.Filled.Close" OnClick="(() => RemoveInvoice(PanelHeadContext))" />
-                                            </MudTooltip>
-                                        }
-                                    </TabPanelHeader>
-                                </MudTabs>
-                            </MudItem>
-                        }
-                    </MudGrid>
-    </div>
-}
-                
-            </EditForm>
-        </MudContainer>
+        <div class="header-section mb-6">
+            <div class="d-flex align-center">
+                <div class="icon-badge primary-badge mr-4">
+                    <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Size="Size.Large" />
+                </div>
+                <div>
+                    <MudText Typo="Typo.h5" Class="admin-title"><b>GC Management</b></MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">
+                        Create and manage Goods Consignment details.
+                    </MudText>
+                </div>
+            </div>
+            <div class="title-accent mt-4"></div>
+        </div>
+
+        <div class="admin-glass-card pa-6">
+            <MudContainer Style="min-height:300px; max-height: 600px; overflow-y: auto;">
+                <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
+                    <ObjectGraphDataAnnotationsValidator />
+                    <ValidationSummary />
+                    @if (IsLoading)
+                    {
+                        <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                            <LoaderComponent IsFullScreen="false" ShowLogo="false" Size="medium" LoadingText="Fetching Data" SubText="Please wait..." />
+                        </div>
+                    }
+                    else
+                    {
+                        <div @key="@("content")">
+                            <MudGrid Spacing="3">
+                                <MudItem xs="12" md="6">
+                                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" T="OrderModel" 
+                                                     Label="Select Order" ResetValueOnEmptyText="true" 
+                                                     ValueChanged="OrderSelected" Value="Order"
+                                                     SearchFunc="@(async (string s, CancellationToken t) => await SearchOrders(s, t))" 
+                                                     ToStringFunc="@(e=> e==null?null : $"{e.OrderName}")"
+                                                     Class="modern-input"></MudAutocomplete>
+                                </MudItem>
+                                @if (Order?.OrderID > 0)
+                                {
+                                    <MudItem xs="12" md="6">
+                                        <MudAutocomplete T="RouteModel" Variant="Variant.Outlined" Label="Route Path" 
+                                                         Value="Route" ValueChanged="RouteChanged" ResetValueOnEmptyText="true"
+                                                         SearchFunc="@(async (string s, CancellationToken t) => await SearchRoutes(s, t))" 
+                                                         ToStringFunc="@(e => e == null ? null : $"{e.RouteName}")"
+                                                         Class="modern-input"></MudAutocomplete>
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudAutocomplete T="ConsigneeModel" Variant="Variant.Outlined" Label="Consignor" 
+                                                         Value="Consignor" ValueChanged="ConsignorChanged" ResetValueOnEmptyText="true"
+                                                         SearchFunc="@(async (string s, CancellationToken t) => await SearchConsignor(s, t))" 
+                                                         ToStringFunc="@(e => e == null ? null : $"{e.ConsigneeName}")"
+                                                         Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add" 
+                                                         OnAdornmentClick="AddConsignee_Consignor" Class="modern-input">
+                                        </MudAutocomplete>
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudAutocomplete T="ConsigneeModel" Variant="Variant.Outlined" Label="Consignee" 
+                                                         Value="Consignee" ValueChanged="ConsigneeChanged" ResetValueOnEmptyText="true"
+                                                         SearchFunc="@(async (string s, CancellationToken t) => await SearchConsignee(s, t))" 
+                                                         ToStringFunc="@(e => e == null ? null : $"{e.ConsigneeName}")"
+                                                         Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add" 
+                                                         OnAdornmentClick="AddConsignee_Consignor" Class="modern-input"></MudAutocomplete>
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField Label="Order Time" Format="s" Variant="Variant.Outlined" 
+                                                     @bind-Value="@model.OrderTime" InputType="InputType.DateTimeLocal"
+                                                     Class="modern-input"></MudTextField>
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField Label="LR Date" Format="yyyy-MM-dd" Variant="Variant.Outlined" 
+                                                     @bind-Value="@model.LRDate" InputType="InputType.Date"
+                                                     Class="modern-input"></MudTextField>
+                                    </MudItem>
+                                    <MudItem xs="12">
+                                        <MudTabs @bind-ActivePanelIndex="@_tabIndex" Elevation="0" Rounded="true" 
+                                                 ApplyEffectsToContainer="true" Class="mt-4"
+                                                 PanelClass="pa-4 rounded-xl" Style="background: rgba(255,255,255,0.3)">
+                                            <ChildContent>
+                                                @foreach (var wrapperitem in model.Gcs.Select((value, i) => new { i, value }))
+                                                {
+                                                    var item = wrapperitem.value;
+                                                    string head = item.GcID > 0 ? item.GcPrefix + item.GcNumber : "Invoice " + (wrapperitem.i + 1);
+                                                    <MudTabPanel Text="@head" Tag="@item">
+                                                        <MudGrid Spacing="2" Class="pa-2">
+                                                            <MudItem xs="12" md="4">
+                                                                <MudDatePicker Label="Bill Date" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                                                               DisableToolbar="true" Editable="true" @bind-Date="item.BillDate" 
+                                                                               DateFormat="dd/MM/yyyy" Class="modern-input" />
+                                                            </MudItem>
+                                                            <MudItem xs="12" md="4">
+                                                                <MudTextField @bind-Value="item.BillNumber" Label="Bill No" Variant="Variant.Outlined" 
+                                                                             Margin="Margin.Dense" Class="modern-input"></MudTextField>
+                                                            </MudItem>
+                                                            <MudItem xs="12" md="4">
+                                                                <MudTextField Value="item.BillQuantity" T="decimal?" ValueChanged="((e)=>QtyChanged(e,item))" 
+                                                                             Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                                                             Adornment="Adornment.End" AdornmentText="@(Order?.Content?.PrimaryUnit)"
+                                                                             Class="modern-input"></MudTextField>
+                                                            </MudItem>
+                                                            <MudItem xs="12" md="3">
+                                                                <MudSelect Label="GC Type" @bind-Value="item.GcType" Variant="Variant.Outlined" 
+                                                                          Margin="Margin.Dense" Class="modern-input">
+                                                                    @foreach (var ditem in GcTypes)
+                                                                    {
+                                                                        <MudSelectItem Value="@ditem.GcTypeID">@ditem.GcTypeName</MudSelectItem>
+                                                                    }
+                                                                </MudSelect>
+                                                            </MudItem>
+                                                            <MudItem xs="12" md="3">
+                                                                <MudTextField @bind-Value="item.PassNumber" Label="Pass No" Variant="Variant.Outlined" 
+                                                                             Margin="Margin.Dense" Class="modern-input"></MudTextField>
+                                                            </MudItem>
+                                                            <MudItem xs="12" md="3">
+                                                                <MudTextField @bind-Value="item.LRNo" Label="LR No" Variant="Variant.Outlined" 
+                                                                             Margin="Margin.Dense" Class="modern-input"></MudTextField>
+                                                            </MudItem>
+                                                            <MudItem xs="12" md="3">
+                                                                <MudTextField Value="item.Freight" T="decimal?" ValueChanged="((e)=>FrChanged(e,item))" 
+                                                                             Label="Freight" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                                                             Class="modern-input"></MudTextField>
+                                                            </MudItem>
+                                                        </MudGrid>
+                                                    </MudTabPanel>
+                                                }
+                                            </ChildContent>
+                                            <Header Context="HeaderContext">
+                                                <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" 
+                                                               OnClick="@( () => AddMoreInvoice() )" Title="Add Invoice" />
+                                            </Header>
+                                        </MudTabs>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </div>
+                    }
+                </EditForm>
+            </MudContainer>
+        </div>
     </DialogContent>
     <DialogActions>
-        @if (model.TotalFreight != 0)
-        {
-            <MudText Typo="Typo.body1" Class="d-flex mx-4 align-center">
-                Total Freight :<MudText Typo="Typo.h6" Color="Color.Primary"> @model.Gcs.Sum(x => x.Freight)?.ToString("C2")</MudText>
-            </MudText>
-            <MudRadioGroup T="byte?" @bind-Value="@model.PaidBy" Class="pl-5">
-                <MudRadio Value="@((byte?)1)" Color="Color.Primary" Dense="true">Paid by Client</MudRadio>
-                <MudRadio Value="@((byte?)2)" Color="Color.Secondary" Dense="true">Paid by Consignee</MudRadio>
-            </MudRadioGroup>
-        }
-        <MudSpacer></MudSpacer>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Disabled="@_busy" form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Gc</MudButton>
-        @if(model.GcSetID is null)
-        {
-            <MudButton Disabled="@_busy"  Variant="Variant.Filled" Color="Color.Error" OnClick="@Delete" ButtonType="ButtonType.Button">Delete</MudButton>
-        }
+        <div class="d-flex flex-wrap pa-4 w-100 align-center gap-4">
+            @if (model.TotalFreight != 0)
+            {
+                <div class="pa-2 px-4 rounded-xl d-flex align-center" style="background: rgba(54, 117, 136, 0.05);">
+                    <MudText Typo="Typo.body2" Class="mr-2">Total Freight:</MudText>
+                    <MudText Typo="Typo.h6" Style="color: #367588; font-weight: 800;">@model.Gcs.Sum(x => x.Freight)?.ToString("C2")</MudText>
+                </div>
+                <MudRadioGroup T="byte?" @bind-Value="@model.PaidBy" Class="d-flex gap-4">
+                    <MudRadio Value="@((byte?)1)" Color="Color.Primary" Dense="true" Size="Size.Small">Client</MudRadio>
+                    <MudRadio Value="@((byte?)2)" Color="Color.Secondary" Dense="true" Size="Size.Small">Consignee</MudRadio>
+                </MudRadioGroup>
+            }
+            <MudSpacer />
+            <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+            <MudButton Disabled="@_busy" form="form" Variant="Variant.Filled" 
+                       Color="Color.Primary" ButtonType="ButtonType.Submit"
+                       Class="action-btn-primary px-8"
+                       Style="background: #367588 !important; color: white !important;">Save GC</MudButton>
+            @if(model.GcSetID is null)
+            {
+                <MudButton Disabled="@_busy" Variant="Variant.Outlined" Color="Color.Error" 
+                           OnClick="@Delete" Class="rounded-xl">Delete</MudButton>
+            }
+        </div>
     </DialogActions>
 </MudDialog>
