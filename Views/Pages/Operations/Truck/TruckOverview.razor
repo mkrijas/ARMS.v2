@@ -1,0 +1,696 @@
+@page "/truck-overview"
+@using ArmsModels.BaseModels
+@using ArmsServices.DataServices
+@using System.Threading
+@inject ITruckService TruckService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
+    <MudText Typo="Typo.h5" Class="mb-4 fw-bold">Truck Overview</MudText>
+
+    @* Search Section *@
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudAutocomplete T="TruckModel" Label="Search Truck (Reg No)" @bind-Value="SelectedTruck"
+                                 SearchFunc="@SearchTrucks" ToStringFunc="@(t => t?.RegNo)"
+                                 ResetValueOnEmptyText="true" CoerceText="true" CoerceValue="true"
+                                 AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary"
+                                 Variant="Variant.Outlined" Clearable="true" OnClearButtonClick="ClearSelection" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if (isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+    }
+    else if (SelectedTruck != null)
+    {
+        @* Hero Section (Top Card) *@
+        <MudCard Class="mb-5" Elevation="6" Style="border-radius: 16px; overflow: hidden; position: relative;">
+            @* Decorative background gradient *@
+            <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, var(--mud-palette-primary-hover) 0%, transparent 60%); opacity: 0.1; z-index: 0; pointer-events: none;"></div>
+            
+            <MudCardContent Class="d-flex align-center flex-wrap gap-6 py-8 px-8" Style="position: relative; z-index: 1;">
+                @* Placeholder Image/Avatar *@
+                <MudPaper Elevation="4" Style="border-radius: 50%; padding: 4px; background: white;">
+                    <MudAvatar Style="height: 120px; width: 120px; background: linear-gradient(135deg, var(--mud-palette-primary), var(--mud-palette-secondary)); color: white;">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Style="font-size: 4.5rem;" />
+                    </MudAvatar>
+                </MudPaper>
+                
+                <div class="d-flex flex-column flex-grow-1">
+                    <div class="d-flex justify-space-between align-start flex-wrap gap-4">
+                        <div>
+                            <MudText Typo="Typo.h3" Class="fw-bold mb-1" Style="letter-spacing: -0.5px;">@SelectedTruck.RegNo</MudText>
+                            <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mb-2">
+                                @(string.IsNullOrEmpty(SelectedTruck.TruckType) ? "Unknown Type" : SelectedTruck.TruckType) 
+                                @(!string.IsNullOrEmpty(SelectedTruck.BodyType) ? $" • {SelectedTruck.BodyType}" : "")
+                            </MudText>
+                        </div>
+                        <MudChip T="string" Color="@(SelectedTruck.CurrentEvent?.TruckEventID != null ? Color.Warning : Color.Success)" 
+                                 Variant="Variant.Filled" 
+                                 Size="Size.Large"
+                                 Icon="@(SelectedTruck.CurrentEvent?.TruckEventID != null ? Icons.Material.Filled.Moving : Icons.Material.Filled.CheckCircle)"
+                                 Class="fw-bold elevation-2 px-4 py-2" style="border-radius: 8px;">
+                            @(SelectedTruck.CurrentEvent?.TruckEventID != null ? "Active Event" : "Available / Idle")
+                        </MudChip>
+                    </div>
+
+                    <MudDivider Class="my-4 opacity-50" />
+
+                    <div class="d-flex gap-8 mt-2 flex-wrap">
+                        <div class="d-flex align-center gap-3">
+                             <MudAvatar Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small"><MudIcon Icon="@Icons.Material.Filled.PinDrop" Size="Size.Small" /></MudAvatar>
+                             <div>
+                                 <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block; font-weight: 600;">Operating Branch</MudText>
+                                 <MudText Typo="Typo.body1" Class="fw-bold">@(string.IsNullOrEmpty(SelectedTruck.OperatingBranchName) ? "Not Assigned" : SelectedTruck.OperatingBranchName)</MudText>
+                             </div>
+                        </div>
+                        <div class="d-flex align-center gap-3">
+                             <MudAvatar Color="Color.Tertiary" Variant="Variant.Outlined" Size="Size.Small"><MudIcon Icon="@Icons.Material.Filled.Garage" Size="Size.Small" /></MudAvatar>
+                             <div>
+                                 <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block; font-weight: 600;">Home Branch</MudText>
+                                 <MudText Typo="Typo.body1" Class="fw-bold">@(string.IsNullOrEmpty(SelectedTruck.HomeBranchName) ? "Not Assigned" : SelectedTruck.HomeBranchName)</MudText>
+                             </div>
+                        </div>
+                         <div class="d-flex align-center gap-3">
+                             <MudAvatar Color="Color.Info" Variant="Variant.Outlined" Size="Size.Small"><MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" /></MudAvatar>
+                             <div>
+                                 <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block; font-weight: 600;">Assigned Driver</MudText>
+                                 <MudText Typo="Typo.body1" Class="fw-bold">@(string.IsNullOrEmpty(SelectedTruck.DriverName) ? "Unassigned" : SelectedTruck.DriverName)</MudText>
+                             </div>
+                        </div>
+                         <div class="d-flex align-center gap-3">
+                             <MudAvatar Color="Color.Warning" Variant="Variant.Outlined" Size="Size.Small"><MudIcon Icon="@Icons.Material.Filled.Numbers" Size="Size.Small" /></MudAvatar>
+                             <div>
+                                 <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block; font-weight: 600;">Asset ID</MudText>
+                                 <MudText Typo="Typo.body1" Class="fw-bold">@(SelectedTruck.AssetID?.ToString() ?? "N/A")</MudText>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+
+        @* Detailed Information Tabs *@
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Color="Color.Primary" Variant="Variant.Outlined">
+            
+            <MudTabPanel Text="Core Specifications" Icon="@Icons.Material.Filled.BuildCircle">
+                <MudGrid>
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="Make / Type" Value="@SelectedTruck.TruckType" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="Body Type" Value="@SelectedTruck.BodyType" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="BS Type" Value="@SelectedTruck.BSType" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="Manufactured Year" Value="@SelectedTruck.ManufacturedYear?.ToString()" />
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="6">
+                        <InfoItem Label="Chassis Number" Value="@SelectedTruck.ChassisNumber" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <InfoItem Label="Engine Number" Value="@SelectedTruck.EngineNumber" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="Transmission" Value="@SelectedTruck.TransmissionType" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="Fuel Type" Value="@SelectedTruck.FuelType" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="Fuel Capacity" Value="@($"{SelectedTruck.FuelTankCapacity} L")" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="Wheels" Value="@SelectedTruck.wheels?.ToString()" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="Unladen Weight" Value="@($"{SelectedTruck.UnladenWeight} kg")" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="Gross Weight" Value="@($"{SelectedTruck.GrossWeight} kg")" />
+                    </MudItem>
+                     <MudItem xs="12" md="3">
+                        <InfoItem Label="GPS Device ID" Value="@SelectedTruck.GpsDeviceID?.ToString()" />
+                    </MudItem>
+                     <MudItem xs="12" md="3">
+                        <InfoItem Label="Purchase Date" Value="@SelectedTruck.PurchaseDate?.ToString("MMMM dd, yyyy")" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Documents" Icon="@Icons.Material.Filled.AssignmentTurnedIn">
+                <MudGrid>
+                    @* Registration Section *@
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.h6" Class="mb-3 fw-bold">Registration (RC)</MudText>
+                    </MudItem>
+                    @if (SelectedTruck.CurrentRegistration != null)
+                    {
+                        <MudItem xs="12" md="3">
+                            <InfoItem Label="Registration No" Value="@SelectedTruck.CurrentRegistration.RegNo" />
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <InfoItem Label="Valid From" Value="@SelectedTruck.CurrentRegistration.EffectFrom?.ToString("MMMM dd, yyyy")" />
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <InfoItem Label="Valid To" Value="@SelectedTruck.CurrentRegistration.EffectTo?.ToString("MMMM dd, yyyy")" />
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <InfoItem Label="RC Document Link" Value="@SelectedTruck.CurrentRegistration.RC" />
+                        </MudItem>
+                    }
+                    
+                    @* Insurance Section *@
+                    <MudItem xs="12">
+                        <MudDivider Class="my-2" />
+                        <MudText Typo="Typo.h6" Class="mb-3 fw-bold">Insurance Policy</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="Provider" Value="@_mockInsuranceProvider" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                         <InfoItem Label="Policy No" Value="@_mockInsurancePolicyNo" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                         <InfoItem Label="Valid To" Value="@_mockInsuranceValidTo.ToString("MMMM dd, yyyy")" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                         <InfoItem Label="Document Link" Value="insurance_policy.pdf" />
+                    </MudItem>
+
+                    @* Permits Section *@
+                    <MudItem xs="12">
+                        <MudDivider Class="my-2" />
+                        <MudText Typo="Typo.h6" Class="mb-3 fw-bold">Permits & Fitness</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <InfoItem Label="National Permit No" Value="@_mockPermitNo" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                         <InfoItem Label="Permit Valid To" Value="@_mockPermitValidTo.ToString("MMMM dd, yyyy")" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                         <InfoItem Label="Fitness Cert (FC)" Value="@_mockFcNo" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                         <InfoItem Label="FC Valid To" Value="@_mockFcValidTo.ToString("MMMM dd, yyyy")" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+             <MudTabPanel Text="Current Event" Icon="@Icons.Material.Filled.Event">
+                @if (SelectedTruck.CurrentEvent != null && SelectedTruck.CurrentEvent.TruckEventID != null)
+                {
+                     <MudGrid>
+                        <MudItem xs="12" md="4">
+                            <InfoItem Label="Event ID" Value="@SelectedTruck.CurrentEvent.TruckEventID.ToString()" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <InfoItem Label="Origin" Value="@SelectedTruck.CurrentEvent.OriginName" />
+                        </MudItem>
+                         <MudItem xs="12" md="4">
+                            <InfoItem Label="Destination" Value="@SelectedTruck.CurrentEvent.DestinationName" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <InfoItem Label="Event Time" Value="@SelectedTruck.CurrentEvent.EventTime?.ToString("g")" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <InfoItem Label="Accepted KM" Value="@SelectedTruck.CurrentEvent.AcceptedKM?.ToString()" />
+                        </MudItem>
+                    </MudGrid>
+                }
+                else
+                {
+                     <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-2">The truck does not have a current active event.</MudAlert>
+                }
+            </MudTabPanel>
+
+            @* ---------------- NEW TABS WITH MOCK DATA ---------------- *@
+
+            <MudTabPanel Text="Telematics" Icon="@Icons.Material.Filled.Sensors">
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudPaper Elevation="2" Class="pa-4 d-flex align-center gap-4" Style="border-left: 4px solid var(--mud-palette-info);">
+                            <MudAvatar Color="Color.Info" Variant="Variant.Filled"><MudIcon Icon="@Icons.Material.Filled.Speed" /></MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">Odometer Reading</MudText>
+                                <MudText Typo="Typo.h6" Class="fw-bold">@(_mockOdometer.ToString("N0")) km</MudText>
+                            </div>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudPaper Elevation="2" Class="pa-4 d-flex align-center gap-4" Style="border-left: 4px solid var(--mud-palette-warning);">
+                            <MudAvatar Color="Color.Warning" Variant="Variant.Filled"><MudIcon Icon="@Icons.Material.Filled.Timer" /></MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">Engine Hours</MudText>
+                                <MudText Typo="Typo.h6" Class="fw-bold">@(_mockEngineHours.ToString("N0")) hrs</MudText>
+                            </div>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudPaper Elevation="2" Class="pa-4 d-flex align-center gap-4" Style="border-left: 4px solid var(--mud-palette-success);">
+                            <MudAvatar Color="Color.Success" Variant="Variant.Filled"><MudIcon Icon="@Icons.Material.Filled.LocalGasStation" /></MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">Fuel Efficiency</MudText>
+                                <MudText Typo="Typo.h6" Class="fw-bold">@(_mockFuelEfficiency.ToString("F1")) km/L</MudText>
+                            </div>
+                        </MudPaper>
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="2" Class="pa-4">
+                            <MudText Typo="Typo.subtitle2" Class="mb-4" Style="font-weight: 600;">Live Sensor Data</MudText>
+                            <div class="d-flex justify-space-between mb-2">
+                                <MudText Typo="Typo.body2">Battery Voltage</MudText>
+                                <MudText Typo="Typo.body2" Class="fw-bold text-success">@(_mockBattery)V (Healthy)</MudText>
+                            </div>
+                            <MudProgressLinear Color="Color.Success" Value="90" Class="mb-4" />
+
+                            <div class="d-flex justify-space-between mb-2">
+                                <MudText Typo="Typo.body2">Current Fuel Level</MudText>
+                                <MudText Typo="Typo.body2" Class="fw-bold" Color="Color.Info">@(_mockFuelLevel)% (@($"{(_mockFuelLevel / 100.0 * (double)SelectedTruck?.FuelTankCapacity):F0}") L)</MudText>
+                            </div>
+                            <MudProgressLinear Color="Color.Info" Value="@_mockFuelLevel" Class="mb-4" />
+
+                            <div class="d-flex justify-space-between mb-2">
+                                <MudText Typo="Typo.body2">Coolant Temp</MudText>
+                                <MudText Typo="Typo.body2" Class="fw-bold">@(_mockCoolantTemp)°C</MudText>
+                            </div>
+                            <MudProgressLinear Color="Color.Warning" Value="@_mockCoolantTemp" Max="120" />
+                        </MudPaper>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="2" Class="pa-4 h-100">
+                             <MudText Typo="Typo.subtitle2" Class="mb-4" Style="font-weight: 600;">Tire Pressures (TPMS)</MudText>
+                             <MudGrid>
+                                 @for(int i=1; i<= (SelectedTruck.wheels ?? 6); i++)
+                                 {
+                                     int psi = new Random(SelectedTruck.RegNo.GetHashCode() + i).Next(95, 110);
+                                     <MudItem xs="6" sm="4">
+                                         <div class="d-flex flex-column align-center p-2 rounded" style="background: var(--mud-palette-background-grey);">
+                                             <MudIcon Icon="@Icons.Material.Filled.TireRepair" Color="@(psi < 100 ? Color.Warning : Color.Success)" Class="mb-1" />
+                                             <MudText Typo="Typo.caption">Tire @i</MudText>
+                                             <MudText Typo="Typo.body2" Class="fw-bold">@psi PSI</MudText>
+                                         </div>
+                                     </MudItem>
+                                 }
+                             </MudGrid>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Maintenance" Icon="@Icons.Material.Filled.Handyman">
+                <MudGrid>
+                    <MudItem xs="12" md="12">
+                         <MudCard Elevation="1" Class="mb-4 border-solid border-2 border-primary" Style="background-color: var(--mud-palette-primary-hover); opacity: 0.9;">
+                            <MudCardContent Class="d-flex justify-space-between align-center">
+                                <div>
+                                    <MudText Typo="Typo.h6" Color="Color.Primary" Class="fw-bold">Next Scheduled PM</MudText>
+                                    <MudText Typo="Typo.body2">Standard Routine Service (Oil, Filters, Brakes)</MudText>
+                                </div>
+                                <div class="text-right">
+                                    <MudText Typo="Typo.h4" Class="fw-bold">In @(_mockDaysToService) Days</MudText>
+                                    <MudText Typo="Typo.caption">or @(_mockKmToService.ToString("N0")) km</MudText>
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-3">Recent Repair History</MudText>
+                        <MudTimeline TimelinePosition="TimelinePosition.Start">
+                            <MudTimelineItem Color="Color.Info">
+                                <ItemContent>
+                                    <MudText Typo="Typo.subtitle2">Replaced Brake Pads</MudText>
+                                    <MudText Typo="Typo.caption">@DateTime.Now.AddDays(-14).ToString("MMM dd, yyyy") • Workshop HQ</MudText>
+                                </ItemContent>
+                            </MudTimelineItem>
+                            <MudTimelineItem Color="Color.Success">
+                                <ItemContent>
+                                    <MudText Typo="Typo.subtitle2">Preventative Maintenance A</MudText>
+                                    <MudText Typo="Typo.caption">@DateTime.Now.AddDays(-45).ToString("MMM dd, yyyy") • Workshop HQ</MudText>
+                                </ItemContent>
+                            </MudTimelineItem>
+                            <MudTimelineItem Color="Color.Warning">
+                                <ItemContent>
+                                    <MudText Typo="Typo.subtitle2">Repaired Headlight Wiring</MudText>
+                                    <MudText Typo="Typo.caption">@DateTime.Now.AddDays(-70).ToString("MMM dd, yyyy") • External Vendor</MudText>
+                                </ItemContent>
+                            </MudTimelineItem>
+                        </MudTimeline>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-3">Reported Defects</MudText>
+                        @if (_mockHasActiveDefect)
+                        {
+                            <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-2">
+                                Minor oil leak near differential reported by driver.
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.DoneAll">
+                                No active vehicle defects reported.
+                            </MudAlert>
+                        }
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+            <MudTabPanel Text="History" Icon="@Icons.Material.Filled.History">
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudPaper Elevation="2" Class="pa-4 text-center">
+                            <MudText Typo="Typo.h3" Color="Color.Primary" Class="fw-bold">@(_mockUtilization)%</MudText>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">30-Day Utilization Rate</MudText>
+                        </MudPaper>
+                    </MudItem>
+                     <MudItem xs="12" md="4">
+                        <MudPaper Elevation="2" Class="pa-4 text-center">
+                            <MudText Typo="Typo.h3" Color="Color.Success" Class="fw-bold">@(_mockTrips30Days)</MudText>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Trips Completed (30 Days)</MudText>
+                        </MudPaper>
+                    </MudItem>
+                     <MudItem xs="12" md="4">
+                        <MudPaper Elevation="2" Class="pa-4 text-center">
+                            <MudText Typo="Typo.h3" Color="Color.Warning" Class="fw-bold">@(_mockIdleDays)</MudText>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Idle Days (30 Days)</MudText>
+                        </MudPaper>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTable Items="@_mockPastTrips" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="2" Class="mt-4">
+                            <HeaderContent>
+                                <MudTh>Trip ID</MudTh>
+                                <MudTh>Origin</MudTh>
+                                <MudTh>Destination</MudTh>
+                                <MudTh>Completion Date</MudTh>
+                                <MudTh>Distance (KM)</MudTh>
+                                <MudTh>Status</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Trip ID">@context.TripID</MudTd>
+                                <MudTd DataLabel="Origin">@context.Origin</MudTd>
+                                <MudTd DataLabel="Destination">@context.Destination</MudTd>
+                                <MudTd DataLabel="Completion Date">@context.Date.ToString("MMM dd, yyyy")</MudTd>
+                                <MudTd DataLabel="Distance (KM)">@context.Distance.ToString("N0")</MudTd>
+                                <MudTd DataLabel="Status"><MudChip T="string" Color="Color.Success" Size="Size.Small">Delivered</MudChip></MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Financials" Icon="@Icons.Material.Filled.AttachMoney">
+                <MudGrid>
+                     <MudItem xs="12" md="6">
+                        <MudPaper Elevation="2" Class="pa-6 d-flex flex-column justify-center align-center h-100" Style="background: linear-gradient(135deg, var(--mud-palette-success-hover) 0%, transparent 100%);">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Color="Color.Success" Class="mb-2" />
+                            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Lifetime Revenue Generated</MudText>
+                            <MudText Typo="Typo.h4" Class="fw-bold text-success mt-2">₹ @(_mockRevenue.ToString("N2"))</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="2" Class="pa-6 d-flex flex-column justify-center align-center h-100" Style="background: linear-gradient(135deg, var(--mud-palette-error-hover) 0%, transparent 100%);">
+                             <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Size="Size.Large" Color="Color.Error" Class="mb-2" />
+                            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">YTD Maintenance & Fuel Cost</MudText>
+                            <MudText Typo="Typo.h4" Class="fw-bold text-error mt-2">₹ @(_mockCost.ToString("N2"))</MudText>
+                        </MudPaper>
+                    </MudItem>
+
+                     <MudItem xs="12">
+                         <MudPaper Elevation="2" Class="pa-6 mt-4">
+                              <MudText Typo="Typo.h6" Class="mb-4">Asset Acquisition Details</MudText>
+                              <MudGrid>
+                                  <MudItem xs="12" md="4">
+                                      <InfoItem Label="Purchase Cost" Value="@($"₹ {((_mockRevenue / 3.5m).ToString("N0"))}")" />
+                                  </MudItem>
+                                  <MudItem xs="12" md="4">
+                                      <InfoItem Label="Financier" Value="HDFC Bank Auto" />
+                                  </MudItem>
+                                  <MudItem xs="12" md="4">
+                                      <InfoItem Label="EMI Status" Value="Active (12 Months left)" />
+                                  </MudItem>
+                              </MudGrid>
+                         </MudPaper>
+                     </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+
+        </MudTabs>
+    }
+</MudContainer>
+
+@code {
+    private TruckModel _selectedTruck;
+    private TruckModel SelectedTruck
+    {
+        get => _selectedTruck;
+        set
+        {
+            if (_selectedTruck != value)
+            {
+                _selectedTruck = value;
+                if (_selectedTruck != null)
+                {
+                    _ = LoadFullTruckDetails(_selectedTruck.TruckID);
+                }
+            }
+        }
+    }
+
+    private IEnumerable<TruckModel> AllTrucks = new List<TruckModel>();
+    private bool isLoading = false;
+
+    // --- Mock Data Properties ---
+    private int _mockOdometer;
+    private int _mockEngineHours;
+    private double _mockFuelEfficiency;
+    private double _mockBattery;
+    private int _mockFuelLevel;
+    private int _mockCoolantTemp;
+    private int _mockDaysToService;
+    private int _mockKmToService;
+    private bool _mockHasActiveDefect;
+    private int _mockUtilization;
+    private int _mockTrips30Days;
+    private int _mockIdleDays;
+    private decimal _mockRevenue;
+    private decimal _mockCost;
+    private List<MockTrip> _mockPastTrips = new();
+
+    // Document Mock Properties
+    private string _mockInsuranceProvider;
+    private string _mockInsurancePolicyNo;
+    private DateTime _mockInsuranceValidTo;
+    private string _mockPermitNo;
+    private DateTime _mockPermitValidTo;
+    private string _mockFcNo;
+    private DateTime _mockFcValidTo;
+
+    private class MockTrip
+    {
+        public string TripID { get; set; }
+        public string Origin { get; set; }
+        public string Destination { get; set; }
+        public DateTime Date { get; set; }
+        public int Distance { get; set; }
+    }
+
+    // A lightweight rendering component for details with a modern look
+    private RenderFragment InfoItem(string Label, string Value) => __builder =>
+    {
+        <div class="d-flex flex-column mb-3 pa-3" style="border-radius: 8px; background-color: var(--mud-palette-background-grey); box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">@Label</MudText>
+            <MudText Typo="Typo.body1" Class="fw-bold" Style="color: var(--mud-palette-text-primary);">@(string.IsNullOrWhiteSpace(Value) ? "-" : Value)</MudText>
+        </div>
+    };
+
+    private void InitializeMockDataFor(TruckModel truck)
+    {
+        // Use RegNo hash to ensure consistent random data per truck
+        var rnd = new Random(truck.RegNo.GetHashCode());
+
+        _mockOdometer = rnd.Next(25000, 350000);
+        _mockEngineHours = _mockOdometer / rnd.Next(35, 55);
+        _mockFuelEfficiency = rnd.NextDouble() * (4.5 - 2.8) + 2.8;
+        _mockBattery = Math.Round(rnd.NextDouble() * (14.2 - 12.5) + 12.5, 1);
+        _mockFuelLevel = rnd.Next(15, 100);
+        _mockCoolantTemp = rnd.Next(80, 95);
+
+        _mockDaysToService = rnd.Next(5, 45);
+        _mockKmToService = rnd.Next(1000, 8000);
+        _mockHasActiveDefect = rnd.Next(0, 10) > 7; // 30% chance of defect
+
+        _mockUtilization = rnd.Next(65, 95);
+        _mockTrips30Days = rnd.Next(4, 15);
+        _mockIdleDays = 30 - (int)(30 * (_mockUtilization / 100.0));
+
+        _mockRevenue = (decimal)(rnd.NextDouble() * (8500000 - 1500000) + 1500000);
+        _mockCost = (decimal)(rnd.NextDouble() * (450000 - 150000) + 150000);
+
+        _mockPastTrips = new List<MockTrip>();
+        string[] cities = { "Mumbai", "Delhi", "Chennai", "Kolkata", "Bangalore", "Hyderabad", "Pune", "Ahmedabad" };
+        for(int i = 0; i < 5; i++)
+        {
+            _mockPastTrips.Add(new MockTrip {
+                TripID = $"TRP-{rnd.Next(10000, 99999)}",
+                Origin = cities[rnd.Next(cities.Length)],
+                Destination = cities[rnd.Next(cities.Length)],
+                Date = DateTime.Now.AddDays(-rnd.Next(5, 60)),
+                Distance = rnd.Next(300, 1500)
+            });
+        }
+        
+        // Populate Documents
+        _mockInsuranceProvider = "ICICI Lombard General";
+        _mockInsurancePolicyNo = $"POL-{rnd.Next(1000000, 9999999)}";
+        _mockInsuranceValidTo = DateTime.Now.AddDays(rnd.Next(30, 300));
+        _mockPermitNo = $"NP-{rnd.Next(10000, 99999)}";
+        _mockPermitValidTo = DateTime.Now.AddDays(rnd.Next(60, 365));
+        _mockFcNo = $"FC-{rnd.Next(10000, 99999)}";
+        _mockFcValidTo = DateTime.Now.AddDays(rnd.Next(45, 180));
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInitialTrucksList();
+    }
+
+    private async Task LoadInitialTrucksList()
+    {
+        isLoading = true;
+        try
+        {
+            // Assuming this loads a lightweight list of trucks. Passing no BranchID and "All" fetches all trucks usually.
+            AllTrucks = await Task.Run(() => TruckService.SelectAllByBranch(false, null, "All", "AllOperation"));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Failed to load trucks list.", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task<IEnumerable<TruckModel>> SearchTrucks(string value, CancellationToken token)
+    {
+        // if text is null or empty, return all trucks within reasonable limit
+        if (string.IsNullOrEmpty(value))
+            return AllTrucks.Take(10);
+
+        return AllTrucks.Where(x => x.RegNo.Contains(value, StringComparison.InvariantCultureIgnoreCase)).Take(10);
+    }
+
+    private async Task LoadFullTruckDetails(int? truckId)
+    {
+        if (truckId == null) return;
+
+        isLoading = true;
+        StateHasChanged(); // Force update to show loading indicator
+
+        try
+        {
+            var detailedTruck = await Task.Run(() => TruckService.SelectByID(truckId));
+            var registration = await Task.Run(() => TruckService.GetRegistration(truckId));
+            
+            if (detailedTruck != null)
+            {
+                var rnd = new Random(detailedTruck.RegNo.GetHashCode());
+
+                // Inject realistic mock data for empty properties to ensure UI isn't empty 
+                // ONLY DO THIS FOR DEMO/MOCKING PURPOSES IF ACTUAL DATA IS MISSING
+                detailedTruck.TruckType = string.IsNullOrWhiteSpace(detailedTruck.TruckType) ? "Heavy Commercial Vehicle" : detailedTruck.TruckType;
+                detailedTruck.BodyType = string.IsNullOrWhiteSpace(detailedTruck.BodyType) ? "Bulker" : detailedTruck.BodyType;
+                detailedTruck.BSType = string.IsNullOrWhiteSpace(detailedTruck.BSType) ? "BS-VI" : detailedTruck.BSType;
+                detailedTruck.TransmissionType = string.IsNullOrWhiteSpace(detailedTruck.TransmissionType) ? "Manual 8-Speed" : detailedTruck.TransmissionType;
+                detailedTruck.FuelType = string.IsNullOrWhiteSpace(detailedTruck.FuelType) ? "Diesel" : detailedTruck.FuelType;
+                detailedTruck.ChassisNumber = string.IsNullOrWhiteSpace(detailedTruck.ChassisNumber) ? $"MAT{DateTime.Now.Ticks.ToString().Substring(0, 10)}" : detailedTruck.ChassisNumber;
+                detailedTruck.EngineNumber = string.IsNullOrWhiteSpace(detailedTruck.EngineNumber) ? $"ENG{DateTime.Now.Ticks.ToString().Substring(2, 8)}" : detailedTruck.EngineNumber;
+                
+                detailedTruck.OperatingBranchName = string.IsNullOrWhiteSpace(detailedTruck.OperatingBranchName) ? "Main Hub (Mock)" : detailedTruck.OperatingBranchName;
+                detailedTruck.HomeBranchName = string.IsNullOrWhiteSpace(detailedTruck.HomeBranchName) ? "Regional HQ" : detailedTruck.HomeBranchName;
+                detailedTruck.DriverName = string.IsNullOrWhiteSpace(detailedTruck.DriverName) ? "Rajesh Kumar" : detailedTruck.DriverName;
+
+                if (detailedTruck.AssetID == null || detailedTruck.AssetID == 0) detailedTruck.AssetID = rnd.Next(100, 999);
+                if (detailedTruck.GpsDeviceID == null || detailedTruck.GpsDeviceID == 0) detailedTruck.GpsDeviceID = rnd.Next(10000, 99999);
+                if (detailedTruck.FuelTankCapacity == null || detailedTruck.FuelTankCapacity == 0) detailedTruck.FuelTankCapacity = 350;
+                if (detailedTruck.wheels == null || detailedTruck.wheels == 0) detailedTruck.wheels = 10;
+                if (detailedTruck.UnladenWeight == null || detailedTruck.UnladenWeight == 0) detailedTruck.UnladenWeight = 8500;
+                if (detailedTruck.GrossWeight == null || detailedTruck.GrossWeight == 0) detailedTruck.GrossWeight = 25000;
+                if (detailedTruck.ManufacturedYear == null || detailedTruck.ManufacturedYear == 0) detailedTruck.ManufacturedYear = (short)DateTime.Now.AddYears(-3).Year;
+                if (detailedTruck.PurchaseDate == null || detailedTruck.PurchaseDate == DateTime.MinValue) detailedTruck.PurchaseDate = DateTime.Now.AddYears(-rnd.Next(1, 4));
+
+                if (registration == null || string.IsNullOrWhiteSpace(registration.RC))
+                {
+                    // Mock registration info
+                    registration = new TruckRegistrationModel
+                    {
+                        RegNo = detailedTruck.RegNo,
+                        EffectFrom = DateTime.Now.AddYears(-1),
+                        EffectTo = DateTime.Now.AddYears(1),
+                        RC = "rc_document_v2_signed.pdf"
+                    };
+                }
+                
+                // Keep genuine registration info if it has dates
+                if(registration.EffectFrom == null) registration.EffectFrom = DateTime.Now.AddYears(-2);
+                if(registration.EffectTo == null) registration.EffectTo = DateTime.Now.AddYears(2);
+                if(string.IsNullOrWhiteSpace(registration.RC)) registration.RC = "rc_approved.pdf";
+
+                detailedTruck.CurrentRegistration = registration;
+
+                // Current Event mock
+                if (detailedTruck.CurrentEvent == null || detailedTruck.CurrentEvent.TruckEventID == null || detailedTruck.CurrentEvent.TruckEventID == 0)
+                {
+                    detailedTruck.CurrentEvent = new EventModel
+                    {
+                        TruckEventID = rnd.Next(1000, 9999),
+                        OriginName = "Loading Terminal A",
+                        DestinationName = "Warehouse B",
+                        EventTime = DateTime.Now.AddHours(-rnd.Next(1, 12)),
+                        AcceptedKM = rnd.Next(100, 500)
+                    };
+                }
+
+                // Initialize Mock values for specific truck
+                InitializeMockDataFor(detailedTruck);
+
+                _selectedTruck = detailedTruck; // Update without triggering the setter
+            }
+            else
+            {
+                 Snackbar.Add("Selected truck details could not be found.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading truck details: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearSelection()
+    {
+        _selectedTruck = null;
+    }
+}
