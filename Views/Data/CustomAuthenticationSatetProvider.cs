@@ -17,6 +17,7 @@ namespace Views.Data
         private ISessionStorageService _storage;
         private IUserService _userService;
         private readonly IServiceProvider _serviceProvider;
+        private AuthenticationState _cachedState;
 
 
         public CustomAuthenticationSatetProvider(ISessionStorageService storage, IUserService userService, IServiceProvider service)
@@ -28,6 +29,11 @@ namespace Views.Data
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
+            if (_cachedState != null)
+            {
+                return _cachedState;
+            }
+
             try
             {
                 using (var scope = _serviceProvider.CreateScope())
@@ -67,12 +73,14 @@ namespace Views.Data
                         identity = new ClaimsIdentity(claims, "apiauth_type");
                     }
                     var user = new ClaimsPrincipal(identity);
-                    return await Task.FromResult(new AuthenticationState(user));
+                    _cachedState = new AuthenticationState(user);
+                    return _cachedState;
                 }
             }
             catch
             {
-                return await Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
+                _cachedState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+                return _cachedState;
             }
         
         }
@@ -100,7 +108,8 @@ namespace Views.Data
 
             var identity = new ClaimsIdentity(claims, "apiauth_type");
             var user = new ClaimsPrincipal(identity);
-            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
+            _cachedState = new AuthenticationState(user);
+            NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
         }
 
         public async Task Logout()
@@ -108,7 +117,8 @@ namespace Views.Data
             await _storage.RemoveItemAsync("userID");
             var identity = new ClaimsIdentity();
             var user = new ClaimsPrincipal(identity);
-            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
+            _cachedState = new AuthenticationState(user);
+            NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
         }
     }
 }
