@@ -3,20 +3,344 @@
 @using ArmsServices.DataServices
 @using System.Threading
 @inject ITruckService TruckService
+@inject ITyreService TyreService
 @inject ISnackbar Snackbar
 
+<style>
+    @@keyframes pulse {
+        0% { transform: scale(1); opacity: 0.3; }
+        50% { transform: scale(1.08); opacity: 0.45; }
+        100% { transform: scale(1); opacity: 0.3; }
+    }
+
+    .truck-card-glass {
+        background: rgba(var(--mud-palette-surface-rgb), 0.7) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+    }
+
+    .animate-float {
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .animate-float:hover {
+        transform: translateY(-5px);
+    }
+
+    /* Premium Tab Styling */
+    .premium-tabs .mud-tabs-toolbar {
+        background: transparent !important;
+        padding: 8px 16px !important;
+        border-radius: 20px !important;
+        background: rgba(var(--mud-palette-surface-rgb), 0.4) !important;
+        backdrop-filter: blur(10px);
+        margin-bottom: 24px;
+        border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.1);
+    }
+
+    .premium-tabs .mud-tab {
+        border-radius: 12px !important;
+        margin: 0 4px !important;
+        transition: all 0.3s ease;
+        text-transform: none !important;
+        font-weight: 600 !important;
+        min-height: 44px !important;
+        color: var(--mud-palette-text-secondary) !important;
+    }
+
+    .premium-tabs .mud-tab.mud-tab-active {
+        background: linear-gradient(135deg, var(--mud-palette-primary), var(--mud-palette-secondary)) !important;
+        color: white !important;
+        box-shadow: 0 8px 15px -5px rgba(var(--mud-palette-primary-rgb), 0.4);
+    }
+
+    .premium-tabs .mud-tab:hover:not(.mud-tab-active) {
+        background: rgba(var(--mud-palette-primary-rgb), 0.08) !important;
+    }
+
+    .premium-tabs .mud-tab-slider {
+        display: none !important; /* Remove the default underline */
+    }
+
+    /* Core Specifications Premium Styles */
+    .spec-group-glow {
+        position: absolute;
+        width: 250px;
+        height: 250px;
+        filter: blur(100px);
+        opacity: 0.1;
+        pointer-events: none;
+        border-radius: 50%;
+        z-index: 0;
+    }
+
+    .spec-icon-box {
+        padding: 12px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .spec-group-identity:hover .spec-icon-box { transform: scale(1.1) rotate(5deg); box-shadow: 0 8px 20px rgba(var(--mud-palette-primary-rgb), 0.3); }
+    .spec-group-technical:hover .spec-icon-box { transform: scale(1.1) rotate(-5deg); box-shadow: 0 8px 20px rgba(var(--mud-palette-info-rgb), 0.3); }
+    .spec-group-capacity:hover .spec-icon-box { transform: scale(1.1) rotate(5deg); box-shadow: 0 8px 20px rgba(var(--mud-palette-success-rgb), 0.3); }
+
+    /* TPMS Truck Layout */
+    .truck-tpms-container {
+        position: relative;
+        padding: 24px;
+        background: rgba(var(--mud-palette-surface-rgb), 0.5);
+        border-radius: 24px;
+        border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.1);
+    }
+
+    .axle-line {
+        position: relative;
+        height: 4px;
+        background: rgba(0,0,0,0.1);
+        width: 60%;
+        margin: 40px auto;
+        border-radius: 2px;
+    }
+
+    .axle-chassis {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 120px;
+        height: 100%;
+        background: rgba(0,0,0,0.2);
+        z-index: 1;
+    }
+
+    .tpms-wheel-box {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+        cursor: pointer;
+    }
+
+    .tpms-wheel-box:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        z-index: 10;
+    }
+
+    .wheel-inner-glow {
+        position: absolute;
+        inset: 0;
+        opacity: 0.1;
+        filter: blur(10px);
+        border-radius: inherit;
+    }
+
+    /* PREMIUM TPMS REFINEMENT - SCALED HORIZONTAL */
+    .truck-tpms-v2 {
+        position: relative;
+        background: #f8f9fa;
+        border-radius: 40px;
+        padding-left: 300px;
+        padding-right: 80px;
+        padding-top: 100px;
+        padding-bottom: 120px;
+        border: 2px solid #e9ecef;
+        box-shadow: inset 0 0 30px rgba(0,0,0,0.03);
+        margin-top: 40px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        min-height: 600px;
+        overflow-x: auto;
+    }
+
+    .truck-cab-visual {
+        position: absolute;
+        left: 25px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 160px;
+        height: 240px;
+        background: #343a40;
+        border-radius: 25px 15px 15px 25px;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 15px 0 30px rgba(0,0,0,0.25);
+    }
+    
+    .cab-nose {
+        position: absolute;
+        right: -12px;
+        width: 24px;
+        height: 150px;
+        background: #212529;
+        border-radius: 0 12px 12px 0;
+    }
+
+    .chassis-beam {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 54px;
+        background: linear-gradient(to bottom, #212529 0%, #495057 50%, #212529 100%);
+        z-index: 1;
+        opacity: 0.95;
+    }
+
+    .axle-row-container {
+        position: relative;
+        z-index: 2;
+        margin-right: 180px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        height: 100%;
+    }
+
+    .axle-line-refined {
+        position: relative;
+        width: 18px;
+        height: 480px;
+        background: #343a40;
+        border-radius: 9px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 6px 0 12px rgba(0,0,0,0.15);
+    }
+
+    .axle-label-badge {
+        position: absolute;
+        bottom: -45px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #343a40;
+        color: white;
+        padding: 6px 16px;
+        border-radius: 14px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        white-space: nowrap;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+    }
+
+    .side-marker-label {
+        position: absolute;
+        left: 240px;
+        font-size: 1.1rem;
+        font-weight: 900;
+        color: #adb5bd;
+        letter-spacing: 8px;
+        text-transform: uppercase;
+        z-index: 0;
+        opacity: 0.3;
+    }
+    .side-marker-left { top: 40px; }
+    .side-marker-right { bottom: 40px; }
+
+    .tpms-tire-card {
+        position: absolute;
+        width: 160px;
+        height: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1e21;
+        border: 2px solid #3d444b;
+        border-radius: 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        cursor: pointer;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+        padding: 12px;
+        text-align: center;
+    }
+
+    .tpms-tire-card:hover {
+        transform: translateX(-50%) scale(1.1);
+        z-index: 10;
+        border-color: #ff9f43;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.6);
+        background: #212529;
+    }
+
+    .tire-serial-badge {
+        font-size: 0.85rem;
+        font-weight: 900;
+        color: #ff9f43;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+        background: rgba(255,159,67,0.15);
+        padding: 4px 12px;
+        border-radius: 6px;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .tire-brand-name {
+        font-size: 1.15rem;
+        font-weight: 1000;
+        text-transform: uppercase;
+        color: #f8f9fa;
+        line-height: 1;
+        margin-top: 4px;
+        letter-spacing: 1px;
+    }
+
+    .tire-status-dot {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #28a745;
+        box-shadow: 0 0 12px #28a745;
+    }
+
+    /* Directional Alignment (Relative to Vertical Axle) - NO OVERLAP */
+    .p-outer-left { top: 0px; }
+    .p-inner-left { top: 130px; }
+    .p-inner-right { bottom: 130px; }
+    .p-outer-right { bottom: 0px; }
+
+    .status-warning .tire-status-dot { background: #ffc107; box-shadow: 0 0 12px #ffc107; }
+    .status-empty { background: rgba(0,0,0,0.05); border: 2px dashed #dee2e6; color: #adb5bd; box-shadow: none; opacity: 0.4; }
+    .status-empty .tire-serial-badge, .status-empty .tire-brand-name, .status-empty .tire-status-dot { display: none; }
+</style>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
     <MudText Typo="Typo.h5" Class="mb-4 fw-bold">Truck Overview</MudText>
 
     @* Search Section *@
-    <MudPaper Class="pa-4 mb-4" Elevation="2">
-        <MudGrid>
-            <MudItem xs="12" md="6">
-                <MudAutocomplete T="TruckModel" Label="Search Truck (Reg No)" @bind-Value="SelectedTruck"
+    <MudPaper Class="pa-6 mb-6" Elevation="4" Style="border-radius: 20px; background: linear-gradient(135deg, var(--mud-palette-surface) 0%, var(--mud-palette-background-grey) 100%); border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.1);">
+        <MudGrid AlignItems="Center">
+            <MudItem xs="12" md="8">
+                <MudText Typo="Typo.h4" Class="fw-bold mb-2" Style="background: linear-gradient(90deg, var(--mud-palette-primary), var(--mud-palette-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Truck Intelligence Center</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Enter a registration number to explore vehicle metrics, maintenance history, and live telematics.</MudText>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudAutocomplete T="TruckModel" Label="Search Registration No" @bind-Value="SelectedTruck"
                                  SearchFunc="@SearchTrucks" ToStringFunc="@(t => t?.RegNo)"
                                  ResetValueOnEmptyText="true" CoerceText="true" CoerceValue="true"
                                  AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary"
-                                 Variant="Variant.Outlined" Clearable="true" OnClearButtonClick="ClearSelection" />
+                                 Variant="Variant.Filled" Clearable="true" OnClearButtonClick="ClearSelection" 
+                                 Class="rounded-pill" />
             </MudItem>
         </MudGrid>
     </MudPaper>
@@ -28,181 +352,303 @@
     else if (SelectedTruck != null)
     {
         @* Hero Section (Top Card) *@
-        <MudCard Class="mb-5" Elevation="6" Style="border-radius: 16px; overflow: hidden; position: relative;">
-            @* Decorative background gradient *@
-            <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, var(--mud-palette-primary-hover) 0%, transparent 60%); opacity: 0.1; z-index: 0; pointer-events: none;"></div>
+        <MudCard Class="mb-6" Elevation="8" Style="border-radius: 24px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.1); background: rgba(var(--mud-palette-surface-rgb), 0.82); backdrop-filter: blur(20px);">
+            @* Dynamic background gradient based on status *@
+            @{
+                var statusColor = SelectedTruck.CurrentEvent?.TruckEventID != null ? "var(--mud-palette-warning)" : "var(--mud-palette-success)";
+                var statusLabel = SelectedTruck.CurrentEvent?.TruckEventID != null ? "In Operation" : "Available";
+            }
+            <div style="position: absolute; top: -100px; right: -100px; width: 300px; height: 300px; background: @(statusColor); filter: blur(80px); opacity: 0.15; z-index: 0; pointer-events: none; border-radius: 50%;"></div>
             
-            <MudCardContent Class="d-flex align-center flex-wrap gap-6 py-8 px-8" Style="position: relative; z-index: 1;">
-                @* Placeholder Image/Avatar *@
-                <MudPaper Elevation="4" Style="border-radius: 50%; padding: 4px; background: white;">
-                    <MudAvatar Style="height: 120px; width: 120px; background: linear-gradient(135deg, var(--mud-palette-primary), var(--mud-palette-secondary)); color: white;">
-                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Style="font-size: 4.5rem;" />
-                    </MudAvatar>
-                </MudPaper>
-                
-                <div class="d-flex flex-column flex-grow-1">
-                    <div class="d-flex justify-space-between align-start flex-wrap gap-4">
-                        <div>
-                            <MudText Typo="Typo.h3" Class="fw-bold mb-1" Style="letter-spacing: -0.5px;">@SelectedTruck.RegNo</MudText>
-                            <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mb-2">
-                                @(string.IsNullOrEmpty(SelectedTruck.TruckType) ? "Unknown Type" : SelectedTruck.TruckType) 
-                                @(!string.IsNullOrEmpty(SelectedTruck.BodyType) ? $" • {SelectedTruck.BodyType}" : "")
-                            </MudText>
+            <MudCardContent Class="pa-8" Style="position: relative; z-index: 1;">
+                <MudGrid>
+                    <MudItem xs="12" md="3" Class="d-flex justify-center">
+                        <div style="position: relative;">
+                            <div style="position: absolute; inset: -10px; background: linear-gradient(135deg, var(--mud-palette-primary), var(--mud-palette-secondary)); border-radius: 50%; filter: blur(15px); opacity: 0.3; animation: pulse 3s infinite;"></div>
+                            <MudPaper Elevation="12" Style="border-radius: 50%; padding: 6px; background: white; position: relative;">
+                                <MudAvatar Style="height: 140px; width: 140px; background: linear-gradient(135deg, var(--mud-palette-primary), var(--mud-palette-secondary)); color: white;">
+                                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Style="font-size: 5rem;" />
+                                </MudAvatar>
+                            </MudPaper>
                         </div>
-                        <MudChip T="string" Color="@(SelectedTruck.CurrentEvent?.TruckEventID != null ? Color.Warning : Color.Success)" 
-                                 Variant="Variant.Filled" 
-                                 Size="Size.Large"
-                                 Icon="@(SelectedTruck.CurrentEvent?.TruckEventID != null ? Icons.Material.Filled.Moving : Icons.Material.Filled.CheckCircle)"
-                                 Class="fw-bold elevation-2 px-4 py-2" style="border-radius: 8px;">
-                            @(SelectedTruck.CurrentEvent?.TruckEventID != null ? "Active Event" : "Available / Idle")
-                        </MudChip>
-                    </div>
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="9" Class="d-flex flex-column justify-center pl-md-8">
+                        <div class="d-flex justify-space-between align-start flex-wrap gap-4">
+                            <div>
+                                <div class="d-flex align-center gap-3 mb-1">
+                                    <MudText Typo="Typo.h2" Class="fw-bold" Style="letter-spacing: -1.5px; line-height: 1;">@SelectedTruck.RegNo</MudText>
+                                    <MudChip T="string" Color="@(SelectedTruck.CurrentEvent?.TruckEventID != null ? Color.Warning : Color.Success)" 
+                                             Variant="Variant.Filled" Size="Size.Small" Class="fw-bold px-3">@statusLabel</MudChip>
+                                </div>
+                                <MudText Typo="Typo.h5" Color="Color.Secondary" Style="font-weight: 500; opacity: 0.8;">
+                                    @(string.IsNullOrEmpty(SelectedTruck.TruckType) ? "Premium Carrier" : SelectedTruck.TruckType) 
+                                    @(!string.IsNullOrEmpty(SelectedTruck.BodyType) ? $" • {SelectedTruck.BodyType}" : "")
+                                </MudText>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Style="border-radius: 12px; text-transform: none;" Class="px-6">Manage Vehicle</MudButton>
+                                <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Variant="Variant.Outlined" Style="border-radius: 12px;" />
+                            </div>
+                        </div>
 
-                    <MudDivider Class="my-4 opacity-50" />
+                        <MudDivider Class="my-6 opacity-20" />
 
-                    <div class="d-flex gap-8 mt-2 flex-wrap">
-                        <div class="d-flex align-center gap-3">
-                             <MudAvatar Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small"><MudIcon Icon="@Icons.Material.Filled.PinDrop" Size="Size.Small" /></MudAvatar>
-                             <div>
-                                 <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block; font-weight: 600;">Operating Branch</MudText>
-                                 <MudText Typo="Typo.body1" Class="fw-bold">@(string.IsNullOrEmpty(SelectedTruck.OperatingBranchName) ? "Not Assigned" : SelectedTruck.OperatingBranchName)</MudText>
-                             </div>
-                        </div>
-                        <div class="d-flex align-center gap-3">
-                             <MudAvatar Color="Color.Tertiary" Variant="Variant.Outlined" Size="Size.Small"><MudIcon Icon="@Icons.Material.Filled.Garage" Size="Size.Small" /></MudAvatar>
-                             <div>
-                                 <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block; font-weight: 600;">Home Branch</MudText>
-                                 <MudText Typo="Typo.body1" Class="fw-bold">@(string.IsNullOrEmpty(SelectedTruck.HomeBranchName) ? "Not Assigned" : SelectedTruck.HomeBranchName)</MudText>
-                             </div>
-                        </div>
-                         <div class="d-flex align-center gap-3">
-                             <MudAvatar Color="Color.Info" Variant="Variant.Outlined" Size="Size.Small"><MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" /></MudAvatar>
-                             <div>
-                                 <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block; font-weight: 600;">Assigned Driver</MudText>
-                                 <MudText Typo="Typo.body1" Class="fw-bold">@(string.IsNullOrEmpty(SelectedTruck.DriverName) ? "Unassigned" : SelectedTruck.DriverName)</MudText>
-                             </div>
-                        </div>
-                         <div class="d-flex align-center gap-3">
-                             <MudAvatar Color="Color.Warning" Variant="Variant.Outlined" Size="Size.Small"><MudIcon Icon="@Icons.Material.Filled.Numbers" Size="Size.Small" /></MudAvatar>
-                             <div>
-                                 <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block; font-weight: 600;">Asset ID</MudText>
-                                 <MudText Typo="Typo.body1" Class="fw-bold">@(SelectedTruck.AssetID?.ToString() ?? "N/A")</MudText>
-                             </div>
-                        </div>
-                    </div>
-                </div>
+                        <MudGrid Spacing="4">
+                            <MudItem xs="6" sm="3">
+                                 <div class="d-flex align-center gap-3">
+                                     <div style="padding: 10px; border-radius: 12px; background: rgba(var(--mud-palette-primary-rgb), 0.1); color: var(--mud-palette-primary);">
+                                         <MudIcon Icon="@Icons.Material.Filled.PinDrop" Size="Size.Medium" />
+                                     </div>
+                                     <div>
+                                         <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Operating Hub</MudText>
+                                         <MudText Typo="Typo.body1" Class="fw-bold">@(string.IsNullOrEmpty(SelectedTruck.OperatingBranchName) ? "Global Terminal" : SelectedTruck.OperatingBranchName)</MudText>
+                                     </div>
+                                 </div>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                 <div class="d-flex align-center gap-3">
+                                     <div style="padding: 10px; border-radius: 12px; background: rgba(var(--mud-palette-tertiary-rgb), 0.1); color: var(--mud-palette-tertiary);">
+                                         <MudIcon Icon="@Icons.Material.Filled.Garage" Size="Size.Medium" />
+                                     </div>
+                                     <div>
+                                         <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Fleet Base</MudText>
+                                         <MudText Typo="Typo.body1" Class="fw-bold">@(string.IsNullOrEmpty(SelectedTruck.HomeBranchName) ? "Central HQ" : SelectedTruck.HomeBranchName)</MudText>
+                                     </div>
+                                 </div>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                 <div class="d-flex align-center gap-3">
+                                     <div style="padding: 10px; border-radius: 12px; background: rgba(var(--mud-palette-info-rgb), 0.1); color: var(--mud-palette-info);">
+                                         <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Medium" />
+                                     </div>
+                                     <div>
+                                         <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Active Pilot</MudText>
+                                         <MudText Typo="Typo.body1" Class="fw-bold">@(string.IsNullOrEmpty(SelectedTruck.DriverName) ? "Standby" : SelectedTruck.DriverName)</MudText>
+                                     </div>
+                                 </div>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                 <div class="d-flex align-center gap-3">
+                                     <div style="padding: 10px; border-radius: 12px; background: rgba(var(--mud-palette-warning-rgb), 0.1); color: var(--mud-palette-warning);">
+                                         <MudIcon Icon="@Icons.Material.Filled.Numbers" Size="Size.Medium" />
+                                     </div>
+                                     <div>
+                                         <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Asset ID</MudText>
+                                         <MudText Typo="Typo.body1" Class="fw-bold">@(SelectedTruck.AssetID?.ToString() ?? "—")</MudText>
+                                     </div>
+                                 </div>
+                            </MudItem>
+                        </MudGrid>
+                    </MudItem>
+                </MudGrid>
             </MudCardContent>
         </MudCard>
 
         @* Detailed Information Tabs *@
-        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Color="Color.Primary" Variant="Variant.Outlined">
+        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" 
+                 Class="premium-tabs">
             
             <MudTabPanel Text="Core Specifications" Icon="@Icons.Material.Filled.BuildCircle">
-                <MudGrid>
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="Make / Type" Value="@SelectedTruck.TruckType" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="Body Type" Value="@SelectedTruck.BodyType" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="BS Type" Value="@SelectedTruck.BSType" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="Manufactured Year" Value="@SelectedTruck.ManufacturedYear?.ToString()" />
-                    </MudItem>
-                    
-                    <MudItem xs="12" md="6">
-                        <InfoItem Label="Chassis Number" Value="@SelectedTruck.ChassisNumber" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <InfoItem Label="Engine Number" Value="@SelectedTruck.EngineNumber" />
+                <MudGrid Spacing="4" Class="mt-2">
+                    @* Group 1: Vehicle DNA (Identity) *@
+                    <MudItem xs="12">
+                        <div class="pa-8 rounded-xl spec-group-identity" style="position: relative; overflow: hidden; background: rgba(var(--mud-palette-surface-rgb), 0.5); border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.1); backdrop-filter: blur(10px);">
+                            <div class="spec-group-glow" style="background: var(--mud-palette-primary); top: -50px; left: -50px;"></div>
+                            
+                            <div class="d-flex align-center gap-4 mb-8" style="position: relative; z-index: 1;">
+                                <div class="spec-icon-box" style="background: var(--mud-palette-primary);">
+                                    <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Color="Color.Surface" Size="Size.Medium" />
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.h5" Class="fw-bold" Style="letter-spacing: -0.5px;">Vehicle DNA</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="text-transform: uppercase; font-weight: 700; opacity: 0.6;">Core Identity & Build Signature</MudText>
+                                </div>
+                            </div>
+
+                            <MudGrid>
+                                <MudItem xs="12" md="3">
+                                    <InfoItem Label="Make / Type" Value="@SelectedTruck.TruckType" />
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <InfoItem Label="Body Config" Value="@SelectedTruck.BodyType" />
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <InfoItem Label="Emission Class" Value="@SelectedTruck.BSType" />
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <InfoItem Label="Birth Year" Value="@SelectedTruck.ManufacturedYear?.ToString()" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Chassis Signature" Value="@SelectedTruck.ChassisNumber" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Engine Signature" Value="@SelectedTruck.EngineNumber" />
+                                </MudItem>
+                            </MudGrid>
+                        </div>
                     </MudItem>
 
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="Transmission" Value="@SelectedTruck.TransmissionType" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="Fuel Type" Value="@SelectedTruck.FuelType" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="Fuel Capacity" Value="@($"{SelectedTruck.FuelTankCapacity} L")" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="Wheels" Value="@SelectedTruck.wheels?.ToString()" />
+                    @* Group 2: Technical Blueprint (Performance) *@
+                    <MudItem xs="12" md="7">
+                        <div class="pa-8 rounded-xl spec-group-technical h-100" style="position: relative; overflow: hidden; background: rgba(var(--mud-palette-surface-rgb), 0.5); border: 1px solid rgba(var(--mud-palette-info-rgb), 0.1); backdrop-filter: blur(10px);">
+                            <div class="spec-group-glow" style="background: var(--mud-palette-info); bottom: -50px; right: -50px;"></div>
+
+                            <div class="d-flex align-center gap-4 mb-8" style="position: relative; z-index: 1;">
+                                <div class="spec-icon-box" style="background: var(--mud-palette-info);">
+                                    <MudIcon Icon="@Icons.Material.Filled.SettingsInputHdmi" Color="Color.Surface" Size="Size.Medium" />
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.h5" Class="fw-bold" Style="letter-spacing: -0.5px;">Technical Blueprint</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="text-transform: uppercase; font-weight: 700; opacity: 0.6;">Powertrain & Mechanical Core</MudText>
+                                </div>
+                            </div>
+
+                            <MudGrid>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Transmission" Value="@SelectedTruck.TransmissionType" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Displacement" Value="10,800 cc" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Peak Output" Value="@("400 HP @ 1900 RPM")" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Max Torque" Value="@("2000 Nm @ 1100-1500 RPM")" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Combustion" Value="@SelectedTruck.FuelType" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Fuel Reserve" Value="@($"{SelectedTruck.FuelTankCapacity} L")" />
+                                </MudItem>
+                            </MudGrid>
+                        </div>
                     </MudItem>
 
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="Unladen Weight" Value="@($"{SelectedTruck.UnladenWeight} kg")" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="Gross Weight" Value="@($"{SelectedTruck.GrossWeight} kg")" />
-                    </MudItem>
-                     <MudItem xs="12" md="3">
-                        <InfoItem Label="GPS Device ID" Value="@SelectedTruck.GpsDeviceID?.ToString()" />
-                    </MudItem>
-                     <MudItem xs="12" md="3">
-                        <InfoItem Label="Purchase Date" Value="@SelectedTruck.PurchaseDate?.ToString("MMMM dd, yyyy")" />
+                    @* Group 3: Operational Capacity *@
+                    <MudItem xs="12" md="5">
+                        <div class="pa-8 rounded-xl spec-group-capacity h-100" style="position: relative; overflow: hidden; background: rgba(var(--mud-palette-surface-rgb), 0.5); border: 1px solid rgba(var(--mud-palette-success-rgb), 0.1); backdrop-filter: blur(10px);">
+                            <div class="spec-group-glow" style="background: var(--mud-palette-success); top: -30px; right: -30px;"></div>
+
+                            <div class="d-flex align-center gap-4 mb-8" style="position: relative; z-index: 1;">
+                                <div class="spec-icon-box" style="background: var(--mud-palette-success);">
+                                    <MudIcon Icon="@Icons.Material.Filled.Scale" Color="Color.Surface" Size="Size.Medium" />
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.h5" Class="fw-bold" Style="letter-spacing: -0.5px;">Operational Profile</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="text-transform: uppercase; font-weight: 700; opacity: 0.6;">Weight & Logistics Matrix</MudText>
+                                </div>
+                            </div>
+
+                            <MudGrid>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Gross Rating" Value="@($"{SelectedTruck.GrossWeight} kg")" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Payload Limit" Value="@($"{SelectedTruck.GrossWeight - SelectedTruck.UnladenWeight} kg")" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Wheel Config" Value="@SelectedTruck.wheels?.ToString()" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <InfoItem Label="Asset ID" Value="@SelectedTruck.AssetID?.ToString()" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <InfoItem Label="Initial Deployment" Value="@SelectedTruck.PurchaseDate?.ToString("MMMM dd, yyyy")" />
+                                </MudItem>
+                            </MudGrid>
+                        </div>
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
 
             <MudTabPanel Text="Documents" Icon="@Icons.Material.Filled.AssignmentTurnedIn">
-                <MudGrid>
-                    @* Registration Section *@
-                    <MudItem xs="12">
-                        <MudText Typo="Typo.h6" Class="mb-3 fw-bold">Registration (RC)</MudText>
-                    </MudItem>
-                    @if (SelectedTruck.CurrentRegistration != null)
-                    {
-                        <MudItem xs="12" md="3">
-                            <InfoItem Label="Registration No" Value="@SelectedTruck.CurrentRegistration.RegNo" />
-                        </MudItem>
-                        <MudItem xs="12" md="3">
-                            <InfoItem Label="Valid From" Value="@SelectedTruck.CurrentRegistration.EffectFrom?.ToString("MMMM dd, yyyy")" />
-                        </MudItem>
-                        <MudItem xs="12" md="3">
-                            <InfoItem Label="Valid To" Value="@SelectedTruck.CurrentRegistration.EffectTo?.ToString("MMMM dd, yyyy")" />
-                        </MudItem>
-                        <MudItem xs="12" md="3">
-                            <InfoItem Label="RC Document Link" Value="@SelectedTruck.CurrentRegistration.RC" />
-                        </MudItem>
-                    }
-                    
-                    @* Insurance Section *@
-                    <MudItem xs="12">
-                        <MudDivider Class="my-2" />
-                        <MudText Typo="Typo.h6" Class="mb-3 fw-bold">Insurance Policy</MudText>
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="Provider" Value="@_mockInsuranceProvider" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                         <InfoItem Label="Policy No" Value="@_mockInsurancePolicyNo" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                         <InfoItem Label="Valid To" Value="@_mockInsuranceValidTo.ToString("MMMM dd, yyyy")" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                         <InfoItem Label="Document Link" Value="insurance_policy.pdf" />
+                <MudGrid Spacing="4" Class="mt-2">
+                    @* Registration Card *@
+                    <MudItem xs="12" md="4">
+                        <MudPaper Elevation="2" Class="pa-6 rounded-xl h-100 d-flex flex-column" Style="border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.1); background: linear-gradient(180deg, rgba(var(--mud-palette-surface-rgb), 1) 0%, rgba(var(--mud-palette-primary-rgb), 0.02) 100%); overflow: hidden;">
+                             <div class="d-flex justify-space-between align-start mb-4">
+                                <div class="d-flex align-center gap-3">
+                                    <div style="background: rgba(var(--mud-palette-primary-rgb), 0.1); padding: 8px; border-radius: 12px;">
+                                        <MudIcon Icon="@Icons.Material.Filled.Article" Color="Color.Primary" />
+                                    </div>
+                                    <MudText Typo="Typo.h6" Class="fw-bold">Registration (RC)</MudText>
+                                </div>
+                                <div class="pa-2 rounded-pill px-3" style="background: rgba(25, 135, 84, 0.1); border: 1px solid rgba(25, 135, 84, 0.2);">
+                                    <MudText Typo="Typo.caption" Style="color: #198754; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Verified</MudText>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-grow-1">
+                                <InfoItem Label="RC Number" Value="@_mockRcNo" />
+                                <div class="d-flex gap-4 mt-2">
+                                    <div class="flex-grow-1"><InfoItem Label="Valid From" Value="@SelectedTruck.CurrentRegistration?.EffectFrom?.ToString("MMM dd, yyyy")" /></div>
+                                    <div class="flex-grow-1"><InfoItem Label="Expiry Date" Value="@_mockRcValidTo.ToString("MMM dd, yyyy")" /></div>
+                                </div>
+                            </div>
+
+                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.FileDownload" Color="Color.Primary" Class="mt-4 rounded-lg align-self-start pa-2" Style="text-transform: none; font-weight: 700;">Download Base Copy</MudButton>
+                        </MudPaper>
                     </MudItem>
 
-                    @* Permits Section *@
-                    <MudItem xs="12">
-                        <MudDivider Class="my-2" />
-                        <MudText Typo="Typo.h6" Class="mb-3 fw-bold">Permits & Fitness</MudText>
+                    @* Insurance Card *@
+                    <MudItem xs="12" md="4">
+                        <MudPaper Elevation="2" Class="pa-6 rounded-xl h-100 d-flex flex-column" Style="border: 1px solid rgba(var(--mud-palette-secondary-rgb), 0.1); background: linear-gradient(180deg, rgba(var(--mud-palette-surface-rgb), 1) 0%, rgba(var(--mud-palette-secondary-rgb), 0.02) 100%); overflow: hidden;">
+                             <div class="d-flex justify-space-between align-start mb-4">
+                                <div class="d-flex align-center gap-3">
+                                    <div style="background: rgba(var(--mud-palette-secondary-rgb), 0.1); padding: 8px; border-radius: 12px;">
+                                        <MudIcon Icon="@Icons.Material.Filled.Security" Color="Color.Secondary" />
+                                    </div>
+                                    <MudText Typo="Typo.h6" Class="fw-bold">Insurance Policy</MudText>
+                                </div>
+                                <div class="pa-2 rounded-pill px-3" style="background: rgba(25, 135, 84, 0.1); border: 1px solid rgba(25, 135, 84, 0.2);">
+                                    <MudText Typo="Typo.caption" Style="color: #198754; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Premium Paid</MudText>
+                                </div>
+                            </div>
+
+                            <div class="flex-grow-1">
+                                <InfoItem Label="Provider" Value="@_mockInsuranceProvider" />
+                                <div class="d-flex gap-4 mt-2">
+                                    <div class="flex-grow-1"><InfoItem Label="Policy Number" Value="@_mockInsurancePolicyNo" /></div>
+                                    <div class="flex-grow-1"><InfoItem Label="Expiry Date" Value="@_mockInsuranceValidTo.ToString("MMM dd, yyyy")" /></div>
+                                </div>
+                            </div>
+
+                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.History" Color="Color.Secondary" Class="mt-4 rounded-lg align-self-start pa-2" Style="text-transform: none; font-weight: 700;">Renewal History</MudButton>
+                        </MudPaper>
                     </MudItem>
-                    <MudItem xs="12" md="3">
-                        <InfoItem Label="National Permit No" Value="@_mockPermitNo" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                         <InfoItem Label="Permit Valid To" Value="@_mockPermitValidTo.ToString("MMMM dd, yyyy")" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                         <InfoItem Label="Fitness Cert (FC)" Value="@_mockFcNo" />
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                         <InfoItem Label="FC Valid To" Value="@_mockFcValidTo.ToString("MMMM dd, yyyy")" />
+
+                    @* Permit & Fitness Card *@
+                    <MudItem xs="12" md="4">
+                        <MudPaper Elevation="2" Class="pa-6 rounded-xl h-100 d-flex flex-column" Style="border: 1px solid rgba(var(--mud-palette-info-rgb), 0.1); background: linear-gradient(180deg, rgba(var(--mud-palette-surface-rgb), 1) 0%, rgba(var(--mud-palette-info-rgb), 0.02) 100%); overflow: hidden;">
+                             <div class="d-flex justify-space-between align-start mb-4">
+                                <div class="d-flex align-center gap-3">
+                                    <div style="background: rgba(var(--mud-palette-info-rgb), 0.1); padding: 8px; border-radius: 12px;">
+                                        <MudIcon Icon="@Icons.Material.Filled.FactCheck" Color="Color.Info" />
+                                    </div>
+                                    <MudText Typo="Typo.h6" Class="fw-bold">Permits & Fitness</MudText>
+                                </div>
+                                <div class="pa-2 rounded-pill px-3" style="background: rgba(25, 135, 84, 0.1); border: 1px solid rgba(25, 135, 84, 0.2);">
+                                    <MudText Typo="Typo.caption" Style="color: #198754; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Compliant</MudText>
+                                </div>
+                            </div>
+
+                            <div class="flex-grow-1">
+                                <div class="d-flex gap-4 mb-2">
+                                    <div class="flex-grow-1"><InfoItem Label="National Permit" Value="@_mockPermitNo" /></div>
+                                    <div class="flex-grow-1"><InfoItem Label="Valid To" Value="@_mockPermitValidTo.ToString("MMM dd, yyyy")" /></div>
+                                </div>
+                                <div class="d-flex gap-4 mt-2">
+                                    <div class="flex-grow-1"><InfoItem Label="Fitness Number" Value="@_mockFcNo" /></div>
+                                    <div class="flex-grow-1"><InfoItem Label="Valid To" Value="@_mockFcValidTo.ToString("MMM dd, yyyy")" /></div>
+                                </div>
+                            </div>
+
+                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.CalendarToday" Color="Color.Info" Class="mt-4 rounded-lg align-self-start pa-2" Style="text-transform: none; font-weight: 700;">Check Compliance</MudButton>
+                        </MudPaper>
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
@@ -210,27 +656,81 @@
              <MudTabPanel Text="Current Event" Icon="@Icons.Material.Filled.Event">
                 @if (SelectedTruck.CurrentEvent != null && SelectedTruck.CurrentEvent.TruckEventID != null)
                 {
-                     <MudGrid>
-                        <MudItem xs="12" md="4">
-                            <InfoItem Label="Event ID" Value="@SelectedTruck.CurrentEvent.TruckEventID.ToString()" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <InfoItem Label="Origin" Value="@SelectedTruck.CurrentEvent.OriginName" />
-                        </MudItem>
-                         <MudItem xs="12" md="4">
-                            <InfoItem Label="Destination" Value="@SelectedTruck.CurrentEvent.DestinationName" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <InfoItem Label="Event Time" Value="@SelectedTruck.CurrentEvent.EventTime?.ToString("g")" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <InfoItem Label="Accepted KM" Value="@SelectedTruck.CurrentEvent.AcceptedKM?.ToString()" />
-                        </MudItem>
-                    </MudGrid>
+                    <MudPaper Elevation="4" Class="pa-8 rounded-xl overflow-hidden" Style="border: 1px solid rgba(var(--mud-palette-warning-rgb), 0.1); background: linear-gradient(135deg, rgba(var(--mud-palette-surface-rgb), 1) 0%, rgba(var(--mud-palette-warning-rgb), 0.05) 100%);">
+                        @* Header Section *@
+                        <div class="d-flex justify-space-between align-center mb-8">
+                            <div class="d-flex align-center gap-4">
+                                <div style="background: var(--mud-palette-warning); padding: 12px; border-radius: 16px; box-shadow: 0 4px 12px rgba(var(--mud-palette-warning-rgb), 0.3);">
+                                    <MudIcon Icon="@Icons.Material.Filled.Navigation" Color="Color.Surface" />
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.h5" Class="fw-bold">Active Mission</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase;">ID: #@SelectedTruck.CurrentEvent.TruckEventID</MudText>
+                                </div>
+                            </div>
+                            <div class="pa-2 rounded-pill px-4 d-flex align-center gap-2" style="background: rgba(var(--mud-palette-warning-rgb), 0.1); border: 1px solid rgba(var(--mud-palette-warning-rgb), 0.2);">
+                                <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--mud-palette-warning); animation: pulse 1.5s infinite;"></div>
+                                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-warning-darken); font-weight: 800; text-transform: uppercase;">In Transit</MudText>
+                            </div>
+                        </div>
+
+                        @* Journey Visual Flow *@
+                        <div class="journey-flow-container pa-6 mb-8 rounded-xl" style="background: rgba(var(--mud-palette-surface-rgb), 0.5); border: 1px solid rgba(0,0,0,0.05);">
+                            <MudGrid AlignItems="Center">
+                                <MudItem xs="4" Class="text-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+                                    <MudText Typo="Typo.h6" Class="fw-bold">@SelectedTruck.CurrentEvent.OriginName</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Departure Point</MudText>
+                                </MudItem>
+                                
+                                <MudItem xs="4" Class="d-flex flex-column align-center">
+                                    <div style="width: 100%; height: 2px; background: linear-gradient(90deg, var(--mud-palette-primary) 0%, var(--mud-palette-warning) 50%, var(--mud-palette-success) 100%); position: relative; margin-bottom: 24px;">
+                                        <div style="position: absolute; top: 50%; left: 65%; transform: translate(-50%, -50%); background: var(--mud-palette-warning); padding: 6px; border-radius: 50%; box-shadow: 0 0 10px var(--mud-palette-warning);">
+                                            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Surface" Size="Size.Small" />
+                                        </div>
+                                    </div>
+                                    <MudText Typo="Typo.body2" Class="fw-bold" Color="Color.Warning">65% Progress</MudText>
+                                    <MudText Typo="Typo.caption">~14 hours remaining</MudText>
+                                </MudItem>
+
+                                <MudItem xs="4" Class="text-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Flag" Color="Color.Success" Size="Size.Large" Class="mb-2" />
+                                    <MudText Typo="Typo.h6" Class="fw-bold">@SelectedTruck.CurrentEvent.DestinationName</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Delivery Point</MudText>
+                                </MudItem>
+                            </MudGrid>
+                        </div>
+
+                        @* Detailed Stats Grid *@
+                        <MudGrid Spacing="4">
+                            <MudItem xs="12" md="3">
+                                <InfoItem Label="Assignment" Value="Industrial Logistics" />
+                            </MudItem>
+                            <MudItem xs="12" md="3">
+                                <InfoItem Label="Cargo Class" Value="Bulk Steel Products" />
+                            </MudItem>
+                            <MudItem xs="12" md="3">
+                                <InfoItem Label="Event Time" Value="@SelectedTruck.CurrentEvent.EventTime?.ToString("MMM dd, HH:mm")" />
+                            </MudItem>
+                            <MudItem xs="12" md="3">
+                                <InfoItem Label="Est. Arrival" Value="@SelectedTruck.CurrentEvent.EventTime?.AddHours(14).ToString("MMM dd, HH:mm")" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <div class="mt-8 d-flex gap-4">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Map" Class="rounded-pill px-6">View Live Map</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.PhoneAndroid" Class="rounded-pill px-6">Contact Driver</MudButton>
+                        </div>
+                    </MudPaper>
                 }
                 else
                 {
-                     <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-2">The truck does not have a current active event.</MudAlert>
+                    <div class="pa-12 rounded-xl text-center" style="border: 2px dashed rgba(var(--mud-palette-primary-rgb), 0.2); background: rgba(var(--mud-palette-primary-rgb), 0.02);">
+                         <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Size="Size.Large" Color="Color.Primary" Class="mb-4" Style="font-size: 5rem; opacity: 0.3;" />
+                         <MudText Typo="Typo.h5" Class="fw-bold">No Active Assignment</MudText>
+                         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">This truck is currently idle and ready for its next mission.</MudText>
+                         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-8 rounded-pill px-8" StartIcon="@Icons.Material.Filled.Add">Assign New Trip</MudButton>
+                    </div>
                 }
             </MudTabPanel>
 
@@ -239,72 +739,158 @@
             <MudTabPanel Text="Telematics" Icon="@Icons.Material.Filled.Sensors">
                 <MudGrid>
                     <MudItem xs="12" md="4">
-                        <MudPaper Elevation="2" Class="pa-4 d-flex align-center gap-4" Style="border-left: 4px solid var(--mud-palette-info);">
-                            <MudAvatar Color="Color.Info" Variant="Variant.Filled"><MudIcon Icon="@Icons.Material.Filled.Speed" /></MudAvatar>
+                        <MudPaper Elevation="4" Class="pa-6 d-flex align-center gap-6" Style="border-radius: 20px; border-left: 6px solid var(--mud-palette-info); background: linear-gradient(135deg, var(--mud-palette-surface) 0%, rgba(var(--mud-palette-info-rgb), 0.05) 100%);">
+                            <div style="background: rgba(var(--mud-palette-info-rgb), 0.1); padding: 12px; border-radius: 16px;">
+                                <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Info" Size="Size.Large" />
+                            </div>
                             <div>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">Odometer Reading</MudText>
-                                <MudText Typo="Typo.h6" Class="fw-bold">@(_mockOdometer.ToString("N0")) km</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Odometer</MudText>
+                                <MudText Typo="Typo.h5" Class="fw-bold">@(_mockOdometer.ToString("N0")) km</MudText>
                             </div>
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudPaper Elevation="2" Class="pa-4 d-flex align-center gap-4" Style="border-left: 4px solid var(--mud-palette-warning);">
-                            <MudAvatar Color="Color.Warning" Variant="Variant.Filled"><MudIcon Icon="@Icons.Material.Filled.Timer" /></MudAvatar>
+                        <MudPaper Elevation="4" Class="pa-6 d-flex align-center gap-6" Style="border-radius: 20px; border-left: 6px solid var(--mud-palette-warning); background: linear-gradient(135deg, var(--mud-palette-surface) 0%, rgba(var(--mud-palette-warning-rgb), 0.05) 100%);">
+                             <div style="background: rgba(var(--mud-palette-warning-rgb), 0.1); padding: 12px; border-radius: 16px;">
+                                <MudIcon Icon="@Icons.Material.Filled.Timer" Color="Color.Warning" Size="Size.Large" />
+                            </div>
                             <div>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">Engine Hours</MudText>
-                                <MudText Typo="Typo.h6" Class="fw-bold">@(_mockEngineHours.ToString("N0")) hrs</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Engine Runtime</MudText>
+                                <MudText Typo="Typo.h5" Class="fw-bold">@(_mockEngineHours.ToString("N0")) hrs</MudText>
                             </div>
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudPaper Elevation="2" Class="pa-4 d-flex align-center gap-4" Style="border-left: 4px solid var(--mud-palette-success);">
-                            <MudAvatar Color="Color.Success" Variant="Variant.Filled"><MudIcon Icon="@Icons.Material.Filled.LocalGasStation" /></MudAvatar>
+                        <MudPaper Elevation="4" Class="pa-6 d-flex align-center gap-6" Style="border-radius: 20px; border-left: 6px solid var(--mud-palette-success); background: linear-gradient(135deg, var(--mud-palette-surface) 0%, rgba(var(--mud-palette-success-rgb), 0.05) 100%);">
+                             <div style="background: rgba(var(--mud-palette-success-rgb), 0.1); padding: 12px; border-radius: 16px;">
+                                <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Success" Size="Size.Large" />
+                            </div>
                             <div>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">Fuel Efficiency</MudText>
-                                <MudText Typo="Typo.h6" Class="fw-bold">@(_mockFuelEfficiency.ToString("F1")) km/L</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Efficiency</MudText>
+                                <MudText Typo="Typo.h5" Class="fw-bold">@(_mockFuelEfficiency.ToString("F1")) km/L</MudText>
                             </div>
                         </MudPaper>
                     </MudItem>
                     
                     <MudItem xs="12" md="6">
-                        <MudPaper Elevation="2" Class="pa-4">
-                            <MudText Typo="Typo.subtitle2" Class="mb-4" Style="font-weight: 600;">Live Sensor Data</MudText>
-                            <div class="d-flex justify-space-between mb-2">
-                                <MudText Typo="Typo.body2">Battery Voltage</MudText>
-                                <MudText Typo="Typo.body2" Class="fw-bold text-success">@(_mockBattery)V (Healthy)</MudText>
+                        <MudPaper Elevation="2" Class="pa-6" Style="border-radius: 20px;">
+                            <MudText Typo="Typo.h6" Class="mb-6 fw-bold">Live Diagnostics</MudText>
+                            <div class="mb-6">
+                                <div class="d-flex justify-space-between mb-2">
+                                    <MudText Typo="Typo.body2" Class="fw-bold">Battery Health</MudText>
+                                    <MudText Typo="Typo.body2" Class="fw-bold text-success">@(_mockBattery)V</MudText>
+                                </div>
+                                <MudProgressLinear Color="Color.Success" Value="92" Size="Size.Large" Style="height: 10px; border-radius: 5px;" />
                             </div>
-                            <MudProgressLinear Color="Color.Success" Value="90" Class="mb-4" />
 
-                            <div class="d-flex justify-space-between mb-2">
-                                <MudText Typo="Typo.body2">Current Fuel Level</MudText>
-                                <MudText Typo="Typo.body2" Class="fw-bold" Color="Color.Info">@(_mockFuelLevel)% (@($"{(_mockFuelLevel / 100.0 * (double)SelectedTruck?.FuelTankCapacity):F0}") L)</MudText>
+                            <div class="mb-6">
+                                <div class="d-flex justify-space-between mb-2">
+                                    <MudText Typo="Typo.body2" Class="fw-bold">Fuel Payload</MudText>
+                                    <MudText Typo="Typo.body2" Class="fw-bold" Color="Color.Info">@(_mockFuelLevel)% (@($"{(_mockFuelLevel / 100.0 * (double)SelectedTruck?.FuelTankCapacity):F0}") L)</MudText>
+                                </div>
+                                <MudProgressLinear Color="Color.Info" Value="@_mockFuelLevel" Size="Size.Large" Style="height: 10px; border-radius: 5px;" />
                             </div>
-                            <MudProgressLinear Color="Color.Info" Value="@_mockFuelLevel" Class="mb-4" />
 
-                            <div class="d-flex justify-space-between mb-2">
-                                <MudText Typo="Typo.body2">Coolant Temp</MudText>
-                                <MudText Typo="Typo.body2" Class="fw-bold">@(_mockCoolantTemp)°C</MudText>
+                            <div>
+                                <div class="d-flex justify-space-between mb-2">
+                                    <MudText Typo="Typo.body2" Class="fw-bold">Coolant Status</MudText>
+                                    <MudText Typo="Typo.body2" Class="fw-bold">@(_mockCoolantTemp)°C</MudText>
+                                </div>
+                                <MudProgressLinear Color="Color.Warning" Value="@_mockCoolantTemp" Max="120" Size="Size.Large" Style="height: 10px; border-radius: 5px;" />
                             </div>
-                            <MudProgressLinear Color="Color.Warning" Value="@_mockCoolantTemp" Max="120" />
                         </MudPaper>
                     </MudItem>
 
-                    <MudItem xs="12" md="6">
-                        <MudPaper Elevation="2" Class="pa-4 h-100">
-                             <MudText Typo="Typo.subtitle2" Class="mb-4" Style="font-weight: 600;">Tire Pressures (TPMS)</MudText>
-                             <MudGrid>
-                                 @for(int i=1; i<= (SelectedTruck.wheels ?? 6); i++)
-                                 {
-                                     int psi = new Random(SelectedTruck.RegNo.GetHashCode() + i).Next(95, 110);
-                                     <MudItem xs="6" sm="4">
-                                         <div class="d-flex flex-column align-center p-2 rounded" style="background: var(--mud-palette-background-grey);">
-                                             <MudIcon Icon="@Icons.Material.Filled.TireRepair" Color="@(psi < 100 ? Color.Warning : Color.Success)" Class="mb-1" />
-                                             <MudText Typo="Typo.caption">Tire @i</MudText>
-                                             <MudText Typo="Typo.body2" Class="fw-bold">@psi PSI</MudText>
+                    <MudItem xs="12">
+                        <MudPaper Elevation="2" Class="pa-8 h-100" Style="border-radius: 24px;">
+                             <div class="d-flex justify-space-between align-center mb-10">
+                                 <div>
+                                     <MudText Typo="Typo.h5" Class="fw-bold">Tire Matrix (TPMS)</MudText>
+                                     <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700;">Live Mounting Layout & Live Diagnostics</MudText>
+                                 </div>
+                                 <div class="d-flex gap-4">
+                                     <div class="d-flex align-center gap-2">
+                                         <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--mud-palette-success);"></div>
+                                         <MudText Typo="Typo.caption" Class="fw-bold">Optimal</MudText>
+                                     </div>
+                                     <div class="d-flex align-center gap-2">
+                                         <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--mud-palette-warning);"></div>
+                                         <MudText Typo="Typo.caption" Class="fw-bold">Check Pressure</MudText>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             @if (!_parsedAxles.Any())
+                             {
+                                 <div class="pa-12 text-center rounded-xl" style="background: rgba(0,0,0,0.02); border: 2px dashed rgba(0,0,0,0.1);">
+                                     <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Color="Color.Default" Class="mb-2" />
+                                     <MudText Color="Color.Secondary">No tyre position layout defined for this truck type.</MudText>
+                                 </div>
+                             }
+                             else
+                             {
+                                 <div class="truck-tpms-v2 mx-auto" style="overflow-x: auto;">
+                                     @* Side Markers *@
+                                     <div class="side-marker-label side-marker-left">LEFT SIDE</div>
+                                     <div class="side-marker-label side-marker-right">RIGHT SIDE</div>
+
+                                     @* Truck Front Hook *@
+                                     <div class="truck-cab-visual">
+                                         <div class="cab-nose"></div>
+                                         <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Surface" Size="Size.Large" />
+                                         <MudText Typo="Typo.overline" Style="color: rgba(255,255,255,0.7); font-weight: 900; margin-top: 8px;">FRONT</MudText>
+                                     </div>
+
+                                     @* Chassis Spine (Horizontal) *@
+                                     <div class="chassis-beam"></div>
+
+                                     @foreach (var axle in _parsedAxles)
+                                     {
+                                         <div class="axle-row-container">
+                                             <div class="axle-label-badge">@axle.AxleName</div>
+                                             
+                                             <div class="axle-line-refined">
+                                                 @foreach (var pos in axle.Positions)
+                                                 {
+                                                     var col = GetColumnOrder(pos.Description);
+                                                     var mounted = _mountedTyres.FirstOrDefault(t => t.PositionID == pos.PositionID);
+                                                     var sideClass = col switch { 
+                                                         1 => "p-outer-left", 
+                                                         2 => "p-inner-left", 
+                                                         3 => "p-inner-right", 
+                                                         4 => "p-outer-right", 
+                                                         _ => "" 
+                                                     };
+
+                                                     var rnd = new Random(SelectedTruck.RegNo.GetHashCode() + (axle.Order * 10) + col);
+                                                     int psi = rnd.Next(98, 115);
+                                                     var isWarning = psi < 105;
+                                                     var brand = GetMockBrand(rnd);
+
+                                                     <MudTooltip Text="@($"{pos.Description} {(mounted != null ? $" - {mounted.TyreNo} ({brand})" : " (Unmounted)")}")">
+                                                         <div class="tpms-tire-card @sideClass @(mounted == null ? "status-empty" : (isWarning ? "status-warning" : ""))">
+                                                             @if (mounted != null)
+                                                             {
+                                                                 <div class="tire-status-dot"></div>
+                                                                 <div class="tire-serial-badge">@mounted.TyreNo</div>
+                                                                 <div class="tire-brand-name">@brand</div>
+                                                                 
+                                                                 @* Hidden psi context for tooltip/hover effect feel *@
+                                                                 <div style="font-size: 0.55rem; color: #6c757d; margin-top: 6px; font-weight: 700;">@psi PSI</div>
+                                                             }
+                                                             else
+                                                             {
+                                                                 <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                                                                 <div style="font-size: 0.5rem; text-transform: uppercase; margin-top: 4px;">Empty</div>
+                                                             }
+                                                         </div>
+                                                     </MudTooltip>
+                                                 }
+                                             </div>
                                          </div>
-                                     </MudItem>
-                                 }
-                             </MudGrid>
+                                     }
+                                 </div>
+                             }
                         </MudPaper>
                     </MudItem>
                 </MudGrid>
@@ -312,59 +898,76 @@
 
             <MudTabPanel Text="Maintenance" Icon="@Icons.Material.Filled.Handyman">
                 <MudGrid>
-                    <MudItem xs="12" md="12">
-                         <MudCard Elevation="1" Class="mb-4 border-solid border-2 border-primary" Style="background-color: var(--mud-palette-primary-hover); opacity: 0.9;">
-                            <MudCardContent Class="d-flex justify-space-between align-center">
+                    <MudItem xs="12">
+                         <MudCard Elevation="4" Class="mb-6 overflow-hidden" Style="border-radius: 20px; background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%);">
+                            <MudCardContent Class="pa-8 d-flex justify-space-between align-center">
                                 <div>
-                                    <MudText Typo="Typo.h6" Color="Color.Primary" Class="fw-bold">Next Scheduled PM</MudText>
-                                    <MudText Typo="Typo.body2">Standard Routine Service (Oil, Filters, Brakes)</MudText>
+                                    <MudText Typo="Typo.h5" Style="color: white; font-weight: 800;">Next Service Window</MudText>
+                                    <MudText Typo="Typo.body1" Style="color: rgba(255,255,255,0.7);">Standard Preventive Maintenance (Type A)</MudText>
                                 </div>
                                 <div class="text-right">
-                                    <MudText Typo="Typo.h4" Class="fw-bold">In @(_mockDaysToService) Days</MudText>
-                                    <MudText Typo="Typo.caption">or @(_mockKmToService.ToString("N0")) km</MudText>
+                                    <MudText Typo="Typo.h2" Style="color: white; font-weight: 900; line-height: 1;">@(_mockDaysToService) <span style="font-size: 1.5rem; opacity: 0.6;">Days</span></MudText>
+                                    <MudText Typo="Typo.h6" Style="color: rgba(255,255,255,0.8); font-weight: 500;">or @(_mockKmToService.ToString("N0")) km</MudText>
                                 </div>
                             </MudCardContent>
+                            <div style="height: 6px; background: rgba(0,0,0,0.1); width: 100%;">
+                                <div style="height: 100%; background: white; width: 75%; opacity: 0.3;"></div>
+                            </div>
                         </MudCard>
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudText Typo="Typo.h6" Class="mb-3">Recent Repair History</MudText>
-                        <MudTimeline TimelinePosition="TimelinePosition.Start">
-                            <MudTimelineItem Color="Color.Info">
-                                <ItemContent>
-                                    <MudText Typo="Typo.subtitle2">Replaced Brake Pads</MudText>
-                                    <MudText Typo="Typo.caption">@DateTime.Now.AddDays(-14).ToString("MMM dd, yyyy") • Workshop HQ</MudText>
-                                </ItemContent>
-                            </MudTimelineItem>
-                            <MudTimelineItem Color="Color.Success">
-                                <ItemContent>
-                                    <MudText Typo="Typo.subtitle2">Preventative Maintenance A</MudText>
-                                    <MudText Typo="Typo.caption">@DateTime.Now.AddDays(-45).ToString("MMM dd, yyyy") • Workshop HQ</MudText>
-                                </ItemContent>
-                            </MudTimelineItem>
-                            <MudTimelineItem Color="Color.Warning">
-                                <ItemContent>
-                                    <MudText Typo="Typo.subtitle2">Repaired Headlight Wiring</MudText>
-                                    <MudText Typo="Typo.caption">@DateTime.Now.AddDays(-70).ToString("MMM dd, yyyy") • External Vendor</MudText>
-                                </ItemContent>
-                            </MudTimelineItem>
-                        </MudTimeline>
+                        <MudPaper Elevation="2" Class="pa-6" Style="border-radius: 20px;">
+                            <MudText Typo="Typo.h6" Class="mb-6 fw-bold">Service Timeline</MudText>
+                            <MudTimeline TimelinePosition="TimelinePosition.Start">
+                                <MudTimelineItem Color="Color.Info" Size="Size.Small">
+                                    <ItemContent>
+                                        <MudText Typo="Typo.subtitle1" Class="fw-bold">Brake System Overhaul</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.AddDays(-14).ToString("MMM dd, yyyy") • Main Workshop</MudText>
+                                    </ItemContent>
+                                </MudTimelineItem>
+                                <MudTimelineItem Color="Color.Success" Size="Size.Small">
+                                    <ItemContent>
+                                        <MudText Typo="Typo.subtitle1" Class="fw-bold">Routine Oil & Filter Change</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.AddDays(-45).ToString("MMM dd, yyyy") • Regional Hub</MudText>
+                                    </ItemContent>
+                                </MudTimelineItem>
+                                <MudTimelineItem Color="Color.Warning" Size="Size.Small">
+                                    <ItemContent>
+                                        <MudText Typo="Typo.subtitle1" Class="fw-bold">Electrical Harness Repair</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.AddDays(-70).ToString("MMM dd, yyyy") • External Vendor</MudText>
+                                    </ItemContent>
+                                </MudTimelineItem>
+                            </MudTimeline>
+                        </MudPaper>
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudText Typo="Typo.h6" Class="mb-3">Reported Defects</MudText>
-                        @if (_mockHasActiveDefect)
-                        {
-                            <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-2">
-                                Minor oil leak near differential reported by driver.
-                            </MudAlert>
-                        }
-                        else
-                        {
-                            <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.DoneAll">
-                                No active vehicle defects reported.
-                            </MudAlert>
-                        }
+                        <MudPaper Elevation="2" Class="pa-6 h-100" Style="border-radius: 20px;">
+                            <MudText Typo="Typo.h6" Class="mb-6 fw-bold">Active Health Reports</MudText>
+                            @if (_mockHasActiveDefect)
+                            {
+                                <div class="pa-6 rounded-xl d-flex align-center gap-4" style="background: rgba(var(--mud-palette-warning-rgb), 0.1); border: 2px dashed var(--mud-palette-warning);">
+                                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
+                                    <div>
+                                        <MudText Typo="Typo.subtitle1" Class="fw-bold" Color="Color.Warning">Minor Mechanical Fault</MudText>
+                                        <MudText Typo="Typo.body2">Differential oil seepage detected during last inspection.</MudText>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="pa-6 rounded-xl d-flex align-center gap-4" style="background: rgba(var(--mud-palette-success-rgb), 0.1); border: 2px dashed var(--mud-palette-success);">
+                                     <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                                     <div>
+                                         <MudText Typo="Typo.subtitle1" Class="fw-bold" Color="Color.Success">System Status Normal</MudText>
+                                         <MudText Typo="Typo.body2">No critical or minor defects reported in the last 30 days.</MudText>
+                                     </div>
+                                </div>
+                            }
+                            
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" Class="mt-6 rounded-pill">Open Maintenance Log</MudButton>
+                        </MudPaper>
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
@@ -372,26 +975,29 @@
             <MudTabPanel Text="History" Icon="@Icons.Material.Filled.History">
                 <MudGrid>
                     <MudItem xs="12" md="4">
-                        <MudPaper Elevation="2" Class="pa-4 text-center">
-                            <MudText Typo="Typo.h3" Color="Color.Primary" Class="fw-bold">@(_mockUtilization)%</MudText>
-                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">30-Day Utilization Rate</MudText>
+                        <MudPaper Elevation="4" Class="pa-6 text-center" Style="border-radius: 20px; border-bottom: 6px solid var(--mud-palette-primary); background: linear-gradient(to top, rgba(var(--mud-palette-primary-rgb), 0.05) 0%, var(--mud-palette-surface) 100%);">
+                            <MudText Typo="Typo.h3" Color="Color.Primary" Class="fw-bold mb-2">@(_mockUtilization)%</MudText>
+                            <MudText Typo="Typo.subtitle1" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Utilization</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Based on 30-day activity</MudText>
                         </MudPaper>
                     </MudItem>
                      <MudItem xs="12" md="4">
-                        <MudPaper Elevation="2" Class="pa-4 text-center">
-                            <MudText Typo="Typo.h3" Color="Color.Success" Class="fw-bold">@(_mockTrips30Days)</MudText>
-                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Trips Completed (30 Days)</MudText>
+                        <MudPaper Elevation="4" Class="pa-6 text-center" Style="border-radius: 20px; border-bottom: 6px solid var(--mud-palette-success); background: linear-gradient(to top, rgba(var(--mud-palette-success-rgb), 0.05) 0%, var(--mud-palette-surface) 100%);">
+                            <MudText Typo="Typo.h3" Color="Color.Success" Class="fw-bold mb-2">@(_mockTrips30Days)</MudText>
+                            <MudText Typo="Typo.subtitle1" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Completed Trips</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Deliveries in last 30 days</MudText>
                         </MudPaper>
                     </MudItem>
                      <MudItem xs="12" md="4">
-                        <MudPaper Elevation="2" Class="pa-4 text-center">
-                            <MudText Typo="Typo.h3" Color="Color.Warning" Class="fw-bold">@(_mockIdleDays)</MudText>
-                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Idle Days (30 Days)</MudText>
+                        <MudPaper Elevation="4" Class="pa-6 text-center" Style="border-radius: 20px; border-bottom: 6px solid var(--mud-palette-warning); background: linear-gradient(to top, rgba(var(--mud-palette-warning-rgb), 0.05) 0%, var(--mud-palette-surface) 100%);">
+                            <MudText Typo="Typo.h3" Color="Color.Warning" Class="fw-bold mb-2">@(_mockIdleDays)</MudText>
+                            <MudText Typo="Typo.subtitle1" Color="Color.Secondary" Style="font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Idle Period</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Total days without activity</MudText>
                         </MudPaper>
                     </MudItem>
 
                     <MudItem xs="12">
-                        <MudTable Items="@_mockPastTrips" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="2" Class="mt-4">
+                        <MudTable Items="@_mockPastTrips" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="mt-6 rounded-xl border border-solid border-light" Style="overflow: hidden;">
                             <HeaderContent>
                                 <MudTh>Trip ID</MudTh>
                                 <MudTh>Origin</MudTh>
@@ -401,12 +1007,17 @@
                                 <MudTh>Status</MudTh>
                             </HeaderContent>
                             <RowTemplate>
-                                <MudTd DataLabel="Trip ID">@context.TripID</MudTd>
+                                <MudTd DataLabel="Trip ID"><span class="fw-bold text-primary">@context.TripID</span></MudTd>
                                 <MudTd DataLabel="Origin">@context.Origin</MudTd>
                                 <MudTd DataLabel="Destination">@context.Destination</MudTd>
                                 <MudTd DataLabel="Completion Date">@context.Date.ToString("MMM dd, yyyy")</MudTd>
-                                <MudTd DataLabel="Distance (KM)">@context.Distance.ToString("N0")</MudTd>
-                                <MudTd DataLabel="Status"><MudChip T="string" Color="Color.Success" Size="Size.Small">Delivered</MudChip></MudTd>
+                                <MudTd DataLabel="Distance (KM)">@context.Distance.ToString("N0") km</MudTd>
+                                <MudTd DataLabel="Status">
+                                    <div class="d-flex align-center gap-2">
+                                        <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--mud-palette-success);"></div>
+                                        <MudText Typo="Typo.body2" Class="fw-bold text-success">Delivered</MudText>
+                                    </div>
+                                </MudTd>
                             </RowTemplate>
                         </MudTable>
                     </MudItem>
@@ -416,36 +1027,45 @@
             <MudTabPanel Text="Financials" Icon="@Icons.Material.Filled.AttachMoney">
                 <MudGrid>
                      <MudItem xs="12" md="6">
-                        <MudPaper Elevation="2" Class="pa-6 d-flex flex-column justify-center align-center h-100" Style="background: linear-gradient(135deg, var(--mud-palette-success-hover) 0%, transparent 100%);">
-                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Color="Color.Success" Class="mb-2" />
-                            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Lifetime Revenue Generated</MudText>
-                            <MudText Typo="Typo.h4" Class="fw-bold text-success mt-2">₹ @(_mockRevenue.ToString("N2"))</MudText>
+                        <MudPaper Elevation="8" Class="pa-8 d-flex flex-column justify-center align-center h-100 overflow-hidden" Style="border-radius: 24px; position: relative; background: linear-gradient(135deg, var(--mud-palette-success) 0%, var(--mud-palette-success-darken) 100%); color: white;">
+                            <div style="position: absolute; top: -20px; right: -20px; opacity: 0.1;">
+                                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Style="font-size: 10rem;" />
+                            </div>
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Class="mb-4" />
+                            <MudText Typo="Typo.h6" Style="opacity: 0.8; font-weight: 500;">Lifetime Revenue</MudText>
+                            <MudText Typo="Typo.h2" Class="fw-bold mt-2">₹ @(_mockRevenue.ToString("N0"))</MudText>
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudPaper Elevation="2" Class="pa-6 d-flex flex-column justify-center align-center h-100" Style="background: linear-gradient(135deg, var(--mud-palette-error-hover) 0%, transparent 100%);">
-                             <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Size="Size.Large" Color="Color.Error" Class="mb-2" />
-                            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">YTD Maintenance & Fuel Cost</MudText>
-                            <MudText Typo="Typo.h4" Class="fw-bold text-error mt-2">₹ @(_mockCost.ToString("N2"))</MudText>
+                        <MudPaper Elevation="8" Class="pa-8 d-flex flex-column justify-center align-center h-100 overflow-hidden" Style="border-radius: 24px; position: relative; background: linear-gradient(135deg, var(--mud-palette-error) 0%, var(--mud-palette-error-darken) 100%); color: white;">
+                             <div style="position: absolute; top: -20px; right: -20px; opacity: 0.1;">
+                                <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Style="font-size: 10rem;" />
+                            </div>
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Size="Size.Large" Class="mb-4" />
+                            <MudText Typo="Typo.h6" Style="opacity: 0.8; font-weight: 500;">Operational Costs (YTD)</MudText>
+                            <MudText Typo="Typo.h2" Class="fw-bold mt-2">₹ @(_mockCost.ToString("N0"))</MudText>
                         </MudPaper>
                     </MudItem>
 
                      <MudItem xs="12">
-                         <MudPaper Elevation="2" Class="pa-6 mt-4">
-                              <MudText Typo="Typo.h6" Class="mb-4">Asset Acquisition Details</MudText>
+                         <MudPaper Elevation="2" Class="pa-8 mt-6" Style="border-radius: 24px; border-top: 4px solid var(--mud-palette-primary);">
+                              <MudText Typo="Typo.h5" Class="mb-6 fw-bold">Capital & Asset Valuation</MudText>
                               <MudGrid>
-                                  <MudItem xs="12" md="4">
-                                      <InfoItem Label="Purchase Cost" Value="@($"₹ {((_mockRevenue / 3.5m).ToString("N0"))}")" />
+                                  <MudItem xs="12" md="3">
+                                      <InfoItem Label="Acquisition Cost" Value="@($"₹ {((_mockRevenue / 3.5m).ToString("N0"))}")" />
                                   </MudItem>
-                                  <MudItem xs="12" md="4">
-                                      <InfoItem Label="Financier" Value="HDFC Bank Auto" />
+                                  <MudItem xs="12" md="3">
+                                      <InfoItem Label="Total Depreciation" Value="@($"₹ {(_mockDepreciation.ToString("N0"))}")" />
                                   </MudItem>
-                                  <MudItem xs="12" md="4">
-                                      <InfoItem Label="EMI Status" Value="Active (12 Months left)" />
+                                  <MudItem xs="12" md="3">
+                                      <InfoItem Label="Book Value" Value="@($"₹ {(_mockCurrentValue.ToString("N0"))}")" />
+                                  </MudItem>
+                                  <MudItem xs="12" md="3">
+                                      <InfoItem Label="Asset Lifecycle" Value="Active (72% ROI reached)" />
                                   </MudItem>
                               </MudGrid>
                          </MudPaper>
-                     </MudItem>
+                      </MudItem>
                 </MudGrid>
             </MudTabPanel>
 
@@ -488,8 +1108,20 @@
     private int _mockUtilization;
     private int _mockTrips30Days;
     private int _mockIdleDays;
+    private List<TyreMountedModel> _mountedTyres = new();
+    private List<TyrePositionModel> _tyrePositions = new();
+    private List<AxleData> _parsedAxles = new();
+
+    private class AxleData
+    {
+        public string AxleName { get; set; }
+        public int Order { get; set; }
+        public List<TyrePositionModel> Positions { get; set; } = new();
+    }
     private decimal _mockRevenue;
     private decimal _mockCost;
+    private decimal _mockDepreciation;
+    private decimal _mockCurrentValue;
     private List<MockTrip> _mockPastTrips = new();
 
     // Document Mock Properties
@@ -500,6 +1132,8 @@
     private DateTime _mockPermitValidTo;
     private string _mockFcNo;
     private DateTime _mockFcValidTo;
+    private string _mockRcNo;
+    private DateTime _mockRcValidTo;
 
     private class MockTrip
     {
@@ -509,15 +1143,6 @@
         public DateTime Date { get; set; }
         public int Distance { get; set; }
     }
-
-    // A lightweight rendering component for details with a modern look
-    private RenderFragment InfoItem(string Label, string Value) => __builder =>
-    {
-        <div class="d-flex flex-column mb-3 pa-3" style="border-radius: 8px; background-color: var(--mud-palette-background-grey); box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-            <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">@Label</MudText>
-            <MudText Typo="Typo.body1" Class="fw-bold" Style="color: var(--mud-palette-text-primary);">@(string.IsNullOrWhiteSpace(Value) ? "-" : Value)</MudText>
-        </div>
-    };
 
     private void InitializeMockDataFor(TruckModel truck)
     {
@@ -542,6 +1167,14 @@
         _mockRevenue = (decimal)(rnd.NextDouble() * (8500000 - 1500000) + 1500000);
         _mockCost = (decimal)(rnd.NextDouble() * (450000 - 150000) + 150000);
 
+        // Assets and Depreciation
+        decimal acquisitionCost = _mockRevenue / 3.5m;
+        int ageYears = DateTime.Now.Year - (truck.ManufacturedYear ?? (short)DateTime.Now.Year);
+        if (ageYears <= 0) ageYears = 1;
+        _mockDepreciation = acquisitionCost * (decimal)(ageYears * 0.12); // 12% annual depreciation
+        _mockCurrentValue = acquisitionCost - _mockDepreciation;
+        if (_mockCurrentValue < acquisitionCost * 0.2m) _mockCurrentValue = acquisitionCost * 0.2m; // Salvage value floor
+
         _mockPastTrips = new List<MockTrip>();
         string[] cities = { "Mumbai", "Delhi", "Chennai", "Kolkata", "Bangalore", "Hyderabad", "Pune", "Ahmedabad" };
         for(int i = 0; i < 5; i++)
@@ -557,12 +1190,17 @@
         
         // Populate Documents
         _mockInsuranceProvider = "ICICI Lombard General";
-        _mockInsurancePolicyNo = $"POL-{rnd.Next(1000000, 9999999)}";
+        _mockInsurancePolicyNo = $"INS-{rnd.Next(1000000, 9999999)}";
         _mockInsuranceValidTo = DateTime.Now.AddDays(rnd.Next(30, 300));
-        _mockPermitNo = $"NP-{rnd.Next(10000, 99999)}";
+        
+        _mockPermitNo = $"PER-{rnd.Next(10000, 99999)}";
         _mockPermitValidTo = DateTime.Now.AddDays(rnd.Next(60, 365));
-        _mockFcNo = $"FC-{rnd.Next(10000, 99999)}";
+        
+        _mockFcNo = $"FTC-{rnd.Next(10000, 99999)}";
         _mockFcValidTo = DateTime.Now.AddDays(rnd.Next(45, 180));
+
+        _mockRcNo = $"REG-{rnd.Next(100000, 999999)}";
+        _mockRcValidTo = DateTime.Now.AddYears(rnd.Next(5, 12));
     }
 
     protected override async Task OnInitializedAsync()
@@ -602,7 +1240,7 @@
         if (truckId == null) return;
 
         isLoading = true;
-        StateHasChanged(); // Force update to show loading indicator
+        await InvokeAsync(StateHasChanged); // Force update to show loading indicator
 
         try
         {
@@ -671,6 +1309,16 @@
                 // Initialize Mock values for specific truck
                 InitializeMockDataFor(detailedTruck);
 
+                // Fetch real tyre data
+                _mountedTyres = (await Task.Run(() => TyreService.SelectMountedTyresByID(truckId))).ToList();
+                var positions = (await Task.Run(() => TyreService.GetTyrePositionListUsingTruckTypeId(detailedTruck.TruckTypeID))).ToList();
+                _tyrePositions = positions;
+
+                if (_tyrePositions.Any())
+                {
+                    ProcessTyreLayout();
+                }
+
                 _selectedTruck = detailedTruck; // Update without triggering the setter
             }
             else
@@ -685,12 +1333,100 @@
         finally
         {
             isLoading = false;
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
     private void ClearSelection()
     {
         _selectedTruck = null;
+    }
+
+    private void ProcessTyreLayout()
+    {
+        _parsedAxles.Clear();
+        if (!_tyrePositions.Any()) return;
+
+        var axleGroups = _tyrePositions.GroupBy(p => GetAxleName(p.Description));
+
+        foreach (var group in axleGroups)
+        {
+            var axle = new AxleData
+            {
+                AxleName = group.Key,
+                Order = GetAxleOrder(group.Key),
+                Positions = group.OrderBy(p => GetColumnOrder(p.Description)).ToList()
+            };
+            _parsedAxles.Add(axle);
+        }
+
+        _parsedAxles = _parsedAxles.OrderBy(a => a.Order).ToList();
+    }
+
+    private string GetAxleName(string desc)
+    {
+        if (string.IsNullOrEmpty(desc)) return "Other Position";
+        
+        // Match standard axle patterns: "Front Axle", "1st Drive-Axle", "3rd Trailer-Axle"
+        var lowercase = desc.ToLower();
+        if (lowercase.Contains("front")) return "Front Axle";
+        
+        // Use regex or splitting to find groups like "1st Drive-Axle"
+        var parts = desc.Split(' ');
+        if (parts.Length > 1)
+        {
+            // Join parts until we hit a directional keyword
+            var axleParts = new List<string>();
+            foreach(var part in parts)
+            {
+                var p = part.ToLower();
+                if (p == "left" || p == "right" || p == "inner" || p == "outer") break;
+                axleParts.Add(part);
+            }
+            return string.Join(" ", axleParts);
+        }
+        
+        return desc;
+    }
+
+    private int GetAxleOrder(string name)
+    {
+        var n = name.ToLower();
+        if (n.Contains("front")) return 10;
+        if (n.Contains("steer")) return 11;
+        
+        if (n.Contains("drive"))
+        {
+            if (n.Contains("1st")) return 20;
+            if (n.Contains("2nd")) return 21;
+            return 25;
+        }
+        
+        if (n.Contains("trailer"))
+        {
+            if (n.Contains("1st")) return 30;
+            if (n.Contains("2nd")) return 31;
+            if (n.Contains("3rd")) return 32;
+            if (n.Contains("4th")) return 33;
+            return 39;
+        }
+        
+        return 100;
+    }
+
+    private int GetColumnOrder(string desc)
+    {
+        var d = desc.ToLower();
+        if (d.Contains("outer left")) return 1;
+        if (d.Contains("inner left") || (d.Contains("left") && !d.Contains("outer") && !d.Contains("inner"))) return 2;
+        if (d.Contains("inner right") || (d.Contains("right") && !d.Contains("outer") && !d.Contains("inner"))) return 3;
+        if (d.Contains("outer right")) return 4;
+        return 2; // Default to inner
+    }
+
+    private string GetMockBrand(Random rnd)
+    {
+        string[] brands = { "MRF", "Apollo", "CEAT", "Bridgestone", "Michelin", "JK Tyre" };
+        return brands[rnd.Next(brands.Length)];
     }
 }
