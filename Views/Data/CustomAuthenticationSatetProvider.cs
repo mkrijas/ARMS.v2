@@ -38,16 +38,13 @@ namespace Views.Data
 
                     if (userID != null)
                     {
-                        List<Claim> claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name, userID)
-                    };
+                        List<Claim> claims = new List<Claim> {  new Claim(ClaimTypes.Name, userID)  };
 
-                        // Define a dummy ClaimsPrincipal to use for fetching roles (avoid infinite loop if service checks auth)
-                        // Or better, just fetch by string userID directly if possible.
-                        // Assuming GetCurrentUserBranchRole accepts just userID or we can look it up.
-                        // Looking at UserService.cs will determine the exact method to call.
-                        // For now, I'll attempt to fetch the role.
+                                        // Define a dummy ClaimsPrincipal to use for fetching roles (avoid infinite loop if service checks auth)
+                                        // Or better, just fetch by string userID directly if possible.
+                                        // Assuming GetCurrentUserBranchRole accepts just userID or we can look it up.
+                                        // Looking at UserService.cs will determine the exact method to call.
+                                        // For now, I'll attempt to fetch the role.
 
                         var currentRole = _userService.GetCurrentBranchRole(userID);
                         if (currentRole != null && currentRole.Branch != null)
