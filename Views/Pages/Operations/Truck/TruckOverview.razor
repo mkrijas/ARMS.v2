@@ -3,6 +3,7 @@
 @using ArmsServices.DataServices
 @using System.Threading
 @inject ITruckService TruckService
+@inject ITyreService TyreService
 @inject ISnackbar Snackbar
 
 <style>
@@ -86,6 +87,242 @@
     .spec-group-identity:hover .spec-icon-box { transform: scale(1.1) rotate(5deg); box-shadow: 0 8px 20px rgba(var(--mud-palette-primary-rgb), 0.3); }
     .spec-group-technical:hover .spec-icon-box { transform: scale(1.1) rotate(-5deg); box-shadow: 0 8px 20px rgba(var(--mud-palette-info-rgb), 0.3); }
     .spec-group-capacity:hover .spec-icon-box { transform: scale(1.1) rotate(5deg); box-shadow: 0 8px 20px rgba(var(--mud-palette-success-rgb), 0.3); }
+
+    /* TPMS Truck Layout */
+    .truck-tpms-container {
+        position: relative;
+        padding: 24px;
+        background: rgba(var(--mud-palette-surface-rgb), 0.5);
+        border-radius: 24px;
+        border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.1);
+    }
+
+    .axle-line {
+        position: relative;
+        height: 4px;
+        background: rgba(0,0,0,0.1);
+        width: 60%;
+        margin: 40px auto;
+        border-radius: 2px;
+    }
+
+    .axle-chassis {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 120px;
+        height: 100%;
+        background: rgba(0,0,0,0.2);
+        z-index: 1;
+    }
+
+    .tpms-wheel-box {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+        cursor: pointer;
+    }
+
+    .tpms-wheel-box:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        z-index: 10;
+    }
+
+    .wheel-inner-glow {
+        position: absolute;
+        inset: 0;
+        opacity: 0.1;
+        filter: blur(10px);
+        border-radius: inherit;
+    }
+
+    /* PREMIUM TPMS REFINEMENT - SCALED HORIZONTAL */
+    .truck-tpms-v2 {
+        position: relative;
+        background: #f8f9fa;
+        border-radius: 40px;
+        padding-left: 300px;
+        padding-right: 80px;
+        padding-top: 100px;
+        padding-bottom: 120px;
+        border: 2px solid #e9ecef;
+        box-shadow: inset 0 0 30px rgba(0,0,0,0.03);
+        margin-top: 40px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        min-height: 600px;
+        overflow-x: auto;
+    }
+
+    .truck-cab-visual {
+        position: absolute;
+        left: 25px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 160px;
+        height: 240px;
+        background: #343a40;
+        border-radius: 25px 15px 15px 25px;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 15px 0 30px rgba(0,0,0,0.25);
+    }
+    
+    .cab-nose {
+        position: absolute;
+        right: -12px;
+        width: 24px;
+        height: 150px;
+        background: #212529;
+        border-radius: 0 12px 12px 0;
+    }
+
+    .chassis-beam {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 54px;
+        background: linear-gradient(to bottom, #212529 0%, #495057 50%, #212529 100%);
+        z-index: 1;
+        opacity: 0.95;
+    }
+
+    .axle-row-container {
+        position: relative;
+        z-index: 2;
+        margin-right: 180px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        height: 100%;
+    }
+
+    .axle-line-refined {
+        position: relative;
+        width: 18px;
+        height: 480px;
+        background: #343a40;
+        border-radius: 9px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 6px 0 12px rgba(0,0,0,0.15);
+    }
+
+    .axle-label-badge {
+        position: absolute;
+        bottom: -45px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #343a40;
+        color: white;
+        padding: 6px 16px;
+        border-radius: 14px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        white-space: nowrap;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+    }
+
+    .side-marker-label {
+        position: absolute;
+        left: 240px;
+        font-size: 1.1rem;
+        font-weight: 900;
+        color: #adb5bd;
+        letter-spacing: 8px;
+        text-transform: uppercase;
+        z-index: 0;
+        opacity: 0.3;
+    }
+    .side-marker-left { top: 40px; }
+    .side-marker-right { bottom: 40px; }
+
+    .tpms-tire-card {
+        position: absolute;
+        width: 160px;
+        height: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1e21;
+        border: 2px solid #3d444b;
+        border-radius: 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        cursor: pointer;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+        padding: 12px;
+        text-align: center;
+    }
+
+    .tpms-tire-card:hover {
+        transform: translateX(-50%) scale(1.1);
+        z-index: 10;
+        border-color: #ff9f43;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.6);
+        background: #212529;
+    }
+
+    .tire-serial-badge {
+        font-size: 0.85rem;
+        font-weight: 900;
+        color: #ff9f43;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+        background: rgba(255,159,67,0.15);
+        padding: 4px 12px;
+        border-radius: 6px;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .tire-brand-name {
+        font-size: 1.15rem;
+        font-weight: 1000;
+        text-transform: uppercase;
+        color: #f8f9fa;
+        line-height: 1;
+        margin-top: 4px;
+        letter-spacing: 1px;
+    }
+
+    .tire-status-dot {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #28a745;
+        box-shadow: 0 0 12px #28a745;
+    }
+
+    /* Directional Alignment (Relative to Vertical Axle) - NO OVERLAP */
+    .p-outer-left { top: 0px; }
+    .p-inner-left { top: 130px; }
+    .p-inner-right { bottom: 130px; }
+    .p-outer-right { bottom: 0px; }
+
+    .status-warning .tire-status-dot { background: #ffc107; box-shadow: 0 0 12px #ffc107; }
+    .status-empty { background: rgba(0,0,0,0.05); border: 2px dashed #dee2e6; color: #adb5bd; box-shadow: none; opacity: 0.4; }
+    .status-empty .tire-serial-badge, .status-empty .tire-brand-name, .status-empty .tire-status-dot { display: none; }
 </style>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
     <MudText Typo="Typo.h5" Class="mb-4 fw-bold">Truck Overview</MudText>
@@ -564,22 +801,96 @@
                         </MudPaper>
                     </MudItem>
 
-                    <MudItem xs="12" md="6">
-                        <MudPaper Elevation="2" Class="pa-6 h-100" Style="border-radius: 20px;">
-                             <MudText Typo="Typo.h6" Class="mb-6 fw-bold">Tire Matrix (TPMS)</MudText>
-                             <MudGrid Spacing="2">
-                                 @for(int i=1; i<= (SelectedTruck.wheels ?? 6); i++)
-                                 {
-                                     int psi = new Random(SelectedTruck.RegNo.GetHashCode() + i).Next(95, 110);
-                                     <MudItem xs="4" sm="3">
-                                         <div class="d-flex flex-column align-center pa-3 rounded-lg" style="background: rgba(var(--mud-palette-primary-rgb), 0.03); border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.08);">
-                                             <MudIcon Icon="@Icons.Material.Filled.TireRepair" Color="@(psi < 100 ? Color.Warning : Color.Success)" Class="mb-1" />
-                                             <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700;">Tire @i</MudText>
-                                             <MudText Typo="Typo.body2" Class="fw-bold">@psi PSI</MudText>
+                    <MudItem xs="12">
+                        <MudPaper Elevation="2" Class="pa-8 h-100" Style="border-radius: 24px;">
+                             <div class="d-flex justify-space-between align-center mb-10">
+                                 <div>
+                                     <MudText Typo="Typo.h5" Class="fw-bold">Tire Matrix (TPMS)</MudText>
+                                     <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700;">Live Mounting Layout & Live Diagnostics</MudText>
+                                 </div>
+                                 <div class="d-flex gap-4">
+                                     <div class="d-flex align-center gap-2">
+                                         <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--mud-palette-success);"></div>
+                                         <MudText Typo="Typo.caption" Class="fw-bold">Optimal</MudText>
+                                     </div>
+                                     <div class="d-flex align-center gap-2">
+                                         <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--mud-palette-warning);"></div>
+                                         <MudText Typo="Typo.caption" Class="fw-bold">Check Pressure</MudText>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             @if (!_parsedAxles.Any())
+                             {
+                                 <div class="pa-12 text-center rounded-xl" style="background: rgba(0,0,0,0.02); border: 2px dashed rgba(0,0,0,0.1);">
+                                     <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Color="Color.Default" Class="mb-2" />
+                                     <MudText Color="Color.Secondary">No tyre position layout defined for this truck type.</MudText>
+                                 </div>
+                             }
+                             else
+                             {
+                                 <div class="truck-tpms-v2 mx-auto" style="overflow-x: auto;">
+                                     @* Side Markers *@
+                                     <div class="side-marker-label side-marker-left">LEFT SIDE</div>
+                                     <div class="side-marker-label side-marker-right">RIGHT SIDE</div>
+
+                                     @* Truck Front Hook *@
+                                     <div class="truck-cab-visual">
+                                         <div class="cab-nose"></div>
+                                         <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Surface" Size="Size.Large" />
+                                         <MudText Typo="Typo.overline" Style="color: rgba(255,255,255,0.7); font-weight: 900; margin-top: 8px;">FRONT</MudText>
+                                     </div>
+
+                                     @* Chassis Spine (Horizontal) *@
+                                     <div class="chassis-beam"></div>
+
+                                     @foreach (var axle in _parsedAxles)
+                                     {
+                                         <div class="axle-row-container">
+                                             <div class="axle-label-badge">@axle.AxleName</div>
+                                             
+                                             <div class="axle-line-refined">
+                                                 @foreach (var pos in axle.Positions)
+                                                 {
+                                                     var col = GetColumnOrder(pos.Description);
+                                                     var mounted = _mountedTyres.FirstOrDefault(t => t.PositionID == pos.PositionID);
+                                                     var sideClass = col switch { 
+                                                         1 => "p-outer-left", 
+                                                         2 => "p-inner-left", 
+                                                         3 => "p-inner-right", 
+                                                         4 => "p-outer-right", 
+                                                         _ => "" 
+                                                     };
+
+                                                     var rnd = new Random(SelectedTruck.RegNo.GetHashCode() + (axle.Order * 10) + col);
+                                                     int psi = rnd.Next(98, 115);
+                                                     var isWarning = psi < 105;
+                                                     var brand = GetMockBrand(rnd);
+
+                                                     <MudTooltip Text="@($"{pos.Description} {(mounted != null ? $" - {mounted.TyreNo} ({brand})" : " (Unmounted)")}")">
+                                                         <div class="tpms-tire-card @sideClass @(mounted == null ? "status-empty" : (isWarning ? "status-warning" : ""))">
+                                                             @if (mounted != null)
+                                                             {
+                                                                 <div class="tire-status-dot"></div>
+                                                                 <div class="tire-serial-badge">@mounted.TyreNo</div>
+                                                                 <div class="tire-brand-name">@brand</div>
+                                                                 
+                                                                 @* Hidden psi context for tooltip/hover effect feel *@
+                                                                 <div style="font-size: 0.55rem; color: #6c757d; margin-top: 6px; font-weight: 700;">@psi PSI</div>
+                                                             }
+                                                             else
+                                                             {
+                                                                 <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                                                                 <div style="font-size: 0.5rem; text-transform: uppercase; margin-top: 4px;">Empty</div>
+                                                             }
+                                                         </div>
+                                                     </MudTooltip>
+                                                 }
+                                             </div>
                                          </div>
-                                     </MudItem>
-                                 }
-                             </MudGrid>
+                                     }
+                                 </div>
+                             }
                         </MudPaper>
                     </MudItem>
                 </MudGrid>
@@ -797,6 +1108,16 @@
     private int _mockUtilization;
     private int _mockTrips30Days;
     private int _mockIdleDays;
+    private List<TyreMountedModel> _mountedTyres = new();
+    private List<TyrePositionModel> _tyrePositions = new();
+    private List<AxleData> _parsedAxles = new();
+
+    private class AxleData
+    {
+        public string AxleName { get; set; }
+        public int Order { get; set; }
+        public List<TyrePositionModel> Positions { get; set; } = new();
+    }
     private decimal _mockRevenue;
     private decimal _mockCost;
     private decimal _mockDepreciation;
@@ -988,6 +1309,16 @@
                 // Initialize Mock values for specific truck
                 InitializeMockDataFor(detailedTruck);
 
+                // Fetch real tyre data
+                _mountedTyres = (await Task.Run(() => TyreService.SelectMountedTyresByID(truckId))).ToList();
+                var positions = (await Task.Run(() => TyreService.GetTyrePositionListUsingTruckTypeId(detailedTruck.TruckTypeID))).ToList();
+                _tyrePositions = positions;
+
+                if (_tyrePositions.Any())
+                {
+                    ProcessTyreLayout();
+                }
+
                 _selectedTruck = detailedTruck; // Update without triggering the setter
             }
             else
@@ -1009,5 +1340,93 @@
     private void ClearSelection()
     {
         _selectedTruck = null;
+    }
+
+    private void ProcessTyreLayout()
+    {
+        _parsedAxles.Clear();
+        if (!_tyrePositions.Any()) return;
+
+        var axleGroups = _tyrePositions.GroupBy(p => GetAxleName(p.Description));
+
+        foreach (var group in axleGroups)
+        {
+            var axle = new AxleData
+            {
+                AxleName = group.Key,
+                Order = GetAxleOrder(group.Key),
+                Positions = group.OrderBy(p => GetColumnOrder(p.Description)).ToList()
+            };
+            _parsedAxles.Add(axle);
+        }
+
+        _parsedAxles = _parsedAxles.OrderBy(a => a.Order).ToList();
+    }
+
+    private string GetAxleName(string desc)
+    {
+        if (string.IsNullOrEmpty(desc)) return "Other Position";
+        
+        // Match standard axle patterns: "Front Axle", "1st Drive-Axle", "3rd Trailer-Axle"
+        var lowercase = desc.ToLower();
+        if (lowercase.Contains("front")) return "Front Axle";
+        
+        // Use regex or splitting to find groups like "1st Drive-Axle"
+        var parts = desc.Split(' ');
+        if (parts.Length > 1)
+        {
+            // Join parts until we hit a directional keyword
+            var axleParts = new List<string>();
+            foreach(var part in parts)
+            {
+                var p = part.ToLower();
+                if (p == "left" || p == "right" || p == "inner" || p == "outer") break;
+                axleParts.Add(part);
+            }
+            return string.Join(" ", axleParts);
+        }
+        
+        return desc;
+    }
+
+    private int GetAxleOrder(string name)
+    {
+        var n = name.ToLower();
+        if (n.Contains("front")) return 10;
+        if (n.Contains("steer")) return 11;
+        
+        if (n.Contains("drive"))
+        {
+            if (n.Contains("1st")) return 20;
+            if (n.Contains("2nd")) return 21;
+            return 25;
+        }
+        
+        if (n.Contains("trailer"))
+        {
+            if (n.Contains("1st")) return 30;
+            if (n.Contains("2nd")) return 31;
+            if (n.Contains("3rd")) return 32;
+            if (n.Contains("4th")) return 33;
+            return 39;
+        }
+        
+        return 100;
+    }
+
+    private int GetColumnOrder(string desc)
+    {
+        var d = desc.ToLower();
+        if (d.Contains("outer left")) return 1;
+        if (d.Contains("inner left") || (d.Contains("left") && !d.Contains("outer") && !d.Contains("inner"))) return 2;
+        if (d.Contains("inner right") || (d.Contains("right") && !d.Contains("outer") && !d.Contains("inner"))) return 3;
+        if (d.Contains("outer right")) return 4;
+        return 2; // Default to inner
+    }
+
+    private string GetMockBrand(Random rnd)
+    {
+        string[] brands = { "MRF", "Apollo", "CEAT", "Bridgestone", "Michelin", "JK Tyre" };
+        return brands[rnd.Next(brands.Length)];
     }
 }
