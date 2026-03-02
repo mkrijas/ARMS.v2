@@ -532,7 +532,15 @@ namespace ArmsServices.DataServices
                 PositionName = dr.GetString("Description"),
                 MountedOn = dr.GetDateTime("MountedOn"),
                 MountedKM = dr.GetInt32("MountedKM"),
-                UnmountedKM = dr.GetInt32("MountedKM") + dr.GetInt32("RunKM"),
+                UnmountedKM = dr.GetInt32("MountedKM") + dr.GetInt32("RunKM"),                
+                Tyre = new TyreModel()
+                {                    
+                    TyreSize = dr.GetString("TyreSize"),
+                    TyreType = dr.GetString("TyreType"),
+                    TyreStatus = dr.GetInt32("TyreStatus"),
+                    Make = dr.GetString("Make"),
+                    TotalExpectedLife = dr.GetInt32("TotalExpectedLife"),
+                },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
