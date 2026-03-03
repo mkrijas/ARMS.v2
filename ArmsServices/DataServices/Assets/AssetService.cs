@@ -74,6 +74,7 @@ namespace ArmsServices.DataServices
                 DepreciationEndingDate = dr.GetDateTime("DepreciationEndingDate"),
                 DepreciationStartingDate = dr.GetDateTime("DepreciationStartingDate"),
                 DepreciationMethod = dr.GetString("DepreciationMethod"),
+                CumulatedDepreciation = dr.GetDecimal("acDepreciation"),
                 Description = dr.GetString("Description"),
                 CurrentValue = dr.GetDecimal("CurrentValue"),
                 GstRateID = dr.GetInt32("GstRateID"),

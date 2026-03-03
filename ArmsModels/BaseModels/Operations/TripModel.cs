@@ -56,11 +56,15 @@ namespace ArmsModels.BaseModels
     {
         public long? TripID { get; set; }
         public string TripNumber { get; set; }
+        public DateTime? TripDate { get; set; }
         public string Truck { get; set; }
         public string Driver { get; set; }
         public decimal? Mileage { get; set; }
+        public string Origin { get; set; }
+        public string Destination { get; set; }
+        public int? Distance { get; set; }
         public int? RunKM { get; set; }
-        public string RunDuration { get; set; }
+        public int? RunDuration { get; set; }
         public decimal? Fuel { get; set; }
         public decimal? Freight { get; set; }
         public decimal? Expenses { get; set; }

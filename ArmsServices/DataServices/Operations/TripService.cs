@@ -279,7 +279,7 @@ namespace ArmsServices.DataServices
                     Driver = reader.GetString("Driver"),
                     Fuel = reader.GetDecimal("Fuel"),
                     RunKM = reader.GetInt32("RunKm"),
-                    RunDuration = reader.GetString("TimeDifference"),
+                    RunDuration = reader.GetInt32("TimeDifference"),
                     TripID = reader.GetInt64("TripID"),
                     TripNumber = reader.GetString("TripNumber"),
                     Truck = reader.GetString("Truck"),
@@ -331,5 +331,40 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
+        public IEnumerable<TripInfoModel> GetTripsByTruckID(int? TruckID, DateTime? FromDate, DateTime? ToDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@FromDate", FromDate),
+               new SqlParameter("@ToDate", ToDate),
+               new SqlParameter("@Operation", "GetTripInfo"),
+            };
+            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
+            {
+                yield return new TripInfoModel()
+                {
+                    Destination = dr.GetString("Destination"),
+                    Origin = dr.GetString("Origin"),
+                    TripID = dr.GetInt64("TripID"),
+                    TripNumber = dr.GetString("TripNumber"),
+                    TripDate = dr.GetDateTime("TripDate"),
+                    Distance = dr.GetInt32("Distance"),
+                    Driver = dr.GetString("Driver"),
+                    Expenses = dr.GetDecimal("Expenses"),
+                    Freight = dr.GetDecimal("Freight"),
+                    Gcs = dr.GetString("Gcs"),
+                    Fuel = dr.GetDecimal("Fuel"),
+                    IsMileageOverride = dr.GetBoolean("OverrideMileageShortage"),
+                    Mileage = dr.GetDecimal("Mileage"),
+                    RunDuration = dr.GetInt32("TimeDifference"),
+                    RunKM = dr.GetInt32("RunKm"),
+                    SettledKm = dr.GetDecimal("SettledKm"),
+                    Truck = dr.GetString("Truck"),
+                };
+            }
+        }
+
     }
 }
