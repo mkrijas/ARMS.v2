@@ -111,6 +111,7 @@ namespace ArmsModels.BaseModels
         {
             get { return UnmountedKM - MountedKM; }
         }
+        public virtual TyreModel Tyre { get; set; } = new();
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
