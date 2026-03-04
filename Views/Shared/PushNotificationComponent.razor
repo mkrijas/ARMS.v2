@@ -48,28 +48,37 @@
         }
     }
 
-    .notification-popover-anim {
-        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    .anim-slide-out {
+        animation: notif-slide-out 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
         transform-origin: top right !important;
-        transform: scale(0.65) !important;
-        opacity: 0 !important;
         pointer-events: none;
     }
 
-    .mud-popover-open.notification-popover-anim {
-        transform: scale(1) !important;
-        opacity: 1 !important;
+    .anim-slide-in {
+        animation: notif-slide-in 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        transform-origin: top right !important;
         pointer-events: auto;
+    }
+
+    @@keyframes notif-slide-in {
+        0% { transform: translateX(200px); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+    }
+
+    @@keyframes notif-slide-out {
+        0% { transform: translateX(0); opacity: 1; }
+        100% { transform: translateX(200px); opacity: 0; }
     }
 </style>
 
-<MudOverlay Visible="@IsOpen" DarkBackground="true" AutoClose="true" OnClick="OverlayVisibleChanged" ZIndex="1300" />
+<MudOverlay Visible="@IsOpen" DarkBackground="true" AutoClose="false" OnClick="CloseNotificationPopoverAsync" />
 
 <MudPopover Open="@IsOpen" 
             AnchorOrigin="Origin.BottomRight"
             TransformOrigin="Origin.TopRight"
             Fixed="true" 
-            Class="notification-popover notification-popover-anim" >
+            Duration="0"
+            Class="@($"notification-popover {(_isClosing ? "anim-slide-out" : "anim-slide-in")}")" >
 
     <!-- Header -->
     <div class="d-flex justify-space-between align-center px-4 py-3" style="background: #fff; border-bottom: 1px solid #f0f0f0;">
@@ -77,14 +86,14 @@
             <MudText Typo="Typo.subtitle1" Style="font-weight: 700; color: #333;">Notifications</MudText>
             @if (currentNotificationMessages.Count > 0)
             {
-                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" Class="ml-2">@currentNotificationMessages.Count New</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" Class="ml-2">@notiCount New</MudChip>
             }
         </div>
-        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => IsOpen = false)" Color="Color.Default" />
+        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => CloseNotificationPopoverAsync())" Color="Color.Default" />
     </div>
 
     <!-- Notification List -->
-    <div style="max-height: 450px; overflow-y: auto; background-color: #fafafa;">
+    <div style="max-height: calc(100vh - 150px); overflow-y: auto; background-color: #fafafa;">
         @if (currentNotificationMessages.Any())
         {
             <MudList T="string" Clickable="false" DisablePadding="true">
@@ -177,6 +186,7 @@
     string UserID;
     int BranchID = 0;
     bool IsOpen;
+    private bool _isClosing = true;
     private DateTime lastToggleTime = DateTime.MinValue;
 
     void Toggle()
@@ -190,21 +200,32 @@
         lastToggleTime = now;
 
         // ONLY toggle the popover - never open the drawer from here
-        IsOpen = !IsOpen;
-
-        // Ensure drawer is closed when toggling popover
-        if (IsOpen && isAllNotificationsDrawerOpen)
-        {
-            isAllNotificationsDrawerOpen = false;
+        if (IsOpen) {
+            _ = CloseNotificationPopoverAsync();
+        } else {
+            IsOpen = true;
+            _isClosing = false;
+            if (isAllNotificationsDrawerOpen) isAllNotificationsDrawerOpen = false;
+            Take = 5;
+            StateHasChanged();
         }
+    }
 
-        Take = 5; // Reset Take when popover is toggled
+    private async Task CloseNotificationPopoverAsync()
+    {
+        if (!IsOpen || _isClosing) return;
+        
+        _isClosing = true;
+        StateHasChanged();
+        await Task.Delay(200); // Matches animation time
+        IsOpen = false;        
+        StateHasChanged();
     }
 
     void OverlayVisibleChanged()
     {
         if (IsOpen)
-            IsOpen = false;
+            _ = CloseNotificationPopoverAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -223,8 +244,6 @@
             UserID = user.Identity.Name;
             getNotifications();
         }
-
-
     }
 
     protected override async Task OnInitializedAsync()
@@ -248,15 +267,10 @@
                 await InvokeAsync(() => StateHasChanged());
             });
             await hubConnection.StartAsync();
-
-
         }
-
-
-
     }
 
-    private int notiCount;
+    private int notiCount{get;set;} = 0;
     private void getNotifications()
     {
         if (BranchID != 0)
@@ -265,16 +279,12 @@
             var noti = IpushNotificationService.SelectActiveNotifications(BranchID, UserID);
             currentNotificationMessages =  noti.notifications;
 
-            notiCount = noti.NotificationsCount;
-            if (noti.NotificationsCount > 0)
-            {
+            notiCount = noti.NotificationsCount;            
                 // <span class="absolute d-flex align-center justify-center rounded-pill"
                 //       style="top: 2px; right: 0px; background-color: #ff3d00; color: white; font-size: 0.65rem; font-weight: 700; min-width: 20px; padding: 0 6px; height: 18px; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite;">
                 //     @(
-                badgeContent = notiCount > 99 ? "99+" : notiCount.ToString();
-
-                // </span>
-            }
+                badgeContent = notiCount > 99 ? "99+" : notiCount.ToString();                // </span>
+            
         }
     }
 
@@ -296,7 +306,7 @@
 
             // Clear all notifications after acknowledgment
             currentNotificationMessages.Clear();
-            IsOpen = false; // Close popover if all notifications are acknowledged
+            _ = CloseNotificationPopoverAsync(); // Close popover if all notifications are acknowledged
 
             await InvokeAsync(StateHasChanged);
         }
@@ -325,7 +335,7 @@
                 // If no messages left, close the popover
                 if (!currentNotificationMessages.Any())
                 {
-                    IsOpen = false;
+                    _ = CloseNotificationPopoverAsync();
                 }
 
                 await InvokeAsync(StateHasChanged); // Force UI refresh
@@ -360,7 +370,7 @@
         }
         
         // Close the popover first
-        IsOpen = false;
+        _ = CloseNotificationPopoverAsync();
 
         var noti = IpushNotificationService.SelectActiveNotifications(BranchID, UserID,notiCount);
         currentNotificationMessages = noti.notifications;        // Open the drawer

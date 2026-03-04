@@ -22,8 +22,8 @@
                         AnchorOrigin="Origin.BottomCenter" 
                         TransformOrigin="Origin.TopCenter" 
                         Relative="false"
-                        MaxHeight="500"
-                        Class="pa-4 mt-2 rounded-xl popup-shadow branch-popover-anim" 
+                        Duration="0"
+                        Class="@($"pa-4 mt-2 rounded-xl popup-shadow {(_isClosingBranch ? "anim-slide-out-branch" : "anim-slide-in-branch")}")" 
                         Style="width: 350px; z-index: 100;">
                 
                 <MudText Typo="Typo.h6" Class="mb-3 d-flex align-center" Color="Color.Primary">
@@ -68,10 +68,9 @@
             </MudPopover>
 
             <MudOverlay Visible="@_isBranchPopoverOpen" 
-                        OnClick="ClosePopover" 
+                        OnClick="ClosePopoverAsync" 
                         AutoClose="false" 
-                        DarkBackground="true" 
-                        ZIndex="99" />
+                        DarkBackground="true" />
 
             <!-- Admin Button (Only for Admins) -->
             <AuthorizeView Policy="Admin" Context="adminContext">
@@ -106,7 +105,7 @@
         background-color: var(--mud-palette-surface);
     }
     .branch-list {
-        max-height: 300px;
+        max-height: calc(100vh - 240px);
         overflow-y: auto;
     }
     .custom-scrollbar::-webkit-scrollbar {
@@ -123,18 +122,26 @@
         background-color: var(--mud-palette-action-default-hover);
     }
     
-    .branch-popover-anim {
-        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    .anim-slide-out-branch {
+        animation: branch-slide-out 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
         transform-origin: top center !important;
-        transform: scale(0.65) !important;
-        opacity: 0 !important;
         pointer-events: none;
     }
 
-    .mud-popover-open.branch-popover-anim {
-        transform: scale(1) !important;
-        opacity: 1 !important;
+    .anim-slide-in-branch {
+        animation: branch-slide-in 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        transform-origin: top center !important;
         pointer-events: auto;
+    }
+
+    @@keyframes branch-slide-in {
+        0% { transform: translateX(200px); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+    }
+
+    @@keyframes branch-slide-out {
+        0% { transform: translateX(0); opacity: 1; }
+        100% { transform: translateX(200px); opacity: 0; }
     }
 </style>
 
@@ -146,11 +153,13 @@
     private string _searchText = "";
     private string _currentUserId = "";
 
+    private bool _isClosingBranch = true;
+
     private async Task ToggleBranchPopover(string userId)
     {
         if (_isBranchPopoverOpen)
         {
-            if (_canClosePopover) _isBranchPopoverOpen = false;
+            if (_canClosePopover) _ = ClosePopoverAsync();
             return;
         }
 
@@ -160,6 +169,7 @@
         _canClosePopover = user.Claims.Any(x => x.Type == "BranchID");
 
         _isBranchPopoverOpen = true;
+        _isClosingBranch = false;
         
         // Fetch branches synchronously as in ChooseBranch.razor
         _branches = _user.GetBranchesNRoles(_currentUserId).ToList();
@@ -172,11 +182,15 @@
         }
     }
 
-    private void ClosePopover()
+    private async Task ClosePopoverAsync()
     {
-        if (_canClosePopover)
+        if (_canClosePopover && !_isClosingBranch)
         {
-            _isBranchPopoverOpen = false;
+            _isClosingBranch = true;
+            StateHasChanged();
+            await Task.Delay(200);
+            _isBranchPopoverOpen = false;           
+            StateHasChanged();
         }
     }
 
@@ -210,7 +224,7 @@
                 uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
             }
             
-            _isBranchPopoverOpen = false;
+            _ = ClosePopoverAsync();
         }
     }
 
