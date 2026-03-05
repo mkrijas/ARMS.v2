@@ -27,6 +27,7 @@ namespace ArmsModels.BaseModels
         [RequiredIfTrue(nameof(deferredExpenditure))]
         public DateTime? EndDate { get; set; }
         public int? GRNID { get; set; }
+        public virtual string GRNRef { get; set; }
         [Required]
         public PartyModel PartyInfo { get; set; }
         [Required]

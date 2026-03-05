@@ -293,6 +293,7 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 GRNID = dr.GetInt32("GRNID"),
+                GRNRef = dr.GetString("GrnNo"),
                 InvoiceDate = dr.GetDateTime("InvoiceDate"),
                 IsCredit = dr.GetBoolean("IsCredit"),
                 InvoiceNo = dr.GetString("InvoiceNo"),
