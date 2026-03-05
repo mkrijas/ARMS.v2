@@ -739,34 +739,168 @@
                             </div>
                         </div>
 
-                        @* Journey Visual Flow *@
-                        <div class="journey-flow-container pa-6 mb-8 rounded-xl" style="background: rgba(var(--mud-palette-surface-rgb), 0.5); border: 1px solid rgba(0,0,0,0.05);">
-                            <MudGrid AlignItems="Center">
-                                <MudItem xs="4" Class="text-center">
-                                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-                                    <MudText Typo="Typo.h6" Class="fw-bold">@SelectedTruck.CurrentEvent.OriginName</MudText>
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@(_currentEventType.IsStationary?"Standing":"Departure Point")</MudText>
-                                </MudItem>
-                                
-                                @if (!_currentEventType.IsStationary)
-                                {
-                                <MudItem xs="4" Class="d-flex flex-column align-center">
-                                    <div style="width: 100%; height: 2px; background: linear-gradient(90deg, var(--mud-palette-primary) 0%, var(--mud-palette-warning) 50%, var(--mud-palette-success) 100%); position: relative; margin-bottom: 24px;">
-                                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--mud-palette-warning); padding: 6px; border-radius: 50%; box-shadow: 0 0 10px var(--mud-palette-warning);">
-                                            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Surface" Size="Size.Small" />
-                                        </div>
-                                    </div>
-                                    <MudText Typo="Typo.body2" Class="fw-bold" Color="Color.Warning">@_currentEventType.EventStatusText</MudText>
-                                    <MudText Typo="Typo.caption">since : @SelectedTruck.CurrentEvent.EventTime?.ToString("MMM dd, HH:mm")</MudText>
-                                </MudItem>
+                        @* Journey Visual Flow - Dynamic State Graphics *@
+                        <div class="journey-flow-container pa-6 mb-8 rounded-xl" style="background: rgba(var(--mud-palette-surface-rgb), 0.5); border: 1px solid rgba(0,0,0,0.05); position: relative; overflow: hidden;">
+                            <style>
+                                @@keyframes spin-slow { 100% { transform: rotate(360deg); } }
+                                @@keyframes spin-slow-reverse { 100% { transform: rotate(-360deg); } }
+                            </style>
+                            
+                            @{
+                                int eventTypeID = _currentEventType?.EventTypeID??0;
+                                bool isLoading = eventTypeID == 2 || eventTypeID == 12;
+                                bool isUnload = eventTypeID == 4;
+                                bool isWorkOrder = eventTypeID == 7 || eventTypeID == 8;
+                                bool isIdle = eventTypeID == 6 || eventTypeID == 9 || eventTypeID == 11;
+                                bool nonOperational = eventTypeID == 13;
+                                bool isInTransit = !_currentEventType.IsStationary;
 
-                                <MudItem xs="4" Class="text-center">
-                                    <MudIcon Icon="@Icons.Material.Filled.Flag" Color="Color.Success" Size="Size.Large" Class="mb-2" />
-                                    <MudText Typo="Typo.h6" Class="fw-bold">@SelectedTruck.CurrentEvent.DestinationName</MudText>
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Delivery Point</MudText>
-                                </MudItem>
+                            }
+
+                            @if (isInTransit)
+                            {
+                                <MudGrid AlignItems="Center">
+                                    <MudItem xs="4" Class="text-center">
+                                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+                                        <MudText Typo="Typo.h6" Class="fw-bold">@SelectedTruck.CurrentEvent.OriginName</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Departure Point</MudText>
+                                    </MudItem>
+                                    
+                                    <MudItem xs="4" Class="d-flex flex-column align-center">
+                                        <div style="width: 100%; height: 2px; background: linear-gradient(90deg, var(--mud-palette-primary) 0%, var(--mud-palette-warning) 50%, var(--mud-palette-success) 100%); position: relative; margin-bottom: 24px;">
+                                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--mud-palette-warning); padding: 6px; border-radius: 50%; box-shadow: 0 0 10px var(--mud-palette-warning);">
+                                                <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Surface" Size="Size.Small" />
+                                            </div>
+                                        </div>
+                                        <MudText Typo="Typo.body2" Class="fw-bold" Color="Color.Warning">@_currentEventType.EventStatusText</MudText>
+                                        <MudText Typo="Typo.caption">since : @SelectedTruck.CurrentEvent.EventTime?.ToString("MMM dd, HH:mm")</MudText>
+                                    </MudItem>
+
+                                    <MudItem xs="4" Class="text-center">
+                                        <MudIcon Icon="@Icons.Material.Filled.Flag" Color="Color.Success" Size="Size.Large" Class="mb-2" />
+                                        <MudText Typo="Typo.h6" Class="fw-bold">@SelectedTruck.CurrentEvent.DestinationName</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Delivery Point</MudText>
+                                    </MudItem>
+                                </MudGrid>
+                            }
+                            else if (isLoading)
+                            {
+                                <MudGrid AlignItems="Center" Justify="Justify.Center">
+                                    <MudItem xs="12" Class="d-flex flex-column align-center text-center">
+                                        <div style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                            <div style="position: absolute; inset: 0; border: 4px dashed var(--mud-palette-info); border-radius: 50%; animation: spin-slow 15s linear infinite; opacity: 0.3;"></div>
+                                            <div style="background: rgba(var(--mud-palette-info-rgb), 0.1); padding: 24px; border-radius: 50%; box-shadow: 0 10px 30px rgba(var(--mud-palette-info-rgb), 0.2);">
+                                                 <MudIcon Icon="@Icons.Material.Filled.Unarchive" Color="Color.Info" Style="font-size: 3rem;" />
+                                            </div>
+                                        </div>
+                                        <MudText Typo="Typo.h5" Class="fw-bold text-info">Loading at @SelectedTruck.CurrentEvent.OriginName</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">Cargo bulk is currently being loaded securely onto the vehicle.</MudText>
+                                        <MudText Typo="Typo.caption" Class="mt-2 fw-bold">Started: @SelectedTruck.CurrentEvent.EventTime?.ToString("MMM dd, HH:mm")</MudText>
+                                    </MudItem>
+                                </MudGrid>
+                            }
+                            else if (isUnload)
+                            {
+                                <MudGrid AlignItems="Center" Justify="Justify.Center">
+                                    <MudItem xs="12" Class="d-flex flex-column align-center text-center">
+                                        <div style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                            <div style="position: absolute; inset: 0; border: 4px dashed var(--mud-palette-info); border-radius: 50%; animation: spin-slow 15s linear infinite; opacity: 0.3;"></div>
+                                            <div style="background: rgba(var(--mud-palette-info-rgb), 0.1); padding: 24px; border-radius: 50%; box-shadow: 0 10px 30px rgba(var(--mud-palette-info-rgb), 0.2);">
+                                                <MudIcon Icon="@Icons.Material.Filled.Archive" Color="Color.Info" Style="font-size: 3rem;" />
+                                            </div>
+                                        </div>
+                                        <MudText Typo="Typo.h5" Class="fw-bold text-success">Unloading at @SelectedTruck.CurrentEvent.OriginName</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">Freight is being unloaded and safely checked into the terminal.</MudText>
+                                        <MudText Typo="Typo.caption" Class="mt-2 fw-bold">Started: @SelectedTruck.CurrentEvent.EventTime?.ToString("MMM dd, HH:mm")</MudText>
+                                    </MudItem>
+                                </MudGrid>
+                            }
+                            else if (isWorkOrder)
+                            {
+                                <MudGrid AlignItems="Center" Justify="Justify.Center">
+                                    <MudItem xs="12" Class="d-flex flex-column align-center text-center">
+                                        <div style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                            <div style="position: absolute; inset: 0; border: 4px solid var(--mud-palette-error); border-radius: 20%; transform: rotate(45deg); opacity: 0.15; animation: spin-slow 20s linear infinite;"></div>
+                                            <div style="background: rgba(var(--mud-palette-error-rgb), 0.1); padding: 24px; border-radius: 20%; transform: rotate(45deg); box-shadow: 0 10px 30px rgba(var(--mud-palette-error-rgb), 0.2);">
+                                                 <MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Error" Style="font-size: 3rem; transform: rotate(-45deg);" />
+                                            </div>
+                                        </div>
+                                        <MudText Typo="Typo.h5" Class="fw-bold text-error">Active Work Order / Maintenance</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">Vehicle is undergoing mechanical inspection or garage maintenance.</MudText>
+                                        <MudText Typo="Typo.caption" Class="mt-2 fw-bold">Started: @SelectedTruck.CurrentEvent.EventTime?.ToString("MMM dd, HH:mm")</MudText>
+                                    </MudItem>
+                                </MudGrid>
+                            }
+                            else if (isIdle)
+                            {
+                                <MudGrid AlignItems="Center" Justify="Justify.Center">
+                                    <MudItem xs="12" Class="d-flex flex-column align-center text-center">
+                                        <div style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                            <div style="position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, transparent 40%, rgba(var(--mud-palette-secondary-rgb), 0.15) 100%);"></div>
+                                            <div style="background: rgba(var(--mud-palette-secondary-rgb), 0.1); padding: 24px; border-radius: 50%;">
+                                                 <MudIcon Icon="@Icons.Material.Filled.DoNotDisturb" Color="Color.Secondary" Style="font-size: 3rem;" />
+                                            </div>
+                                        </div>
+                                        <MudText Typo="Typo.h5" Class="fw-bold" Color="Color.Secondary">Vehicle is Idle / Waiting</MudText>
+                                         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">Currently stationed and parked securely at @SelectedTruck.CurrentEvent.OriginName.</MudText>
+                                        <MudText Typo="Typo.caption" Class="mt-2 fw-bold">Since: @SelectedTruck.CurrentEvent.EventTime?.ToString("MMM dd, HH:mm")</MudText>
+                                    </MudItem>
+                                </MudGrid>
+                            }
+                            else
+                            {
+                             @*    string dIcon = Icons.Material.Filled.LocationCity;
+                                Color dColor = Color.Primary;
+                                string dDesc = $"Current Location: {SelectedTruck.CurrentEvent.OriginName}";
+                                string colorVar = "primary"; *@
+                                
+                              @*   if (evtrName.Contains("park") || evtrName.Contains("halt") || evtrName.Contains("stop") || evtrName.Contains("rest"))
+                                {
+                                    dIcon = Icons.Material.Filled.LocalParking;
+                                    colorVar = "secondary";
+                                    dColor = Color.Secondary;
+                                    dDesc = $"Vehicle is parked at {SelectedTruck.CurrentEvent.OriginName}.";
                                 }
-                            </MudGrid>
+                                else if (evtrName.Contains("branch") || evtrName.Contains("hub") || evtrName.Contains("terminal") || evtrName.Contains("warehouse"))
+                                {
+                                    dIcon = Icons.Material.Filled.Warehouse;
+                                    colorVar = "info";
+                                    dColor = Color.Info;
+                                    dDesc = $"Vehicle is stationed at branch: {SelectedTruck.CurrentEvent.OriginName}.";
+                                }
+                                else if (evtrName.Contains("customer") || evtrName.Contains("party") || evtrName.Contains("client") || evtrName.Contains("dealer"))
+                                {
+                                    dIcon = Icons.Material.Filled.Storefront;
+                                    colorVar = "tertiary";
+                                    dColor = Color.Tertiary;
+                                    dDesc = $"Vehicle is at a customer/vendor location: {SelectedTruck.CurrentEvent.OriginName}.";
+                                }
+                                else if (evtrName.Contains("breakdown") || evtrName.Contains("accident") || evtrName.Contains("emergency"))
+                                {
+                                    dIcon = Icons.Material.Filled.CarCrash;
+                                    colorVar = "error";
+                                    dColor = Color.Error;
+                                    dDesc = $"Vehicle is stationary due to breakdown/emergency at {SelectedTruck.CurrentEvent.OriginName}.";
+                                }
+                                else if (evtrName.Contains("rto") || evtrName.Contains("toll") || evtrName.Contains("check") || evtrName.Contains("border"))
+                                {
+                                    dIcon = Icons.Material.Filled.Toll;
+                                    colorVar = "warning";
+                                    dColor = Color.Warning;
+                                    dDesc = $"Vehicle is at a checkpost/toll at {SelectedTruck.CurrentEvent.OriginName}.";
+                                } *@
+
+                             @*    <MudGrid AlignItems="Center" Justify="Justify.Center">
+                                    <MudItem xs="12" Class="d-flex flex-column align-center text-center">
+                                        <div style=@($"background: rgba(var(--mud-palette-{colorVar}-rgb), 0.1); padding: 24px; border-radius: 50%; margin-bottom: 16px;")>
+                                            <MudIcon Icon="@dIcon" Color="@dColor" Style="font-size: 4rem; opacity: 0.9;" />
+                                        </div>
+                                        <MudText Typo="Typo.h5" Class="fw-bold" Color="@dColor">@(_currentEventType.EventStatusText ?? "Stationary")</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">@dDesc</MudText>
+                                        <MudText Typo="Typo.caption" Class="mt-2 fw-bold">Recorded: @SelectedTruck.CurrentEvent.EventTime?.ToString("MMM dd, HH:mm")</MudText>
+                                    </MudItem>
+                                </MudGrid> *@
+                            }
                         </div>
 
                         @* Detailed Stats Grid *@
