@@ -85,25 +85,35 @@ namespace Views.Data
         
         }
 
-        public void AuthenticateUser(string userID)
+        public async Task AuthenticateUser(string userID)
         {
             List<Claim> claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, userID)
             };
 
-            var currentRole = _userService.GetCurrentBranchRole(userID); 
-            if (currentRole != null && currentRole.Branch != null)
+            using (var scope = _serviceProvider.CreateScope())
             {
-                 claims.Add(new System.Security.Claims.Claim("BranchID", currentRole.Branch.BranchID.ToString()));
-                 if (!string.IsNullOrEmpty(currentRole.Branch.BranchName))
-                 {
-                    claims.Add(new System.Security.Claims.Claim("BranchName", currentRole.Branch.BranchName));
-                 }
-                 if(currentRole.Role != null && !string.IsNullOrEmpty(currentRole.Role.RoleID))
-                 {
-                     claims.Add(new System.Security.Claims.Claim(ClaimTypes.Role, currentRole.Role.RoleID));
-                 }
+                var _role = scope.ServiceProvider.GetRequiredService<RoleManager<RoleModel>>();
+                var currentRole = _userService.GetCurrentBranchRole(userID);
+                if (currentRole != null && currentRole.Branch != null)
+                {
+                    claims.Add(new Claim("BranchID", currentRole.Branch.BranchID.ToString()));
+                    if (!string.IsNullOrEmpty(currentRole.Branch.BranchName))
+                    {
+                        claims.Add(new Claim("BranchName", currentRole.Branch.BranchName));
+                    }
+                    if (currentRole.Role != null && !string.IsNullOrEmpty(currentRole.Role.RoleID))
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, currentRole.Role.RoleID));
+                        // Fetch permission claims from DB — same as GetAuthenticationStateAsync
+                        var claimsFromRole = await _role.GetClaimsAsync(currentRole.Role);
+                        foreach (var claim in claimsFromRole)
+                        {
+                            claims.Add(claim);
+                        }
+                    }
+                }
             }
 
             var identity = new ClaimsIdentity(claims, "apiauth_type");
