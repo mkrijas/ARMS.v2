@@ -4,83 +4,107 @@
 @inject IPaymentService Iservice
 
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Payment Memo" formID="PaymentMemoForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Payment Memo" Subtitle="Manage and settle outstanding invoices with centralized party balance tracking." Icon="@Icons.Material.Filled.Payments" AdminStyle="true" formID="PaymentMemoForm" DocumentDetails="DocInfo" model="@_model" _busy="_busy">
     <FormContent>
-        <MudPaper Class="p-3">
+        <div class="dialog-content-wrapper">
             <EditForm id="PaymentMemoForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
                 <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudGrid>
-                    <MudItem xs="12" md="6">
-                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Purpose" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudSelect Label="Select Party" ReadOnly="ReadOnly" Value="@model.BusinessNature" T="string" ValueChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
-                            <MudSelectItem Value="@("Supplier")" />
-                            <MudSelectItem Value="@("Customer")" />
-                            <MudSelectItem Value="@("Renter")" />
-                            <MudSelectItem Value="@("SisterConcern")">Sister-Concern</MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" BranchID="BranchID" NatureOfBusiness="@model.BusinessNature"></PartySelector>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudSelect Label="Nature Of Payment" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
-                            @if (model.PartyInfo is not null)
-                            {
-                                foreach (var item in natureOfBusinessGroup)
-                                {
-                                    <MudSelectItem Value="@(item)" />
-                                }
-                            }
-                        </MudSelect>
-                    </MudItem>
+                
+                <div class="admin-glass-card pa-6 mb-6">
+                    <span class="admin-section-label">Classification & Timeline</span>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="_model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" Class="admin-input-group" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField ReadOnly="ReadOnly" @bind-Value="_model.Reference" Label="Purpose / Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _model.Reference)" Class="admin-input-group"></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                </div>
 
-                    @if (model.Bills.Any())
-                    {
-                        <MudItem xs="12">
-                            <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Elevation="0">
-                                <thead>
-                                    <tr>
-                                        <th>Invoice info</th>
-                                        <th>Branch</th>
-                                        <th>Outstanding Amount</th>
-                                        <th>Pay Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in model.Bills)
+                <div class="admin-glass-card pa-6 mb-6">
+                    <span class="admin-section-label">Party Engagement</span>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="4">
+                            <MudSelect Label="Nature of Party" ReadOnly="ReadOnly" Value="@_model.BusinessNature" T="string" ValueChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" AdornmentColor="Color.Primary">
+                                <MudSelectItem Value="@("Supplier")" />
+                                <MudSelectItem Value="@("Customer")" />
+                                <MudSelectItem Value="@("Renter")" />
+                                <MudSelectItem Value="@("SisterConcern")">Sister-Concern</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <PartySelector Value="_model.PartyInfo" ValueChanged="PartyChanged" BranchID="BranchID" NatureOfBusiness="@_model.BusinessNature" Class="admin-input-group"></PartySelector>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudSelect Label="Nature Of Payment" ReadOnly="ReadOnly" Value="_model.NatureOfTransaction" ValueChanged="nTransactionChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group">
+                                @if (_model.PartyInfo is not null)
+                                {
+                                    foreach (var item in natureOfBusinessGroup)
                                     {
-                                        <tr>
-                                            <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
-                                            <td>@item.BranchName</td>
-                                            <td>@item.OutstandingAmount</td>
-                                            <td> <MudNumericField T="decimal?" ReadOnly="@ReadOnly" @bind-Value="item.PayAmount" TextChanged="SetTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons> </MudNumericField></td>
-                                        </tr>
+                                        <MudSelectItem Value="@(item)" />
                                     }
-                                </tbody>
-                            </MudSimpleTable>
+                                }
+                            </MudSelect>
                         </MudItem>
-                    }
-                    @if (model.NatureOfTransaction == "Deposit" || model.NatureOfTransaction == "Prepayment" || model.NatureOfTransaction == "Other")
-                    {
-                        <MudItem xs="12" md="12">
-                            <MudNumericField ReadOnly="ReadOnly" HideSpinButtons @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudNumericField>
+                    </MudGrid>
+                </div>
+
+                @if (_model.Bills.Any())
+                {
+                    <div class="admin-glass-card pa-0 overflow-hidden mb-6">
+                        <div class="px-6 py-4 border-bottom-subtle" style="background: rgba(255, 159, 67, 0.02);">
+                            <span class="admin-section-label mb-0">Outstanding Settlements</span>
+                        </div>
+                        <div class="modern-admin-table">
+                            <MudGrid Class="admin-table-header px-6 py-3">
+                                <MudItem xs="4"><span class="admin-header-text">INVOICE INFO</span></MudItem>
+                                <MudItem xs="2"><span class="admin-header-text">BRANCH</span></MudItem>
+                                <MudItem xs="3"><span class="admin-header-text">OUTSTANDING</span></MudItem>
+                                <MudItem xs="3"><span class="admin-header-text">PAY AMOUNT</span></MudItem>
+                            </MudGrid>
+
+                            @foreach (var item in _model.Bills)
+                            {
+                                <MudGrid Class="px-6 py-3 border-bottom-subtle align-center">
+                                    <MudItem xs="4">
+                                        <MudText Typo="Typo.body2" Style="font-weight: 700;">@item.InvoiceNumber</MudText>
+                                        <MudText Typo="Typo.caption" Style="color: #667085;">@item.InvoiceDate?.ToString("dd/MM/yyyy")</MudText>
+                                    </MudItem>
+                                    <MudItem xs="2">
+                                        <MudText Typo="Typo.body2">@item.BranchName</MudText>
+                                    </MudItem>
+                                    <MudItem xs="3">
+                                        <MudText Typo="Typo.body2" Style="color: #141A46;">₹ @item.OutstandingAmount</MudText>
+                                    </MudItem>
+                                    <MudItem xs="3">
+                                        <MudNumericField T="decimal?" ReadOnly="@ReadOnly" @bind-Value="item.PayAmount" TextChanged="SetTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons Class="admin-input-group" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.CurrencyRupee" AdornmentColor="Color.Primary" />
+                                    </MudItem>
+                                </MudGrid>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="admin-glass-card pa-6">
+                    <span class="admin-section-label">Final Remarks</span>
+                    <MudGrid Spacing="3">
+                        @if (_model.NatureOfTransaction == "Deposit" || _model.NatureOfTransaction == "Prepayment" || _model.NatureOfTransaction == "Other")
+                        {
+                            <MudItem xs="12">
+                                <MudNumericField ReadOnly="ReadOnly" HideSpinButtons @bind-Value="_model.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.CurrencyRupee" AdornmentColor="Color.Primary" For="@(() => _model.TotalAmount)"></MudNumericField>
+                            </MudItem>
+                        }
+                        <MudItem xs="12">
+                            <MudTextField ReadOnly="ReadOnly" @bind-Value="_model.Narration" Lines="3" Label="Narration / Process Notes" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _model.Narration)" Class="admin-input-group"></MudTextField>
                         </MudItem>
-                    }
-                    <MudItem xs="12" md="12">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                    </MudItem>
-                </MudGrid>
+                    </MudGrid>
+                </div>
             </EditForm>
-        </MudPaper>
+        </div>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocType="@DocInfo.DocumentName" DocNumber="@DocNumber" DocumentID="DocInfo.DocumentID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent CreatedBy="@_model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocType="@DocInfo.DocumentName" DocNumber="@DocNumber" DocumentID="DocInfo.DocumentID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
