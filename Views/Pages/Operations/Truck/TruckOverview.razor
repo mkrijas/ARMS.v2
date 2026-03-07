@@ -8,7 +8,10 @@
 @inject IAssetService iAssetService
 @inject IAssetDocumentService iDocs
 @inject IEventService iEventService
+@inject IGcService iGcService
+@inject IJobcardService iJobcardService
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <style>
     @@keyframes pulse {
@@ -501,7 +504,7 @@
                             </div>
                             
                             <div class="d-flex gap-2">
-                                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Style="border-radius: 12px; text-transform: none;" Class="px-6">Manage Vehicle</MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Style="border-radius: 12px; text-transform: none;" Class="px-6" OnClick="EditTruck">Manage Vehicle</MudButton>
                                 <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Variant="Variant.Outlined" Style="border-radius: 12px;" />
                             </div>
                         </div>
@@ -763,7 +766,7 @@
                                     <MudItem xs="4" Class="text-center">
                                         <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
                                         <MudText Typo="Typo.h6" Class="fw-bold">@SelectedTruck.CurrentEvent.OriginName</MudText>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Departure Point</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Origin</MudText>
                                     </MudItem>
                                     
                                     <MudItem xs="4" Class="d-flex flex-column align-center">
@@ -779,7 +782,7 @@
                                     <MudItem xs="4" Class="text-center">
                                         <MudIcon Icon="@Icons.Material.Filled.Flag" Color="Color.Success" Size="Size.Large" Class="mb-2" />
                                         <MudText Typo="Typo.h6" Class="fw-bold">@SelectedTruck.CurrentEvent.DestinationName</MudText>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Delivery Point</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Destination</MudText>
                                     </MudItem>
                                 </MudGrid>
                             }
@@ -904,20 +907,24 @@
                         </div>
 
                         @* Detailed Stats Grid *@
-                        <MudGrid Spacing="4">
-                            <MudItem xs="12" md="3">
-                                <InfoItem Label="Assignment" Value="Industrial Logistics" />
-                            </MudItem>
-                            <MudItem xs="12" md="3">
-                                <InfoItem Label="Cargo Class" Value="Bulk Steel Products" />
-                            </MudItem>
-                            <MudItem xs="12" md="3">
-                                <InfoItem Label="Event Time" Value="@SelectedTruck.CurrentEvent.EventTime?.ToString("MMM dd, HH:mm")" />
-                            </MudItem>
-                            <MudItem xs="12" md="3">
-                                <InfoItem Label="Est. Arrival" Value="@SelectedTruck.CurrentEvent.EventTime?.AddHours(14).ToString("MMM dd, HH:mm")" />
-                            </MudItem>
-                        </MudGrid>
+                        @foreach (var _gc in _Gcs)
+                        {
+                            <MudGrid Spacing="4">
+                                <MudItem xs="12" md="3">
+                                    <InfoItem Label="Cargo" Value=@($"{_gc.TotalBillQuantity} MT {_gc.Content}") />
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <InfoItem Label="Route" Value="@_gc.RouteName" />
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <InfoItem Label="Consignor" Value="@_gc.ConsignorName" />
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <InfoItem Label="Consignee" Value="@_gc.ConsigneeName" />
+                                </MudItem>
+                                
+                            </MudGrid>
+                        }
 
                         <div class="mt-8 d-flex gap-4">
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Map" Class="rounded-pill px-6">View Live Map</MudButton>
@@ -1124,13 +1131,17 @@
                         <MudPaper Elevation="2" Class="pa-6" Style="border-radius: 20px;">
                             <MudText Typo="Typo.h6" Class="mb-6 fw-bold">Service Timeline</MudText>
                             <MudTimeline TimelinePosition="TimelinePosition.Start">
-                                <MudTimelineItem Color="Color.Info" Size="Size.Small">
-                                    <ItemContent>
-                                        <MudText Typo="Typo.subtitle1" Class="fw-bold">Brake System Overhaul</MudText>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.AddDays(-14).ToString("MMM dd, yyyy") • Main Workshop</MudText>
-                                    </ItemContent>
-                                </MudTimelineItem>
-                                <MudTimelineItem Color="Color.Success" Size="Size.Small">
+                                @foreach(var job in _jobHistory)
+                                {
+                                    <MudTimelineItem Color="Color.Info" Size="Size.Small">
+                                        <ItemContent>
+                                            <div class="d-flex"> <MudText Typo="Typo.h5" Class="fw-bold" Color="Color.Tertiary"> @job.BreakdownType </MudText>   <MudText Typo="Typo.subtitle1" Class="fw-bold">- @job.Jobs</MudText></div>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@($"{job.FinishedOn?.ToString("MMM dd, yyyy")} • {job.Workshop}")</MudText>
+                                        </ItemContent>
+                                    </MudTimelineItem>
+                                }
+                               
+                               @*  <MudTimelineItem Color="Color.Success" Size="Size.Small">
                                     <ItemContent>
                                         <MudText Typo="Typo.subtitle1" Class="fw-bold">Routine Oil & Filter Change</MudText>
                                         <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.AddDays(-45).ToString("MMM dd, yyyy") • Regional Hub</MudText>
@@ -1141,7 +1152,7 @@
                                         <MudText Typo="Typo.subtitle1" Class="fw-bold">Electrical Harness Repair</MudText>
                                         <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.AddDays(-70).ToString("MMM dd, yyyy") • External Vendor</MudText>
                                     </ItemContent>
-                                </MudTimelineItem>
+                                </MudTimelineItem> *@
                             </MudTimeline>
                         </MudPaper>
                     </MudItem>
@@ -1333,6 +1344,8 @@
     private decimal _CurrentValue;
     private decimal _aquisitionCost;
     private List<TripInfoModel> _PastTrips = new();
+    private List<GcSetModel> _Gcs = new();
+    private List<RepairJobHistoryModel> _jobHistory = new();
 
     private List<AssetDocumentModel> docs = new();
     private AssetModel _assetInfo = new();
@@ -1401,6 +1414,9 @@
 
         docs = iDocs.SelectByAsset(truck.AssetID,false).ToList();
 
+        // Populate consignment info
+        _Gcs = iGcService.SelectByTrip(truck.CurrentEvent.TripID).ToList();
+
     }
 
     protected override async Task OnInitializedAsync()
@@ -1456,6 +1472,10 @@
                 _mountedTyres =  TyreService.SelectMountedTyresByID(truckId).ToList();
                 _tyrePositions = TyreService.GetTyrePositionListUsingTruckTypeId(detailedTruck.TruckTypeID).ToList();
 
+
+                var FromDate = DateTime.Now.AddDays(-365);
+                _jobHistory = iJobcardService.GetJobsDoneForTruck(truckId.Value,FromDate,DateTime.Now).ToList();
+
                 if (_tyrePositions.Any())
                 {
                     ProcessTyreLayout();                }
@@ -1464,7 +1484,7 @@
             }
             else
             {
-                 Snackbar.Add("Selected truck details could not be found.", Severity.Warning);
+                Snackbar.Add("Selected truck details could not be found.", Severity.Warning);
             }
         }
         catch (Exception ex)
@@ -1507,10 +1527,10 @@
     private string GetAxleName(string desc)
     {
         if (string.IsNullOrEmpty(desc)) return "Other Position";
-        
+
         var lowercase = desc.ToLower();
         if (lowercase.Contains("front")) return "Front Axle";
-        
+
         // Handle hyphenated names like "SECOND-AXLE" or "DRIVE-AXLE"
         var parts = desc.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length > 0)
@@ -1525,7 +1545,7 @@
             }
             if (axleParts.Any()) return string.Join(" ", axleParts);
         }
-        
+
         return desc;
     }
 
@@ -1535,17 +1555,17 @@
         if (n.Contains("front")) return 10;
         if (n.Contains("second")) return 12;
         if (n.Contains("steer")) return 15;
-        
+
         if (n.Contains("drive"))
         {
             if (n.Contains("1st")) return 20;
             if (n.Contains("2nd")) return 21;
             return 25;
         }
-        
+
         if (n.Contains("lift")) return 30;
         if (n.Contains("tag")) return 31;
-        
+
         if (n.Contains("trailer"))
         {
             if (n.Contains("1st")) return 40;
@@ -1554,7 +1574,7 @@
             if (n.Contains("4th")) return 43;
             return 49;
         }
-        
+
         return 100;
     }
 
@@ -1567,5 +1587,17 @@
         if (d.Contains("outer right") || (d.Contains("right") && !d.Contains("outer") && !d.Contains("inner"))) return 4;
         return 2; // Default to inner
     }
-   
+
+    private async Task EditTruck()
+    {
+        DialogOptions options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Large,
+        };   
+        
+        DialogParameters parms = new();
+        parms.Add("EditModel", SelectedTruck);
+        var dialog = await DialogService.ShowAsync<Truckdilog>("Truck", parms, options);
+        var result = await dialog.Result;
+    }
 }

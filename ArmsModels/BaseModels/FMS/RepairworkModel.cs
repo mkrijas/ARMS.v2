@@ -112,4 +112,17 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; }
         public decimal Odometer { get; set; }
     }
+
+    public class RepairJobHistoryModel
+    {
+        public string BranchName { get; set; }
+        public string BreakdownType { get; set; }
+        public string Workshop { get; set; }
+        public int? TimeSpentatWorkshop { get; set; }
+        public string Jobs { get; set; }        
+        public DateTime? FinishedOn { get; set; }
+        public string UsedItems { get; set; }
+        public decimal? TotalAmount { get; set; }
+        public string Status { get; set; }
+    }
 }
