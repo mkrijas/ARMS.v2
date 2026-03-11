@@ -226,5 +226,31 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.Close]", parameters);
         }
+
+        public IEnumerable<RepairJobHistoryModel> GetJobsDoneForTruck(int? TruckID, DateTime From, DateTime To)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@FromDate", From),
+                new SqlParameter("@ToDate", To),
+                new SqlParameter("@TruckID", TruckID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[rptJobMaintenanceReport]", parameters))
+            {
+                yield return new RepairJobHistoryModel()
+                {
+                    BranchName = dr.GetString("BranchName"),
+                    BreakdownType = dr.GetString("BreakdownType"),
+                    Workshop = dr.GetString("Workshops"),
+                    TimeSpentatWorkshop = dr.GetInt32("TimeAtWorkshop"),
+                    Jobs = dr.GetString("Jobs"),
+                    FinishedOn = dr.GetDateTime("FinishedOn"),
+                    UsedItems =  dr.GetString("UsedItems") + dr.GetString("PItems"),
+                    TotalAmount = dr.GetDecimal("TotalPurchaseItemRate")??0 + dr.GetDecimal("TotalPurchaseExpRate")??0,
+                    Status = dr.GetString("Status")
+                };
+            }            
+        }
     }
 }
