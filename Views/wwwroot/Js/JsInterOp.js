@@ -310,3 +310,15 @@ function findInIframe(iframeId, text, findNext) {
         console.warn('[findInIframe]', e);
     }
 }
+
+/**
+ * Scroll to the first element matching a given class name.
+ */
+function scrollToClass(className) {
+    setTimeout(function() {
+        var element = document.querySelector('.' + className);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 100);
+}

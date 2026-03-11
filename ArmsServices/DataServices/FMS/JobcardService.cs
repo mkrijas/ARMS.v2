@@ -245,6 +245,7 @@ namespace ArmsServices.DataServices
                     Workshop = dr.GetString("Workshops"),
                     TimeSpentatWorkshop = dr.GetInt32("TimeAtWorkshop"),
                     Jobs = dr.GetString("Jobs"),
+                    CreatedOn = dr.GetDateTime("CreatedOn"),
                     FinishedOn = dr.GetDateTime("FinishedOn"),
                     UsedItems =  dr.GetString("UsedItems") + dr.GetString("PItems"),
                     TotalAmount = dr.GetDecimal("TotalPurchaseItemRate")??0 + dr.GetDecimal("TotalPurchaseExpRate")??0,

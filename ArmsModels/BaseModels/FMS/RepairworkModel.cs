@@ -119,7 +119,8 @@ namespace ArmsModels.BaseModels
         public string BreakdownType { get; set; }
         public string Workshop { get; set; }
         public int? TimeSpentatWorkshop { get; set; }
-        public string Jobs { get; set; }        
+        public string Jobs { get; set; }
+        public DateTime? CreatedOn { get; set; }
         public DateTime? FinishedOn { get; set; }
         public string UsedItems { get; set; }
         public decimal? TotalAmount { get; set; }

@@ -350,7 +350,7 @@ namespace ArmsServices.DataServices
                     TripID = dr.GetInt64("TripID"),
                     TripNumber = dr.GetString("TripNumber"),
                     TripDate = dr.GetDateTime("TripDate"),
-                    Distance = dr.GetInt32("Distance"),
+                    Distance =  Convert.ToInt32(dr.GetDecimal("Distance")),
                     Driver = dr.GetString("Driver"),
                     Expenses = dr.GetDecimal("Expenses"),
                     Freight = dr.GetDecimal("Freight"),

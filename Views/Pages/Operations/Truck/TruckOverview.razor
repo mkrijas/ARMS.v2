@@ -12,6 +12,7 @@
 @inject IJobcardService iJobcardService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IPeriodicMaintenanceService iPmService
 
 <style>
     @@keyframes pulse {
@@ -440,6 +441,21 @@
         backdrop-filter: none;
     }
     .status-empty .tire-serial-badge, .status-empty .tire-brand-name, .status-empty .tire-status-dot { display: none; }
+    
+    /* Custom Scrollbar for Timelines and Lists */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.1);
+        border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(0,0,0,0.2);
+    }
 </style>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4"> 
@@ -505,7 +521,9 @@
                             
                             <div class="d-flex gap-2">
                                 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Style="border-radius: 12px; text-transform: none;" Class="px-6" OnClick="EditTruck">Manage Vehicle</MudButton>
-                                <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Variant="Variant.Outlined" Style="border-radius: 12px;" />
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Style="border-radius: 12px; border-color: rgba(0,0,0,0.2) !important;">
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Add" OnClick="OpenRequestTruckDialog">Request Truck</MudMenuItem>
+                                </MudMenu>
                             </div>
                         </div>
 
@@ -941,9 +959,7 @@
                          <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-8 rounded-pill px-8" StartIcon="@Icons.Material.Filled.Add">Assign New Trip</MudButton>
                     </div>
                 }
-            </MudTabPanel>
-
-            @* ---------------- NEW TABS WITH MOCK DATA ---------------- *@
+            </MudTabPanel>           
 
             <MudTabPanel Text="Tyre Matrix" Icon="@Icons.Material.Filled.Sensors">
                 <MudGrid>
@@ -1114,12 +1130,12 @@
                             <MudCardContent Class="pa-8 d-flex justify-space-between align-center">
                                 <div>
                                     <MudText Typo="Typo.h5" Style="color: white; font-weight: 800;">Next Service Window</MudText>
-                                    <MudText Typo="Typo.body1" Style="color: rgba(255,255,255,0.7);">Standard Preventive Maintenance (Type A)</MudText>
+                                    <MudText Typo="Typo.body1" Style="color: rgba(255,255,255,0.7);">Standard Preventive Maintenance </MudText>
                                 </div>
                                 <div class="text-right">
-                                    <MudText Typo="Typo.h2" Style="color: white; font-weight: 900; line-height: 1;">@(_mockDaysToService) <span style="font-size: 1.5rem; opacity: 0.6;">Days</span></MudText>
-                                    <MudText Typo="Typo.h6" Style="color: rgba(255,255,255,0.8); font-weight: 500;">or @(_mockKmToService.ToString("N0")) km</MudText>
-                                </div>
+                                    <MudText Typo="Typo.h2" Style="color: white; font-weight: 900; line-height: 1;">@(_nextService?.NDate?.ToShortDateString()?? " Not Set!") </MudText>
+                                    <MudText Typo="Typo.h6" Style="color: rgba(255,255,255,0.8); font-weight: 500;">@(_nextService?.NAudometer is null? "Not Set!" : $" or {_nextService?.NAudometer?.ToString("N0")} km") </MudText>
+                                    </div>
                             </MudCardContent>
                             <div style="height: 6px; background: rgba(0,0,0,0.1); width: 100%;">
                                 <div style="height: 100%; background: white; width: 75%; opacity: 0.3;"></div>
@@ -1128,60 +1144,92 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudPaper Elevation="2" Class="pa-6" Style="border-radius: 20px;">
-                            <MudText Typo="Typo.h6" Class="mb-6 fw-bold">Service Timeline</MudText>
-                            <MudTimeline TimelinePosition="TimelinePosition.Start">
-                                @foreach(var job in _jobHistory)
-                                {
-                                    <MudTimelineItem Color="Color.Info" Size="Size.Small">
-                                        <ItemContent>
-                                            <div class="d-flex"> <MudText Typo="Typo.h5" Class="fw-bold" Color="Color.Tertiary"> @job.BreakdownType </MudText>   <MudText Typo="Typo.subtitle1" Class="fw-bold">- @job.Jobs</MudText></div>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@($"{job.FinishedOn?.ToString("MMM dd, yyyy")} • {job.Workshop}")</MudText>
-                                        </ItemContent>
-                                    </MudTimelineItem>
+                        <MudPaper Elevation="2" Class="pa-6 h-100" Style="border-radius: 20px;">
+                            <div class="d-flex justify-space-between align-center mb-6">
+                                <MudText Typo="Typo.h6" Class="fw-bold"><MudIcon Icon="@Icons.Material.Filled.Timeline" Class="mr-2" Color="Color.Primary" />Service Timeline</MudText>
+                                <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Filled" Class="fw-bold">@_jobHistory.Count Records</MudChip>
+                            </div>
+                            
+                            <div style="max-height: 480px; overflow-y: auto; overflow-x: hidden; padding-right: 8px;" class="custom-scrollbar">    
+                                <MudTimeline TimelinePosition="TimelinePosition.Start" Class="pa-0">
+                                    @foreach(var job in _jobHistory)
+                                    {
+                                        <MudTimelineItem Color="Color.Info" Size="Size.Small">
+                                            <ItemContent>
+                                                <div class="d-flex flex-column mb-1">
+                                                    <MudText Typo="Typo.body1" Class="fw-bold" Color="Color.Tertiary">@job.BreakdownType</MudText>
+                                                    <MudText Typo="Typo.body2" Class="fw-bold text-muted">@job.Jobs</MudText>
+                                                </div>
+                                                <div class="d-flex align-center gap-1 mt-1">
+                                                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Color="Color.Secondary" Style="font-size: 0.8rem;" />
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@job.FinishedOn?.ToString("MMM dd, yyyy")</MudText>
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mx-1">•</MudText>
+                                                    <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" Color="Color.Secondary" Style="font-size: 0.8rem;" />
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@job.Workshop</MudText>
+                                                </div>
+                                            </ItemContent>
+                                        </MudTimelineItem>
+                                    }                               
+                                </MudTimeline>
+                                @if(!_jobHistory.Any()) {
+                                    <div class="text-center pa-6">
+                                        <MudIcon Icon="@Icons.Material.Filled.Healing" Color="Color.Default" Size="Size.Large" Class="mb-2" Style="opacity: 0.3;" />
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">No service history recorded.</MudText>
+                                    </div>
                                 }
-                               
-                               @*  <MudTimelineItem Color="Color.Success" Size="Size.Small">
-                                    <ItemContent>
-                                        <MudText Typo="Typo.subtitle1" Class="fw-bold">Routine Oil & Filter Change</MudText>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.AddDays(-45).ToString("MMM dd, yyyy") • Regional Hub</MudText>
-                                    </ItemContent>
-                                </MudTimelineItem>
-                                <MudTimelineItem Color="Color.Warning" Size="Size.Small">
-                                    <ItemContent>
-                                        <MudText Typo="Typo.subtitle1" Class="fw-bold">Electrical Harness Repair</MudText>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.AddDays(-70).ToString("MMM dd, yyyy") • External Vendor</MudText>
-                                    </ItemContent>
-                                </MudTimelineItem> *@
-                            </MudTimeline>
+                            </div>
                         </MudPaper>
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudPaper Elevation="2" Class="pa-6 h-100" Style="border-radius: 20px;">
-                            <MudText Typo="Typo.h6" Class="mb-6 fw-bold">Active Health Reports</MudText>
-                            @if (_mockHasActiveDefect)
-                            {
-                                <div class="pa-6 rounded-xl d-flex align-center gap-4" style="background: rgba(var(--mud-palette-warning-rgb), 0.1); border: 2px dashed var(--mud-palette-warning);">
-                                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
-                                    <div>
-                                        <MudText Typo="Typo.subtitle1" Class="fw-bold" Color="Color.Warning">Minor Mechanical Fault</MudText>
-                                        <MudText Typo="Typo.body2">Differential oil seepage detected during last inspection.</MudText>
-                                    </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="pa-6 rounded-xl d-flex align-center gap-4" style="background: rgba(var(--mud-palette-success-rgb), 0.1); border: 2px dashed var(--mud-palette-success);">
-                                     <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
-                                     <div>
-                                         <MudText Typo="Typo.subtitle1" Class="fw-bold" Color="Color.Success">System Status Normal</MudText>
-                                         <MudText Typo="Typo.body2">No critical or minor defects reported in the last 30 days.</MudText>
-                                     </div>
-                                </div>
-                            }
+                        <MudPaper Elevation="2" Class="pa-6 h-100 d-flex flex-column" Style="border-radius: 20px;">
+                            <div class="d-flex justify-space-between align-center mb-6">
+                                <MudText Typo="Typo.h6" Class="fw-bold"><MudIcon Icon="@Icons.Material.Filled.HealthAndSafety" Class="mr-2" Color="Color.Error" />Active Health Reports</MudText>
+                            </div>
                             
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" Class="mt-6 rounded-pill">Open Maintenance Log</MudButton>
+                            <div class="flex-grow-1">
+                                @if (_currentMaintenance is null)
+                                {
+                                    <div class="pa-6 rounded-xl d-flex flex-column align-center justify-center text-center h-100" style="background: rgba(var(--mud-palette-success-rgb), 0.05); border: 2px dashed rgba(var(--mud-palette-success-rgb), 0.3);">
+                                        <div style="background: rgba(var(--mud-palette-success-rgb), 0.1); padding: 16px; border-radius: 50%; margin-bottom: 16px;">
+                                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Style="font-size: 4rem;" />
+                                        </div>
+                                        <MudText Typo="Typo.h6" Class="fw-bold mb-1" Color="Color.Success">System Status Normal</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">No critical or minor issues reported currently.</MudText>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="pa-6 rounded-xl h-100 d-flex flex-column" style="background: rgba(var(--mud-palette-warning-rgb), 0.05); border: 1px solid rgba(var(--mud-palette-warning-rgb), 0.2); position: relative; overflow: hidden;">
+                                        <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--mud-palette-warning);"></div>
+                                        
+                                        <div class="d-flex align-start gap-4 mb-4">
+                                            <div style="background: rgba(var(--mud-palette-warning-rgb), 0.1); padding: 12px; border-radius: 12px;">
+                                                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
+                                            </div>
+                                            <div>
+                                                <MudText Typo="Typo.h6" Class="fw-bold" Color="Color.Warning" Style="line-height: 1.2;">@_currentMaintenance.BreakdownType</MudText>
+                                                <MudText Typo="Typo.body2" Color="Color.Error" Class="fw-bold mt-1">@_currentMaintenance.Jobs</MudText>
+                                            </div>
+                                        </div>
+                                        
+                                        <MudDivider Class="my-4 opacity-50" />
+                                        
+                                        <div class="d-flex justify-space-between align-center mt-auto">
+                                            <div class="d-flex align-center gap-2">
+                                                <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Small" Color="Color.Secondary" />
+                                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="fw-bold">@_currentMaintenance.Workshop</MudText>
+                                            </div>
+                                            <div class="d-flex align-center gap-2">
+                                                <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Color="Color.Secondary" />
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">Since @_currentMaintenance.CreatedOn?.ToString("MMM dd, yyyy")</MudText>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-6 rounded-pill fw-bold" Style="height: 48px;">Open Maintenance Log</MudButton>
                         </MudPaper>
                     </MudItem>
                 </MudGrid>
@@ -1214,7 +1262,7 @@
                     <MudItem xs="12">
                         <MudTable Items="@_PastTrips" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="mt-6 rounded-xl border border-solid border-light" Style="overflow: hidden;">
                             <HeaderContent>
-                                <MudTh>Trip ID</MudTh>
+                                <MudTh>Trip Number</MudTh>
                                 <MudTh>Origin</MudTh>
                                 <MudTh>Destination</MudTh>
                                 <MudTh>Completion Date</MudTh>
@@ -1222,15 +1270,15 @@
                                 <MudTh>Status</MudTh>
                             </HeaderContent>
                             <RowTemplate>
-                                <MudTd DataLabel="Trip ID"><span class="fw-bold text-primary">@context.TripID</span></MudTd>
+                                <MudTd DataLabel="Trip ID"><span class="fw-bold text-primary">@context.TripNumber</span></MudTd>
                                 <MudTd DataLabel="Origin">@context.Origin</MudTd>
                                 <MudTd DataLabel="Destination">@context.Destination</MudTd>
                                 <MudTd DataLabel="Completion Date">@context.TripDate?.ToString("MMM dd, yyyy")</MudTd>
-                                <MudTd DataLabel="Distance (KM)">@context.Distance?.ToString("N0") km</MudTd>
+                                <MudTd DataLabel="Distance (KM)">@context.RunKM?.ToString("N0") KM</MudTd>
                                 <MudTd DataLabel="Status">
                                     <div class="d-flex align-center gap-2">
                                         <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--mud-palette-success);"></div>
-                                        <MudText Typo="Typo.body2" Class="fw-bold text-success">Delivered</MudText>
+                                        <MudText Typo="Typo.body2" Class="fw-bold text-success">@(context.RunKM == null?"Incomplete":"Completed") </MudText>
                                     </div>
                                 </MudTd>
                             </RowTemplate>
@@ -1346,9 +1394,11 @@
     private List<TripInfoModel> _PastTrips = new();
     private List<GcSetModel> _Gcs = new();
     private List<RepairJobHistoryModel> _jobHistory = new();
+    private RepairJobHistoryModel _currentMaintenance = new();
 
     private List<AssetDocumentModel> docs = new();
     private AssetModel _assetInfo = new();
+    private PeriodicMaintenanceInitiateModel _nextService = new();
 
     // Document Mock Properties
     // private string _mockInsuranceProvider;
@@ -1374,7 +1424,7 @@
     {
         DateTime last30Days = DateTime.Now.AddDays(-30);
         DateTime Today = DateTime.Now;
-        _PastTrips = iTripService.GetTripsByTruckID(truck.TruckID, last30Days, Today).ToList();
+        _PastTrips = iTripService.GetTripsByTruckID(truck.TruckID, last30Days, Today)?.ToList();
 
         _currentEventType = iEventService.GetEventType(truck.CurrentEvent.EventTypeID ?? 0) ?? new EventTypeModel { EventTypeName = "Unknown" };
 
@@ -1384,7 +1434,10 @@
         {
             _mockEngineHours = (int)_Odometer / 25;
         }
-        _FuelEfficiency = (double)_PastTrips.Average(x => x.Mileage);
+        if (_PastTrips != null && _PastTrips.Count > 0)
+        {
+            _FuelEfficiency =  Convert.ToDouble(_PastTrips.Average(x => x.Mileage));
+        }
         _mockBattery = 0;
         _mockFuelLevel = 0;
         _mockCoolantTemp = 0;
@@ -1395,7 +1448,7 @@
         _mockHasActiveDefect = random.Next(2) == 1;
 
         _Trips30Days = _PastTrips.Count;
-        _Utilization = _Trips30Days > 0 ? (int)((_PastTrips.Sum(x => x.RunDuration) / 720) * 100) : 0;
+        _Utilization = _Trips30Days > 0 ? (int)((_PastTrips.Sum(x => x.RunDuration)  * 100) / 720) : 0;
         _IdleDays = 30 - (int)(30 * (_Utilization / 100.0));
 
         _Revenue = (decimal) _PastTrips.Sum(x => x.Freight);
@@ -1476,9 +1529,15 @@
                 var FromDate = DateTime.Now.AddDays(-365);
                 _jobHistory = iJobcardService.GetJobsDoneForTruck(truckId.Value,FromDate,DateTime.Now).ToList();
 
+                var _pmServices = iPmService.SelectByTruck(truckId.Value,3).ToList();
+                _nextService = _pmServices.OrderBy(s => s.NDate).FirstOrDefault();
+
+                _currentMaintenance = _jobHistory.Where(j =>  j.Status != "COMPLETED").FirstOrDefault();
+
                 if (_tyrePositions.Any())
                 {
-                    ProcessTyreLayout();                }
+                    ProcessTyreLayout();              
+                }
 
                 _selectedTruck = detailedTruck; // Update without triggering the setter
             }
@@ -1598,6 +1657,21 @@
         DialogParameters parms = new();
         parms.Add("EditModel", SelectedTruck);
         var dialog = await DialogService.ShowAsync<Truckdilog>("Truck", parms, options);
+        var result = await dialog.Result;
+    }
+
+    private async Task OpenRequestTruckDialog()
+    {
+        if (SelectedTruck == null) return;
+        
+        DialogOptions options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+            CloseButton = true
+        };
+        
+        var dialog = await DialogService.ShowAsync<TruckAvailabilityRequestDialog>("Request Truck", options);
         var result = await dialog.Result;
     }
 }

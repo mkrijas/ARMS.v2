@@ -3,6 +3,7 @@
 @inject AuthenticationStateProvider auth
 @inject IUserService _user
 @inject Blazored.SessionStorage.ISessionStorageService _storage
+@inject IJSRuntime JS
 
 <AuthorizeView>
     <Authorized>
@@ -48,7 +49,7 @@
                         {
                             <MudListItem T="UserBranchRoleModel" Value="@item"
                                          OnClick="@(async () => await SelectBranch(item))"
-                                         Class="rounded-lg mb-1 pa-2 transition-ease">
+                                         Class="@($"rounded-lg mb-1 pa-2 transition-ease {(item.Branch.BranchID == _currentBranchId ? "selected-branch" : "")}")">
                                  <div class="d-flex align-center">
                                      <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="mr-3 elevation-2">
                                          @(!string.IsNullOrEmpty(item.Branch.BranchName) ? item.Branch.BranchName.Substring(0, 1) : "B")
@@ -122,6 +123,13 @@
         background-color: var(--mud-palette-action-default-hover);
     }
     
+    .selected-branch {
+        background-color: #FFD3AC !important;
+        font-weight: bold;
+        color: var(--mud-palette-primary-darken) !important;
+        border-left: 4px solid var(--mud-palette-primary);
+    }
+    
     .anim-slide-out-branch {
         animation: branch-slide-out 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
         transform-origin: top center !important;
@@ -152,6 +160,7 @@
     private List<UserBranchRoleModel> _filteredBranches = new();
     private string _searchText = "";
     private string _currentUserId = "";
+    private int _currentBranchId;
 
     private bool _isClosingBranch = true;
 
@@ -167,6 +176,7 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         _canClosePopover = user.Claims.Any(x => x.Type == "BranchID");
+        int.TryParse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value, out _currentBranchId);
 
         _isBranchPopoverOpen = true;
         _isClosingBranch = false;
@@ -179,6 +189,11 @@
         if (_branches.Count == 1)
         {
             await SelectBranch(_branches.First());
+        }
+
+        if (_currentBranchId > 0)
+        {
+            _ = JS.InvokeVoidAsync("scrollToClass", "selected-branch");
         }
     }
 
