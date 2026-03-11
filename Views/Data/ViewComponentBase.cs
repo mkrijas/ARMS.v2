@@ -76,7 +76,7 @@ namespace Views.Data
         {
             if (DeletePermission)
             {
-                bool? result = await dialogService.ShowMessageBox(
+                bool? result = await dialogService.ShowMessageBoxAsync(
                     "Warning !",
                     "Are you sure you want to delete this Document ?");
                 if (result == true)
@@ -88,7 +88,7 @@ namespace Views.Data
             }
             else
             {
-                bool? result = await dialogService.ShowMessageBox(
+                bool? result = await dialogService.ShowMessageBoxAsync(
                     "Permission denied!",
                     "You don't have any permission to Delete Payment.");
             }

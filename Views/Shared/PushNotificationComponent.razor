@@ -254,18 +254,24 @@
         UserID = user.Identity.Name;
 
         getNotifications();
+    }
 
-        if (hubConnection == null || hubConnection.State == HubConnectionState.Disconnected)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
-            hubConnection.On<string>("ReceiveMessage", async Triggered =>
+            if (hubConnection == null || hubConnection.State == HubConnectionState.Disconnected)
             {
-                getNotifications();
-                Take = 1;
-                IsOpen = currentNotificationMessages.Any();
-                await InvokeAsync(() => StateHasChanged());
-            });
-            await hubConnection.StartAsync();
+                hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
+                hubConnection.On<string>("ReceiveMessage", async Triggered =>
+                {
+                    getNotifications();
+                    Take = 1;
+                    IsOpen = currentNotificationMessages.Any();
+                    await InvokeAsync(() => StateHasChanged());
+                });
+                await hubConnection.StartAsync();
+            }
         }
     }
 
@@ -341,7 +347,7 @@
             }
             else
             {
-                await DialogService.ShowMessageBox("Permission denied!", "You don't have permission to acknowledge.");
+                await DialogService.ShowMessageBoxAsync("Permission denied!", "You don't have permission to acknowledge.");
             }
         }
     }

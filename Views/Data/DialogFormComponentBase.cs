@@ -117,7 +117,7 @@ namespace Views.Data
         {
             if (!DayOpenService.ValidateDayOpen(model.DocumentDate, DocInfo.DocumentTypeID, model.BranchID, model.UserInfo.UserID).Value)
             {
-                bool? result = await dialogService.ShowMessageBox(
+                bool? result = await dialogService.ShowMessageBoxAsync(
                     "Oops !",
                     new MarkupString("The specified DocumentDate : <b>" + model.DocumentDate.Value.ToString("dd/MM/yyyy") + "</b> is closed for this branch ! <br>Please create a request to open the date."));
                 return false;
@@ -143,7 +143,7 @@ namespace Views.Data
             {
                 if (!EditPermission)
                 {
-                    bool? result = await dialogService.ShowMessageBox("Permission denied!", "You don't have permission to Edit !");
+                    bool? result = await dialogService.ShowMessageBoxAsync("Permission denied!", "You don't have permission to Edit !");
                 }
                 else
                 {
@@ -189,7 +189,7 @@ namespace Views.Data
             }
             else
             {
-                bool? result = await dialogService.ShowMessageBox(
+                bool? result = await dialogService.ShowMessageBoxAsync(
                     "Permission denied!",
                     string.Format("You don't have permission to Approve {0} !.", DocInfo.DocumentName));
             }

@@ -158,7 +158,7 @@ namespace Views.Pages.Operations.Gc
             }
             else
             {
-                bool? ResultModel = await DialogService.ShowMessageBox(
+                bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                     "Permission denied!",
                     "You don't have any permission to Add or Edit GC.");
             }   
@@ -223,7 +223,7 @@ namespace Views.Pages.Operations.Gc
             ConsigneeModel consigneeModel = new();
             parms.Add("model", consigneeModel.Clone());
             parms.Add("Order", Order);
-            var dialog = DialogService.Show<Consineedilog>("Add/Edit Consignee", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+            var dialog = await DialogService.ShowAsync<Consineedilog>("Add/Edit Consignee", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -298,7 +298,7 @@ namespace Views.Pages.Operations.Gc
         // Method to delete the GcSet
         private async Task Delete()
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
            "Warning",
            "Deleting can not be undone!",
            yesText: "Delete!", cancelText: "Cancel");
