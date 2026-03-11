@@ -132,12 +132,12 @@ namespace Views
 
             // ------ SIgnalR & Hub ---------- //
             services.AddScoped<SignalRService>();
-            services.AddSignalRCore();
-            services.AddResponseCompression(opts =>
-            {
-                opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
-                      new[] { "application/octet-stream" });
-            });
+            services.AddSignalR();
+            // services.AddResponseCompression(opts =>
+            // {
+            //     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+            //           new[] { "application/octet-stream" });
+            // });
 
             // -------- Authorization----------- //
             services.AddAuthorization(config =>
@@ -425,7 +425,7 @@ namespace Views
             CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
             CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-            app.UseResponseCompression(); // SignalR Response compression
+            // app.UseResponseCompression(); // SignalR Response compression
 
             app.UseHttpsRedirection();
 
