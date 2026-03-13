@@ -1,4 +1,4 @@
-﻿@using ArmsModels.BaseModels.Finance.Transactions;
+@using ArmsModels.BaseModels.Finance.Transactions;
 @using ArmsServices.DataServices.Finance.Transactions;
 @using ArmsServices.DataServices.Inventory;
 @attribute [Authorize]
@@ -11,78 +11,104 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <DialogContent>
-        <MudContainer Style="min-height:300px;max-height: 800px;">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Inventory Request" Subtitle="Submit requests for inventory items linked to specific job cards or vehicles." Icon="@Icons.Material.Filled.Assignment" AdminStyle="true" formID="inventoryRequestForm" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
             <EditForm id="inventoryRequestForm" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudGrid>
-                    <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="model.RequestNumber" Label="Request Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RequestNumber)" Disabled></MudTextField>
-                     </MudItem>
-                     <MudItem xs="12" md="4">
-                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.RequestDate" DateFormat="dd/MM/yyyy" />
-                     </MudItem>
-                     <MudItem xs="12" md="4">
-                         <MudSelect Label="Select Job Card" T="JobcardModel" Value="model.Jobcard" ValueChanged="OnChangeJobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary" Disabled="@SetIncomingVal">
-                             @foreach (var ditem in JobcardList)
-                            {
-                                <MudSelectItem Value="@ditem">@ditem.JobcardNumber</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <TruckSelector @bind-Value="@model.Truck" BranchID="@model.BranchID" IsDisabled="@SetIncomingVal" Filter="All"></TruckSelector>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <StoreSelector @bind-Value="@model.Store" BranchID="@(model.BranchID??0)"></StoreSelector>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12">
-                        <h6><u>Items</u></h6>
-                        <MudGrid Justify="Justify.Center">
-                            <MudItem xs="5" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
-                            <MudItem xs="5" Class="d-flex align-center"><span><strong><u>Quantity</u></strong> </span></MudItem>
-                            <MudItem xs="2"></MudItem>
-                            @foreach (var item in model.Items)
-                            {
-                                <MudItem xs="5"> @(ItemList.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.ItemGroup.ItemGroupDescription) - @(ItemList.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.ItemDescription) </MudItem>
-                                <MudItem xs="5"> @item.ItemQty </MudItem>
-                                <MudItem xs="1" Class="d-flex">
-                                </MudItem>
-                                <MudItem xs="1" Class="d-flex">
-                                    @if (!ReadOnly)
-                                    {
-                                        <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteItem(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                                    }
-                                </MudItem>
-                            }
-                            @if (!ReadOnly)
-                            {
-                                <MudItem xs="5">
-                                    <InventoryItemSelector Value="SelectedItems" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" />
-                                </MudItem>
-                                <MudItem xs="5">
-                                    <MudTextField @bind-Value="Entrymodel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField>
-                                </MudItem>
-                                <MudItem xs="1">
-                                </MudItem>
-                                <MudItem xs="1" Class="d-flex align-center"><MudFab OnClick="AddSubList" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudItem>
-                            }
-                        </MudGrid>
-                    </MudItem>
-                </MudGrid>
+                
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Request Information</span>
+                    </div>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.RequestNumber" Label="Request Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RequestNumber)" Disabled Class="admin-input-group"></MudTextField>
+                         </MudItem>
+                         <MudItem xs="12" md="4">
+                             <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.RequestDate" DateFormat="dd/MM/yyyy" Class="admin-input-group" />
+                         </MudItem>
+                         <MudItem xs="12" md="4">
+                             <MudSelect Label="Job Card" T="JobcardModel" Value="model.Jobcard" ValueChanged="OnChangeJobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@SetIncomingVal" Class="admin-input-group">
+                                 @foreach (var ditem in JobcardList)
+                                {
+                                    <MudSelectItem Value="@ditem">@ditem.JobcardNumber</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <TruckSelector @bind-Value="@model.Truck" BranchID="@model.BranchID" IsDisabled="@SetIncomingVal" Filter="All" Class="admin-input-group"></TruckSelector>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <StoreSelector @bind-Value="@model.Store" BranchID="@(model.BranchID??0)" Class="admin-input-group"></StoreSelector>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="model.Remarks" Label="Remarks / Special Instructions" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" For="@(() => model.Remarks)" Class="admin-input-group"></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+
+                <div class="admin-glass-card pa-0 overflow-hidden mb-6">
+                    <div class="px-6 py-4 border-bottom-subtle d-flex align-center" style="background: rgba(255, 159, 67, 0.03); border-bottom: 1px solid rgba(255, 159, 67, 0.3);">
+                        <MudIcon Icon="@Icons.Material.Filled.List" Color="Color.Warning" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Requested Items</span>
+                    </div>
+                    <div class="modern-admin-table">
+                        <MudSimpleTable Style="width:100%" Hover="true" FixedHeader="true" Dense="true" Elevation="0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60%">ITEM DESCRIPTION</th>
+                                    <th>QUANTITY</th>
+                                    <th style="width: 50px"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in model.Items)
+                                {
+                                    <tr>
+                                        <td>
+                                            <MudText Typo="Typo.body2" Class="fw-bold">
+                                                @(ItemList.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.ItemGroup.ItemGroupDescription) - @(ItemList.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.ItemDescription)
+                                            </MudText>
+                                        </td>
+                                        <td>@item.ItemQty</td>
+                                        <td>
+                                            @if (!ReadOnly)
+                                            {
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(()=> DeleteItem(@item))" />
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                                @if (!ReadOnly)
+                                {
+                                    <tr style="background: rgba(54, 117, 136, 0.05);">
+                                        <td>
+                                            <InventoryItemSelector Value="SelectedItems" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" Class="admin-input-group" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="Entrymodel.ItemQty" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" HideSpinButtons />
+                                        </td>
+                                        <td>
+                                            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" OnClick="AddSubList" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </div>
+                </div>
             </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Disabled="@_busy" form="inventoryRequestForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-    </DialogActions>
-</MudDialog>
+        </div>
+    </FormContent>
+    <VerificationStatus>
+        @if (ReadOnly)
+        {
+            <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="Inventory Request" DocNumber="@model.RequestNumber" DocumentID="model.RequestID" OnApprove="Approve"></AutherizationStatusComponent>
+        }
+    </VerificationStatus>
+</DialogForm>
 
 @code {
 
@@ -93,6 +119,7 @@
     private GstUsageCodeModel gstusge = new();
     public string Area { get; set; } = null;
     public bool Local { get; set; } = true;
+    public DateTime? DocDate { get; set; }
     private string UserID = null;
     public int SubAssetModel { get; set; }
     private List<InventoryItemModel> ItemList = new();
@@ -136,6 +163,7 @@
         }
         ItemList = itemIservice.SearchByDescription(string.Empty).ToList();
         JobcardList = IJobcardService.SelectByBranch(model.BranchID, true).ToList();
+        DocDate = model.RequestDate;
     }
 
     protected override void OnParametersSet()
@@ -230,6 +258,22 @@
         {
             int rowIndex = model.Items.IndexOf(ItemDetails);
             model.Items.RemoveAt(rowIndex);
+        }
+    }
+
+    protected async Task Approve(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+            try
+            {
+                // Iservice.Approve(model.RequestID, UserID, aprvd.Remarks);
+                snackbar.Add("Approved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
     }
 
