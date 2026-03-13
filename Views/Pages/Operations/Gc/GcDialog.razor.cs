@@ -11,6 +11,7 @@ using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 using Views.Pages.Operations.Place;
+using Views.Shared;
 using static NuGet.Packaging.PackagingConstants;
 
 
@@ -44,6 +45,7 @@ namespace Views.Pages.Operations.Gc
         private int _tabIndex = 0;
         private bool _tabAdded = false;
         private bool _busy;
+        private DialogForm dialogForm;
         string UserID;
         int BranchID;
         public bool HasPermissionGcServiceEdit { get; set; } = false;

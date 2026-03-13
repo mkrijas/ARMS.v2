@@ -51,56 +51,129 @@
             }
         </MudGrid>
     </MudContainer> *@
-    <MudPaper Elevation="0" Class="pa-4 mt-6 border-solid border-2 mud-border-lines-default" Outlined="true">
-        <MudTable Items="@collection" Dense="true" Elevation="0" Hover="true" Breakpoint="Breakpoint.Sm" Striped="true">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6" Class="fw-bold"><MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Class="mr-2 mb-n1" />Verification Status</MudText>
-                <MudSpacer />
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Verification Type</MudText></MudTh>
-                <MudTh Style="text-align: right;"><MudText Typo="Typo.subtitle2" Class="fw-bold">Verified By / Action</MudText></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                @{
-                    Color typeColor = context.IsCompleted ? Color.Success : Color.Default;
-                    if(context.AuthLevelID == 100 && context.IsCompleted) typeColor = Color.Error;
+    <MudPaper Elevation="0" Class="pa-6 mt-6 border-solid border-1 mud-border-lines-default rounded-lg" Outlined="true" Style="background: var(--mud-palette-background-grey);">
+        <MudText Typo="Typo.h6" Class="fw-bold mb-6" Style="display: flex; align-items: center;">
+            <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn" Color="Color.Primary" Class="mr-2" />
+            Verification Journey
+        </MudText>
+
+        <MudTimeline TimelineOrientation="TimelineOrientation.Vertical" TimelinePosition="TimelinePosition.Start">
+            @foreach (var item in collection)
+            {
+                // Logic to hide irrelevant steps once finalized
+                if (Authorized && item.AuthLevelID == 100 && !item.IsCompleted) continue; // Hide Deny if already Approved
+                if (Rejected && !item.IsCompleted && item.AuthLevelID != 100) continue; // Hide other pending steps if already Rejected
+
+                var isRejected = item.AuthLevelID == 100 && item.IsCompleted;
+                var isActive = !Rejected && !Authorized && authlevelID != null && (item.AuthLevelID == authlevelID || item.AuthLevelID == 100);
+                var isPending = !Rejected && !Authorized && authlevelID != null && item.AuthLevelID > authlevelID && item.AuthLevelID != 100;
+                
+                Variant dotStyle = Variant.Filled;
+                Color dotColor = Color.Default;
+                string icon = Icons.Material.Filled.Circle;
+
+                if (item.IsCompleted)
+                {
+                    dotColor = isRejected ? Color.Error : Color.Success;
+                    icon = isRejected ? Icons.Material.Filled.Error : Icons.Material.Filled.CheckCircle;
                 }
-                <MudTd DataLabel="Verification Type">
-                    <MudText Typo="Typo.body2" Color="@typeColor" Class="fw-bold">@context.AuthType</MudText>
-                </MudTd>
-                <MudTd DataLabel="Verified By / Action" Style="text-align: right;">
-                    @if (!Rejected && !Authorized && authlevelID != null && (context.AuthLevelID == authlevelID))
-                    {
-                        <MudButton OnClick="@(()=> OpenDialog(context))" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Small" Class="rounded-pill px-4">Verify</MudButton>
-                    }
-                    else if (!Rejected && !Authorized && authlevelID != null && (context.AuthLevelID == 100))
-                    {
-                        <MudButton OnClick="@(()=> OpenDialog(context))" Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" Class="rounded-pill px-4">Reject</MudButton>
-                    }
-                    else if (!Rejected && !Authorized && authlevelID != null && context.AuthLevelID > authlevelID)
-                    {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">Pending</MudChip>
-                    }
-                    else
-                    {
-                        @if (context.IsCompleted && context.AuthLevelID == 100)
+                else if (isActive)
+                {
+                    dotColor = item.AuthLevelID == 100 ? Color.Error : Color.Primary;
+                    icon = item.AuthLevelID == 100 ? Icons.Material.Filled.Close : Icons.Material.Filled.PlayArrow;
+                    dotStyle = Variant.Outlined;
+                }
+                else if (isPending)
+                {
+                    dotColor = Color.Default;
+                    icon = Icons.Material.Filled.RadioButtonUnchecked;
+                }
+
+                <MudTimelineItem Color="@dotColor" Variant="@dotStyle" Icon="@icon">
+                    <ItemOpposite>
+                        @if (item.IsCompleted)
                         {
-                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">Rejected: @context.DisplayString</MudChip>
-                        }
-                        else if (context.IsCompleted)
-                        {
-                            <MudText Typo="Typo.body2" Color="Color.Success" Class="fw-bold">@context.DisplayString</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@item.UserInfo?.TimeStampField?.ToString("dd MMM yyyy")</MudText>
+                            <br/>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.7rem;">@item.UserInfo?.TimeStampField?.ToString("hh:mm tt")</MudText>
                         }
                         else
                         {
-                            <MudText Typo="Typo.body2">@context.DisplayString</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mud-text-secondary">@item.AuthType</MudText>
                         }
-                    }
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
+                    </ItemOpposite>
+                    <ItemContent>
+                        <MudCard Elevation="1" Class="@(item.IsCompleted ? "pa-4 rounded-xl border-l-4" : "pa-4 rounded-xl")" 
+                                 Style="@(item.IsCompleted ? $"border-left-color: {(isRejected ? "var(--mud-palette-error)" : "var(--mud-palette-success)")} !important;" : "")">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.subtitle1" Class="fw-bold">@item.AuthType</MudText>
+                                    @if (item.IsCompleted)
+                                    {
+                                        <MudStack Spacing="0" Class="mt-1">
+                                            <MudText Typo="Typo.body2" Class="mud-text-primary fw-bold" Style="display: flex; align-items: center;">
+                                                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
+                                                @item.UserInfo?.UserID
+                                            </MudText>
+                                            @if (!string.IsNullOrEmpty(item.Remarks))
+                                            {
+                                                <MudText Typo="Typo.body2" Class="mt-2 pa-2 mud-bg-muted rounded mud-text-secondary italic" Style="font-size: 0.85rem; border-left: 2px solid var(--mud-palette-divider);">
+                                                    "@item.Remarks"
+                                                </MudText>
+                                            }
+                                        </MudStack>
+                                    }
+                                    else if (isActive)
+                                    {
+                                        <MudText Typo="Typo.body2" Color="Color.Primary" Class="italic">Action Required</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary">Awaiting completion</MudText>
+                                    }
+                                </MudStack>
+
+                                <MudStack Row="true" AlignItems="AlignItems.Center">
+                                    @if (isActive)
+                                    {
+                                        if (item.AuthLevelID == 100)
+                                        {
+                                            <MudButton OnClick="@(()=> OpenDialog(item))" 
+                                                       Variant="Variant.Filled" 
+                                                       Color="Color.Error" 
+                                                       StartIcon="@Icons.Material.Filled.Close" 
+                                                       Size="Size.Small" 
+                                                       Class="rounded-pill">Reject Entry</MudButton>
+                                        }
+                                        else
+                                        {
+                                            <MudButton OnClick="@(()=> OpenDialog(item))" 
+                                                       Variant="Variant.Filled" 
+                                                       Color="Color.Primary" 
+                                                       StartIcon="@Icons.Material.Filled.Check" 
+                                                       Size="Size.Small" 
+                                                       Class="rounded-pill px-6">Approve</MudButton>
+                                        }
+                                    }
+                                    else if (isPending)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">Pending</MudChip>
+                                    }
+                                    else if (item.IsCompleted)
+                                    {
+                                        <MudIcon Icon="@(isRejected ? Icons.Material.Filled.Error : Icons.Material.Filled.Verified)" 
+                                                 Color="@(isRejected ? Color.Error : Color.Success)" 
+                                                 Size="Size.Medium" />
+                                    }
+                                </MudStack>
+                            </MudStack>
+                        </MudCard>
+                    </ItemContent>
+                </MudTimelineItem>
+            }
+        </MudTimeline>
     </MudPaper>
+
 }
 
 @code {
