@@ -7,74 +7,81 @@
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <DialogContent>
-        <EditForm id="routeForm" Model="@routemodel" OnValidSubmit="SubmitRoute">
-            <ObjectGraphDataAnnotationsValidator />
-            <ValidationSummary />
-            @if (ValidationMessageOrgin != null)
-            {
-                <div class="validation-message">@(ValidationMessageOrgin)</div>
-            }
-            @if (ValidationMessageDestination != null)
-            {
-                <div class="validation-message">@(ValidationMessageDestination)</div>
-            }
-            <MudGrid>
-                <MudItem xs="12" md="4">
-                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Origin" Value="@routemodel.Origin" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ValueChanged="@ValidateOrgine" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
-                                     Variant="Variant.Outlined" Immediate="true" MaxItems="50"></MudAutocomplete>
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Via" @bind-Value="@routemodel.Via" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
-                                     Variant="Variant.Outlined" Immediate="true" MaxItems="50"></MudAutocomplete>
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Destination" Value="@routemodel.Destination" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ValueChanged="@ValidateDestination" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
-                                     Variant="Variant.Outlined" Immediate="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add" OnAdornmentClick="AddPlace" AdornmentAriaLabel="Add Place" MaxItems="50"></MudAutocomplete>
-                </MudItem>                
-                <MudItem xs="12" md="4">
-                    <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.SpeedLimit" Label="Speed Limit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.SpeedLimit)"></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.RunningHours" Label="Running Hours" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() =>routemodel.RunningHours)"></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudNumericField @bind-Value="@routemodel.TollBooths" Label="No of TollBooths" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.TollBooths)"></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="3">
-                    <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.Distance" Label="Distance(as per client)" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.Distance)"></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="3">
-                    <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.DistanceInGps" Label="Distance(as per GPS)" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.DistanceInGps)"></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="3">
-                    <MudTextField @bind-Value="@routemodel.MileageModifierPercentage" Label="Mileage Modifier" Adornment="Adornment.End" AdornmentText="%" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.MileageModifierPercentage)"></MudTextField>
-                </MudItem>
-                <MudItem xs="12" md="3">
-                    <MudNumericField ReadOnly="(!HasPermissionRouteServiceModify && routemodel.RouteID != null)" HideSpinButtons="true" @bind-Value="@routemodel.SettledKm" Label="Settled KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.SettledKm)"></MudNumericField>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudRadioGroup T="string" @bind-Value="@routemodel.RouteType">
-                        @foreach (var rtype in RouteTypes)
-                        {
-                            <MudRadio T="string" Value="@rtype" Color="Color.Primary">@rtype</MudRadio>
-                        }
-                    </MudRadioGroup>
-                </MudItem>
-            </MudGrid>
-        </EditForm>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Disabled="@_busy" form="routeForm" Variant="Variant.Filled" Color="Color.Success" @onclick="@(() => ValidateOrgineAndDestination())" ButtonType="ButtonType.Submit">Save Route</MudButton>
-    </DialogActions>
-</MudDialog>
+<DialogForm @ref="@dialogForm" Title="Route" Subtitle="Define transit routes, speed limits, and distance parameters." Icon="@Icons.Material.Filled.AltRoute" AdminStyle="true" formID="routeForm" model="@routemodel" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper pa-4">
+            <EditForm id="routeForm" Model="@routemodel" OnValidSubmit="SubmitRoute">
+                <div class="admin-glass-card pa-6">
+                    <ObjectGraphDataAnnotationsValidator />
+                    <MudValidationSummary />
+                    @if (ValidationMessageOrgin != null)
+                    {
+                        <div class="validation-message mb-2">@(ValidationMessageOrgin)</div>
+                    }
+                    @if (ValidationMessageDestination != null)
+                    {
+                        <div class="validation-message mb-4">@(ValidationMessageDestination)</div>
+                    }
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Origin" Value="@routemodel.Origin" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ValueChanged="@ValidateOrgine" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
+                                             Variant="Variant.Outlined" Immediate="true" MaxItems="50" Class="modern-input"></MudAutocomplete>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Via (Optional)" @bind-Value="@routemodel.Via" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
+                                             Variant="Variant.Outlined" Immediate="true" MaxItems="50" Class="modern-input"></MudAutocomplete>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Destination" Value="@routemodel.Destination" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ValueChanged="@ValidateDestination" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
+                                             Variant="Variant.Outlined" Immediate="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add" OnAdornmentClick="AddPlace" AdornmentAriaLabel="Add Place" MaxItems="50" Class="modern-input"></MudAutocomplete>
+                        </MudItem>                
+                        <MudItem xs="12" md="4">
+                            <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.SpeedLimit" Label="Speed Limit (km/h)" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => routemodel.SpeedLimit)" Class="modern-input"></MudNumericField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.RunningHours" Label="Est. Running Hours" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() =>routemodel.RunningHours)" Class="modern-input"></MudNumericField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudNumericField @bind-Value="@routemodel.TollBooths" Label="Count of Toll Booths" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => routemodel.TollBooths)" Class="modern-input"></MudNumericField>
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.Distance" Label="Distance (Client)" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => routemodel.Distance)" Class="modern-input"></MudNumericField>
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.DistanceInGps" Label="Distance (GPS)" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => routemodel.DistanceInGps)" Class="modern-input"></MudNumericField>
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudTextField @bind-Value="@routemodel.MileageModifierPercentage" Label="Mileage Modifier %" Adornment="Adornment.End" AdornmentText="%" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => routemodel.MileageModifierPercentage)" Class="modern-input"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudNumericField ReadOnly="(!HasPermissionRouteServiceModify && routemodel.RouteID != null)" HideSpinButtons="true" @bind-Value="@routemodel.SettledKm" Label="Settled KM" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => routemodel.SettledKm)" Class="modern-input"></MudNumericField>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <div class="px-2 py-1">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Route Classification</MudText>
+                                <MudRadioGroup T="string" @bind-Value="@routemodel.RouteType" Class="admin-radio-group">
+                                    @foreach (var rtype in RouteTypes)
+                                    {
+                                        <MudRadio T="string" Value="@rtype" Color="Color.Primary">@rtype</MudRadio>
+                                    }
+                                </MudRadioGroup>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+            </EditForm>
+        </div>
+    </FormContent>
+    <Actions>
+         <MudButton Disabled="@_busy" form="routeForm" Variant="Variant.Filled" Color="Color.Success" @onclick="@(() => ValidateOrgineAndDestination())" ButtonType="ButtonType.Submit">Save Route</MudButton>
+    </Actions>
+</DialogForm>
 
 @code {
 
     [Parameter]
     public RouteModel routemodel { get; set; }
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
     public List<PlaceModel> places = new List<PlaceModel>();
     private List<string> RouteTypes = new List<string>() { "Highland", "City", "Highway", "Other" };
     private string searchRoute = "";
@@ -171,7 +178,7 @@
             {
                 routemodel = await Iservice.Update(routemodel);
                 snackbar.Add("Saved Successfully", Severity.Success);
-                MudDialog.Close(routemodel);
+                dialogForm.Close(routemodel);
                 routemodel = new RouteModel();
             }
             catch (Exception ex)

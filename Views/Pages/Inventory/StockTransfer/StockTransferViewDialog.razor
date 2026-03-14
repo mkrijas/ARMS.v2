@@ -4,73 +4,86 @@
 @inject IInventoryReleaseService inventoryReleaseService
 @inject IStockTransferService IStockTransferService
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-3" /> View Items
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudContainer>
-            <MudPaper Class="p-3" Elevation="0">
-                <EditForm id="form" Model="@InitiationModel" OnValidSubmit="OnValidSubmit">
-                    <MudGrid>
+<DialogForm @ref="@dialogForm" Title="Inventory Transfer Manifest" Subtitle="Detailed audit of cross-branch stock movement and item delivery status." Icon="@Icons.Material.Filled.Assignment" AdminStyle="true" formID="formStockTransferView" model="@InitiationModel" _busy="_busy" ReadOnly="@IsView">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <EditForm id="formStockTransferView" Model="@InitiationModel" OnValidSubmit="OnValidSubmit">
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Transfer Authentication</span>
+                    </div>
+
+                    <MudGrid Spacing="3">
                         <MudItem xs="12" md="6">
-                            <MudDatePicker Disabled="true" Label="Initiated Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="false" @bind-Date="InitiationModel.InitiatedDate" DateFormat="dd/MM/yyyy" />
+                            <MudDatePicker Disabled="true" Label="Initiation Timestamp" Variant="Variant.Outlined" Margin="Margin.Normal" DisableToolbar="true" Editable="false" @bind-Date="InitiationModel.InitiatedDate" DateFormat="dd/MM/yyyy" Class="modern-input" AdornmentIcon="@Icons.Material.Filled.Event" />
                         </MudItem>
                         <MudItem xs="12" md="6">
                             <StoreSelector IsDisabled="IsView" Value="SelectedStore" ValueChanged="StoreChanged"></StoreSelector>
                         </MudItem>
-                        <MudItem xs="12" md="4">
-                        </MudItem>
                     </MudGrid>
-                    <br />
-                    <MudSimpleTable Elevation="1" Hover="true" Dense="true" FixedHeader="true">
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th>Total</th>
-                                <th>@InitiationModel.TotalValue</th>
-                                <th></th>
-                            </tr>
-                            <tr>
-                                <th>Items</th>
-                                <th>Initiated Quantity</th>
-                                <th>Rate</th>
-                                <th>Delivered Quantity</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in itm)
-                            {
-                                <tr>
-                                    <td>@item.ItemDescription</td>
-                                    <td>@item.ItemQty</td>
-                                    <td>@item.ItemRate</td>
-                                    <td>
-                                        @if (item.ItemGstVal!.HasValue)
-                                        {
-                                            <Center>-</Center>
-                                        }
-                                        @if (item.ItemGstVal.HasValue)
-                                        {
-                                            @item.ItemGstVal
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </MudSimpleTable>
-                </EditForm>
-            </MudPaper>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton form="form" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">Submit</MudButton>
-    </DialogActions>
-</MudDialog>
+                </div>
+
+                <div class="admin-glass-card pa-0 overflow-hidden">
+                    <div class="pa-6 border-b">
+                        <div class="d-flex align-center justify-space-between">
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.ListAlt" Color="Color.Primary" Class="mr-2" />
+                                <span class="admin-section-label mb-0">Consolidated Item Manifest</span>
+                            </div>
+                            <div class="admin-badge primary px-4 py-2 rounded-pill">
+                                <span class="fw-700">Total Value: @InitiationModel.TotalValue?.ToString("C2")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <MudTable Items="@itm" Dense="true" Hover="true" Elevation="0" Class="modern-table no-border-radius" HeaderClass="admin-table-header" Breakpoint="Breakpoint.Sm">
+                        <HeaderContent>
+                            <MudTh>Material Specification</MudTh>
+                            <MudTh Style="text-align: right">Requested Qty</MudTh>
+                            <MudTh Style="text-align: right">Unit Rate</MudTh>
+                            <MudTh Style="text-align: right">Delivered Qty</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Material">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="mr-2 color-muted" />
+                                    <MudText Typo="Typo.body2" Class="fw-500">@context.ItemDescription</MudText>
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="Qty" Style="text-align: right">
+                                <span class="fw-600">@context.ItemQty</span>
+                            </MudTd>
+                            <MudTd DataLabel="Rate" Style="text-align: right">
+                                @context.ItemRate?.ToString("C2")
+                            </MudTd>
+                            <MudTd DataLabel="Delivered" Style="text-align: right">
+                                @if (context.ItemGstVal.HasValue)
+                                {
+                                    <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Class="fw-700">@context.ItemGstVal</MudChip>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Class="color-muted">PENDING</MudText>
+                                }
+                            </MudTd>
+                        </RowTemplate>
+                        <NoRecordsContent>
+                            <div class="pa-12 text-center color-muted gray-bg">
+                                <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Class="mb-2 opacity-30" />
+                                <MudText Typo="Typo.body2">No logistical items documented for this transfer.</MudText>
+                            </div>
+                        </NoRecordsContent>
+                    </MudTable>
+                </div>
+            </EditForm>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
+    DialogForm dialogForm;
+    private bool _busy;
 
     public StoreModel SelectedStore { get; set; } = new();
     public int? branchID { get; set; }

@@ -6,22 +6,46 @@
 @inject IDialogService DialogService
 @using System.Threading;
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.ProductionQuantityLimits" Class="mr-3 mb-n1" />
-            Inventory Group
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Style="min-height:300px;max-height: 800px;">
-            <EditForm id="formtdsRate" Model="@Model" OnValidSubmit="OnValidSubmit">
+<DialogForm @ref="@dialogForm" Title="Inventory Taxonomy (Primary)" Subtitle="Establish high-level inventory classifications and operational status for global asset tracking." Icon="@Icons.Material.Filled.AccountTree" AdminStyle="true" formID="formtdsRate" model="@Model.Group" _busy="@_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <EditForm id="formtdsRate" Model="@Model.Group" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
+                
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Primary Classification Metadata</span>
+                    </div>
+
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="Model.Group.InventoryGroupName" Label="Classification Identity (Group Name)" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => Model.Group.InventoryGroupName)" Class="modern-input" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Label" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <div class="d-flex align-center pa-4 rounded-lg gray-bg">
+                                <MudIcon Icon="@Icons.Material.Filled.PowerSettingsNew" Color="@(Model.Group.InventoryGroupStatus == 2 ? Color.Success : Color.Default)" Class="mr-3" />
+                                <div class="flex-grow-1">
+                                    <MudText Typo="Typo.subtitle2" Class="fw-700">Operational Status</MudText>
+                                    <MudText Typo="Typo.caption" Class="opacity-60">Designate the active lifecycle state for this classification.</MudText>
+                                </div>
+                                <MudRadioGroup T="int?" @bind-Value="Model.Group.InventoryGroupStatus" Class="d-flex gap-4">
+                                    <MudRadio Value="@(2)" Color="Color.Success">Active</MudRadio>
+                                    <MudRadio Value="@(3)" Color="Color.Error">Inactive</MudRadio>
+                                </MudRadioGroup>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+
+                <div class="admin-glass-card pa-6 text-center shadow-none gray-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" Size="Size.Large" Class="mb-2" />
+                    <MudText Typo="Typo.body2" Class="fw-500 opacity-70">
+                        Primary taxonomy definitions propagate across all downstream inventory and procurement modules.
+                    </MudText>
+                </div>
+
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" md="12">
-                        <MudTextField ReadOnly @bind-Value="Model.Group.InventoryGroupName" Label="Group Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.Group.InventoryGroupName)"></MudTextField>
-                    </MudItem>
                     <MudItem xs="12">
                         <MudAutocomplete T="ChartOfAccountModel" Label="Mapped Purchase Head" @bind-Value="MappedPurchaseHead_at" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
                                          Margin="Margin.Dense" AdornmentColor="Color.Secondary" AnchorOrigin="Origin.BottomCenter" SearchFunc="SearchAccounts" ToStringFunc="@(e => (e == null) ? null : (string.IsNullOrEmpty(e.AccountName) ? "" : string.Format("{0} | {1}",e.AccountCode,e.AccountName)))"></MudAutocomplete>
@@ -36,22 +60,18 @@
                     </MudItem>
                 </MudGrid>
             </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Disabled="@_busy" form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-    </DialogActions>
-</MudDialog>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
+    DialogForm dialogForm;
 
     [Parameter]
     public InventoryGroup2Model Model { get; set; }
     private ChartOfAccountModel MappedPurchaseHead_at = null;
     private ChartOfAccountModel MappedConsumptionHead_at = null;
     private ChartOfAccountModel MappedNonInventoryPurchaseHead_at = null;
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     private bool _busy;
 
     protected override async Task OnInitializedAsync()
@@ -96,7 +116,7 @@
         Model.Group.MappedConsumptionHead = MappedConsumptionHead_at.CoaID;
         Model.Group.MappedPurchaseHead = MappedPurchaseHead_at.CoaID;
         Model.Group.MappedNonInventoryPurchaseHead = MappedNonInventoryPurchaseHead_at.CoaID;
-        MudDialog.Close(Model);
+        dialogForm.Close(Model);
 
         await Task.Delay(200);
         _busy = false;
@@ -104,6 +124,6 @@
 
     private void Cancel()
     {
-        MudDialog.Cancel();
+        dialogForm.Cancel();
     }
 }

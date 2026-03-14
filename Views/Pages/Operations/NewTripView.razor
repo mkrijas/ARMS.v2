@@ -14,113 +14,107 @@
 @inject IDialogService DialogService
 @inject IBranchSettingsService IbranchSettings
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.AddRoad" Class="mr-3 mb-n1"/>
-            Start New Trip
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        @if (model != null)
-        {
-            <EditForm id="formStartTrip" Model="@model" OnValidSubmit="OnValidSubmit">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                
-                @if (IsLoading)
-                {
-                    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
-                        <LoaderComponent IsFullScreen="true" 
-                                        ShowLogo="false" 
-                                        Size="medium" 
-                                        LoadingText="Loading Trip Details" 
-                                        SubText="Please wait..." />
+<DialogForm @ref="@dialogForm" Title="Commence New Expedition" Subtitle="Initialize logistical journey parameters and authorize vehicle departure." Icon="@Icons.Material.Filled.AddRoad" AdminStyle="true" formID="formStartTrip" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            @if (model != null)
+            {
+                <EditForm id="formStartTrip" Model="@model" OnValidSubmit="OnValidSubmit">
+                    <ObjectGraphDataAnnotationsValidator />
+                    
+                    <div class="admin-glass-card pa-0 mb-6 overflow-hidden">
+                        <div class="pa-6" style="background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);">
+                            <div class="d-flex align-center justify-space-between">
+                                <div class="d-flex align-center">
+                                    <div class="mr-4 pa-3 rounded-lg" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(4px);">
+                                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Inherit" style="color: white !important;" Size="Size.Large"/>
+                                    </div>
+                                    <div>
+                                        <MudText Typo="Typo.h5" Class="white-text fw-700">@Truck.RegNo</MudText>
+                                        <MudText Typo="Typo.caption" Class="white-text-secondary">Expeditionary Asset Registration</MudText>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-center">
+                                    <div class="text-right mr-3">
+                                        <MudText Typo="Typo.subtitle1" Class="white-text fw-600">@(AssignedDriver?.DriverName ?? "UNASSIGNED")</MudText>
+                                        <MudText Typo="Typo.caption" Class="white-text-secondary">Designated Operator</MudText>
+                                    </div>
+                                    <MudAvatar Color="Color.Surface" Size="Size.Large" Class="shadow-sm">
+                                        <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Primary" />
+                                    </MudAvatar>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                }
-                else
-                {
-                    <MudGrid Spacing="2" Class="mt-2">
-                        <MudItem xs="12">
-                            <MudPaper Elevation="0" Class="pa-3 rounded custom-header-box" Style="background-color: #f5f5f5; border: 1px solid #e0e0e0;">
-                                 <div class="d-flex align-center justify-space-between">
-                                    <div class="d-flex align-center">
-                                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Primary" Class="mr-2" Size="Size.Large"/>
-                                        <div>
-                                            <MudText Typo="Typo.h6" Color="Color.Primary" Class="ma-0">@Truck.RegNo</MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Default">Registration Number</MudText>
-                                        </div>
+
+                    @if (IsLoading)
+                    {
+                        <div class="d-flex justify-center align-center py-12">
+                            <LoaderComponent IsFullScreen="false" ShowLogo="false" Size="medium" LoadingText="Synchronizing Parameters" SubText="Retrieving latest asset telemetry..." />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="admin-glass-card pa-6">
+                            <div class="d-flex align-center mb-6">
+                                <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Primary" Class="mr-2" />
+                                <span class="admin-section-label mb-0">Configuration & Telemetry</span>
+                            </div>
+
+                            <MudGrid Spacing="3">
+                                <MudItem xs="12">
+                                    <div class="modern-checkbox pa-2 rounded-lg" style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px dashed var(--mud-palette-primary);">
+                                        <MudCheckBox Value="@startWithLoading" Label="Commence with Cargo Loading Operations" T="bool" ValueChanged="EventSelected" Color="Color.Primary" Dense="true" UncheckedColor="Color.Default"></MudCheckBox>
                                     </div>
-                                    <div class="d-flex align-center">
-                                         <div class="d-flex flex-column align-end mr-2">
-                                            <MudText Typo="Typo.subtitle1" Color="@(AssignedDriver == null ? Color.Warning : Color.Dark)">
-                                                @(AssignedDriver?.DriverName ?? "UNASSIGNED")
-                                            </MudText>
-                                            <MudText Typo="Typo.caption">Driver</MudText>
-                                         </div>
-                                         <MudAvatar Color="@(AssignedDriver == null ? Color.Warning : Color.Secondary)" Size="Size.Medium">
-                                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Medium"/>
-                                         </MudAvatar>
-                                    </div>
-                                 </div>
-                            </MudPaper>
-                        </MudItem>
+                                </MudItem>
 
-                        <MudItem xs="12">
-                             <MudCheckBox Value="@startWithLoading" Label="Start with Loading" T="bool" ValueChanged="EventSelected" Color="Color.Primary"></MudCheckBox>
-                        </MudItem>
-
-                        @if (_canEditTime)
-                        {
-                            <MudItem xs="12" md="6">
-                                <MudTextField Label="Trip Date & Time" Format="s" Variant="Variant.Outlined" @bind-Value="@currentEvent.EventTime" InputType="InputType.DateTimeLocal" Margin="Margin.Dense" Max="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" Min="2024-04-01T00:00" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.CalendarToday"/>
-                            </MudItem>
-                        }
-                        
-                        <MudItem xs="12" md="6">
-                            <MudNumericField HideSpinButtons @bind-Value="currentEvent.EventReading" Label="Odometer Reading" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Speed"></MudNumericField>
-                        </MudItem>
-
-                        <MudItem xs="12" md="@(startWithLoading ? 12 : 6)">
-                            <MudAutocomplete T="PlaceModel" Variant="Variant.Outlined" Label="Origin" Value="Origin" ValueChanged="OriginChanged" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Margin="Margin.Dense" MaxItems="50" AdornmentIcon="@Icons.Material.Filled.Place" AdornmentColor="Color.Success"></MudAutocomplete>
-                        </MudItem>
-                        
-                        @if (!startWithLoading)
-                        {
-                            <MudItem xs="12" md="6">
-                                <MudAutocomplete T="PlaceModel" Variant="Variant.Outlined" Label="Destination" Value="Destination" ValueChanged="DestinationChanged" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Margin="Margin.Dense" MaxItems="50" AdornmentIcon="@Icons.Material.Filled.Place" AdornmentColor="Color.Error"></MudAutocomplete>
-                            </MudItem>
-                        }
-
-                        <MudItem xs="12" md="12">
-                             <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="currentEvent.NextEventTypeID" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" Margin="Margin.Dense" ToStringFunc="GetEventTypeName" AnchorOrigin="MudBlazor.Origin.BottomCenter">
-                                @foreach (var item in DestinationEventTypes)
+                                @if (_canEditTime)
                                 {
-                                    <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField Label="Expedition Commencement Timestamp" Format="s" Variant="Variant.Outlined" @bind-Value="@currentEvent.EventTime" InputType="InputType.DateTimeLocal" Margin="Margin.Normal" Max="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" Min="2024-04-01T00:00" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Schedule" Class="modern-input"/>
+                                    </MudItem>
                                 }
-                            </MudSelect>
-                        </MudItem>
+                                
+                                <MudItem xs="12" md="6">
+                                    <MudNumericField HideSpinButtons @bind-Value="currentEvent.EventReading" Label="Verified Odometer Synchronicity" Variant="Variant.Outlined" Margin="Margin.Normal" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Speed" Class="modern-input" Placeholder="Enter current reading..."></MudNumericField>
+                                </MudItem>
 
-                    </MudGrid>
-                }
-            </EditForm>
-        }
-        else
-        {
-             <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
-                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-            </div>
-        }
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Text" Color="Color.Default">Cancel</MudButton>
-        <MudButton Disabled="@_busy" form="formStartTrip" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" StartIcon="@Icons.Material.Filled.PlayArrow">Start Trip</MudButton>
-    </DialogActions>
-</MudDialog>
+                                <MudItem xs="12" md="@(startWithLoading ? 12 : 6)">
+                                    <MudAutocomplete T="PlaceModel" Variant="Variant.Outlined" Label="Expeditionary Origin" Value="Origin" ValueChanged="OriginChanged" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Margin="Margin.Normal" MaxItems="50" AdornmentIcon="@Icons.Material.Filled.Home" AdornmentColor="Color.Success" Class="modern-input" Placeholder="Search origin..."></MudAutocomplete>
+                                </MudItem>
+                                
+                                @if (!startWithLoading)
+                                {
+                                    <MudItem xs="12" md="6">
+                                        <MudAutocomplete T="PlaceModel" Variant="Variant.Outlined" Label="Strategic Destination" Value="Destination" ValueChanged="DestinationChanged" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Margin="Margin.Normal" MaxItems="50" AdornmentIcon="@Icons.Material.Filled.Flag" AdornmentColor="Color.Error" Class="modern-input" Placeholder="Search destination..."></MudAutocomplete>
+                                    </MudItem>
+                                }
+
+                                <MudItem xs="12">
+                                    <MudSelect Label="Operational Objective / Next Phase" T="byte?" @bind-Value="currentEvent.NextEventTypeID" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" Margin="Margin.Normal" ToStringFunc="GetEventTypeName" AnchorOrigin="MudBlazor.Origin.BottomCenter" Class="modern-input" AdornmentIcon="@Icons.Material.Filled.DoubleArrow">
+                                        @foreach (var item in DestinationEventTypes)
+                                        {
+                                            <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                            </MudGrid>
+                        </div>
+                    }
+                </EditForm>
+            }
+            else
+            {
+                <div class="d-flex justify-center align-center py-12">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                </div>
+            }
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
-
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public DriverModel AssignedDriver { get; set; }
     private EventModel lastEvent;
@@ -148,7 +142,7 @@
 
     private void Cancel()
     {
-        MudDialog.Cancel();
+        dialogForm.Cancel();
     }
 
     protected override async Task OnInitializedAsync()
@@ -320,7 +314,7 @@
                     //         currentEvent.EventTypeID = 2;
                     //         currentEvent = Ievent.Update(currentEvent);
                     //     }
-                    MudDialog.Close(DialogResult.Ok(model));
+                    dialogForm.Close(DialogResult.Ok(model));
                     // }
                 }
                 else

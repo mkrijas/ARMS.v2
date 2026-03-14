@@ -1,4 +1,5 @@
-@* @using System.Threading;
+@using System.Threading;
+@using ArmsServices.DataServices
 @inject AuthenticationStateProvider auth
 @inject ITruckTransferService Iservice
 @inject IBranchService Ibranchservice
@@ -6,115 +7,103 @@
 @inject ISnackbar Snackbar
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Accep Or Reject Truck.
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm id="formDriver" Model="@model" OnValidSubmit="Accept">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudItem xs="12" md="12">
-                    <MudTextField @bind-Value="model.Truck.RegNo" Label="Truck" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Truck.RegNo)" Disabled></MudTextField>
-                 </MudItem>
-                <MudItem xs="12" md="12">
-                    <MudTextField @bind-Value="model.InitiationBranch.BranchName" Label="Initiation Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InitiationBranch.BranchName)" Disabled></MudTextField>
-                </MudItem>
-                <MudItem xs="12" md="12" Class="mb-6">
-                    <MudTextField @bind-Value="model.TruckTransferEndModel.TruckEvent.EventReading" Label="EndKM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TruckTransferEndModel.TruckEvent.EventReading)" Required></MudTextField>
-                </MudItem>
-                <MudItem xs="12" md="12" Class="mb-6">
-                    <MudTextField @bind-Value="model.TruckTransferEndModel.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
-                </MudItem>
+<DialogForm @ref="@dialogForm" Title="Fleet Arrival Protocol" Subtitle="Verify asset status and finalize inter-branch migration or authorize rejection." Icon="@Icons.Material.Filled.FactCheck" AdminStyle="true" formID="formTruckTransferEnd" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <EditForm id="formTruckTransferEnd" Model="@model" OnValidSubmit="Accept">
+                <DataAnnotationsValidator />
+                
+                <div class="admin-glass-card pa-6 mb-6" style="border-left: 4px solid var(--mud-palette-info);">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" Class="mr-3" Size="Size.Large" />
+                        <div>
+                            <MudText Typo="Typo.subtitle1" Class="fw-600 color-info">Incoming Asset Acquisition</MudText>
+                            <MudText Typo="Typo.body2">
+                                Reviewing transfer of vehicle <b>@model.Truck.RegNo</b> from <b>@model.InitiationBranch.BranchName</b>.
+                            </MudText>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-glass-card pa-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.EditNote" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Arrival Verification</span>
+                    </div>
+                    
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="model.TruckTransferEndModel.TruckEvent.EventReading" Label="Verification Odometer Reading" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TruckTransferEndModel.TruckEvent.EventReading)" Required Class="modern-input" Adornment="Adornment.End" AdornmentText="KM" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="model.TruckTransferEndModel.Remarks" Label="Acquisition Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Remarks)" Class="modern-input" Lines="3" Placeholder="Enter any relevant observations upon arrival..." />
+                        </MudItem>
+                    </MudGrid>
+                </div>
             </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Class="px-12">Accept Truck</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reject" Class="px-12">Reject Truck</MudButton>
-    </DialogActions>
-</MudDialog>
+        </div>
+    </FormContent>
+    <Actions>
+        <div class="d-flex gap-4">
+            <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Success" OnClick="Accept" StartIcon="@Icons.Material.Filled.CheckCircle" Class="px-12 rounded-pill py-3 shadow-none">Accept Asset</MudButton>
+            <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Error" OnClick="Reject" StartIcon="@Icons.Material.Filled.Cancel" Class="px-12 rounded-pill py-3 shadow-none">Reject Transfer</MudButton>
+        </div>
+    </Actions>
+</DialogForm>
 
 @code {
-
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
+    private bool _busy;
     [Parameter]
     public TruckTransferInitiationModel model { get; set; } = new();
-    private int branchID { get; set; } = 0;
-
-    protected override async Task OnInitializedAsync()
-    {
-        branchID = model?.DestinationBranch?.BranchID ?? 0;
-    }
-
-    protected override void OnParametersSet()
-    {
-
-    }
 
     void Cancel()
     {
-        MudDialog.Cancel();
+        dialogForm.Cancel();
     }
 
     public async Task Accept()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        if (model.Truck == null || model.Truck.TruckID == 0)
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Warning",
-                "Please, Select truck.", yesText: "OK");
-            return;
-        }
-        if (model != null)
-        {
-            model.IstruckReject = 0;
-            model.TruckTransferEndModel.TruckEvent.UserInfo.UserID = user.Identity.Name;
-            try
-            {
-                model.TruckTransferEndModel.TransferStatus = true;
-                Iservice.UpdateStatus(model);
-                Snackbar.Add("Transfered succesfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
-        MudDialog.Close(model);
+        await ProcessStatus(false);
     }
 
     public async Task Reject()
     {
+        await ProcessStatus(true);
+    }
+
+    private async Task ProcessStatus(bool isReject)
+    {
+        if (_busy) return;
+        
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
+        
         if (model.Truck == null || model.Truck.TruckID == 0)
         {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Warning",
-                "Please, Select truck.", yesText: "OK");
+            await DialogService.ShowMessageBoxAsync("Warning", "Asset identity not verified.", yesText: "OK");
             return;
         }
-        if (model != null)
+        
+        _busy = true;
+        try
         {
-            model.IstruckReject = 1;
+            model.IstruckReject = (byte)(isReject ? 1 : 0);
             model.TruckTransferEndModel.TruckEvent.UserInfo.UserID = user.Identity.Name;
-            try
-            {
-                model.TruckTransferEndModel.TransferStatus = false;
-                Iservice.UpdateStatus(model);
-                Snackbar.Add("Transfered succesfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
+            model.TruckTransferEndModel.TransferStatus = !isReject;
+            
+            Iservice.UpdateStatus(model);
+            Snackbar.Add(isReject ? "Transfer Rejected" : "Asset Accepted Successfully", isReject ? Severity.Warning : Severity.Success);
+            dialogForm.Close(model);
         }
-        MudDialog.Close(model);
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            await Task.Delay(200);
+            _busy = false;
+        }
     }
-} *@
+}

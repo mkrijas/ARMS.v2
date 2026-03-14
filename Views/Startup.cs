@@ -243,7 +243,7 @@ namespace Views
             services.AddScoped<IPeriodicMaintenanceService, PeriodicMaintenanceService>();
             services.AddScoped<IInsuranceClaimService, InsuranceClaimService>();
             services.AddScoped<IRoutineCheckListService, RoutineCheckListService>();
-            //services.AddScoped<ITruckTransferService, TruckTransferService>();
+            services.AddScoped<ITruckTransferService, TruckTransferService>();
             #endregion
 
             #region ------------INVENTORY-------------------

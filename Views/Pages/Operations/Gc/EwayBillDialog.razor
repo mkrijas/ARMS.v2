@@ -8,48 +8,64 @@
 @inject IPushNotificationService IpushNotificationService
 @inject SignalRService signalRService
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.FileCopy" />
-            Eway Bill
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
-            <ObjectGraphDataAnnotationsValidator/>
-            <ValidationSummary />
-            <MudText Typo="Typo.h6">@model.SetGcNumber</MudText>
-            <MudTabs Outlined="true" Position="Position.Right" Rounded="true" Border="true" ApplyEffectsToContainer="true" Class="mt-8" PanelClass="pa-6">
-                @foreach (var wrapperitem in model.Gcs.Select((value, i) => new { i, value }))
-                {
-                    var item = wrapperitem.value.EwayBill;
-                    <MudTabPanel Text="@("Invoice No:"+wrapperitem.value.BillNumber)">
-                        <MudGrid>
-                            <MudItem xs="6">
-                                <MudTextField Mask="@(new PatternMask("000000000000"))" @bind-Value="item.EwayBillRef" Label="Eway Bill Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.EwayBillRef)"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="6">
-                                <MudDatePicker Label="Eway Bill Date" Variant="Variant.Outlined" Margin="Margin.Dense" TransformOrigin="Origin.BottomLeft" AnchorOrigin="Origin.BottomRight" DateChanged="((e) => EwayBillDateChanged(item, e))" DisableToolbar="true" Editable="true" Date="item.EwayBillDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
-                            </MudItem>
-                            <MudItem xs="12">
-                                <MudDatePicker Label="Eway Expire On" Variant="Variant.Outlined" Margin="Margin.Dense" TransformOrigin="Origin.BottomLeft" AnchorOrigin="Origin.BottomRight" DisableToolbar="true" Editable="true" @bind-Date="@(item.ExpireOn)" />
-                            </MudItem>
-                        </MudGrid>
-                    </MudTabPanel>
-                }
-            </MudTabs>
-        </EditForm>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Disabled="@_busy" form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
-    </DialogActions>
-</MudDialog>
+<DialogForm @ref="@dialogForm" Title="E-Way Bill Compliance" Subtitle="Register and validate regulatory travel documentation for active cargo consignments." Icon="@Icons.Material.Filled.Assignment" AdminStyle="true" formID="formEwayBill" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <EditForm id="formEwayBill" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator/>
+                
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center justify-space-between">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Numbers" Color="Color.Primary" Class="mr-3" />
+                            <div>
+                                <MudText Typo="Typo.subtitle2" Class="color-muted mb-n1">Consignment Set ID</MudText>
+                                <MudText Typo="Typo.h6" Class="fw-700">@model.SetGcNumber</MudText>
+                            </div>
+                        </div>
+                        <div class="admin-badge secondary px-4 py-2 rounded-pill">
+                            <span class="fw-600">@model.Gcs.Count Invoices</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-glass-card pa-0 overflow-hidden">
+                    <MudTabs Outlined="false" Position="Position.Left" Rounded="false" Border="true" ApplyEffectsToContainer="true" 
+                             Class="modern-tabs-vertical" PanelClass="pa-8" 
+                             SliderColor="Color.Primary" ActivePanelIndex="0">
+                        @foreach (var wrapperitem in model.Gcs.Select((value, i) => new { i, value }))
+                        {
+                            var item = wrapperitem.value.EwayBill;
+                            <MudTabPanel Text="@(wrapperitem.value.BillNumber)" Icon="@Icons.Material.Filled.Description">
+                                <div class="invoice-container">
+                                    <div class="d-flex align-center mb-6">
+                                        <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Color="Color.Primary" Class="mr-2" />
+                                        <span class="admin-section-label mb-0">Invoice Verification #@wrapperitem.value.BillNumber</span>
+                                    </div>
+
+                                    <MudGrid Spacing="4">
+                                        <MudItem xs="12">
+                                            <MudTextField Mask="@(new PatternMask("000000000000"))" @bind-Value="item.EwayBillRef" Label="12-Digit E-Way Bill Number" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => item.EwayBillRef)" Class="modern-input" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.QrCode" Placeholder="Enter 12 digits..."></MudTextField>
+                                        </MudItem>
+                                        <MudItem xs="12" md="6">
+                                            <MudDatePicker Label="Issuance Date" Variant="Variant.Outlined" Margin="Margin.Normal" DateChanged="((e) => EwayBillDateChanged(item, e))" DisableToolbar="true" Editable="true" Date="item.EwayBillDate" DateFormat="dd/MM/yyyy" Class="modern-input" AdornmentIcon="@Icons.Material.Filled.Today" />
+                                        </MudItem>
+                                        <MudItem xs="12" md="6">
+                                            <MudDatePicker Label="Legal Expiry Date" Variant="Variant.Outlined" Margin="Margin.Normal" DisableToolbar="true" Editable="true" @bind-Date="@(item.ExpireOn)" DateFormat="dd/MM/yyyy" Class="modern-input" AdornmentIcon="@Icons.Material.Filled.RunningWithErrors" />
+                                        </MudItem>
+                                    </MudGrid>
+                                </div>
+                            </MudTabPanel>
+                        }
+                    </MudTabs>
+                </div>
+            </EditForm>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
-
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
     [Parameter] public GcSetModel model { get; set; }
     private bool _busy;
 
@@ -81,7 +97,7 @@
     private void Cancel()
     {
         model = new();
-        MudDialog.Cancel();
+        dialogForm.Cancel();
     }
 
     // Method called when the form is submitted
@@ -115,7 +131,7 @@
                 }
                 snackbar.Add("Saved Successfully", Severity.Success);
                 await Task.Delay(200);
-                MudDialog.Close(DialogResult.Ok(model));
+                dialogForm.Close(DialogResult.Ok(model));
             }
             catch (Exception ex)
             {

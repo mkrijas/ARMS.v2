@@ -8,37 +8,46 @@
 @inject ISnackbar Snackbar
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Driver Leave Application
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <b>@model.Driver.DriverName</b> will enter leave as on <b>@DateTime.Today.ToLocalTime()</b>. Please Confirm<br /><br />
-        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+<DialogForm @ref="@dialogForm" Title="Personnel Absence Scheduling" Subtitle="Authorize and document driver leave requests with contractual return commitments." Icon="@Icons.Material.Filled.EventBusy" AdminStyle="true" formID="formDriverLeave" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <div class="admin-glass-card pa-6 mb-6" style="border-left: 4px solid var(--mud-palette-error);">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Color="Color.Error" Class="mr-3" Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Class="fw-bold fw-600 color-error">Critical Confirmation Required</MudText>
+                        <MudText Typo="Typo.body2">
+                            <b>@model.Driver.DriverName</b> will be marked as <b>Inactive/On-Leave</b> effective <b>@DateTime.Today.ToString("dd MMM yyyy")</b>.
+                        </MudText>
+                    </div>
+                </div>
+            </div>
+
+            <EditForm id="formDriverLeave" Model="@model" OnValidSubmit="Submit">
                 <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudGrid>
-                    <MudItem xs="12" md="6">
-                        <MudDatePicker Label="Expected Return Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.ExpectedReturn" DateFormat="dd/MM/yyyy" />
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Reason" Label="Remarks" Variant="Variant.Outlined" Lines="3" Margin="Margin.Dense" For="@(() => model.Reason)"></MudTextField>
-                    </MudItem>
-                </MudGrid>
+                
+                <div class="admin-glass-card pa-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.History" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Leave Parameters</span>
+                    </div>
+                    
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12">
+                            <MudDatePicker Label="Scheduled Return Commitment" Variant="Variant.Outlined" Margin="Margin.Normal" DisableToolbar="true" Editable="true" @bind-Date="model.ExpectedReturn" DateFormat="dd/MM/yyyy" Class="modern-input" AdornmentIcon="@Icons.Material.Filled.EventAvailable" AdornmentColor="Color.Primary" Placeholder="Select return date..." />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="model.Reason" Label="Logistical Remarks / Justification" Variant="Variant.Outlined" Lines="4" Margin="Margin.Normal" For="@(() => model.Reason)" Class="modern-input" Placeholder="Provide detailed reason for absence..."></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                </div>
             </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Error" OnClick="Submit" Class="px-12">On Leave</MudButton>
-    </DialogActions>
-</MudDialog>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
-
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
     [Parameter]
     public DriverLeaveModel model { get; set; } = new();
     [Parameter]
@@ -63,10 +72,9 @@
         }
     }
 
-    // Method to cancel the dialog
     void Cancel()
     {
-        MudDialog.Cancel();
+        dialogForm.Cancel();
     }
 
     // Method to submit the leave request for the driver
@@ -107,7 +115,7 @@
                     Snackbar.Add(ex.Message, Severity.Error);
                 }
             }
-            MudDialog.Close(model);
+            dialogForm.Close(model);
             await Task.Delay(200);
             _busy = false;
         }

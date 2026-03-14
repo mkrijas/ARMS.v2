@@ -4,34 +4,46 @@
 @inject IStockTransferService IStockTransferService
 @using Core.BaseModels.Inventory;
 
-<MudDialog>
-    <TitleContent><h3>Reject Stock-Transfer</h3></TitleContent>
-    <DialogContent>
-        <MudContainer>
+<DialogForm @ref="@dialogForm" Title="Internal Transfer Denegation" Subtitle="Formal rejection of cross-branch inventory movement requests." Icon="@Icons.Material.Filled.TransferWithinAStation" AdminStyle="true" formID="formStockTransferReject" model="@Model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <div class="admin-glass-card pa-6 mb-6" style="border-left: 4px solid var(--mud-palette-error);">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Class="mr-3" Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Class="fw-bold fw-600 color-error">Rejection Authorization</MudText>
+                        <MudText Typo="Typo.body2">
+                            You are about to reject the stock transfer from <b>@Model.OtherBranchName</b>.
+                        </MudText>
+                    </div>
+                </div>
+            </div>
 
-            <MudPaper Class="p-3">
-                <EditForm id="stockTransferRejectForm" Model="@Model" OnValidSubmit="OnValidSubmit">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
-                    <MudGrid>
-                        <MudItem xs="12" md="12">
-                            <MudTextField T="string" ReadOnly Value="@Model.OtherBranchName" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <EditForm id="formStockTransferReject" Model="@Model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                
+                <div class="admin-glass-card pa-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Comment" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Rejection Justification</span>
+                    </div>
+                    
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12">
+                            <MudTextField Value="@Model.OtherBranchName" Label="Originating Branch (Reference)" Variant="Variant.Outlined" Margin="Margin.Normal" ReadOnly Class="modern-input" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AccountTree" Style="background: rgba(0,0,0,0.02);"></MudTextField>
                         </MudItem>
-                        <MudItem xs="12" md="12">
-                            <MudTextField @bind-Value="@Model.Narration" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="ReadOnly"></MudTextField>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="@Model.Narration" Label="Formal Rejection Narration" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => Model.Narration)" Class="modern-input" Lines="4" Placeholder="Provide detailed reasoning for the transfer rejection..."></MudTextField>
                         </MudItem>
-                        <br />
                     </MudGrid>
-                </EditForm>
-            </MudPaper>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudItem xs="12" md="2">
-            <MudButton Disabled="@_busy" form="stockTransferRejectForm" Variant="Variant.Filled" ButtonType="ButtonType.Submit" Color="Color.Success">Submit</MudButton>
-        </MudItem>
-    </DialogActions>
-</MudDialog>
+                </div>
+            </EditForm>
+        </div>
+    </FormContent>
+    <Actions>
+        <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Error" OnClick="(() => OnValidSubmit(null))" StartIcon="@Icons.Material.Filled.Block" Class="px-12 rounded-pill py-3 shadow-none">Finalize Rejection</MudButton>
+    </Actions>
+</DialogForm>
 
 @code {
 
@@ -39,8 +51,7 @@
     public bool ReadOnly { get; set; }
     [Parameter]
     public StockTransferInitiationModel Model { get; set; }
-    [CascadingParameter]
-    IMudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
     bool _busy;
     int? branchID;
     string UserID;
@@ -74,7 +85,7 @@
             //Model.ItemsList = IStockTransferService.SelectItemsList(Model?.StockTransferID).ToList();
             IStockTransferService.RejectOrder(Model);
             snackbar.Add("Order Rejected Successfully", Severity.Success);
-            MudDialog.Close(Model);
+            dialogForm.Close(Model);
         }
         catch (Exception ex)
         {
@@ -88,6 +99,6 @@
 
     private void CloseDialog()
     {
-        MudDialog.Close();
+        dialogForm.Cancel();
     }
 }
