@@ -25,65 +25,130 @@
 else
 {
     <div @key="@("content")">
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" @bind-place="model">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Proforma Invoices</MudText>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Proforma..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
-                </MudTextField>
-                <div class="tablefont">
-                    <span style="margin-right: 10px;">Maximum Records: </span>
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Structuring Invoices" 
+                        SubText="Validating proforma drafts..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Proforma Invoicing Hub</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Consolidated manager for draft billing and proforma invoice issuance. Orchestrate client approvals, verify logistics data, and transition validated drafts into official tax invoices.</MudText>
                 </div>
-                <MudItem xs="1">
-                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
-                </MudItem>
-                <MudCheckBox Label="Approved Entries" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Total Amount</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.Party.TradeName)" InitialDirection="SortDirection.Ascending">Client</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.PeriodFrom)" InitialDirection="SortDirection.Ascending">Period</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToString("dd/MM/yyyy")</MudTd>
-                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
-                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
-                <MudTd DataLabel="TotalAmount">@context.Party.TradeName</MudTd>
-                <MudTd DataLabel="TotalAmount">@string.Concat(context.PeriodFrom?.ToString("dd/MM/yyyy"), " | ", context.PeriodTo?.ToString("dd/MM/yyyy"))</MudTd>
-                <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-                    @if (context.AuthLevelId == null)
-                    {
-                        @* Disabled = "@(context.AuthLevelId != null)" *@
-                        <MudIconButton OnClick="@(()=> Reverse(context))" Color="Color.Error" Title="Reverse Draft" Class="ml-2" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                    @if (@context.AuthLevelId == 99)
-                    {
-                        <EntryReversedComponent DocTypeID="FreightBillingDocTypeID" DocumentID="context.ProformaInvoiceID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
-                        <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Cancel Bill" Class="ml-2" Icon="@Icons.Material.Filled.DoNotDisturb" Size="Size.Small" Variant="Variant.Filled" />
-                        <MudIconButton OnClick="@(()=> PrintAnnexure(context.ProformaInvoiceID))" Color="Color.Tertiary" Title="Annexure Invoice" Class="ml-2" Icon="@Icons.Material.Filled.Assignment" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                    else if (@context.AuthLevelId != 100)
-                    {
-                        <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Success" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                    <MudIconButton OnClick="@(()=> Print(context.ProformaInvoiceID,(context.AuthLevelId == 99) ? "TAX INVOICE" : "PROFORMA INVOICE"))" Color="Color.Tertiary" Title="Print Performa Invoice" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                <MudItem xs="12" md="9"> </MudItem><MudItem xs="12" md="3">
-                </MudItem>
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+            </div>
+        </div>
+
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+                <div style="flex-grow: 1; min-width: 300px;">
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search by invoice #, client, or date..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
+                </div>
+                <div class="d-flex align-center gap-4">
+                    <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
+                        <MudText Typo="Typo.caption" Class="fw-700 opa-50 uppercase mr-2">Limit</MudText>
+                        <MudNumericField @bind-Value="@NumberOfRecords" Variant="Variant.Text" Margin="Margin.Dense" Style="width: 50px;" Class="fw-700 mt-0" HideSpinButtons="true" />
+                    </div>
+                    <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
+                        <MudCheckBox T="bool" Label="Approved Drafts" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden shadow-sm">
+            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">INV DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.DocumentNumber)"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.Party.TradeName)"><span class="admin-header-text">CLIENT NAME</span></MudTableSortLabel></MudTh>
+                    <MudTh><span class="admin-header-text">BILLING PERIOD</span></MudTh>
+                    <MudTh Style="text-align: right;"><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.TotalAmount)"><span class="admin-header-text">TOTAL AMOUNT</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Date"><span class="fw-700 admin-td-primary">@context.DocumentDate?.ToString("dd MMM yyyy")</span></MudTd>
+                    <MudTd DataLabel="DocNum">
+                        <div class="d-flex align-center gap-2">
+                            <span class="fw-700">@context.DocumentNumber</span>
+                             @if (context.AuthLevelId == 100)
+                            {
+                                <span class="tiny fw-900 text-error uppercase">REJECTED</span>
+                            }
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Client">
+                         <div class="d-flex align-center gap-2">
+                             <div class="admin-icon-square-vibrant tiny accent-indigo">
+                                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                            </div>
+                            <span class="fw-600">@context.Party.TradeName</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Period">
+                        <span class="tiny fw-800 text-indigo uppercase">@context.PeriodFrom?.ToString("dd/MM/yy")</span>
+                        <span class="tiny mx-1 opa-30">TO</span>
+                        <span class="tiny fw-800 text-indigo uppercase">@context.PeriodTo?.ToString("dd/MM/yy")</span>
+                    </MudTd>
+                    <MudTd DataLabel="Amount" Style="text-align: right;">
+                        <span class="fw-800 text-vibrant" style="font-size: 1.1rem;">@context.TotalAmount?.ToString("N2")</span>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                                <MudTooltip Text="Inspect Details">
+                                    <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                                
+                                <MudTooltip Text="Modify Draft">
+                                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+
+                                @if (context.AuthLevelId == null)
+                                {
+                                    <MudTooltip Text="Reverse Draft">
+                                        <MudIconButton OnClick="@(()=> Reverse(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Undo" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                }
+
+                                @if (@context.AuthLevelId == 99)
+                                {
+                                    <EntryReversedComponent DocTypeID="FreightBillingDocTypeID" DocumentID="context.ProformaInvoiceID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                                    <MudTooltip Text="Cancel Bill">
+                                        <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Annexure Invoice">
+                                        <MudIconButton OnClick="@(()=> PrintAnnexure(context.ProformaInvoiceID))" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Assignment" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                }
+                                else if (@context.AuthLevelId != 100)
+                                {
+                                    <MudTooltip Text="Verify Invoice">
+                                        <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Success" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                }
+                                <MudTooltip Text="Print Documentation">
+                                    <MudIconButton OnClick="@(()=> Print(context.ProformaInvoiceID,(context.AuthLevelId == 99) ? "TAX INVOICE" : "PROFORMA INVOICE"))" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
 </div>
 
 }

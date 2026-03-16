@@ -23,68 +23,123 @@
 }
 else
 {
-    <div @key="@("content")">
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Sales</MudText>
-                <MudTooltip Text="New Sales">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new SaleModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Sale..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
-                </MudTextField>
-                <div class="tablefont">
-                    <span style="margin-right: 10px;">Maximum Records: </span>
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Sales Matrix" 
+                        SubText="Analyzing revenue streams..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Sales & Distribution</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Master console for tracking commercial sales and distribution cycles. Monitor trade receivables, invoice compliance, and transactional verification workflows.</MudText>
                 </div>
-                <MudItem xs="1">
-                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
-                </MudItem>
-                <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.PartyInfo.TradeName)" InitialDirection="SortDirection.Ascending">Trade Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Total Amount</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.InvoiceNo)" InitialDirection="SortDirection.Ascending">Invoice Number</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="GrnNO">@context.PartyInfo.TradeName</MudTd>
-                <MudTd DataLabel="EntryDate">@context.TotalAmount</MudTd>
-                <MudTd DataLabel="EntryDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="GrnNO">
-                    @context.DocumentNumber
-                    @if (context.AuthLevelId == 100)
-                    {
-                        <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
-                    }
-                </MudTd>
-                <MudTd DataLabel="InvoiceNo">@context.InvoiceNo</MudTd>
-                <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
-                    @if (@context.AuthLevelId == 99)
-                    {
-                        <EntryReversedComponent DocTypeID="SaleDocTypeID" DocumentID="context.SID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
-                        <MudIconButton OnClick="@(()=> PrintInvoice(context.SID))" Color="Color.Tertiary" Title="Print Invoice" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                    else if (@context.AuthLevelId != 100)
-                    {
-                        <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
-</div>
+                <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenDialog(new SaleModel(),false))" Disabled="@_busy">NEW SALES ENTRY</MudButton>
+            </div>
+        </div>
+
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+                <div style="flex-grow: 1; min-width: 300px;">
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search by invoice #, party, or amount..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
+                </div>
+                <div class="d-flex align-center gap-4">
+                    <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
+                        <MudText Typo="Typo.caption" Class="fw-700 opa-50 uppercase mr-2">Limit</MudText>
+                        <MudNumericField @bind-Value="@NumberOfRecords" Variant="Variant.Text" Margin="Margin.Dense" Style="width: 50px;" Class="fw-700 mt-0" HideSpinButtons="true" />
+                    </div>
+                    <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
+                        <MudCheckBox T="bool" Label="Approved Only" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden shadow-sm">
+            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.InvoiceNo)"><span class="admin-header-text">INVOICE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.PartyInfo.TradeName)"><span class="admin-header-text">PARTY / CUSTOMER</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.TotalAmount)"><span class="admin-header-text">TOTAL AMOUNT</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Date">
+                        <div class="d-flex flex-column">
+                            <span class="fw-700 admin-td-primary">@context.DocumentDate?.ToString("dd MMM yyyy")</span>
+                            <span class="tiny opa-50">#@context.DocumentNumber</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Invoice">
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Receipt" Size="Size.Small" Class="opa-30" />
+                            <span class="fw-700">@context.InvoiceNo</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Party">
+                        <div class="d-flex align-center gap-2">
+                             <div class="admin-icon-square-vibrant tiny accent-indigo">
+                                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                            </div>
+                            <span class="fw-600">@context.PartyInfo.TradeName</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Amount" Style="text-align: right;">
+                        <span class="fw-800 text-vibrant" style="font-size: 1.1rem;">@context.TotalAmount?.ToString("N2")</span>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            @if (context.AuthLevelId == 100)
+                            {
+                                <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="fw-900 tiny uppercase mr-2">REJECTED</MudChip>
+                            }
+
+                            @if (@context.AuthLevelId == 99)
+                            {
+                                <EntryReversedComponent DocTypeID="SaleDocTypeID" DocumentID="context.SID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                                <MudTooltip Text="Print Invoice">
+                                    <MudIconButton OnClick="@(()=> PrintInvoice(context.SID))" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+                            else if (@context.AuthLevelId != 100)
+                            {
+                                <MudTooltip Text="Verify Sale">
+                                    <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+
+                            <MudTooltip Text="Inspect Details">
+                                <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            
+                            <MudTooltip Text="Modify Entry">
+                                <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+
+                            <MudTooltip Text="Delete Record">
+                                <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
 
 }
 

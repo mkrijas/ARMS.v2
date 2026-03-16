@@ -118,7 +118,7 @@ else
                 <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 600; color: #5E5873;">Incoming by Store</MudText>
                  @if (ChartData.Sum() > 0)
                 {
-                     <MudChart T="double" ChartType="ChartType.Donut" InputData="@ChartData" InputLabels="@ChartLabels" Width="100%" Height="300px" />
+                     <MudChart T="double" ChartType="ChartType.Donut" ChartSeries="@ChartSeries" ChartLabels="@ChartLabels" Width="100%" Height="300px" />
                 }
                 else
                 {
@@ -133,10 +133,10 @@ else
 }
 
 @code {
-    private bool _isLoading = true;
+    private bool _isLoading = false;
     private DateTime _loadStartTime;
     private int BranchID;
-    
+
     // Metrics
     private int PendingGrnCount = 0;
     private int ActiveStoresCount = 0;
@@ -149,9 +149,12 @@ else
     // Chart
     public double[] ChartData = { };
     public string[] ChartLabels = { };
+    public List<ChartSeries<double>> ChartSeries = new();
 
     protected override async Task OnInitializedAsync()
     {
+        _isLoading = true;
+        await Task.Yield();
         _loadStartTime = DateTime.Now;
         await LoadData();
         await EnsureMinimumLoadTime();
@@ -168,9 +171,9 @@ else
     }
 
     private async Task LoadData()
-    {
+    {      
         var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
+        var User = authprov.User; 
         var claim = User.Claims.FirstOrDefault(x => x.Type == "BranchID");
         if (claim == null) return;
         string BranchIDString = claim.Value;
@@ -199,5 +202,6 @@ else
         
         ChartLabels = grouped.Select(x => x.Store).ToArray();
         ChartData = grouped.Select(x => (double)x.Count).ToArray();
+        ChartSeries = new List<ChartSeries<double>> { new ChartSeries<double> { Name = "GRNs", Data = ChartData } };
     }
 }

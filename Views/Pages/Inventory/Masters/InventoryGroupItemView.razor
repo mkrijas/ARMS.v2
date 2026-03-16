@@ -1,4 +1,4 @@
-﻿@page "/InventoryGroupItem"
+@page "/InventoryGroupItem"
 @inject IInventoryGroupService GIservice
 @inject IInventoryGroup2Service G2Iservice
 @inject IInventoryItemGroupService IGIservice
@@ -11,67 +11,100 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
-<MudGrid>
-    <MudItem xs="4" lg="4">
-        <MudPaper Width="100%" Class="p-2">
-            <MudItem xs="12" md="12" Class="m-3">
-                <MudText Typo="Typo.h6">
-                    Inventory Group 2
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudText>
-            </MudItem>
-            <MudDivider />
-            <MudList T="InventoryGroup2Model" Clickable="true" SelectedItem="SelectedItem">
-                @if (listOfItems?.Any() == true)
+<div class="admin-page-container fade-in">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">Resource Classification Engine</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Manage technical inventory hierarchies, item groups, and resource account mappings.</MudText>
+            </div>
+        </div>
+    </div>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" lg="4">
+            <div class="admin-glass-card pa-0 overflow-hidden h-100">
+                <div class="px-6 py-4 border-bottom-subtle d-flex align-center justify-space-between" style="background: rgba(var(--mud-palette-primary-rgb), 0.05);">
+                    <div class="d-flex align-center">
+                        <div class="icon-badge primary-badge-soft mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Small" />
+                        </div>
+                        <MudText Typo="Typo.subtitle1" Class="fw-700">Item Stratification</MudText>
+                    </div>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="@(()=> OpenDialogGroup(model))" Size="Size.Small" Variant="Variant.Filled" Class="rounded-circle shadow-none" />
+                </div>
+                
+                <div class="pa-2">
+                    <MudList T="InventoryGroup2Model" Clickable="true" SelectedItem="SelectedItem" Class="admin-nav-list">
+                        @if (listOfItems?.Any() == true)
+                        {
+                            @foreach (var item in listOfItems)
+                            {
+                                <ContextMenuTrigger MenuId="myMenu" Data="@item">
+                                    <MudListItem T="InventoryGroup2Model" Value="item" OnClick="@((e) => OnGroupClick(item))" Class="rounded-lg mb-1">
+                                        <div class="d-flex flex-column">
+                                            <span class="small opacity-50 fw-600">@item.Group.InventoryGroupName</span>
+                                            <span class="fw-700">@item.GroupDescription</span>
+                                        </div>
+                                    </MudListItem>
+                                </ContextMenuTrigger>
+                            }
+                        }
+                    </MudList>
+                </div>
+            </div>
+        </MudItem>
+
+        <MudItem xs="12" lg="8">
+            <div class="admin-glass-card pa-0 overflow-hidden h-100">
+                @if (ActiveGroup != null)
                 {
-                    @foreach (var item in listOfItems)
-                    {
-                        <ContextMenuTrigger MenuId="myMenu" Data="@item">
-                            <MudListItem T="InventoryGroup2Model" Value="item" OnClick="@((e) => OnGroupClick(item))">
-                                <MudText Typo=Typo.subtitle1>@item.Group.InventoryGroupName.ToString() - @item.GroupDescription.ToString() </MudText>
-                            </MudListItem>
-                        </ContextMenuTrigger>
-                    }
+                    <div class="px-6 py-4 border-bottom-subtle d-flex align-center justify-space-between" style="background: rgba(var(--mud-palette-primary-rgb), 0.02);">
+                         <div class="d-flex align-center">
+                            <div class="icon-badge primary-badge-soft mr-3">
+                                <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Small" />
+                            </div>
+                            <MudText Typo="Typo.subtitle1" Class="fw-700">Constituent Items: @ActiveGroup.GroupDescription</MudText>
+                        </div>
+                        <MudTextField @bind-Value="SearchItemCode" Placeholder="Filter Items..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Class="modern-input" Style="max-width: 250px;"></MudTextField>
+                    </div>
+
+                    <MudTable Items="@collection" Elevation="0" Hover="true" Breakpoint="Breakpoint.Sm" Class="modern-admin-table" Filter="new Func<InventoryItemGroupModel, bool>(search)">
+                        <HeaderContent>
+                            <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemGroupModel, object>(x=> x.ItemGroupDescription)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">ITEM SPECIFICATION</span></MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemGroupModel, object>(x=> x.Makes)"><span class="admin-header-text">MANUFACTURER</span></MudTableSortLabel></MudTh>
+                            <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Specification"><span class="admin-td-primary fw-600">@context.ItemGroupDescription</span></MudTd>
+                            <MudTd DataLabel="Manufacturer">@context.Makes</MudTd>
+                            <MudTd DataLabel="Actions" Style="text-align: right;">
+                                <MudTooltip Text="Modify Specification">
+                                    <MudIconButton OnClick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                                <MudTooltip Text="Remove Item">
+                                    <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            </MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <div class="pa-4">
+                                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                            </div>
+                        </PagerContent>
+                    </MudTable>
                 }
-            </MudList>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="8" lg="8">
-        @if (ActiveGroup != null)
-        {
-            <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<InventoryItemGroupModel, bool>(search)" @bind-TruckType="model">
-                <ToolBarContent>
-                    <MudText Typo="Typo.h6">Inventory Item</MudText>
-                    <MudSpacer></MudSpacer>
-                    <MudTextField @bind-Value="SearchItemCode" Placeholder="Search Item.... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                </ToolBarContent>
-                <HeaderContent>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemGroupModel, object>(x=> x.ItemGroupDescription)" InitialDirection="SortDirection.Ascending">Item Group Description</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemGroupModel, object>(x=> x.Makes)" InitialDirection="SortDirection.Ascending">Make</MudTableSortLabel></MudTh>
-                    <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="ItemGroupDescription">@context.ItemGroupDescription</MudTd>
-                    <MudTd DataLabel="Makes">@context.Makes</MudTd>
-                    <MudTd DataLabel="">
-                        <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" />
-                        </MudTooltip>
-                        <MudTooltip Text="Delete">
-                            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                        </MudTooltip>
-                        @* <MudTooltip Text="ReOrder Level">
-                    <MudFab @onclick="@(()=> ReOrderLevel(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ProductionQuantityLimits" Size="Size.Small" />
-                    </MudTooltip> *@
-                    </MudTd>
-                </RowTemplate>
-                <PagerContent>
-                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                </PagerContent>
-            </MudTable>
-        }
-    </MudItem>
-</MudGrid>
+                else
+                {
+                    <div class="d-flex flex-column align-center justify-center pa-20 h-100 opacity-40">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Large" Class="mb-4" />
+                        <MudText Typo="Typo.h6">Select a stratum to audit constituent inventory.</MudText>
+                    </div>
+                }
+            </div>
+        </MudItem>
+    </MudGrid>
+</div>
 <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
     <Item OnClick="@ContextMenuOnClickAdd" Id="addItem">Add Items</Item>
     <Item OnClick="@ContextMenuOnClickEdit" Id="editGroup">Edit Group</Item>

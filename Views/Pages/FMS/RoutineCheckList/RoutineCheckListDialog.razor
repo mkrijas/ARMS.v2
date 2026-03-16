@@ -12,77 +12,84 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<MudDialog>
-    <TitleContent>
-        @if (model.RoutineCheckListID == null || model.RoutineCheckListID == 0)
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Routine Check List
-            </MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Routine Check List
-            </MudText>
-        }
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+<DialogForm @ref="@dialogForm" Title="@(model.RoutineCheckListID == 0 ? "Initial Vehicle Inspection" : "Update Routine Assessment")" Subtitle="Document standardized vehicle health parameters and verify technical safety compliance." Icon="@Icons.Material.Filled.FactCheck" AdminStyle="true" formID="formRoutineCheckList" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper fade-in">
             <EditForm id="formRoutineCheckList" Model="@model" OnValidSubmit="Submit">
                 <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
+                
                 @if (ValidationMessage != null)
                 {
-                    <div class="validation-message">@ValidationMessage</div>
+                    <div class="admin-alert error pa-3 mb-4 rounded-lg d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Error" Class="mr-2" />
+                        <span class="fw-500">@ValidationMessage</span>
+                    </div>
                 }
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <TruckSelector Value="model.Truck" BranchID="branchID" ValueChanged="TruckSelected" Filter="All" />
-                </MudItem>
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
-                </MudItem>
-                <MudItem xs="11" md="11">
-                    <MudGrid>
-                        @*@foreach (var item in ItemList)
-                        {
-                        <MudItem Style="border:none; height:fit-content; border-radius:4px;" Class="m-2 mr-2 p-0 pl-2 ml-2 mt-1 mb-1">
-                        <MudCheckBox T="bool" @bind-Value="@item.IsChecked" Disabled="@item.IsDisabled">@(item.ItemName + (item.CurrentTruckLastUpdatedDate != null ? (" (" + @Convert.ToDateTime(item.CurrentTruckLastUpdatedDate).ToString("dd/MM/yyyy hh:mm") + ")") : ""))</MudCheckBox>
-                        </MudItem>*@
-                        <MudItem xs="12">
-                            <MudTable Items="@ItemList" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="model" Context="context1">
-                                @*<ToolBarContent>
-                                <MudSpacer></MudSpacer>
-                                </ToolBarContent>*@
-                                <HeaderContent>
-                                    <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.ItemName)" InitialDirection="SortDirection.Ascending">Item Name</MudTableSortLabel></MudTh>
-                                    <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.IsChecked)" InitialDirection="SortDirection.Ascending">Is Checked</MudTableSortLabel></MudTh>
-                                    <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.DetailDescription)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
-                                    <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.CurrentTruckLastUpdatedDate)" InitialDirection="SortDirection.Ascending">Last Updated Date / Is Expired</MudTableSortLabel></MudTh>
-                                </HeaderContent>
-                                <RowTemplate>
-                                    <MudTd DataLabel="Item Name">@context1.ItemName</MudTd>
-                                    <MudTd DataLabel="Is Checked"> <MudCheckBox T="bool" @bind-Value="@context1.IsChecked" Disabled="@context1.IsDisabled"></MudCheckBox> </MudTd>
-                                    <MudTd DataLabel="Description">  <MudTextField @bind-Value="context1.DetailDescription" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField> </MudTd>
-                                    <MudTd DataLabel="Last Updated Date"><div style="display:inline"> @(context1.CurrentTruckLastUpdatedDate) <span style="color:red"> @(context1.IsExpired ? " (Expired)" : "") </span></div></MudTd>
-                                </RowTemplate>
-                                @*<PagerContent>
-                                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                                </PagerContent>*@
-                            </MudTable>
+
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center mb-6">
+                        <div class="icon-badge primary-badge-soft mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
+                        </div>
+                        <span class="admin-section-label mb-0">Asset Identification & Notes</span>
+                    </div>
+
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <TruckSelector Value="model.Truck" BranchID="branchID" ValueChanged="TruckSelected" Filter="All" Class="modern-selector" />
                         </MudItem>
-                        @*}*@
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Remarks" Label="Operational Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)" Class="modern-input" Placeholder="Enter overview of vehicle status..." />
+                        </MudItem>
                     </MudGrid>
-                </MudItem>
+                </div>
+
+                <div class="admin-glass-card pa-6 overflow-hidden">
+                    <div class="d-flex align-center mb-6 px-2">
+                        <div class="icon-badge secondary-badge-soft mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Rule" Size="Size.Small" />
+                        </div>
+                        <span class="admin-section-label mb-0">Technical Inspection Matrix</span>
+                    </div>
+
+                    <MudTable Items="@ItemList" Dense="true" Hover="true" Elevation="0" Context="context1" Class="modern-admin-table light-header border-subtle">
+                        <HeaderContent>
+                            <MudTh><span class="admin-header-text">INSPECTION PARAMETER</span></MudTh>
+                            <MudTh Style="width: 100px; text-align: center;"><span class="admin-header-text">STATUS</span></MudTh>
+                            <MudTh><span class="admin-header-text">TECHNICAL DESCRIPTION</span></MudTh>
+                            <MudTh><span class="admin-header-text">COMPLIANCE STATUS</span></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Item Name"><span class="fw-600 color-primary">@context1.ItemName</span></MudTd>
+                            <MudTd DataLabel="Is Checked" Style="text-align: center;">
+                                <MudCheckBox T="bool" @bind-Value="@context1.IsChecked" Disabled="@context1.IsDisabled" Color="Color.Primary" Dense="true" />
+                            </MudTd>
+                            <MudTd DataLabel="Description">
+                                <MudTextField @bind-Value="context1.DetailDescription" Label="Notes" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" Placeholder="Technical findings..." />
+                            </MudTd>
+                            <MudTd DataLabel="Status">
+                                <div class="d-flex align-center">
+                                    <span class="opacity-70 mr-2">@(context1.CurrentTruckLastUpdatedDate?.ToString("dd/MM/yyyy") ?? "N/A")</span>
+                                    @if (context1.IsExpired)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text" Class="fw-700" Icon="@Icons.Material.Filled.Warning">EXPIRED</MudChip>
+                                    }
+                                    else if (context1.CurrentTruckLastUpdatedDate != null)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="fw-700" Icon="@Icons.Material.Filled.CheckCircle">COMPLIANT</MudChip>
+                                    }
+                                </div>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </div>
             </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Disabled="@_busy" form="formRoutineCheckList" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
-    </DialogActions>
-</MudDialog>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
+    private DialogForm dialogForm;
 
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     [Parameter]

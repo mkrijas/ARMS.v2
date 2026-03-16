@@ -2,7 +2,6 @@
 @inject ISisterPostingGroupService Iservice
 @inject IChartOfAccountService accountService
 @inject MudBlazor.ISnackbar snackbar
-@inject IChartOfAccountService accountService
 @inject IConfigTable IConfig
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
@@ -12,65 +11,127 @@
 @using System.Threading;
 @using ArmsServices.DataServices.General
 
-<MudGrid>
-    <MudItem xs="4" lg="4">
-        <MudPaper Width="100%" Class="p-2">
-            <MudList T="SisterPostingGroupModel" Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
-                <MudText Typo="Typo.h6" style="padding: 4px; margin-top: -8px; margin-bottom: -22px; margin-left: 8px;">
-                    Sister Posting Group
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudText>
-                <br />
-                @if (listOfItems?.Any() == true)
-                {
-                    @foreach (var item in listOfItems)
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Concern Protocols" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Inter-Company Mapping Protocols</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Define and manage general ledger linkages for sister concerns and affiliate entities. establish systematic posting rules for trade accounts, pre-payments, and inter-entity deposits.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-6 align-start">
+            <!-- Sidebar for Posting Groups -->
+            <div class="admin-glass-card pa-0 overflow-hidden" style="width: 320px; flex-shrink: 0; position: sticky; top: 24px;">
+                <div class="pa-4 b-bottom d-flex align-center justify-space-between bg-glass-brighter">
+                    <MudText Typo="Typo.subtitle1" Class="fw-700 opa-80 uppercase">Concern Groups</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Small" OnClick="@(()=> OpenDialogGroup(model))" Disabled="@_busy" Class="bg-glass rounded-pill" />
+                </div>
+                
+                <MudList T="SisterPostingGroupModel" Clickable="true" SelectedValue="SelectedModel" SelectedValueChanged="HandleGroupChanged" Class="pa-2">
+                    @if (listOfItems?.Any() == true)
                     {
-                        <ContextMenuTrigger MenuId="myMenu" Data="@item">
-                            <MudListItem T="SisterPostingGroupModel" OnClick="((e) => ViewDetails(e,item))" Class="border-solid border-2 pa-4 mb-2 mt-2" Style="border-color:#ccc; border-radius:3%" Value="item">
-                                <MudText Typo=Typo.subtitle1> @item.Title.ToString() </MudText>
+                        @foreach (var item in listOfItems)
+                        {
+                            <ContextMenuTrigger MenuId="myMenu" Data="@item">
+                                <MudListItem T="SisterPostingGroupModel" Value="item" Class="rounded-lg mb-1 admin-list-item">
+                                    <div class="d-flex align-center gap-3">
+                                        <div class="admin-icon-square-vibrant small accent-purple">
+                                            <MudIcon Icon="@Icons.Material.Filled.Hub" Size="Size.Small" />
+                                        </div>
+                                        <MudText Typo="Typo.body2" Class="fw-600">@item.Title</MudText>
+                                    </div>
                                 </MudListItem>
                             </ContextMenuTrigger>
+                        }
                     }
+                </MudList>
+            </div>
+
+            <!-- Main Content Area: Form -->
+            <div style="flex-grow: 1;">
+                @if (value == true)
+                {
+                    <div class="admin-glass-card pa-6">
+                        <div class="d-flex align-center justify-space-between mb-6">
+                            <div>
+                                <div class="d-flex align-center gap-2 mb-1">
+                                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Primary" />
+                                    <MudText Typo="Typo.h5" Class="fw-800">@titleValue</MudText>
+                                </div>
+                                <MudText Typo="Typo.body2" Class="opa-60">Define inter-company linkages for this concern posting profile</MudText>
+                            </div>
+                            @if (IsOnlyView)
+                            {
+                                <MudChip T="string" Color="Color.Info" Variant="Variant.Text" Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="fw-700">READ-ONLY PROTOCOL</MudChip>
+                            }
+                        </div>
+
+                        <EditForm Model="model" OnValidSubmit="CreateSisterPostingGroup">
+                            <ObjectGraphDataAnnotationsValidator />
+                            <div class="d-flex flex-column gap-6">
+                                <MudTextField @bind-Value="model.Title" Label="Concern Profile Identifier" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)" Disabled="IsOnlyView" Class="admin-input-group" />
+                                
+                                <div class="admin-form-section">
+                                    <div class="d-flex align-center gap-2 mb-3">
+                                        <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Small" Class="opa-40" />
+                                        <MudText Typo="Typo.subtitle2" Class="fw-800 opa-50 uppercase">Ledger Synchronization</MudText>
+                                    </div>
+                                    <div class="d-flex flex-column gap-4">
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <CoaSelector @bind-Value="model.Trade" LabelName="Control Account (Inter-Company Trade)" IsDisable="IsOnlyView" />
+                                        </div>
+                                        <div class="pa-4 bg-glass rounded-lg border-1 border-dashed border-opa-10">
+                                            <CoaSelector @bind-Value="model.PrePayment" LabelName="Settlement Account (Inter-Company Pre-Payments)" IsDisable="IsOnlyView" />
+                                        </div>
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <CoaSelector @bind-Value="model.Deposit" LabelName="Escrow Account (Inter-Company Deposits)" IsDisable="IsOnlyView" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-center justify-end gap-3 mt-4">
+                                    <MudButton OnClick="CancelSisterPostingGroup" Variant="Variant.Text" Color="Color.Default" Class="rounded-pill px-6 fw-600">DISMISS</MudButton>
+                                    @if (!IsOnlyView)
+                                    {
+                                        <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn px-8 shadow-lg">COMMIT CONFIGURATION</MudButton>
+                                    }
+                                    else if (HasPermissionSisterPostingGroupServiceEdit)
+                                    {
+                                         <MudButton OnClick="@(() => { IsOnlyView = false; titleValue = "Edit Sister Posting Group"; })" Variant="Variant.Filled" Color="Color.Warning" Class="admin-register-btn px-8 shadow-lg">UNLOCK TO EDIT</MudButton>
+                                    }
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
                 }
-            </MudList>
-        </MudPaper>
-    </MudItem>
-    @if (@value == true)
-    {
-        <MudItem xs="8" lg="8">
-            <MudPaper>
-                <MudContainer>
-                    <h4 style="padding-top:18px;">@titleValue</h4>
-                    <br />
-                    <EditForm Model="model" OnValidSubmit="CreateSisterPostingGroup">
-                        <ObjectGraphDataAnnotationsValidator />
-                        <MudGrid Spacing="4">
-                            <MudItem xs="12" lg="12">
-                                <MudTextField @bind-Value="model.Title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)" Disabled="IsOnlyView"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Trade" LabelName="Account For Trade" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.PrePayment" LabelName="Account For PrePayment" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Deposit" LabelName="Account For Deposit" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <ValidationSummary />
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudButton @onclick="CancelSisterPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
-                                <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
-                            </MudItem>
-                        </MudGrid>
-                    </EditForm>
-                </MudContainer>
-            </MudPaper>
-        </MudItem>
-    }
-</MudGrid>
+                else
+                {
+                    <div class="admin-glass-card d-flex flex-column align-center justify-center py-16" style="min-height: 400px;">
+                        <div class="admin-icon-square-vibrant mb-6 accent-purple" style="width: 80px; height: 80px;">
+                            <MudIcon Icon="@Icons.Material.Filled.Groups" Style="font-size: 3rem;" />
+                        </div>
+                        <MudText Typo="Typo.h5" Class="fw-800 opa-80 mb-2">Select Concern Group</MudText>
+                        <MudText Typo="Typo.body2" Class="opa-50 text-center" Style="max-width: 300px;">Choose a sister concern from the sidebar to configure its audit linkages and consolidation accounts.</MudText>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
 
 <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
     <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Group</Item>
@@ -85,6 +146,8 @@
     public bool value = false;
     public string titleValue = null;
     private List<SisterPostingGroupModel> collection = new List<SisterPostingGroupModel>();
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
     private bool IsOnlyView { get; set; } = false;
     private bool _busy;
 
@@ -94,17 +157,32 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionSisterPostingGroupServiceEdit = await Irole.HasClaim(SisterPostingGroupDocTypeID.ToString(), "Edit", ctc.Token);
 
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
     }
 
-    // Method to handle changes in the selected item
-    protected void SelectedItemChanged(object obj)
+    private async Task EnsureMinimumLoadTime()
     {
-        SelectedItem = (MudListItem<SisterPostingGroupModel>)obj;
-        SelectedModel = (SisterPostingGroupModel)SelectedItem.Value;
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
+    }
+
+    // Method to handle selection changes in the list   
+    protected async Task HandleGroupChanged(SisterPostingGroupModel model)
+    {
+        SelectedModel = model;
+        if (SelectedModel != null)
+        {
+            ViewDetails(null, SelectedModel);
+        }
     }
 
     // Method to fetch all sister posting groups

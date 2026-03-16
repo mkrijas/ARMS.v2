@@ -125,7 +125,7 @@
                     </div>
 
                     <!-- Combined Line Chart -->
-                    <MudChart T="double" ChartOptions="@_ChartOptions" LegendPosition="Position.Start" ChartType="ChartType.Line" ChartSeries="@RevExpSeries" XAxisLabels="@TrendLabels" Width="100%" Height="350px"></MudChart>
+                    <MudChart T="double" MatchBoundsToSize=@(false) Style="padding-left: 12px;" ChartOptions="@_ChartOptions" LegendPosition="Position.Start" ChartType="ChartType.Line" ChartSeries="@RevExpSeries" ChartLabels="@TrendLabels" Width="100%" Height="350px"></MudChart>
                 </MudPaper>
             </MudItem>
 
@@ -138,7 +138,7 @@
                             <div class="d-flex justify-center align-center" style="height: 200px;">
                                 @if (LiquidityData.Sum() > 0)
                                 {
-                                    <MudChart T="double" ChartType="ChartType.Donut" InputData="@LiquidityData" InputLabels="@LiquidityLabels" Width="100%" Height="100%" />
+                                    <MudChart T="double" ChartType="ChartType.Donut" ChartSeries="@LiquiditySeries" ChartLabels="@LiquidityLabels" Width="70%" Height="70%" />
                                 }
                                 else
                                 {
@@ -159,12 +159,6 @@
                 </MudGrid>
             </MudItem>
         </MudGrid>
-
-        <style>
-            .wide_chart .mud-chart svg {
-                width: 100%;
-            }
-        </style>
 
         <!-- 3. Tables Row (Outstanding) -->
         <MudGrid @key="@("tables")">
@@ -266,6 +260,7 @@
     public string[] TrendLabels = { };
     public double[] LiquidityData = { 0, 0 };
     public string[] LiquidityLabels = { "Bank", "Cash" };
+    public List<ChartSeries<double>> LiquiditySeries = new() { new ChartSeries<double> { Name = "Liquidity", Data = new double[] { 0, 0 } } };
 
     // Outstanding totals
     private Decimal? PayableAmount;
@@ -305,7 +300,8 @@
 
     private async Task LoadData()
     {
-        Loading = true;
+        Loading = true;        
+        await Task.Yield();
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         var claim = User.Claims.FirstOrDefault(x => x.Type == "BranchID");
@@ -375,6 +371,7 @@
         CashAccountBalanceList = Iservice.GetCashAccountBalance(BranchID).ToList();
         TotalCashBalance = CashAccountBalanceList.Sum(x => x.Amount ?? 0);
         LiquidityData = new double[] { (double)TotalBankBalance, (double)TotalCashBalance };
+        LiquiditySeries = new List<ChartSeries<double>> { new ChartSeries<double> { Name = "Liquidity", Data = LiquidityData } };
     }
 
     public async Task GetExpensesAndRevenue()
@@ -404,8 +401,8 @@
         // 5. Prepare Chart Data (Daily Trend for Current Month)
         //var salesMTD = RevenueData.Where(x => x.DateList >= firstDayOfMonth).ToList();
 
-        var dailyRevenue = RevenueData.ToDictionary(x => x.DateList?.Date, x => x.Total ?? 0);
-        var dailyExpenses = ExpensesData.ToDictionary(x => x.DateList?.Date, x => x.Total ?? 0);
+        var dailyRevenue = RevenueData.ToDictionary(x => x.DateList?.Date, x => x.Total/100000 ?? 0);
+        var dailyExpenses = ExpensesData.ToDictionary(x => x.DateList?.Date, x => x.Total/100000 ?? 0);
 
         // Merge Days (1 to Today/End of Month)
         //int daysInMonth = DateTime.DaysInMonth(yesterday.Year, yesterday.Month);
@@ -416,7 +413,23 @@
         // We chart up to today or end of month? Usually up to today avoids empty trailing zeros looking like "drop"
         var InitialDay = yesterday.AddDays(-29);
 
-        for (DateTime i = InitialDay; i <= yesterday; i = i.AddDays(1))
+        // Find the last day that actually has data to avoid excessive trailing whitespace
+        DateTime lastDataDay = InitialDay;
+        foreach (var date in dailyRevenue.Keys.Concat(dailyExpenses.Keys))
+        {
+            if (date.HasValue && date >= InitialDay && date <= yesterday)
+            {
+                if (dailyRevenue.GetValueOrDefault(date) > 0 || dailyExpenses.GetValueOrDefault(date) > 0)
+                {
+                    if (date.Value > lastDataDay) lastDataDay = date.Value;
+                }
+            }
+        }
+
+        // Add 1 day of padding if possible
+        var endDay = lastDataDay < yesterday ? lastDataDay.AddDays(1) : yesterday;
+
+        for (DateTime i = InitialDay; i <= endDay; i = i.AddDays(1))
         {
             labels.Add(i.Day.ToString());
             revSeries.Add(dailyRevenue.ContainsKey(i.Date) ? (double)dailyRevenue[i.Date] : 0);
@@ -433,6 +446,9 @@
 
         // var tick = Math.Pow(10,highestTick-1);
         _ChartOptions.YAxisTicks = GetSeriesValue(maxVal) / 10;
+        _ChartOptions.YAxisTitle = "Expenses and Revenue (in Lakhs)";
+        _ChartOptions.XAxisTitle = "Day of Month";
+
     }
 
 
