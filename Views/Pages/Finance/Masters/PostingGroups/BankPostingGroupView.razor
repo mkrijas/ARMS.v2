@@ -13,7 +13,7 @@
 
 @if (_isLoading)
 {
-    <div @key="@("loader")" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
         <LoaderComponent IsFullScreen="true" 
                         ShowLogo="false" 
                         Size="medium" 
@@ -23,73 +23,123 @@
 }
 else
 {
-    <div @key="@("content")">
-<MudGrid>
-    <MudItem xs="4" lg="4">
-        <MudPaper Width="100%" Class="p-2">
-            <MudList T="BankPostingGroupModel" Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
-                <MudText Typo="Typo.h6">
-                    Bank Posting Group
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudText>
-                <br />
-                @if (listOfItems?.Any() == true)
-                {
-                    @foreach (var item in listOfItems)
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Bank Ledger Mapping Protocols</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Assign and manage general ledger linkages for banking institutions. define systematic posting rules for bank charges, processing fees, and main account reconciliations.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-6 align-start">
+            <!-- Sidebar for Posting Groups -->
+            <div class="admin-glass-card pa-0 overflow-hidden" style="width: 320px; flex-shrink: 0; position: sticky; top: 24px;">
+                <div class="pa-4 b-bottom d-flex align-center justify-space-between bg-glass-brighter">
+                    <MudText Typo="Typo.subtitle1" Class="fw-700 opa-80 uppercase">Posting Groups</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Small" OnClick="@(()=> OpenDialogGroup(model))" Disabled="@_busy" Class="bg-glass rounded-pill" />
+                </div>
+                
+                <MudList T="BankPostingGroupModel" Clickable="true" SelectedValue="SelectedModel" SelectedValueChanged="HandleGroupChanged" Class="pa-2">
+                    @if (listOfItems?.Any() == true)
                     {
-                        <ContextMenuTrigger MenuId="myMenu" Data="@item">
-                            <MudListItem T="BankPostingGroupModel" OnClick="((e) => ViewDetails(e,item))" Class="border-solid border-2 pa-4 mb-2 mt-2" Style="border-color:#ccc; border-radius:3%" Value="item">
-                                <MudText Typo=Typo.subtitle1> @item.Title.ToString() </MudText>
-                            </MudListItem>
-                        </ContextMenuTrigger>
+                        @foreach (var item in listOfItems)
+                        {
+                            <ContextMenuTrigger MenuId="myMenu" Data="@item">
+                                <MudListItem T="BankPostingGroupModel" Value="item" Class="rounded-lg mb-1 admin-list-item">
+                                    <div class="d-flex align-center gap-3">
+                                        <div class="admin-icon-square-vibrant small">
+                                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" />
+                                        </div>
+                                        <MudText Typo="Typo.body2" Class="fw-600">@item.Title</MudText>
+                                    </div>
+                                </MudListItem>
+                            </ContextMenuTrigger>
+                        }
                     }
+                </MudList>
+            </div>
+
+            <!-- Main Content Area: Form -->
+            <div style="flex-grow: 1;">
+                @if (value == true)
+                {
+                    <div class="admin-glass-card pa-6">
+                        <div class="d-flex align-center justify-space-between mb-6">
+                            <div>
+                                <div class="d-flex align-center gap-2 mb-1">
+                                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Primary" />
+                                    <MudText Typo="Typo.h5" Class="fw-800">@titleValue</MudText>
+                                </div>
+                                <MudText Typo="Typo.body2" Class="opa-60">Define GL linkages for this bank posting profile</MudText>
+                            </div>
+                            @if (IsOnlyView)
+                            {
+                                <MudChip T="string" Color="Color.Info" Variant="Variant.Text" Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="fw-700">READ-ONLY PROTOCOL</MudChip>
+                            }
+                        </div>
+
+                        <EditForm Model="model" OnValidSubmit="CreateBankPostingGroup">
+                            <ObjectGraphDataAnnotationsValidator />
+                            <div class="d-flex flex-column gap-6">
+                                <MudTextField @bind-Value="model.Title" Label="Group Profile Identifier" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)" Disabled="IsOnlyView" Class="admin-input-group" />
+                                
+                                <div class="admin-form-section">
+                                    <div class="d-flex align-center gap-2 mb-3">
+                                        <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Small" Class="opa-40" />
+                                        <MudText Typo="Typo.subtitle2" Class="fw-800 opa-50 uppercase">Ledger Synchronization</MudText>
+                                    </div>
+                                    <div class="d-flex flex-column gap-4">
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <MudAutocomplete T="ChartOfAccountModel" Label="Primary Bank GL Account" @bind-Value="model.BankAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary" Class="admin-input-group"
+                                                SearchFunc="SearchAccountsBankAccount" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")" Disabled="IsOnlyView"></MudAutocomplete>
+                                        </div>
+
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <MudAutocomplete T="ChartOfAccountModel" Label="Bank Service Charges Account" @bind-Value="model.BankCharges" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary" Class="admin-input-group"
+                                                SearchFunc="SearchAccountsExpenceAccount" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")" Disabled="IsOnlyView"></MudAutocomplete>
+                                        </div>
+
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <MudAutocomplete T="ChartOfAccountModel" Label="Transaction Processing Fee Account" @bind-Value="model.ProcessingFee" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary" Class="admin-input-group"
+                                                SearchFunc="SearchAccountsExpenceAccount" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")" Disabled="IsOnlyView"></MudAutocomplete>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-center justify-end gap-3 mt-4">
+                                    <MudButton OnClick="CancelBankPostingGroup" Variant="Variant.Text" Color="Color.Default" Class="rounded-pill px-6 fw-600">DISMISS</MudButton>
+                                    @if (!IsOnlyView)
+                                    {
+                                        <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn px-8 shadow-lg">COMMIT CONFIGURATION</MudButton>
+                                    }
+                                    else if (HasPermissionBankPostingGroupServiceEdit)
+                                    {
+                                         <MudButton OnClick="@(() => { IsOnlyView = false; titleValue = "Edit Bank Posting Group"; })" Variant="Variant.Filled" Color="Color.Warning" Class="admin-register-btn px-8 shadow-lg">UNLOCK TO EDIT</MudButton>
+                                    }
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
                 }
-            </MudList>
-        </MudPaper>
-    </MudItem>
-    @if (@value == true)
-    {
-        <MudItem xs="8" lg="8">
-            <MudPaper>
-                <MudContainer>
-                    <h4 style="padding-top:18px;">@titleValue</h4>
-                    <br />
-                    <EditForm Model="model" OnValidSubmit="CreateBankPostingGroup">
-                        <ObjectGraphDataAnnotationsValidator />
-                        <MudGrid Spacing="4">
-                            <MudItem xs="12" lg="12">
-                                <MudTextField @bind-Value="model.Title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)" Disabled="IsOnlyView"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <MudAutocomplete T="ChartOfAccountModel" Label="Select Bank Accounts" @bind-Value="model.BankAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary"
-                                SearchFunc="SearchAccountsBankAccount" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")" Disabled="IsOnlyView"></MudAutocomplete>
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <MudAutocomplete T="ChartOfAccountModel" Label="Select Bank Charges" @bind-Value="model.BankCharges" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary"
-                                SearchFunc="SearchAccountsExpenceAccount" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")" Disabled="IsOnlyView"></MudAutocomplete>
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <MudAutocomplete T="ChartOfAccountModel" Label="Select Processing Fee" @bind-Value="model.ProcessingFee" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary"
-                                SearchFunc="SearchAccountsExpenceAccount" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")" Disabled="IsOnlyView"></MudAutocomplete>
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <ValidationSummary />
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudButton @onclick="CancelBankPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
-                                @if (!IsOnlyView)
-                                {
-                                    <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
-                                }
-                            </MudItem>
-                        </MudGrid>
-                    </EditForm>
-                </MudContainer>
-            </MudPaper>
-        </MudItem>
-    }
-</MudGrid>
+                else
+                {
+                    <div class="admin-glass-card d-flex flex-column align-center justify-center py-16" style="min-height: 480px;">
+                        <div class="admin-icon-square-vibrant mb-6 shadow-glow" style="width: 80px; height: 80px;">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Style="font-size: 3rem;" />
+                        </div>
+                        <MudText Typo="Typo.h5" Class="fw-800 opa-80 mb-2">Select Posting Group</MudText>
+                        <MudText Typo="Typo.body2" Class="opa-50 text-center" Style="max-width: 300px;">Choose a bank account profile from the sidebar to configure its audit linkages and synchronization accounts.</MudText>
+                    </div>
+                }
+            </div>
+        </div>
     </div>
+
+    <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
+        <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Group Configuration</Item>
+    </ContextMenu>
 }
 
 @code {
@@ -165,11 +215,14 @@ else
         listOfItems = Iservice.Select().ToList(); // Load bank posting groups from the service
     }
 
-    // Method to handle changes in the selected item
-    protected async Task SelectedItemChanged(object obj)
+    // Method to handle selection changes in the list   
+    protected async Task HandleGroupChanged(BankPostingGroupModel model)
     {
-        SelectedItem = (MudListItem<BankPostingGroupModel>)obj;
-        SelectedModel = (BankPostingGroupModel)SelectedItem.Value;
+        SelectedModel = model;
+        if (SelectedModel != null)
+        {
+            ViewDetails(null, SelectedModel);
+        }
     }
 
     private void GetBankPostingGroup()

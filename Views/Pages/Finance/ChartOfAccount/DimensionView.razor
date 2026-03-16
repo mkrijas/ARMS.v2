@@ -1,4 +1,4 @@
-﻿@page "/Diamension"
+@page "/Diamension"
 @inject IDimensionService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -9,7 +9,7 @@
 
 @if (_isLoading)
 {
-    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
         <LoaderComponent IsFullScreen="true" 
                         ShowLogo="false" 
                         Size="medium" 
@@ -19,58 +19,121 @@
 }
 else
 {
-<MudGrid>
-    <MudItem xs="4" lg="4">
-        <MudPaper Width="100%" Class="p-2">
-            <MudList T="CategoryModel" Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
-                <MudText Typo="Typo.h6">
-                    Category
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogCategory(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudText>
-                @if (listOfItems?.Any() == true)
-                {
-                    @foreach (var item in listOfItems)
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Analytic Dimensions & Groups</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Maintain multi-level analytic dimensions for cross-functional financial reporting. organize dimensions into logical categories for structured business intelligence and auditing.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-6 align-start">
+            <!-- Sidebar for Categories -->
+            <div class="admin-glass-card pa-0 overflow-hidden" style="width: 320px; flex-shrink: 0; position: sticky; top: 24px;">
+                <div class="pa-4 b-bottom d-flex align-center justify-space-between bg-glass-brighter">
+                    <MudText Typo="Typo.subtitle1" Class="fw-700 opa-80 uppercase">Categories</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Small" OnClick="@(()=> OpenDialogCategory(model))" Disabled="@_busy" Class="bg-glass rounded-pill" />
+                </div>
+                
+                <MudList T="CategoryModel" Clickable="true" SelectedValue="SelectedModel" SelectedValueChanged="HandleCategoryChanged" Class="pa-2">
+                    @if (listOfItems?.Any() == true)
                     {
-                        <ContextMenuTrigger MenuId="myMenu" Data="@item">
-                            <MudListItem T="CategoryModel" Value="item">
-                                <MudText Typo=Typo.subtitle1> @item.CategoryName.ToString() </MudText>
-                            </MudListItem>
-                        </ContextMenuTrigger>
+                        @foreach (var item in listOfItems)
+                        {
+                            <ContextMenuTrigger MenuId="myMenu" Data="@item">
+                                <MudListItem T="CategoryModel" Value="item" Class="rounded-lg mb-1 admin-list-item">
+                                    <div class="d-flex align-center gap-3">
+                                        <div class="admin-icon-square-vibrant small">
+                                            <MudIcon Icon="@Icons.Material.Filled.Layers" Size="Size.Small" />
+                                        </div>
+                                        <MudText Typo="Typo.body2" Class="fw-600">@item.CategoryName</MudText>
+                                    </div>
+                                </MudListItem>
+                            </ContextMenuTrigger>
+                        }
                     }
+                </MudList>
+            </div>
+
+            <!-- Main Content Area -->
+            <div style="flex-grow: 1;">
+                @if (SelectedModel != null && SelectedModel.CategoryID != null)
+                {
+                    <div class="admin-glass-card pa-0 overflow-hidden mb-6">
+                        <div class="pa-6 d-flex align-center justify-space-between">
+                            <div>
+                                <div class="d-flex align-center gap-2 mb-1">
+                                    <MudIcon Icon="@Icons.Material.Filled.AutoGraph" Color="Color.Primary" />
+                                    <MudText Typo="Typo.h5" Class="fw-800">@SelectedModel.CategoryName</MudText>
+                                </div>
+                                <MudText Typo="Typo.body2" Class="opa-60">Manage specific analytic identifiers for this category</MudText>
+                            </div>
+                            <MudButton StartIcon="@Icons.Material.Filled.PlaylistAdd" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => OpenDialog(new DimensionModel { Category = new CategoryModel { CategoryID = SelectedModel.CategoryID.Value } }))" Class="admin-register-btn px-6">ADD DIMENSION</MudButton>
+                        </div>
+                    </div>
+
+                    <div class="admin-glass-card pa-0 overflow-hidden">
+                        <div class="pa-4 b-bottom bg-glass-brighter">
+                             <MudTextField @bind-Value="searchTerm" Placeholder="Search dimensions..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" />
+                        </div>
+                        
+                        <MudTable Items="@FilteredDimensions" Elevation="0" Class="modern-admin-table" Hover="true">
+                            <HeaderContent>
+                                <MudTh><span class="admin-header-text">DIMENSION KEY</span></MudTh>
+                                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Dimension">
+                                    <div class="d-flex align-center gap-3">
+                                        <MudIcon Icon="@Icons.Material.Filled.Tag" Size="Size.Small" Color="Color.Primary" Class="opa-40" />
+                                        <span class="fw-700 admin-td-primary">@context.Dimension</span>
+                                    </div>
+                                </MudTd>
+                                <MudTd DataLabel="Actions" Style="text-align: right;">
+                                    <div class="d-flex justify-end gap-1">
+                                        <MudTooltip Text="Edit Dimension">
+                                            <MudIconButton OnClick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                        </MudTooltip>
+                                        <MudTooltip Text="Purge Entry">
+                                            <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                        </MudTooltip>
+                                    </div>
+                                </MudTd>
+                            </RowTemplate>
+                            <NoRecordsContent>
+                                <div class="pa-8 d-flex flex-column align-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Inbox" Size="Size.Large" Class="opa-20 mb-2" />
+                                    <MudText Typo="Typo.body2" Class="opa-40">No dimensions found for this search or category</MudText>
+                                </div>
+                            </NoRecordsContent>
+                            <PagerContent>
+                                <div class="pa-4">
+                                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50 }" />
+                                </div>
+                            </PagerContent>
+                        </MudTable>
+                    </div>
                 }
-            </MudList>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="8" lg="8">
-        @if (SelectedItem != null)
-        {
-            <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
-                <ToolBarContent>
-                    <MudText Typo="Typo.h6">Dimension</MudText>
-                    <MudSpacer></MudSpacer>
-                </ToolBarContent>
-                <HeaderContent>
-                    <MudTh><MudTableSortLabel SortBy="new Func<DimensionModel, object>(x=> x.Dimension)" InitialDirection="SortDirection.Ascending">Dimension</MudTableSortLabel></MudTh>
-                    <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Dimension">@context.Dimension</MudTd>
-                    <MudTd DataLabel="">
-                        <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" title="Edit" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" />
-                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                    </MudTd>
-                </RowTemplate>
-                <PagerContent>
-                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                </PagerContent>
-            </MudTable>
-        }
-    </MudItem>
-</MudGrid>
-<ContextMenu Id="myMenu" OnAppearing="OnAppearing">
-    <Item OnClick="@ContextMenuOnClickadd" Id="addItem">Add Dimension</Item>
-    <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Category</Item>
-</ContextMenu>
+                else
+                {
+                    <div class="admin-glass-card d-flex flex-column align-center justify-center py-16" style="min-height: 400px;">
+                        <div class="admin-icon-square-vibrant mb-6" style="width: 80px; height: 80px;">
+                            <MudIcon Icon="@Icons.Material.Filled.GridGoldenratio" Style="font-size: 3rem;" />
+                        </div>
+                        <MudText Typo="Typo.h5" Class="fw-800 opa-80 mb-2">Select Analytic Category</MudText>
+                        <MudText Typo="Typo.body2" Class="opa-50 text-center" Style="max-width: 300px;">Choose an analytic structure from the sidebar to manage individual data points.</MudText>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
+        <Item OnClick="@ContextMenuOnClickadd" Id="addItem">Add Dimension</Item>
+        <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Category</Item>
+    </ContextMenu>
 }
 
 @code {
@@ -80,10 +143,15 @@ else
 
     CategoryModel model = new CategoryModel();
     private MudListItem<CategoryModel> SelectedItem;
+    private string searchTerm = "";
     private List<CategoryModel> listOfItems = new();
     CategoryModel SelectedModel = new();
     private List<DimensionModel> collection = new List<DimensionModel>();
     private bool _busy;
+
+    private IEnumerable<DimensionModel> FilteredDimensions => collection
+        .Where(x => string.IsNullOrWhiteSpace(searchTerm) || 
+                   x.Dimension.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
 
     public bool HasPermissionDimensionServiceEdit { get; set; } = false;
     public bool HasPermissionDimensionServiceDelete { get; set; } = false;
@@ -112,11 +180,13 @@ else
     }
 
     // Method to handle selection changes in the list   
-    protected async Task SelectedItemChanged(MudListItem<CategoryModel> obj)
+    protected async Task HandleCategoryChanged(CategoryModel model)
     {
-        SelectedItem = obj;
-        SelectedModel = SelectedItem.Value;
-        GetInventoryItem(SelectedModel);
+        SelectedModel = model;
+        if (SelectedModel != null)
+        {
+            GetInventoryItem(SelectedModel);
+        }
     }
 
     // Method to fetch all categories
@@ -199,7 +269,10 @@ else
                 snackbar.Add("Deleted Successfully", Severity.Success);
             }
             GetAll();
-            SelectedItemChanged(SelectedItem);
+            if (SelectedModel != null)
+            {
+                GetInventoryItem(SelectedModel);
+            }
         }
         else
         {

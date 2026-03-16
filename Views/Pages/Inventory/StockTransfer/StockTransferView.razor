@@ -1,4 +1,4 @@
-﻿@page "/StockTransferItem"
+@page "/StockTransferItem"
 @using Core.BaseModels.Inventory;
 @using MudBlazor
 
@@ -22,151 +22,146 @@
 }
 else
 {
-    <div @key="@("content")">
+    <div class="admin-page-container fade-in" @key="@("content")">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Stock Logistics & Transfers</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Monitor and manage inter-branch inventory movements and shipment reconciliation.</MudText>
+                </div>
+                @if (!IsOutComplete)
+                {
+                    <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.LocalShipping" OnClick="@(()=> EditOutGoing(new StockTransferInitiationModel()))" Class="admin-register-btn">INITIATE TRANSFER</MudButton>
+                }
+            </div>
+        </div>
 
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="true" PanelClass="pa-0" Centered="false" Class="modern-tabs">
+                <MudTabPanel Text="OUTGOING SHIPMENTS" BadgeData="@(collectionOutGoing?.Count > 0 ? collectionOutGoing.Count : null)" BadgeColor="Color.Primary">
+                    <div class="pa-6 border-bottom-subtle bg-light-surface">
+                        <MudGrid Spacing="3" Class="align-center">
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="searchvalue" Placeholder="Search by Document Number or Destination..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Class="modern-input"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <div class="d-flex align-center h-100 px-4 rounded-lg border-subtle bg-white">
+                                    <MudCheckBox T="bool" Label="SHOW COMPLETED TRANSFERS" ValueChanged="((bool value)=>CompletedOutgoing(value))" Value="@IsOutComplete" Color="Color.Primary" Dense="true" Class="fw-600" />
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </div>
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="px-4 py-6">
-            <MudTabPanel Style="min-width: 200px;" Text="Outgoing Stock" BadgeData="@(collectionOutGoing?.Count > 0 ? collectionOutGoing.Count : null)" BadgeColor="Color.Info" Visible="@(collectionOutGoing?.Count > 0)">
-                <MudTable Items="@collectionOutGoing" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<StockTransferInitiationModel, bool>(search)">
-                    <ToolBarContent>
-                        @if (!IsOutComplete)
-                        {
-                            <MudText Typo="Typo.h6">Initiate Stock Transfer</MudText>
-                            <MudTooltip Text="New Stock Transfer">
-                                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" @onclick="@(()=> EditOutGoing(new StockTransferInitiationModel()))" Title="Add" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                            </MudTooltip>
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.h6">Completed Transfer</MudText>
-                        }
-                        <MudSpacer></MudSpacer>
-                        <MudTextField @bind-Value="searchvalue" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                        <MudCheckBox T="bool" Style="margin-right: 16px;" Label="Completed Transfers" ValueChanged="((bool value)=>CompletedOutgoing(value))" Value="@IsOutComplete"></MudCheckBox>
-                    </ToolBarContent>
-                    <HeaderContent>
-                        <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.OtherBranchName)" InitialDirection="SortDirection.Descending">Destination Branch</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Descending">Initiated Date</MudTableSortLabel></MudTh>
-                        @if (IsOutComplete)
-                        {
-                            <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.TransferEndDate)" InitialDirection="SortDirection.Descending">TransferEnd Date</MudTableSortLabel></MudTh>
-                        }
-                        <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x?.DisplayStatus)" InitialDirection="SortDirection.Descending">Status</MudTableSortLabel></MudTh>
-                        <MudTh>Actions</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="Document Number">@context.DocumentNumber</MudTd>
-                        <MudTd DataLabel="Destination Branch">@context.OtherBranchName</MudTd>
-                        <MudTd DataLabel="Initiated Date">@context.DocumentDate</MudTd>
-                        @if (IsOutComplete)
-                        {
-                            <MudTd DataLabel="TransferEnd Date">@context.TransferEndDate</MudTd>
-                            <MudTd DataLabel="Status">@context.DisplayCompleteStatus</MudTd>
-                        }
-                        else if (!IsOutComplete)
-                        {
-                            <MudTd DataLabel="Status">@context?.DisplayStatus</MudTd>
-                        }
-                        <MudTd DataLabel="Actions">
-                            <MudIconButton @onclick="@(()=> Initiate(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Size="Size.Small" Variant="Variant.Filled" />
-                            @if (context.Status is null && !IsOutComplete)
-                            {
-                                @* <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> EditOutGoing(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" />
-                            </MudTooltip> *@
-                                <MudIconButton Disabled="@(context.MID != null)" @onclick="@(()=> DeleteOutGoing(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Remove" Title="Remove" Size="Size.Small" Variant="Variant.Filled" />
-                            }
-                            <MudIconButton Disabled="@(context.MID != null)" OnClick="@(()=> Initiate(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-                            <MudIconButton OnClick="@(()=> Print(context.StockTransferID,(context.AuthLevelId == 99) ? "TAX INVOICE" : "PROFORMA INVOICE"))" Color="Color.Tertiary" Title="Print Performa Invoice" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
-                        </MudTd>
-                    </RowTemplate>
-                    <PagerContent>
-                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                    </PagerContent>
-                </MudTable>
-            </MudTabPanel>
-            <MudTabPanel Style="min-width: 200px;" Text="Incoming Stock" BadgeData="@(collectionInComing?.Count > 0 ? collectionInComing.Count : null)" BadgeColor="Color.Info" Visible="@(collectionInComing?.Count > 0)">
-                <MudTable Items="@collectionInComing" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<StockTransferInitiationModel, bool>(search)">
-                    <ToolBarContent>
-                        @if (!IsIncomingComplete)
-                        {
-                            <MudText Typo="Typo.h6">Incoming Transfer</MudText>
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.h6">Received Stock Transfer</MudText>
-                        }
-                        <MudSpacer></MudSpacer>
-                        <MudTextField @bind-Value="searchvalue" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                        <MudCheckBox T="bool" Style="margin-right: 16px;" Label="Received Transfers" ValueChanged="((bool value)=>CompletedIncoming(value))" Value="@IsIncomingComplete"></MudCheckBox>
-                    </ToolBarContent>
-
-                    <HeaderContent>
-                        <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.OtherBranchName)" InitialDirection="SortDirection.Descending">Initiated Branch</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Descending">Initiated Date</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
-                        @if (IsIncomingComplete)
-                        {
-                            <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.TransferEndDate)" InitialDirection="SortDirection.Descending">TransferEnd Date</MudTableSortLabel></MudTh>
-                        }
-                        <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.TransferEndDate)" InitialDirection="SortDirection.Descending">TransferEnd Date</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x?.DisplayStatus)" InitialDirection="SortDirection.Descending">Status</MudTableSortLabel></MudTh>
-                        <MudTh>Actions</MudTh>
-                    </HeaderContent>
-
-                    <RowTemplate>
-                        <MudTd DataLabel="Initiated Branch">@context.OtherBranchName</MudTd>
-                        <MudTd DataLabel="Initiated Date">@context.DocumentDate</MudTd>
-                        <MudTd DataLabel="Document Number">@context.DocumentNumber</MudTd>
-                        @if (IsIncomingComplete)
-                        {
-                            <MudTd DataLabel="TransferEnd Date">@context.TransferEndDate</MudTd>
-                            <MudTd DataLabel="Status">@context.DisplayCompleteStatus</MudTd>
-                        }
-                        else if (!IsIncomingComplete)
-                        {
-                            <MudTd DataLabel="Status">@context?.DisplayStatus</MudTd>
-                        }
-                        <MudTd DataLabel="Actions">
-                            @if (IsIncomingComplete)
-                            {
-                                <MudTooltip Text="View Items">
-                                    <MudFab @onclick="@(()=> Initiate(context,true))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView" Size="Size.Small" />
-                                </MudTooltip>
-                            }
-                            else
-                            {
-                                <MudTooltip Text="View and Accept">
-                                    <MudIconButton @onclick="@(()=> Deliver(context,false))" Color="Color.Primary" Icon="@Icons.Material.Outlined.Check" Size="Size.Small" IconSize="Size.Small" />
-                                </MudTooltip>
-                                @if (context.Status != 3)  @*|| context.EndModel.TransferStatus == 3 || context.EndModel.TransferStatus == 0)*@
-                                {
-                                    if (context.DisplayStatus != "Cancelled")
+                    <MudTable Items="@collectionOutGoing" Elevation="0" Filter="new Func<StockTransferInitiationModel, bool>(search)" Hover="true" Breakpoint="Breakpoint.Sm" Class="modern-admin-table">
+                        <HeaderContent>
+                            <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">DOC NO</span></MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.OtherBranchName)"><span class="admin-header-text">DESTINATION</span></MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">INITIATED</span></MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x?.DisplayStatus)"><span class="admin-header-text">STATUS</span></MudTableSortLabel></MudTh>
+                            <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Doc No"><span class="admin-td-primary fw-600">@context.DocumentNumber</span></MudTd>
+                            <MudTd DataLabel="Destination"><span class="fw-500">@context.OtherBranchName</span></MudTd>
+                            <MudTd DataLabel="Date">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-500">@context.DocumentDate?.ToString("dd MMM yyyy")</span>
+                                    @if (IsOutComplete) { <span class="small opa-50">Ended: @context.TransferEndDate?.ToString("dd MMM")</span> }
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="Status">
+                                <MudChip T="string" Size="Size.Small" Color="@(IsOutComplete ? Color.Success : Color.Info)" Variant="Variant.Text" Class="fw-600">@(IsOutComplete ? context.DisplayCompleteStatus : context.DisplayStatus)</MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Actions" Style="text-align: right;">
+                                <div class="d-flex justify-end gap-1">
+                                    <MudTooltip Text="View Details">
+                                        <MudIconButton OnClick="@(()=> Initiate(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                    @if (context.Status is null && !IsOutComplete)
                                     {
-                                        @* <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> Accept(context))" Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Small" />
-                            </MudTooltip> *@
-                                        <MudTooltip Text="Cancel Incoming">
-                                            <MudIconButton @onclick="@(()=> Reject(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Close" Size="Size.Small" IconSize="Size.Small" />
+                                        <MudTooltip Text="Cancel Transfer">
+                                            <MudIconButton Disabled="@(context.MID != null)" OnClick="@(()=> DeleteOutGoing(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Close" Size="Size.Small" Variant="Variant.Text" />
                                         </MudTooltip>
                                     }
-                                }
-                            }
-                            <MudIconButton OnClick="@(()=> Print(context.StockTransferID,(context.AuthLevelId == 99) ? "TAX INVOICE" : "PROFORMA INVOICE"))" Color="Color.Tertiary" Title="Print Performa Invoice" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
-                        </MudTd>
-                    </RowTemplate>
-                    <PagerContent>
-                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                    </PagerContent>
-                </MudTable>
-            </MudTabPanel>
-        </MudTabs>
-    </MudItem>
-</MudGrid>
-</div>
+                                    <MudTooltip Text="Verify Stock">
+                                        <MudIconButton Disabled="@(context.MID != null)" OnClick="@(()=> Initiate(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.VerifiedUser" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Print Documentation">
+                                        <MudIconButton OnClick="@(()=> Print(context.StockTransferID,(context.AuthLevelId == 99) ? "TAX INVOICE" : "PROFORMA INVOICE"))" Color="Color.Secondary" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                </div>
+                            </MudTd>
+                        </RowTemplate>
+                        <PagerContent><div class="pa-4"><MudTablePager /></div></PagerContent>
+                    </MudTable>
+                </MudTabPanel>
+
+                <MudTabPanel Text="INCOMING SHIPMENTS" BadgeData="@(collectionInComing?.Count > 0 ? collectionInComing.Count : null)" BadgeColor="Color.Secondary">
+                    <div class="pa-6 border-bottom-subtle bg-light-surface">
+                        <MudGrid Spacing="3" Class="align-center">
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="searchvalue" Placeholder="Search incoming logistics..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Class="modern-input"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <div class="d-flex align-center h-100 px-4 rounded-lg border-subtle bg-white">
+                                    <MudCheckBox T="bool" Label="SHOW RECEIVED SHIPMENTS" ValueChanged="((bool value)=>CompletedIncoming(value))" Value="@IsIncomingComplete" Color="Color.Primary" Dense="true" Class="fw-600" />
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+
+                    <MudTable Items="@collectionInComing" Elevation="0" Filter="new Func<StockTransferInitiationModel, bool>(search)" Hover="true" Breakpoint="Breakpoint.Sm" Class="modern-admin-table">
+                        <HeaderContent>
+                            <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.OtherBranchName)"><span class="admin-header-text">ORIGIN</span></MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.DocumentNumber)"><span class="admin-header-text">DOC NO</span></MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DISPATCHED</span></MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<StockTransferInitiationModel, object>(x=> x?.DisplayStatus)"><span class="admin-header-text">STATUS</span></MudTableSortLabel></MudTh>
+                            <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Origin"><span class="fw-600">@context.OtherBranchName</span></MudTd>
+                            <MudTd DataLabel="Doc No"><span class="admin-td-primary fw-600">@context.DocumentNumber</span></MudTd>
+                            <MudTd DataLabel="Date">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-500">@context.DocumentDate?.ToString("dd MMM yyyy")</span>
+                                    @if (IsIncomingComplete) { <span class="small opa-50">Received: @context.TransferEndDate?.ToString("dd MMM")</span> }
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="Status">
+                                <MudChip T="string" Size="Size.Small" Color="@(IsIncomingComplete ? Color.Success : Color.Warning)" Variant="Variant.Text" Class="fw-600">@(IsIncomingComplete ? context.DisplayCompleteStatus : context.DisplayStatus)</MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Actions" Style="text-align: right;">
+                                <div class="d-flex justify-end gap-1">
+                                    @if (IsIncomingComplete)
+                                    {
+                                        <MudTooltip Text="View Received Items">
+                                            <MudIconButton OnClick="@(()=> Initiate(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" Variant="Variant.Text" />
+                                        </MudTooltip>
+                                    }
+                                    else
+                                    {
+                                        <MudTooltip Text="Accept Delivery">
+                                            <MudIconButton OnClick="@(()=> Deliver(context,false))" Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Variant="Variant.Text" />
+                                        </MudTooltip>
+                                        @if (context.Status != 3 && context.DisplayStatus != "Cancelled")
+                                        {
+                                            <MudTooltip Text="Reject Shipment">
+                                                <MudIconButton OnClick="@(()=> Reject(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Variant="Variant.Text" />
+                                            </MudTooltip>
+                                        }
+                                    }
+                                    <MudTooltip Text="Print Invoice">
+                                        <MudIconButton OnClick="@(()=> Print(context.StockTransferID,(context.AuthLevelId == 99) ? "TAX INVOICE" : "PROFORMA INVOICE"))" Color="Color.Secondary" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                </div>
+                            </MudTd>
+                        </RowTemplate>
+                        <PagerContent><div class="pa-4"><MudTablePager /></div></PagerContent>
+                    </MudTable>
+                </MudTabPanel>
+            </MudTabs>
+        </div>
+    </div>
 }
 
 

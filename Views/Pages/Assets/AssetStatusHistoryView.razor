@@ -5,41 +5,90 @@
 @using System.Threading;
 @inject AuthenticationStateProvider auth
 
-<MudPaper Class="p-2 my-4 d-flex align-center">
-    <AssetSelector Value="Asset" ValueChanged="AssetSelected" BranchID="@BranchID" Class="mx-5 my-5 bg-white" />
-</MudPaper>
-<MudPaper>
-    <MudToolBar>
-        <MudText Typo="Typo.h6">Asset Status History</MudText>
-        <MudSpacer />
-    </MudToolBar>
-    <MudDivider></MudDivider>
-        <MudSimpleTable Dense="true" Hover="true" Style="overflow-x: auto;">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th><b>Status</b></th>
-                    <th><b>Status Date</b></th>
-                    <th><b>Amount</b></th>
-                    @* <th><b>Cumulative Amount</b></th> *@
-                </tr>
-            </thead>
-            <tbody>                
-                @foreach (var item in collection)
-                {
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Aggregating History" 
+                        SubText="Compiling lifecycle audit trail..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Asset Lifecycle | Global Status Audit</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Comprehensive audit trail for asset transitions. Monitor historical status changes, verify operational readiness levels, and track movement across organizational nodes to maintain an immutable log of asset availability.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-6">
+                <div style="flex-grow: 1; max-width: 600px;">
+                    <AssetSelector Value="Asset" ValueChanged="AssetSelected" BranchID="@BranchID" Class="admin-input-group" />
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden shadow-sm">
+            <div class="bg-indigo-lighten-5 px-6 py-3 border-b d-flex align-center justify-space-between">
+                <div class="d-flex align-center gap-2">
+                    <div class="admin-icon-square-vibrant tiny accent-indigo">
+                        <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.subtitle2" Class="fw-700 text-indigo uppercase">Transition Ledger</MudText>
+                </div>
+            </div>
+            
+            <MudSimpleTable Dense="true" Hover="true" Class="modern-admin-table no-border-radius">
+                <thead>
                     <tr>
-                        <td></td>
-                        <td>@item.Status</td>
-                        <td>@item.StatusDate?.ToShortDateString()</td>
-                        <td>@item.Amount</td>
-                        @* <td>@item.CumulativeAmount</td> *@
+                        <th style="width: 50px;"></th>
+                        <th><span class="admin-header-text">STATUS TRANSITION</span></th>
+                        <th><span class="admin-header-text">EVENT TIMESTAMP</span></th>
+                        <th style="text-align: right;"><span class="admin-header-text pr-4">VALUATION</span></th>
                     </tr>
-                }
-            </tbody>
-        </MudSimpleTable>
-</MudPaper>
+                </thead>
+                <tbody>                
+                    @{ var serial = 1; }
+                    @foreach (var item in collection)
+                    {
+                        <tr>
+                            <td class="fw-700 opa-50">#@serial</td>
+                            <td>
+                                <div class="d-flex align-center gap-2">
+                                     <div class="admin-icon-square-vibrant tiny accent-indigo">
+                                        <MudIcon Icon="@Icons.Material.Filled.FactCheck" Size="Size.Small" />
+                                    </div>
+                                    <span class="fw-700 admin-td-primary">@item.Status</span>
+                                </div>
+                            </td>
+                            <td><span class="fw-600 opa-70">@item.StatusDate?.ToString("dd MMM yyyy HH:mm")</span></td>
+                            <td style="text-align: right;"><span class="fw-800 text-indigo pr-4">@item.Amount?.ToString("N2")</span></td>
+                        </tr>
+                        serial++;
+                    }
+                    @if (!collection.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="py-8 text-center opa-40 fw-700 italic">No historical transitions recorded for this asset.</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </div>
+    </div>
+}
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private AssetModel Asset { get; set; }
     private List<AssetStatusUpdateModel> collection = new();
@@ -49,10 +98,23 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
         BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to retrieve the status history of the selected asset

@@ -1,4 +1,4 @@
-﻿@page "/CostCenter"
+@page "/CostCenter"
 @inject ICostCenterService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -9,7 +9,7 @@
 
 @if (_isLoading)
 {
-    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
         <LoaderComponent IsFullScreen="true" 
                         ShowLogo="false" 
                         Size="medium" 
@@ -19,58 +19,101 @@
 }
 else
 {
-<MudGrid>
-    <MudItem xs="4" lg="4">
-        <MudPaper Width="100%" Class="p-2">
-            <MudList T="CategoryModel" Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
-                <MudText Typo="Typo.h6">
-                    Category
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogCategory(new CategoryModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudText>
-                @if (listOfItems?.Any() == true)
-                {
-                    @foreach (var item in listOfItems)
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Cost Hierarchy & Allocation</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Maintain organizational cost centers across functional categories. track budgetary distribution and define analytic dimensions for granular expense reporting.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-6 align-start">
+            <!-- Sidebar for Categories -->
+            <div class="admin-glass-card pa-0 overflow-hidden" style="width: 320px; flex-shrink: 0; position: sticky; top: 24px;">
+                <div class="pa-4 b-bottom d-flex align-center justify-space-between bg-glass-brighter">
+                    <MudText Typo="Typo.subtitle1" Class="fw-700 opa-80">CATEGORIES</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Size="Size.Small" OnClick="@(()=> OpenDialogCategory(new CategoryModel()))" Disabled="@_busy" Class="bg-glass rounded-pill" />
+                </div>
+                
+                <MudList T="CategoryModel" Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged" Class="pa-2">
+                    @if (listOfItems?.Any() == true)
                     {
-                        <ContextMenuTrigger MenuId="myMenu" Data="@item">
-                            <MudListItem T="CategoryModel" Value="item">
-                                <MudText Typo=Typo.subtitle1> @item.CategoryName.ToString() </MudText>
-                            </MudListItem>
-                        </ContextMenuTrigger>
+                        @foreach (var item in listOfItems)
+                        {
+                            <ContextMenuTrigger MenuId="myMenu" Data="@item">
+                                <MudListItem T="CategoryModel" Value="item" Class="rounded-lg mb-1 admin-list-item">
+                                    <div class="d-flex align-center gap-3">
+                                        <div class="admin-icon-square-vibrant small">
+                                            <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Small" />
+                                        </div>
+                                        <MudText Typo="Typo.body2" Class="fw-600">@item.CategoryName</MudText>
+                                    </div>
+                                </MudListItem>
+                            </ContextMenuTrigger>
+                        }
                     }
+                </MudList>
+            </div>
+
+            <!-- Main Content Area -->
+            <div style="flex-grow: 1;">
+                @if (SelectedModel != null && SelectedModel.CategoryID != null)
+                {
+                    <div class="admin-glass-card pa-0 overflow-hidden">
+                        <div class="pa-4 b-bottom d-flex align-center justify-space-between bg-glass-brighter">
+                            <div>
+                                <MudText Typo="Typo.h6" Class="fw-700">@SelectedModel.CategoryName</MudText>
+                                <MudText Typo="Typo.caption" Class="opa-60">Cost centers assigned to this category</MudText>
+                            </div>
+                            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => OpenDialog(new CostCenterModel { Category = new CategoryModel { CategoryID = SelectedModel.CategoryID.Value } }))" Size="Size.Small" Class="rounded-pill px-4">ADD CENTER</MudButton>
+                        </div>
+                        
+                        <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+                            <HeaderContent>
+                                <MudTh><span class="admin-header-text">COST CENTER NAME</span></MudTh>
+                                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="CostCenter"><span class="fw-700 admin-td-primary">@context.CostCenter</span></MudTd>
+                                <MudTd DataLabel="Actions" Style="text-align: right;">
+                                    <div class="d-flex justify-end gap-1">
+                                        <MudTooltip Text="Edit Center">
+                                            <MudIconButton OnClick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                        </MudTooltip>
+                                        <MudTooltip Text="Delete Center">
+                                            <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                        </MudTooltip>
+                                    </div>
+                                </MudTd>
+                            </RowTemplate>
+                            <PagerContent>
+                                <div class="pa-4">
+                                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                                </div>
+                            </PagerContent>
+                        </MudTable>
+                    </div>
                 }
-            </MudList>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="8" lg="8">
-        @if (SelectedItem != null)
-        {
-            <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
-                <ToolBarContent>
-                    <MudText Typo="Typo.h6">Cost Centers</MudText>
-                    <MudSpacer></MudSpacer>
-                </ToolBarContent>
-                <HeaderContent>
-                    <MudTh><MudTableSortLabel SortBy="new Func<CostCenterModel, object>(x=> x.CostCenter)" InitialDirection="SortDirection.Ascending">Cost Center</MudTableSortLabel></MudTh>
-                    <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="CostCenter">@context.CostCenter</MudTd>
-                    <MudTd DataLabel="">
-                        <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" title="Edit" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" />
-                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                    </MudTd>
-                </RowTemplate>
-                <PagerContent>
-                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                </PagerContent>
-            </MudTable>
-        }
-    </MudItem>
-</MudGrid>
-<ContextMenu Id="myMenu" OnAppearing="OnAppearing">
-    <Item OnClick="@ContextMenuOnClickadd" Id="addItem">Add CostCenter</Item>
-    <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Category</Item>
-</ContextMenu>
+                else
+                {
+                    <div class="admin-glass-card d-flex flex-column align-center justify-center py-16">
+                        <div class="admin-icon-square-vibrant mb-4" style="width: 80px; height: 80px;">
+                            <MudIcon Icon="@Icons.Material.Filled.Category" Style="font-size: 3rem;" />
+                        </div>
+                        <MudText Typo="Typo.h5" Class="fw-700 opa-80">Select a Category</MudText>
+                        <MudText Typo="Typo.body2" Class="opa-50">Choose a cost category from the sidebar to manage individual centers.</MudText>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
+        <Item OnClick="@ContextMenuOnClickadd" Id="addItem">Add Cost Center</Item>
+        <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Category</Item>
+    </ContextMenu>
 }
 
 @code {

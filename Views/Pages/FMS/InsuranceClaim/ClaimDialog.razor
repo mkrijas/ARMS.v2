@@ -1,4 +1,4 @@
-﻿@attribute [Authorize]
+@attribute [Authorize]
 @using System.Threading;
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
@@ -8,159 +8,190 @@
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
 
-<MudDialog>
-    <TitleContent>
-        @if (Model.InsuranceClaimID == null)
+<DialogForm Title="@(Model.InsuranceClaimID == null ? "Initiate Insurance Claim" : "Manage Claim Dossier")"
+            Subtitle="@(Model.InsuranceClaimID == null ? "Register a new incident and establish legal documentation." : $"Asset Account: {Model.TruckRegNo} | Lifecycle Status: {(Model.IsOpen ? "ACTIVE" : "CLOSED")}")"
+            OnSubmit="OnValidSubmit"
+            IsBusy="_busy"
+            SubmitButtonText="Commit Record"
+            CancelButtonText="Dismiss"
+            @ref="dialogForm">
+
+    <FormContent>
+        <div class="admin-glass-card pa-6 mb-6">
+            <div class="d-flex align-center mb-4">
+                <div class="icon-badge primary-badge-soft mr-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Assignment" Size="Size.Small" />
+                </div>
+                <MudText Typo="Typo.subtitle1" Class="fw-700">Incident Classification</MudText>
+            </div>
+            
+            <MudGrid Spacing="3">
+                <MudItem xs="12" md="6">
+                    <MudTextField ReadOnly @bind-Value="@Model.TruckRegNo" Label="Vehicle Registration" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" 
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.LocalShipping" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudDatePicker ReadOnly="@ReadOnly" Date="@Model?.DateOfAccident" DateChanged="DateChanged" Label="Accident Chronology" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Event" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField ReadOnly @bind-Value="@Model.PolicyNo" Label="Policy Identifier" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Policy" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField ReadOnly="@ReadOnly" @bind-Value="@Model.ClaimNo" Label="Claim Reference" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Numbers" />
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        <div class="admin-glass-card pa-6 mb-6">
+            <div class="d-flex align-center mb-4">
+                <div class="icon-badge primary-badge-soft mr-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Payments" Size="Size.Small" />
+                </div>
+                <MudText Typo="Typo.subtitle1" Class="fw-700">Financial Valuation</MudText>
+            </div>
+
+            <MudGrid Spacing="3">
+                <MudItem xs="12" md="4">
+                    <MudNumericField ReadOnly="@(Jobcard && Model.IsOpen)" HideSpinButtons @bind-Value="@Model.EstimateAmount" Label="Estimated Cost" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input"
+                                     Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Calculate" Format="N2" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudNumericField ReadOnly="@(Jobcard && Model.IsOpen)" HideSpinButtons @bind-Value="@Model.InvoiceAmount" Label="Invoiced Cost" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input"
+                                     Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Description" Format="N2" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudNumericField ReadOnly="@(Jobcard)" HideSpinButtons @bind-Value="@Model.ApprovedAmount" Label="Authorized Settlement" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input"
+                                     Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Verified" Format="N2" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField ReadOnly="@ReadOnly" @bind-Value="@Model.Notes" Label="Administrative Narrative" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="4" Class="modern-input" />
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        <div class="admin-glass-card pa-6 mb-6">
+            <div class="d-flex align-center justify-space-between mb-4">
+                <div class="d-flex align-center">
+                    <div class="icon-badge primary-badge-soft mr-3">
+                        <MudIcon Icon="@Icons.Material.Filled.PhotoLibrary" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.subtitle1" Class="fw-700">Forensic Documentation</MudText>
+                </div>
+                @if (Model.InsuranceClaimID == null || (!Jobcard && Model.IsOpen))
+                {
+                    <MyFileUpload @ref="Mfu" AllowMultiple="true" Resize="true" DeleteExistingFile="false" FileName="@Guid.NewGuid().ToString()" FolderName="@("InsuranceClaim/Breakdown-"+Model.BreakdownID.ToString())" Label="Upload Assets" FilePathChanged="FileUploaded"></MyFileUpload>
+                }
+            </div>
+
+            <div class="admin-asset-grid mt-4">
+                @foreach (var imagePath in Model?.Images)
+                {
+                    @if (!string.IsNullOrEmpty(imagePath))
+                    {
+                        <div class="admin-asset-card p-2">
+                            <div class="position-relative">
+                                <img src="@imagePath" alt="Incident Asset" class="rounded-lg w-100" style="height: 150px; object-fit: cover;" />
+                                @if (Model.IsOpen && !Jobcard || (Jobcard && Model.InsuranceClaimID == null))
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" Class="position-absolute top-0 right-0 m-2 bg-white-glass shadow-sm" OnClick="() => DeleteImage(imagePath)" />
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                @if (!Model.Images.Any())
+                {
+                    <div class="text-center pa-12 border-dashed rounded-lg opacity-40 w-100 grid-span-all">
+                        <MudIcon Icon="@Icons.Material.Filled.NoPhotography" Size="Size.Large" Class="mb-2" />
+                        <MudText Typo="Typo.body2">No forensic assets recorded.</MudText>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (Model.InsuranceClaimID != null)
         {
-            <MudText Typo="Typo.h5">Initiate Claim</MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.h5">Manage Claim</MudText>
-            <MudSpacer />
-            @if (!Model.IsOpen)
-            {
-                <MudText Typo="Typo.h6" Style="color : red;">Claim Closed</MudText>
-            }
-        }
-    </TitleContent>
-    <DialogContent>
-        <div style="max-height:800px; overflow-y:scroll">
-            <MudItem Style="padding: 26px; background-color: whitesmoke; margin: 2px; padding: 26px; border-radius: 4px; box-shadow: inset 0px 0px 4px 0px rgba(0,0,0,0.3);">
-                <MudPaper Style="margin-bottom:24px; padding: 24px;">
-                    <EditForm id="formInsuranceClaim" Model="@Model" OnValidSubmit="OnValidSubmit">
-                        <ObjectGraphDataAnnotationsValidator />
-                        <ValidationSummary />
-                        <MudGrid Spacing="2">
-                            <MudItem xs="6">
-                                <MudTextField ReadOnly @bind-Value="@Model.TruckRegNo" Margin="Margin.Dense" Variant="Variant.Outlined" Label="TruckRegNo"></MudTextField>
+            <div class="admin-glass-card pa-6 overflow-hidden">
+                <div class="d-flex align-center mb-4">
+                    <div class="icon-badge primary-badge-soft mr-3">
+                        <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.subtitle1" Class="fw-700">Protocol Progression Log</MudText>
+                </div>
+
+                <div class="modern-admin-table-container">
+                    <table class="modern-admin-table w-100">
+                        <thead>
+                            <tr>
+                                <th class="admin-header-text">EVENT STRATUM</th>
+                                <th class="admin-header-text" style="text-align: right;">TIMESTAMP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ClaimEvents?.Any() == true)
+                            {
+                                @foreach (var item in ClaimEvents)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-center">
+                                                <div class="bullet-indicator bg-primary mr-3"></div>
+                                                <span class="fw-600">@item.Title</span>
+                                            </div>
+                                        </td>
+                                        <td style="text-align: right;"><span class="small opacity-70">@item.EventDate?.ToString("dd MMM yyyy")</span></td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="2" class="text-center pa-4 opacity-50">No events recorded in progression log.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (!Jobcard && Model.IsOpen && EventMasterSource?.Any() == true)
+                {
+                    <div class="mt-6 pa-4 border-t gray-bg rounded-lg">
+                        <MudGrid Spacing="3" Class="align-end">
+                            <MudItem xs="12" md="5">
+                                <MudSelect T="int?" Label="Operational Milestone" Value="UpdateStatusModel.IcemID" ValueChanged="EventSelected" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" Required>
+                                    @foreach (var item in EventMasterSource)
+                                    {
+                                        <MudSelectItem T="int?" Value="item.IcemID">@item.Title</MudSelectItem>
+                                    }
+                                </MudSelect>
                             </MudItem>
-                            <MudItem xs="6">
-                                <MudDatePicker ReadOnly="@ReadOnly" Date="@Model?.DateOfAccident" DateChanged="DateChanged" Margin="Margin.Dense" Variant="Variant.Outlined" Label="Date Of Accident"></MudDatePicker>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker Label="Milestone Date" @bind-Date="UpdateStatusModel.EventDate" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" Required />
                             </MudItem>
-                            <MudItem xs="6">
-                                <MudTextField ReadOnly @bind-Value="@Model.PolicyNo" Margin="Margin.Dense" Variant="Variant.Outlined" Label="Policy Number"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="6">
-                                <MudTextField ReadOnly="@ReadOnly" @bind-Value="@Model.ClaimNo" Margin="Margin.Dense" Variant="Variant.Outlined" Label="Claim No"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="4">
-                                <MudNumericField ReadOnly="@(Jobcard && Model.IsOpen)" HideSpinButtons @bind-Value="@Model.EstimateAmount" Label="EstimateAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.EstimateAmount)"></MudNumericField>
-                            </MudItem>
-                            <MudItem xs="4">
-                                <MudNumericField ReadOnly="@(Jobcard && Model.IsOpen)" HideSpinButtons @bind-Value="@Model.InvoiceAmount" Label="InvoiceAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.InvoiceAmount)"></MudNumericField>
-                            </MudItem>
-                            <MudItem xs="4">
-                                <MudNumericField ReadOnly="@(Jobcard)" HideSpinButtons @bind-Value="@Model.ApprovedAmount" Label="ApprovedAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.ApprovedAmount)"></MudNumericField>
-                            </MudItem>
-                            <MudItem xs="12">
-                                <MudTextField ReadOnly="@ReadOnly" @bind-Value="@Model.Notes" Margin="Margin.Dense" Variant="Variant.Outlined" Lines="6" Label="Notes"></MudTextField>
+                            <MudItem xs="12" md="3">
+                                <MudButton OnClick="UpdateStatus" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="rounded-pill shadow-none py-2">Update Log</MudButton>
                             </MudItem>
                         </MudGrid>
-                    </EditForm>
-                </MudPaper>
-                <MudPaper Style="margin-bottom: 30px;">
-                    <MudToolBar>
-                        <MudText Typo="Typo.h6">Accident Images</MudText>
-                        <MudSpacer />
-                        @if (Model.InsuranceClaimID == null || (!Jobcard && Model.IsOpen))
-                        {
-                            <MyFileUpload @ref="Mfu" AllowMultiple="true" Resize="true" DeleteExistingFile="false" FileName="@Guid.NewGuid().ToString()" FolderName="@("InsuranceClaim/Breakdown-"+Model.BreakdownID.ToString())" Label="Upload Photos" FilePathChanged="FileUploaded"></MyFileUpload>
-                        }
-                    </MudToolBar>
-                    <MudGrid Style="padding: 24px;" Spacing="2" Justify="Justify.Center">
-                        @foreach (var imagePath in Model?.Images)
-                        {
-                            @if (imagePath != "")
-                            {
-                                <MudItem xs="12" md="6" Class="d-flex">
-                                    <MudPaper Class="p-2 position-relative" Elevation="3">
-                                        <img src="@imagePath" alt="@imagePath" class="w-100" />
-                                        @if (Model.IsOpen && !Jobcard || (Jobcard && Model.InsuranceClaimID == null))
-                                        {
-                                            <MudFab Style="width: 36px; height: 16px; margin-top: -20px; margin-left: -18px;" StartIcon="@Icons.Material.Rounded.Close" Color="Color.Error" Class="position-absolute top-0 end-0" OnClick="() => DeleteImage(imagePath)" />
-                                        }
-                                    </MudPaper>
-                                </MudItem>
-                            }
-                        }
-                    </MudGrid>
-                </MudPaper>
-                @if (Model.InsuranceClaimID != null)
-                {
-                    <MudExpansionPanels>
-                        <MudExpansionPanel HideIcon="true">
-                            <TitleContent>
-                                <div class="row m-0">
-                                    <MudText Typo="Typo.h6">Event History</MudText>
-                                    <MudSpacer />
-                                    @if (ClaimEvents?.Any() == true)
-                                    {
-                                        <MudText Style="margin-top: 6px;">@(ClaimEvents?.LastOrDefault().Title) on @(ClaimEvents?.LastOrDefault().EventDate?.ToString("dd/MM/yyyy"))</MudText>
-                                    }
-                                    <MudSpacer />
-                                </div>
-                            </TitleContent>
-                            <ChildContent>
-                                <MudList T="string">
-                                    @if (ClaimEvents?.Any() == true)
-                                    {
-                                        @foreach (var item in ClaimEvents)
-                                        {
-                                            <MudListItem T="string">
-                                                @item.Title on @item.EventDate?.ToString("dd/MM/yy")
-                                            </MudListItem>
-                                            <MudDivider></MudDivider>
-                                        }
-                                    }
-                                    @if (!Jobcard)
-                                    {
-                                        @if (EventMasterSource?.Any() == true)
-                                        {
-                                            <MudListItem T="string">
-                                                <MudGrid>
-                                                    <MudItem xs="5">
-                                                        <MudSelect T="int?" Label="Event" Value="UpdateStatusModel.IcemID" ValueChanged="EventSelected" AdornmentColor="Color.Secondary" Variant="Variant.Outlined" Required>
-                                                            @foreach (var item in EventMasterSource)
-                                                            {
-                                                                <MudSelectItem T="int?" Value="item.IcemID">@item.Title</MudSelectItem>
-                                                            }
-                                                        </MudSelect>
-                                                    </MudItem>
-                                                    <MudItem xs="5">
-                                                        <MudDatePicker Label="Date of Event" @bind-Date="UpdateStatusModel.EventDate" Variant=Variant.Outlined Required></MudDatePicker>
-                                                    </MudItem>
-                                                    <MudItem xs="2">
-                                                        <MudButton OnClick="UpdateStatus" Color="Color.Primary">Update</MudButton>
-                                                    </MudItem>
-                                                </MudGrid>
-                                            </MudListItem>
-                                        }
-                                    }
-                                </MudList>
-                            </ChildContent>
-                        </MudExpansionPanel>
-                    </MudExpansionPanels>
+                    </div>
                 }
-            </MudItem>
-        </div>
-    </DialogContent>
-    <DialogActions>
+            </div>
+        }
 
-        @if (EventMasterSource?.Any(x => x.IsMandatory) != true && Model.IsOpen && !Jobcard)
+        @if (!Jobcard && Model.IsOpen && (EventMasterSource?.Any(x => x.IsMandatory) != true))
         {
-            <MudButton Color="Color.Primary" OnClick="CloseClaim">Close Claim</MudButton>
+            <div class="d-flex justify-end mt-4">
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CloseClaim" StartIcon="@Icons.Material.Filled.Lock" Class="rounded-pill px-6">Finalize & Close Dossier</MudButton>
+            </div>
         }
-        @if (Model.IsOpen && !Jobcard || (Jobcard && Model.InsuranceClaimID == null))
-        {
-            <MudButton OnClick="Cancel">Cancel</MudButton>
-            <MudButton Disabled="@_busy" form="formInsuranceClaim" Style="margin: 0px 16px 10px 0px;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Truck</MudButton>
-        }
-    </DialogActions>
-</MudDialog>
+    </FormContent>
+</DialogForm>
 
 @code {
 
+    DialogForm dialogForm;
     [CascadingParameter]
     IMudDialogInstance MudDialog { get; set; }
     [Parameter]
