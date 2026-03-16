@@ -2,67 +2,36 @@
 @inject IJSRuntime JSRuntime
 
 <style>
-    .rptStyle {
-        height: 800px;
-        margin-bottom: 10px;
-        background-color: white;
-        border: 1px solid #D5D5D5;
-        border-radius: 6px;
-    }
-
-    /* .mud-dialog .mud-dialog-content{
-        padding: 10px 23px;
-    } */
-
     .mud-dialog-width-md {
-        max-width: 961px;
+        max-width: 1000px;
+    }
+    .mud-dialog .mud-dialog-content {
+        padding: 0;
     }
 </style>
 
 <MudDialog>
     <DialogContent>
-        <iframe id="PreviewClaim" class="rptStyle" src="@URL" scrolling="no" credentialless></iframe>
+        <div style="height: 800px;">
+            <ReportViewer @ref="_reportViewer" ReportName="@ReportName" Parameters="@Parameters" />
+        </div>
     </DialogContent>
 </MudDialog>
 
 @code {
-
     [Parameter]
     public string ReportName { get; set; }
+    
     [Parameter]
     public Dictionary<string, string> Parameters { get; set; }
-    private string URL { get; set; } = string.Empty;
-    bool progress = false;
 
-    protected override async Task OnInitializedAsync()
+    private ReportViewer _reportViewer;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await RenderReport();
-    }
-
-    public async Task RenderReport()
-    {
-        if (ReportName == null)
+        if (firstRender && _reportViewer != null)
         {
-            await Task.Delay(500);
-        }
-        if (ReportName != null)
-        {
-            progress = true;
-
-            // Use the proxy instead of hitting SSRS directly
-            var reportPath = $"ARMS_V2/ARMS_Reports/{ReportName}";
-
-            URL = $"/ssrs-proxy/Pages/ReportViewer.aspx?%2f{Uri.EscapeDataString(reportPath)}";
-            URL += $"&rc:showbackbutton=true";
-            URL += $"&rc:Parameters=false&rs:Command=Render&rc:Zoom=Page Width&rc:PrintLayout=true&rc:Format=HTML4.0&rs:embed=true";
-            
-            foreach (var item in Parameters)
-            {
-                URL = URL + "&" + item.Key + "=" + Uri.EscapeDataString(item.Value);
-            }
-
-            bool success = await JSRuntime.InvokeAsync<bool>("runReport", URL);
-            progress = false;
+            await _reportViewer.RenderReport();
         }
     }
 }

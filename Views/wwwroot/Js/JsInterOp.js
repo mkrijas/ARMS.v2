@@ -63,14 +63,28 @@ function runReportWithCallback(url, dotNetRef) {
         console.error("[runReportWithCallback] PreviewClaim iframe not found.");
         return false;
     }
-    // Register load handler BEFORE setting src (same JS tick — event never missed)
+
+    // Safely clear old timeout if any
+    if (window._ssrsLoadTimeout) clearTimeout(window._ssrsLoadTimeout);
+
+    // Register load handler BEFORE setting src
     iframe.onload = function () {
-        iframe.onload = null;   // fire once only
+        if (window._ssrsLoadTimeout) clearTimeout(window._ssrsLoadTimeout);
+        iframe.onload = null;
         if (dotNetRef) {
             dotNetRef.invokeMethodAsync("OnIframeLoadComplete")
                      .catch(function (e) { console.warn("[runReportWithCallback] callback error:", e); });
         }
     };
+
+    // Safety timeout: if SSRS fails to respond or is too slow, hide the loader after 15s
+    window._ssrsLoadTimeout = setTimeout(function() {
+        if (iframe.onload) {
+            console.warn("[runReportWithCallback] Load timeout reached for " + url);
+            iframe.onload();
+        }
+    }, 15000);
+
     iframe.src = url;
     return true;
 }
