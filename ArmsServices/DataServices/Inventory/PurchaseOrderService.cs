@@ -114,17 +114,45 @@ namespace ArmsServices.DataServices
         }
 
         // Method to select pending purchase orders for a specific branch
-        public IEnumerable<PurchaseOrderModel> SelectPending(int BranchID)
+        public PagedResult<PurchaseOrderModel> SelectPending(int BranchID, int page, int pageSize)
         {
-            List<SqlParameter> parameters = new List<SqlParameter>
+            int? totalRecords = 0;
+
+            // COUNT QUERY
+            List<SqlParameter> countParams = new()
             {
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@Operation", "All")
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "Count")
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
+
+                    foreach (IDataRecord dr in Iservice.GetDataReader(
+                        "[usp.Inventory.PurchaseOrder.Select]", countParams))
+                    {
+                        totalRecords = dr.GetInt32("TotalRecords");
+                    }
+
+                    // PAGED DATA QUERY
+                    List<SqlParameter> parameters = new()
             {
-                yield return GetModel(dr);
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize)
+            };
+
+            List<PurchaseOrderModel> list = new();
+
+            foreach (IDataRecord dr in Iservice.GetDataReader(
+                "[usp.Inventory.PurchaseOrder.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
             }
+
+            return new PagedResult<PurchaseOrderModel>
+            {
+                Items = list,
+                TotalRecords = totalRecords
+            };
         }
 
         // Method to select a purchase order by its ID

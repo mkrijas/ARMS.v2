@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
         PurchaseOrderModel Update(PurchaseOrderModel model);  //Edit
         PurchaseOrderModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);  //Delete
-        IEnumerable<PurchaseOrderModel> SelectPending(int BranchID);
+        PagedResult<PurchaseOrderModel> SelectPending(int BranchID, int page, int pageSize);
         IEnumerable<PurchaseOrderModel> PendingForGrn(int BranchID);
         IEnumerable<PurchaseOrderModel> SelectByStore(int StoreID);
         int Approve(int POID, string UserID, string Remarks);  //Approve

@@ -25,7 +25,14 @@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<PurchaseOrderModel, bool>(search)" @bind-place="model">
+        <MudTable T="PurchaseOrderModel"
+                  ServerData="LoadServerData"
+                  RowStyleFunc="TableRowStyle"
+                  Dense="true"
+                  Hover="true"
+                  Striped="true"
+                  Elevation="10"
+                  @ref="_table">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Purchase Order</MudText>
                 <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new PurchaseOrderModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
@@ -37,7 +44,7 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PONo)" >PO No</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Descending">Entry Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PartyName)" >Party</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x=> x.Status)" >Status</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Status)">Status</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -79,7 +86,7 @@
     private bool _busy;
     [Parameter]
     public int? id { get; set; } = null;
-
+    private MudTable<PurchaseOrderModel> _table;
     public bool HasPermissionPurchaseOrderServiceEdit { get; set; } = false;
     public bool HasPermissionPurchaseOrderServiceDelete { get; set; } = false;
     public int DocTypeID = 17;
@@ -92,20 +99,45 @@
     protected override async Task OnInitializedAsync()
     {
         _loadStartTime = DateTime.Now;
+
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionPurchaseOrderServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionPurchaseOrderServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
+        HasPermissionPurchaseOrderServiceEdit =
+            await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+        HasPermissionPurchaseOrderServiceDelete =
+            await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         model = new();
-        await GetAll(IsApproved);
-        await Task.Delay(200);
+
         await signalRService.StartAsync();
-        if (id != null && collection != null && collection.Any(g => g.POID == id))
-        {
-            await OpenDialog(collection.FirstOrDefault(s => s.POID == id), true, false);
-        }
+
         await EnsureMinimumLoadTime();
+
         _isLoading = false;
+    }
+
+    private async Task<TableData<PurchaseOrderModel>> LoadServerData(
+    TableState state,
+    CancellationToken token)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        var result = Iservice.SelectPending(branchID, state.Page, state.PageSize);
+
+        var list = result.Items;
+
+        if (IsApproved)
+            list = list.Where(x => x.AuthLevelID == 99).ToList();
+        else
+            list = list.Where(x => x.AuthLevelID != 99 && x.AuthLevelID != 100).ToList();
+
+        return new TableData<PurchaseOrderModel>
+        {
+            Items = list,
+            TotalItems = result.TotalRecords ?? 0
+        };
     }
 
     private async Task EnsureMinimumLoadTime()
@@ -120,23 +152,23 @@
     async Task ApprovedChanged(bool value)
     {
         IsApproved = value;
-        await GetAll(IsApproved);
+        await _table.ReloadServerData();
     }
 
-    private async Task GetAll(bool val)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        if (val)
-        {
-            collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID == 99).ToList();
-        }
-        else
-        {
-            collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID != 99 && x.AuthLevelID != 100).ToList();
-        }
-    }
+    // private async Task GetAll(bool val)
+    // {
+    //     var authprov = await auth.GetAuthenticationStateAsync();
+    //     var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+    //     int brancID = int.Parse(brancIDString);
+    //     if (val)
+    //     {
+    //         collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID == 99).ToList();
+    //     }
+    //     else
+    //     {
+    //         collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID != 99 && x.AuthLevelID != 100).ToList();
+    //     }
+    // }
 
     private async Task OpenDialog(PurchaseOrderModel tds, bool ReadOnly, bool View)
     {
@@ -191,7 +223,7 @@
                     snackbar.Add(ex.Message, Severity.Warning);
                 }
             }
-            await GetAll(IsApproved);
+            await _table.ReloadServerData();
             await Task.Delay(200);
             _busy = false;
         }
@@ -216,7 +248,7 @@
                 var user = authprov.User;
                 Iservice.Delete(tds.POID, user.Identity.Name);
                 snackbar.Add("Deleted Successfully", Severity.Success);
-                await GetAll(IsApproved);
+                await _table.ReloadServerData();
             }
         }
         else
