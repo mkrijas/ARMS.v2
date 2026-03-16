@@ -69,7 +69,7 @@ else
                         </MudSelect>
                     </div>
                     <div class="pa-6">
-                        <MudChart T="double" ChartType="ChartType.Bar" ChartOptions="@_barOptions" ChartSeries="@BarSeries" XAxisLabels="@BarLabels" Width="100%" Height="500px" />
+                        <MudChart T="double" ChartType="ChartType.Bar" ChartOptions="@_barOptions" ChartSeries="@BarSeries" ChartLabels="@BarLabels" Width="100%" Height="500px" />
                     </div>
                 </MudPaper>
             </MudItem>
@@ -166,14 +166,9 @@ else
     </div>}
 
 <style>
-    .wide_chart svg {
-        width: 100% !important;
-        height: 100% !important;
-    }
-    
-    /* Dynamic stroke width based on data count */
-    .mud-chart-bar {
+    ::deep .mud-chart-bar {
         stroke-width: @BarChartStrokeWidth !important;
+        stroke-linecap: square !important;
     }
 </style>
 
@@ -285,77 +280,52 @@ else
     async Task TruckStatus()
     {
         TruckStatusData = DashboardService.SelectTruckDonutData(BranchID).ToList();
-        TruckLabels = TruckStatusData.Select(x => x.Label + " - " + x.Data).ToArray();
+        TruckLabels = TruckStatusData.Select(x => string.IsNullOrWhiteSpace(x.Label) ? "Unknown" : x.Label.Trim()).ToArray();
         TruckData = TruckStatusData.Select(x => (double)x.Data).ToArray();
     }
 
     async Task SelectedTruckChartIndexChanged(int index)
     {
         SelectedTruckChartIndex = index;
-        var val = TruckLabels[index];
-        await HandleSelectedData(val);
+        var label = TruckStatusData[index].Label?.Trim() ?? "Unknown";
+        var count = TruckStatusData[index].Data.ToString();
+        await HandleSelectedData(label, count);
     }
 
     [JSInvokable]
-    public async Task HandleSelectedData(string selectedValue)
+    public async Task HandleSelectedData(string label, string count)
     {
-        string result = selectedValue;
-        string extractedNumber = result.Substring(result.LastIndexOf(" ") + 1);
-
-        int lastSpaceIndex = selectedValue.LastIndexOf('-');
-        if (lastSpaceIndex >= 0)
-        {
-            result = selectedValue.Substring(0, lastSpaceIndex);
-        }
-
         DialogOptions MediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("BranchId", BranchID);
-        parms.Add("SelectedValue", result);
-        parms.Add("Count", extractedNumber);
+        parms.Add("SelectedValue", label);
+        parms.Add("Count", count);
         var dialog = await DialogService.ShowAsync<TruckStatusView>("TruckStatusList", parms, MediumWidth);
     }
 
     public async Task DriverStatus()
     {
         DriverStatusData = DashboardService.SelectDriverDonutData(BranchID);
-        DriverLabels = DriverStatusData.Select(x => x.Label + " : " + x.Data).ToArray();
+        DriverLabels = DriverStatusData.Select(x => string.IsNullOrWhiteSpace(x.Label) ? "Unknown" : x.Label.Trim()).ToArray();
         DriverData = DriverStatusData.Select(x => (double)x.Data).ToArray();
-        //var objRef = DotNetObjectReference.Create(this);
-        //await JSRuntime.InvokeVoidAsync("ChartResult.DonutChartDriver", DonutLabels, DonutData, objRef);
     }
 
     async Task SelectedDriverChartIndexChanged(int index)
     {
         SelectedDriverChartIndex = index;
-        var val = DriverLabels[index];
-        await HandleSelectedDriverData(val);
+        var label = DriverStatusData[index].Label?.Trim() ?? "Unknown";
+        var count = DriverStatusData[index].Data.ToString();
+        await HandleSelectedDriverData(label, count);
     }
 
     [JSInvokable]
-    public async Task HandleSelectedDriverData(string selectedValue)
+    public async Task HandleSelectedDriverData(string label, string count)
     {
-        string result = selectedValue;
-        string extractedNumber = result.Substring(result.LastIndexOf(" ") + 1);
-        int colonIndex = selectedValue.IndexOf(":");
-        if (colonIndex >= 0)
-        {
-            result = selectedValue.Substring(0, colonIndex).Trim();
-        }
-        else
-        {
-            int lastSpaceIndex = selectedValue.LastIndexOf(':');
-            if (lastSpaceIndex >= 0)
-            {
-                result = selectedValue.Substring(0, lastSpaceIndex);
-            }
-        }
-
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("BranchId", BranchID);
-        parms.Add("SelectedValue", result);
-        parms.Add("Count", extractedNumber);
+        parms.Add("SelectedValue", label);
+        parms.Add("Count", count);
         var dialog = await DialogService.ShowAsync<DriverStatusView>("DriverStatusList", parms, mediumWidth);
     }
 

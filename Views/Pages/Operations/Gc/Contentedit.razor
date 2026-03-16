@@ -6,40 +6,32 @@
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
-            Content
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Style="max-height: 450px; overflow-y: scroll">
-            <EditForm id="formContent" Model="@model" OnValidSubmit="OnValidSubmit">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudGrid Spacing="2">
-                    <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.ContentName" Label="Content" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ContentName)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.PrimaryUnit" Label="Primary Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PrimaryUnit)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.SecondaryUnit" Label="Secondary Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.SecondaryUnit)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField InputType="InputType.Number" @bind-Value="model.UnitRatio" Label="Ratio" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.UnitRatio)"></MudTextField>
-                    </MudItem>
-                </MudGrid>
+<DialogForm @ref="@dialogForm" Title="Content Property" Subtitle="Configure material types and unit measurement properties." Icon="@Icons.Material.Filled.Build" AdminStyle="true" formID="contentForm" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper pa-4">
+            <EditForm id="contentForm" Model="@model" OnValidSubmit="OnValidSubmit">
+                <div class="admin-glass-card pa-6">
+                    <ObjectGraphDataAnnotationsValidator />
+                    <MudValidationSummary />
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="model.ContentName" Label="Content Name" Variant="Variant.Outlined" For="@(() => model.ContentName)" Class="modern-input"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.PrimaryUnit" Label="Primary Unit" Variant="Variant.Outlined" For="@(() => model.PrimaryUnit)" Class="modern-input"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.SecondaryUnit" Label="Secondary Unit" Variant="Variant.Outlined" For="@(() => model.SecondaryUnit)" Class="modern-input"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField HideSpinButtons @bind-Value="model.UnitRatio" Label="Unit Conversion Ratio" Variant="Variant.Outlined" For="@(() => model.UnitRatio)" Class="modern-input"></MudNumericField>
+                        </MudItem>
+                    </MudGrid>
+                </div>
             </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Disabled="@_busy" form="formContent" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
-    </DialogActions>
-</MudDialog>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
 
@@ -47,25 +39,20 @@
     public ContentModel model { get; set; }
     private List<ContentModel> collection = new List<ContentModel>();
     public List<DistrictModel> districts = new List<DistrictModel>();
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
     private bool _busy;
 
     public bool HasPermissionContentServiceEdit { get; set; } = false;
     public int DocTypeID = 55;
-
-    void Submit() => MudDialog.Close(DialogResult.Ok(true));
-    void Cancel() => MudDialog.Cancel();
 
     // Method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionContentServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-
         await Task.Run(() => GetAll());
     }
 
-    // Method to retrieve all content models from the service
     private async Task GetAll()
     {
         await foreach (var content in Iservice.Select(0))
@@ -74,7 +61,6 @@
         }
     }
 
-    // Method called when the form is submitted
     private async void OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -96,8 +82,7 @@
                 // Update the content model
                 model = await Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
-                StateHasChanged();
-                MudDialog.Close(model);
+                dialogForm.Close(model);
             }
             catch (Exception ex)
             {
@@ -106,7 +91,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
+            await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit Content.");
         }

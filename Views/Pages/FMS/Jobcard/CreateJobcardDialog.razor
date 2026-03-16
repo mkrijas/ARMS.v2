@@ -13,49 +13,64 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
-            Create Jobcard for @Breakdown.RegNo
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Style="min-height:300px;max-height: 800px;">
+<DialogForm @ref="@dialogForm" Title="Create New Jobcard" Subtitle="@($"Initialize repair workflow for vehicle {Breakdown.RegNo}.")" Icon="@Icons.Material.Filled.Construction" AdminStyle="true" formID="formJobcard" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper fade-in">
             <EditForm id="formJobcard" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudGrid Spacing="2">
-                    <MudItem xs="12">
-                        <MudTextField @bind-Value="@(Breakdown.BreakdownType)" Label="Work Order Type" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField>
-                     </MudItem>
-                     <MudItem xs="8">
-                        <MudAutocomplete Label="Select Workshop" Value="SelectedWorkshop" ValueChanged="OnWorkshopChanged" T="WorkshopModel" SearchFunc="SearchWorkshops" ToStringFunc="@((p) => p?.WorkshopName)" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
-                        </MudAutocomplete>
-                    </MudItem>
-                    <MudItem xs="4">
-                        <MudTextField @bind-Value="@(model.Odometer)" Label="Odometer" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-                     </MudItem>
-                    <MudItem xs="12">
+                
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center mb-6">
+                        <div class="icon-badge primary-badge-soft mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" />
+                        </div>
+                        <span class="admin-section-label mb-0">Order Identification</span>
+                    </div>
+
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@(Breakdown.BreakdownType)" Label="Work Order Type" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled Class="modern-input" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Category" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@(model.Odometer)" Label="Arrival Odometer" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" Adornment="Adornment.End" AdornmentText="KM" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudAutocomplete Label="Primary Workshop Facility" Value="SelectedWorkshop" ValueChanged="OnWorkshopChanged" T="WorkshopModel" SearchFunc="SearchWorkshops" ToStringFunc="@((p) => p?.WorkshopName)" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Warehouse" Class="modern-input" />
+                        </MudItem>
+                    </MudGrid>
+                </div>
+
+                <div class="admin-glass-card pa-6">
+                    <div class="d-flex align-center justify-space-between mb-6">
+                        <div class="d-flex align-center">
+                            <div class="icon-badge secondary-badge-soft mr-3">
+                                <MudIcon Icon="@Icons.Material.Filled.PlaylistAddCheck" Size="Size.Small" />
+                            </div>
+                            <span class="admin-section-label mb-0">Repair Scope & Jobs</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <MudButton StartIcon="@Icons.Material.Filled.RemoveCircleOutline" Color="Color.Error" OnClick="DeleteJob" Hidden="@(model.Jobs.Count < 2)" Size="Size.Small" Variant="Variant.Text">Remove Last</MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.AddCircleOutline" Color="Color.Primary" OnClick="AddJob" Size="Size.Small" Variant="Variant.Text">Add More</MudButton>
+                        </div>
+                    </div>
+
+                    <div class="job-items-container">
                         @foreach (var item in model.Jobs)
                         {
-                            <JobInProgressView model="item" workshop="SelectedWorkshop" @ref="JipComp" SetJobs="SetJob"></JobInProgressView>
+                            <div class="job-item-entry pa-4 rounded-lg mb-4 border-subtle bg-light-surface">
+                                <JobInProgressView model="item" workshop="SelectedWorkshop" @ref="JipComp" SetJobs="SetJob"></JobInProgressView>
+                            </div>
                         }
-                    </MudItem>
-                </MudGrid>
+                    </div>
+                </div>
             </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="DeleteJob" Hidden="@(model.Jobs.Count<2)">Delete Job</MudButton>
-        <MudButton OnClick="AddJob">Add More Jobs</MudButton>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Disabled="@_busy" form="formJobcard" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-    </DialogActions>
-</MudDialog>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
 
+    private DialogForm dialogForm;
     [Parameter]
     public JobcardModel model { get; set; }
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; }

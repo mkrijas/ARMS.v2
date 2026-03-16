@@ -1,4 +1,4 @@
-﻿@page "/PurchaseOrder"
+@page "/PurchaseOrder"
 @page "/PurchaseOrder/{id:int}"
 @using System.Threading;
 @inject IPurchaseOrderService Iservice
@@ -23,47 +23,91 @@
 }
 
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<PurchaseOrderModel, bool>(search)" @bind-place="model">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Purchase Order</MudText>
-                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new PurchaseOrderModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchPurchase" Placeholder="Search Purchase order... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PONo)" >PO No</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Descending">Entry Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PartyName)" >Party</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x=> x.Status)" >Status</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="PONo">@context.PONo</MudTd>
-                <MudTd DataLabel="EntryDate">@context.EntryDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="Party">@context.PartyName</MudTd>
-                <MudTd DataLabel="Status">@context.Status</MudTd>
-                <MudTd DataLabel="">
-                    @if (@context.AuthLevelID == null)
-                    {
-                        <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" title="Edit" Size="Size.Small" />
-                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" title="Delete" Size="Size.Small" />
-                    }
-                    @if (@context.AuthLevelID != 99)
-                    {
-                        <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" />
-                    }
-                    <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Info" StartIcon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+    <div class="admin-page-container fade-in" @key="@("content")">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Purchase Orders (PO)</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Manage procurement authorizations and track supplier order commitments.</MudText>
+                </div>
+                <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=> OpenDialog(new PurchaseOrderModel(),false,false))" Class="admin-register-btn" StartIcon="@Icons.Material.Filled.Add">NEW PURCHASE ORDER</MudButton>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-6 mb-6">
+            <MudGrid Spacing="3" Class="align-center">
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="searchPurchase" Placeholder="Search by PO Number, Vendor or Reference..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Class="modern-input"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <div class="d-flex align-center h-100 px-4 rounded-lg bg-light-surface border-subtle">
+                        <MudCheckBox T="bool" Label="SHOW COMPLETED ORDERS" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Color="Color.Primary" Dense="true" Class="fw-600" />
+                    </div>
+                </MudItem>
+                <MudItem xs="12" md="2" Class="d-flex justify-end">
+                    <div class="d-flex flex-column align-end">
+                        <MudText Typo="Typo.caption" Class="admin-subtitle">TOTAL ORDERS: @(collection?.Count ?? 0)</MudText>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        <div class="admin-glass-card overflow-hidden">
+            <MudTable Items="@collection" Elevation="0" RowStyleFunc="TableRowStyle" Filter="new Func<PurchaseOrderModel, bool>(search)" Hover="true" Breakpoint="Breakpoint.Sm" Class="modern-admin-table">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PONo)"><span class="admin-header-text">PO NO</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">ORDER DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PartyName)"><span class="admin-header-text">SUPPLIER</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.Status)"><span class="admin-header-text">STATUS</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="PO No">
+                        <span class="admin-td-primary fw-600">@context.PONo</span>
+                    </MudTd>
+                    <MudTd DataLabel="Date">
+                        <div class="d-flex align-center opa-70">
+                            <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" Class="mr-1" />
+                            <span>@context.EntryDate?.ToString("dd MMM yyyy")</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Supplier"><span class="fw-500">@context.PartyName</span></MudTd>
+                    <MudTd DataLabel="Status">
+                        <MudChip T="string" Size="Size.Small" Color="@(context.Status == "Cancelled" ? Color.Error : context.AuthLevelID == 99 ? Color.Success : Color.Primary)" Variant="Variant.Text" Class="fw-600">@context.Status</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            <MudTooltip Text="View Details">
+                                <MudIconButton OnClick="@(()=> OpenDialog(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            
+                            @if (context.AuthLevelID == null)
+                            {
+                                <MudTooltip Text="Edit Draft">
+                                    <MudIconButton OnClick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                                <MudTooltip Text="Delete Order">
+                                    <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+
+                            @if (context.AuthLevelID != 99 && context.AuthLevelID != 100)
+                            {
+                                <MudTooltip Text="Verify Order">
+                                    <MudIconButton OnClick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.VerifiedUser" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
 
 
 

@@ -1,4 +1,4 @@
-﻿@page "/InventoryGrn"
+@page "/InventoryGrn"
 @page "/InventoryGrn/{id:int}"
 @using System.Threading;
 @using PurchaseOrder
@@ -23,83 +23,108 @@
 }
 else
 {
-    <div @key="@("content")">
+    <div class="admin-page-container fade-in" @key="@("content")">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Goods Receipt Notes (GRN)</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Process incoming inventory shipments and reconcile physical stock with procurement orders.</MudText>
+                </div>
+                <div class="d-flex gap-2">
+                    <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddLink" OnClick="openpurchaseorder" Class="admin-register-btn">IMPORT FROM PO</MudButton>
+                </div>
+            </div>
+        </div>
 
+        <div class="admin-glass-card pa-6 mb-6">
+            <MudGrid Spacing="3" Class="align-center">
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="searchGrn" Placeholder="Search by GRN Number, Party or Reference..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Class="modern-input"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <div class="d-flex align-center h-100 px-4 rounded-lg bg-light-surface border-subtle">
+                        <MudCheckBox T="bool" Label="SHOW APPROVED ENTRIES" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Color="Color.Primary" Dense="true" Class="fw-600" />
+                    </div>
+                </MudItem>
+                <MudItem xs="12" md="2" Class="d-flex justify-end">
+                    <div class="d-flex flex-column align-end">
+                        <MudText Typo="Typo.caption" Class="admin-subtitle">TOTAL GRNS: @(collection?.Count ?? 0)</MudText>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </div>
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<InventoryGrnModel, bool>(search)" @bind-place="model">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">GRN</MudText>
-                @* <MudTooltip Text="New Grn">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new InventoryGrnModel(){UsedInventory=0},false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip> *@
-                <MudTooltip Text="Pending Purchase Order">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.AddLink" @onclick="openpurchaseorder" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-               @*  <MudTooltip Text="Approved Data">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.TableView" Title="Approved Data" @onclick="@(()=> OpenDialogApproved(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip> *@
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchGrn" Placeholder="Search Grn... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.GrnNo)" InitialDirection="SortDirection.Ascending">GRN No</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">Entry Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.PartyName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="GrnNO">@context.GrnNo
-                    @if (@context.AuthLevelID == 100)
-                    {
-                        <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
-                    }
-                </MudTd>
-                <MudTd DataLabel="EntryDate">@context.EntryDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="Party">@context.PartyName</MudTd>
-                <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenDialog(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelID != null)" OnClick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelID != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
-                    @if (@context.AuthLevelID == 99 )
-                    {
-                        <MudIconButton Disabled="@(context.IssuedQty > 0 || context.Invoiced)" @onclick="@(()=> Reverse(context))" Color="Color.Error" Class="ml-2" Icon="@Icons.Material.Filled.ArrowBack" Title="Reverse" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                    else if (@context.AuthLevelID != 100)
-                    {
-                        <MudIconButton OnClick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                </MudTd>
-                    @* @if (@context.AuthLevelID != 99 && @context.AuthLevelID != 100)
-                    {
-                        <MudIconButton OnClick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-                    } *@
-                    @* @if (@context.AuthLevelID != 100)
-                    {
-                        <MudIconButton OnClick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-                    } *@
-                @* <MudTd DataLabel="">
-                    @if (@context.AuthLevelID == null)
-                    {
-                        <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" title="Edit" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" />
-                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                    }
-                    @if (@context.AuthLevelID != 99)
-                    {
-                        <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" />
-                    }
-                    <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Info" StartIcon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" />
-                </MudTd> *@
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
-</div>
+        <div class="admin-glass-card overflow-hidden">
+            <MudTable Items="@collection" Elevation="0" RowStyleFunc="TableRowStyle" Filter="new Func<InventoryGrnModel, bool>(search)" Hover="true" Breakpoint="Breakpoint.Sm" Class="modern-admin-table">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x => x.GrnNo)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">GRN NO</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x => x.EntryDate)"><span class="admin-header-text">RECEIPT DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x => x.PartyName)"><span class="admin-header-text">PARTY / SUPPLIER</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="GRN No">
+                        <div class="d-flex flex-column">
+                            <span class="admin-td-primary fw-600">@context.GrnNo</span>
+                            @if (context.AuthLevelID == 100)
+                            {
+                                <span class="badge badge-error mt-1" style="width: fit-content; font-size: 10px;">REJECTED</span>
+                            }
+                            else if (context.AuthLevelID == 99)
+                            {
+                                <span class="badge badge-success mt-1" style="width: fit-content; font-size: 10px;">VERIFIED</span>
+                            }
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Date">
+                        <div class="d-flex align-center opa-70">
+                            <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" Class="mr-1" />
+                            <span>@context.EntryDate?.ToString("dd MMM yyyy")</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Party"><span class="fw-500">@context.PartyName</span></MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            <MudTooltip Text="Detailed Inspection">
+                                <MudIconButton OnClick="@(()=> OpenDialog(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            
+                            @if (context.AuthLevelID == null)
+                            {
+                                <MudTooltip Text="Edit Draft">
+                                    <MudIconButton OnClick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                                <MudTooltip Text="Discard Record">
+                                    <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+
+                            @if (context.AuthLevelID == 99)
+                            {
+                                @if (context.IssuedQty == 0 && !context.Invoiced)
+                                {
+                                    <MudTooltip Text="Reverse Approval">
+                                        <MudIconButton OnClick="@(()=> Reverse(context))" Color="Color.Error" Icon="@Icons.Material.Filled.SettingsBackupRestore" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                }
+                            }
+                            else if (context.AuthLevelID != 100)
+                            {
+                                <MudTooltip Text="Verify Entry">
+                                    <MudIconButton OnClick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.VerifiedUser" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
 }
 
 

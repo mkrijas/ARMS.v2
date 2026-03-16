@@ -5,78 +5,151 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-<MudPaper Class="pl-5 pr-5 my-5" Elevation="4">
-    <MudGrid>
-        <MudItem xs="12" md="12">
-            <MudText Typo="Typo.h6"> Bills And Settlement </MudText>
-        </MudItem>
-        <MudItem xs="12" md="8">
-            <MudTextField @bind-Value="DocumentNumber" Label="Document Number" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Fetch</MudButton>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
-@if (collection != null)
+@if (_isLoading)
 {
-    <MudTable Items="@collection" Elevation="5">
-        <ToolBarContent>
-            
-        </ToolBarContent>
-        <HeaderContent>
-            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.PartyCode)" InitialDirection="SortDirection.Ascending">PartyCode</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.PartyName)" InitialDirection="SortDirection.Ascending">PartyName</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.BranchName)" InitialDirection="SortDirection.Ascending">BranchName</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.AccountName)" InitialDirection="SortDirection.Ascending">AccountName</MudTableSortLabel></MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="DocumentDate">@context.DocumentDate.Value.ToString("dd/MM/yyyy")</MudTd>
-            <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
-            <MudTd DataLabel="PartyCode">@context.PartyCode</MudTd>
-            <MudTd DataLabel="PartyName">@context.PartyName</MudTd>
-            <MudTd DataLabel="BranchName">@context.BranchName</MudTd>
-             <MudTd DataLabel="Amount">@context.Amount</MudTd>
-            <MudTd DataLabel="AccountName">@context.AccountName</MudTd>
-        </RowTemplate>
-        <PagerContent>
-            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-        </PagerContent>
-        <FooterContent>
-            <MudTd colspan="7"> <b> Outstanding Amount : @outstandingAmount </b> </MudTd>
-        </FooterContent>
-    </MudTable>
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Analyzing Settlements" 
+                        SubText="Reconciling outstanding ledgers..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Outstanding & Settlement Ledger</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Comprehensive utility for tracking commercial liabilities and overdue settlements. Analyze document-level outstanding balances and orchestrate financial reconciliations.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card mb-6 pa-6">
+            <MudGrid Spacing="3" Class="align-center">
+                <MudItem xs="12" md="9">
+                    <MudTextField @bind-Value="DocumentNumber" Label="Reference Document Number" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Placeholder="Enter document # to trace settlements..." />
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn w-100" StartIcon="@Icons.Material.Filled.Bolt">TRACE SETTLEMENTS</MudButton>
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        @if (collection != null && collection.Any())
+        {
+            <div class="d-flex align-center justify-space-between mb-4">
+                <div class="d-flex align-center gap-3">
+                    <div class="admin-icon-square-vibrant small accent-indigo">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Size="Size.Small" />
+                    </div>
+                    <span class="admin-section-label mb-0">Recovered Settlement Chains</span>
+                </div>
+                <div class="admin-glass-card py-2 px-6 d-flex align-center gap-3 border-indigo">
+                    <span class="tiny fw-800 opa-50 uppercase">TOTAL OUTSTANDING</span>
+                    <span class="fw-900 text-vibrant" style="font-size: 1.25rem;">@outstandingAmount?.ToString("N2")</span>
+                </div>
+            </div>
+
+            <div class="admin-glass-card pa-0 overflow-hidden shadow-sm">
+                <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">EFFECTIVE DATE</span></MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.DocumentNumber)"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.PartyName)"><span class="admin-header-text">ENTITY / PARTY</span></MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.AccountName)"><span class="admin-header-text">LEDGER ACCOUNT</span></MudTableSortLabel></MudTh>
+                        <MudTh Style="text-align: right;"><MudTableSortLabel SortBy="new Func<OutStandingBillInfoModel, object>(x=> x.Amount)"><span class="admin-header-text">REBATE/BAL</span></MudTableSortLabel></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Date">
+                            <span class="fw-700 admin-td-primary">@context.DocumentDate?.ToString("dd MMM yyyy")</span>
+                        </MudTd>
+                        <MudTd DataLabel="DocNum">
+                            <span class="fw-800 text-indigo small">@context.DocumentNumber</span>
+                        </MudTd>
+                        <MudTd DataLabel="Party">
+                            <div class="d-flex flex-column">
+                                <span class="fw-700">@context.PartyName</span>
+                                <span class="tiny opa-50 fw-600">CODE: @context.PartyCode</span>
+                                <span class="tiny opa-40 italic">@context.BranchName</span>
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Account">
+                             <div class="d-flex align-center gap-2">
+                                <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Small" Class="opa-30" />
+                                <span class="small fw-600">@context.AccountName</span>
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Amount" Style="text-align: right;">
+                            <span class="fw-800 text-vibrant" style="font-size: 1rem;">@context.Amount?.ToString("N2")</span>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <div class="pa-4">
+                            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                        </div>
+                    </PagerContent>
+                </MudTable>
+            </div>
+        }
+        else if (hasSearched && (collection == null || !collection.Any()))
+        {
+             <div class="admin-glass-card pa-12 d-flex flex-column align-center justify-center mt-6">
+                <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Color="Color.Default" Class="opa-10 mb-4" />
+                <MudText Typo="Typo.h5" Class="fw-700 opa-20">NO SETTLEMENTS DETECTED</MudText>
+                <MudText Typo="Typo.body2" Class="opa-30">Verify the document number and try again.</MudText>
+            </div>
+        }
+    </div>
 }
 
 @code {
+    private bool _isLoading = false;
+    private DateTime _loadStartTime;
+    private bool hasSearched = false;
 
     private string DocumentNumber = string.Empty;
-
     private List<OutStandingBillInfoModel> collection = new List<OutStandingBillInfoModel>();
     private decimal? outstandingAmount;
 
     public async Task fetch()
     {
-        collection = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int branchID = int.Parse(brancIDString);
-        if (DocumentNumber == null)
+        if (string.IsNullOrWhiteSpace(DocumentNumber))
         {
             snackbar.Add("Please enter document number", Severity.Warning);
             return;
         }
 
+        _isLoading = true;
+        _loadStartTime = DateTime.Now;
+        hasSearched = true;
+
+        collection = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int branchID = int.Parse(brancIDString);
+
         collection = Iservice.SelectByDocumentNumber(DocumentNumber).ToList();
         outstandingAmount = collection.Sum(item => item.Amount);
 
-        if(collection == null || collection.Count() == 0)
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+
+        if (collection == null || collection.Count() == 0)
         {
-            snackbar.Add("No data found", Severity.Error);
-            return;
+            snackbar.Add("No linked settlements found for this document.", Severity.Error);
+        }
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 }
+
