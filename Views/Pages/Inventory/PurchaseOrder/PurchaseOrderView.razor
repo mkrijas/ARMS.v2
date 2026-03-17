@@ -37,7 +37,16 @@
         <div class="admin-glass-card pa-6 mb-6">
             <MudGrid Spacing="3" Class="align-center">
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="searchPurchase" Placeholder="Search by PO Number, Vendor or Reference..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Class="modern-input"></MudTextField>
+                <MudTextField @bind-Value="searchPurchase"
+                              Immediate="true"
+                              DebounceInterval="400"
+                              Placeholder="Search by PO Number, Vendor or Reference..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Clearable="true"
+                              Variant="Variant.Outlined"
+                              Class="modern-input"
+                              OnKeyUp="OnSearchKeyUp" />
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <div class="d-flex align-center h-100 px-4 rounded-lg bg-light-surface border-subtle">
@@ -53,8 +62,15 @@
         </div>
 
         <div class="admin-glass-card overflow-hidden">
-            <MudTable Items="@collection" Elevation="0" RowStyleFunc="TableRowStyle" Filter="new Func<PurchaseOrderModel, bool>(search)" Hover="true" Breakpoint="Breakpoint.Sm" Class="modern-admin-table">
-                <HeaderContent>
+            <MudTable T="PurchaseOrderModel"
+                  ServerData="LoadServerData"
+                  RowStyleFunc="TableRowStyle"
+                  Dense="true"
+                  Hover="true"
+                  Striped="true"
+                  Elevation="10"
+                  @ref="_table">
+                  <HeaderContent>
                     <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PONo)"><span class="admin-header-text">PO NO</span></MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">ORDER DATE</span></MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PartyName)"><span class="admin-header-text">SUPPLIER</span></MudTableSortLabel></MudTh>
@@ -161,7 +177,12 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
-        var result = Iservice.SelectPending(branchID, state.Page, state.PageSize);
+        var result = Iservice.SelectPending(
+            branchID,
+            state.Page,
+            state.PageSize,
+            searchPurchase   // pass search text
+        );
 
         var list = result.Items;
 
@@ -296,15 +317,20 @@
         }
     }
 
-    private bool search(PurchaseOrderModel tds)
+    // private bool search(PurchaseOrderModel tds)
+    // {
+    //     if (tds.PONo != null && tds.PONo.Contains(searchPurchase, StringComparison.OrdinalIgnoreCase))
+    //     {
+    //         return true;
+    //     }
+    //     else if (tds.PONo == null)
+    //         return true;
+    //     return false;
+    // }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs args)
     {
-        if (tds.PONo != null && tds.PONo.Contains(searchPurchase, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-        else if (tds.PONo == null)
-            return true;
-        return false;
+        await _table.ReloadServerData();
     }
 
     private string TableRowStyle(PurchaseOrderModel PO, int index)
