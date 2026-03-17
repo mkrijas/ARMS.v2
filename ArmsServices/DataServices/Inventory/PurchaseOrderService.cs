@@ -114,7 +114,7 @@ namespace ArmsServices.DataServices
         }
 
         // Method to select pending purchase orders for a specific branch
-        public PagedResult<PurchaseOrderModel> SelectPending(int BranchID, int page, int pageSize)
+        public PagedResult<PurchaseOrderModel> SelectPending(int BranchID, int page, int pageSize, string search)
         {
             int? totalRecords = 0;
 
@@ -122,22 +122,24 @@ namespace ArmsServices.DataServices
             List<SqlParameter> countParams = new()
             {
                 new SqlParameter("@BranchID", BranchID),
-                new SqlParameter("@Operation", "Count")
+                new SqlParameter("@Operation", "Count"),
+                new SqlParameter("@Search", search ?? "")
             };
 
-                    foreach (IDataRecord dr in Iservice.GetDataReader(
-                        "[usp.Inventory.PurchaseOrder.Select]", countParams))
-                    {
-                        totalRecords = dr.GetInt32("TotalRecords");
-                    }
+            foreach (IDataRecord dr in Iservice.GetDataReader(
+                "[usp.Inventory.PurchaseOrder.Select]", countParams))
+            {
+                totalRecords = dr.GetInt32("TotalRecords");
+            }
 
-                    // PAGED DATA QUERY
-                    List<SqlParameter> parameters = new()
+            // PAGED DATA QUERY
+            List<SqlParameter> parameters = new()
             {
                 new SqlParameter("@BranchID", BranchID),
                 new SqlParameter("@Operation", "All"),
                 new SqlParameter("@Page", page),
-                new SqlParameter("@PageSize", pageSize)
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Search", search ?? "")
             };
 
             List<PurchaseOrderModel> list = new();
