@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
 using System;
 using System.Net.Http.Headers;
@@ -9,6 +9,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Views.Controllers
 {
@@ -45,31 +46,59 @@ namespace Views.Controllers
                 ssrsPath = Request.Path.Value?.TrimStart('/') ?? string.Empty;
             }
 
-            if (ssrsPath.StartsWith("ssrs-proxy/", StringComparison.OrdinalIgnoreCase))
-                ssrsPath = ssrsPath.Substring("ssrs-proxy/".Length);
+            if (ssrsPath.Equals("ssrs-proxy", StringComparison.OrdinalIgnoreCase) || ssrsPath.StartsWith("ssrs-proxy/", StringComparison.OrdinalIgnoreCase))
+                ssrsPath = ssrsPath.Length == 10 ? string.Empty : ssrsPath.Substring(11);
             
-            if (ssrsPath.StartsWith("ReportServer/", StringComparison.OrdinalIgnoreCase))
-                ssrsPath = ssrsPath.Substring("ReportServer/".Length);
+            // 1. RE-ROOTING LOGIC
+            // SSRS often generates relative links (e.g. "Reserved.ReportViewerWebControl.axd" or "?rs:ImageID=...")
+            // When these are inside an iframe at a deep path (e.g. /ssrs-proxy/Folder/Report), the browser
+            // resolves them to /ssrs-proxy/Folder/Reserved... or /ssrs-proxy/Folder/?rs:ImageID=...
+            // We must strip the "Folder/" prefix to hit the root SSRS endpoints.
+            string query = Request.QueryString.Value ?? string.Empty;
+            
+            bool isGlobalHandler = ssrsPath.Contains(".axd", StringComparison.OrdinalIgnoreCase) ||
+                                   ssrsPath.Contains(".css", StringComparison.OrdinalIgnoreCase) ||
+                                   ssrsPath.Contains(".js", StringComparison.OrdinalIgnoreCase) ||
+                                   ssrsPath.Contains(".png", StringComparison.OrdinalIgnoreCase) ||
+                                   ssrsPath.Contains(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                                   ssrsPath.Contains(".gif", StringComparison.OrdinalIgnoreCase);
+            
+            bool isGlobalCommand = query.Contains("rs:ImageID", StringComparison.OrdinalIgnoreCase) ||
+                                  query.Contains("rs:SessionID", StringComparison.OrdinalIgnoreCase) ||
+                                  query.Contains("Operation=GetResource", StringComparison.OrdinalIgnoreCase) ||
+                                  query.Contains("OpType=Resource", StringComparison.OrdinalIgnoreCase);
 
-            // 1. PRECISE AJAX DETECTION
-            // Only flag TRUE ScriptManager UpdatePanel calls. These always carry:
-            //   - X-MicrosoftAjax: Delta=true  (standard ASP.NET header), OR
-            //   - Delta=true in the query string (some SSRS variants)
-            // The old "POST + text/html Accept" heuristic was too broad and was silencing
-            // the initial rs:Command=Render POST (the actual report render), causing blank reports.
+            if ((isGlobalHandler || isGlobalCommand) && ssrsPath.Contains("/"))
+            {
+                 int lastSlash = ssrsPath.LastIndexOf('/');
+                 if (isGlobalCommand && !isGlobalHandler)
+                 {
+                     // For pure command-based resources like ?rs:ImageID, forward to the root ReportServer
+                     ssrsPath = string.Empty; 
+                 }
+                 else
+                 {
+                     // For file-based resources like Reserved.ReportViewerWebControl.axd, take just the filename
+                     ssrsPath = ssrsPath.Substring(lastSlash + 1);
+                 }
+                 Console.WriteLine($"[SSRS Proxy] RE-ROOTED deep resource request to: {ssrsPath}");
+            }
+            else if (ssrsPath.Contains("ReportServer", StringComparison.OrdinalIgnoreCase))
+            {
+                // Legacy deep-path logic
+                int rsIdx = ssrsPath.IndexOf("ReportServer", StringComparison.OrdinalIgnoreCase);
+                ssrsPath = (ssrsPath.Length <= rsIdx + 12) ? string.Empty : ssrsPath.Substring(rsIdx + 13);
+            }
+            else if (ssrsPath.Equals("ReportServer", StringComparison.OrdinalIgnoreCase) || ssrsPath.StartsWith("ReportServer/", StringComparison.OrdinalIgnoreCase))
+                ssrsPath = ssrsPath.Length == 12 ? string.Empty : ssrsPath.Substring(13);
+
+            // AJAX Detection
             bool isAjax = Request.Headers["X-MicrosoftAjax"].ToString()
                               .Contains("Delta=true", StringComparison.OrdinalIgnoreCase) ||
-                         Request.QueryString.Value?.Contains("Delta=true", StringComparison.OrdinalIgnoreCase) == true ||
-                         Request.Headers.ContainsKey("X-Requested-With");
+                          Request.QueryString.Value?.Contains("Delta=true", StringComparison.OrdinalIgnoreCase) == true ||
+                          Request.Headers.ContainsKey("X-Requested-With");
 
             Console.WriteLine($"[SSRS Proxy] {Request.Method} request to: {Request.Path}{Request.QueryString} (IsAjax: {isAjax})");
-
-            // 2. PREVENT EXTERNAL URL MANGLING (Fix for ai.2.min.js)
-            if (ssrsPath.Contains("//") || ssrsPath.Contains("js.monitor.azure.com"))
-            {
-                Response.StatusCode = 404;
-                return;
-            }
 
             var ssrsUser = _configuration["SSRS:User"];
             var ssrsPassword = _configuration["SSRS:Password"];
@@ -77,30 +106,25 @@ namespace Views.Controllers
             var ssrsBaseUrl = (_configuration["SSRS:BaseUrl"] ?? "http://10.200.90.30").TrimEnd('/');
             var useWindowsAuth = _configuration.GetValue<bool>("SSRS:UseWindowsAuth");
 
-            var query = Request.QueryString.Value ?? string.Empty;
             string fullUrl;
-            // 2. ROBUST URL BUILDING
             bool isResourceHandler = ssrsPath.Contains(".axd", StringComparison.OrdinalIgnoreCase);
             bool isPages = ssrsPath.StartsWith("Pages/", StringComparison.OrdinalIgnoreCase);
 
             if (isResourceHandler || isPages)
             {
-                // Ensure we don't duplicate the slash before Pages/
-                string cleanPath = ssrsPath.TrimStart('/');
-                fullUrl = $"{ssrsBaseUrl}/ReportServer/{cleanPath}{query}";
+                fullUrl = $"{ssrsBaseUrl}/ReportServer/{ssrsPath.TrimStart('/')}{query}";
             }
             else if (string.IsNullOrEmpty(ssrsPath))
             {
-                fullUrl = $"{ssrsBaseUrl}/ReportServer/{query}";
+                fullUrl = $"{ssrsBaseUrl}/ReportServer{query}";
             }
             else
             {
                 string trimmedPath = ssrsPath.Trim('/');
-                // SSRS ?/ format
                 fullUrl = $"{ssrsBaseUrl}/ReportServer?/{trimmedPath}{query.Replace("?", "&")}";
             }
 
-            Console.WriteLine($"[SSRS Proxy] Forwarding to: {fullUrl} (WindowsAuth: {useWindowsAuth})");
+            Console.WriteLine($"[SSRS Proxy] Forwarding to: {fullUrl}");
             Console.WriteLine(fullUrl);
 
             // Production: UseWindowsAuth=true → app pool Windows identity forwarded (no popup).
@@ -135,7 +159,7 @@ namespace Views.Controllers
                 }
 
                 var ssrsUri = new Uri(ssrsBaseUrl);
-                request.Headers.Host = ssrsUri.Host;
+                request.Headers.Host = ssrsUri.Authority;
                 
                 string? incomingReferer = Request.Headers["Referer"].ToString();
                 if (!string.IsNullOrEmpty(incomingReferer))
@@ -359,26 +383,23 @@ namespace Views.Controllers
                     
                     if (shouldApplyRewrites)
                     {
-                        content = content.Replace("\"/ReportServer/", "\"/ssrs-proxy/");
-                        content = content.Replace("='/ReportServer/", "'/ssrs-proxy/");
-                        content = content.Replace("=\"/ReportServer/", "=\"/ssrs-proxy/");
-                        content = content.Replace("='/ReportServer/", "='/ssrs-proxy/");
-                        
-                        content = content.Replace("\"/Reserved.ReportViewerWebControl.axd", "\"/ssrs-proxy/Reserved.ReportViewerWebControl.axd");
-                        content = content.Replace("='/Reserved.ReportViewerWebControl.axd", "'/ssrs-proxy/Reserved.ReportViewerWebControl.axd");
-                        content = content.Replace("=\"/Reserved.ReportViewerWebControl.axd", "=\"/ssrs-proxy/Reserved.ReportViewerWebControl.axd");
-                        
-                        content = content.Replace("\"/ScriptResource.axd", "\"/ssrs-proxy/ScriptResource.axd");
-                        content = content.Replace("='/ScriptResource.axd", "'/ssrs-proxy/ScriptResource.axd");
-                        content = content.Replace("=\"/ScriptResource.axd", "=\"/ssrs-proxy/ScriptResource.axd");
-                        
-                        content = content.Replace("\"/WebResource.axd", "\"/ssrs-proxy/WebResource.axd");
-                        content = content.Replace("='/WebResource.axd", "'/ssrs-proxy/WebResource.axd");
-                        content = content.Replace("=\"/WebResource.axd", "=\"/ssrs-proxy/WebResource.axd");
+                        // 1. Hostname-agnostic absolute and root-relative replacements
+                        // Pattern: optional (http/https://hostname), followed by /ReportServer
+                        string urlPattern = @"((?:http|https)://[a-zA-Z0-9\.\-:]+)?/ReportServer";
+                        content = Regex.Replace(content, urlPattern, "/ssrs-proxy", RegexOptions.IgnoreCase);
 
-                        content = content.Replace("var baseUrl = \"/ReportServer\";", "var baseUrl = \"/ssrs-proxy\";");
-                        content = content.Replace("'baseUrl': '/ReportServer'", "'baseUrl': '/ssrs-proxy'");
+                        // 2. Handler and global resource rewrites (Reserved.axd, etc.)
+                        // Force these to be root-relative to /ssrs-proxy/ so they bypass deep-path routing issues
+                        string handlerPattern = @"(?<=[ '""\(])(?:/ReportServer/)?(Reserved\.ReportViewerWebControl\.axd|ScriptResource\.axd|WebResource\.axd|Styles/|Images/|js/)(?=[/\?\w])";
+                        content = Regex.Replace(content, handlerPattern, "/ssrs-proxy/$1", RegexOptions.IgnoreCase);
 
+                        // 3. Command-based relative replacements (ReportServer? or ReportServer/)
+                        string relativePattern = @"(?<=[ '""\(])ReportServer(?=[/\?])";
+                        content = Regex.Replace(content, relativePattern, "/ssrs-proxy", RegexOptions.IgnoreCase);
+
+                        // 4. Configuration object rewrites
+                        content = content.Replace("\"/ReportServer\"", "\"/ssrs-proxy\"");
+                        content = content.Replace("'/ReportServer'", "'/ssrs-proxy'");
                     }
 
 
