@@ -236,21 +236,37 @@ function showReportPage(iframeId, pageNum) {
 function _findSSRSPages(doc) {
     var pages;
 
-    // SSRS 2017+ new HTML renderer: class="msrp-body-page"
+    // 1. Direct Page Containers (SSRS 2017+ new HTML renderer)
     pages = Array.from(doc.querySelectorAll('.msrp-body-page'));
     if (pages.length > 0) return pages;
 
-    // SSRS 2016 HTML4.0: id ends with "_oReportCell"
-    pages = Array.from(doc.querySelectorAll('[id$="_oReportCell"]'));
-    if (pages.length > 0) return pages;
+    // 2. Report Cells as Page Containers (SSRS 2016- HTML4.0)
+    // Sometimes prefixed, so we check if ID contains _oReportCell
+    pages = Array.from(doc.querySelectorAll('[id*="_oReportCell"]'));
+    if (pages.length > 0) {
+        // Filter out nested ones if any (rare but possible)
+        return pages.filter(p => !pages.some(other => other !== p && other.contains(p)));
+    }
 
-    // Older SSRS: pages separated by <br style="page-break-after:always">
-    // or <div style="page-break-after:always">. Wrap the sibling groups.
-    var breaks = Array.from(doc.querySelectorAll(
-        'br[style*="page-break-after"], div[style*="page-break-after"], td[style*="page-break-after"]'
-    ));
+    // 3. Page Break Markers (Separators)
+    // We look for page-break-after or page-break-before in style attributes
+    var breakSelector = [
+        'br[style*="page-break" i]',
+        'div[style*="page-break" i]',
+        'td[style*="page-break" i]',
+        'tr[style*="page-break" i]',
+        'span[style*="page-break" i]'
+    ].join(',');
+    
+    var breaks = Array.from(doc.querySelectorAll(breakSelector));
     if (breaks.length > 0) {
         return _groupByBreaks(doc, breaks);
+    }
+
+    // 4. Hidden Input Markers
+    var hiddenCells = Array.from(doc.querySelectorAll('input[type="hidden"][id*="_oReportCell"]'));
+    if (hiddenCells.length > 0) {
+        return _groupByBreaks(doc, hiddenCells);
     }
 
     return [];
@@ -258,7 +274,16 @@ function _findSSRSPages(doc) {
 
 /** Wrap content around page-break markers into synthetic page divs */
 function _groupByBreaks(doc, breaks) {
-    var container = breaks[0].parentNode;
+    if (!breaks || breaks.length === 0) return [];
+
+    // Find the common container. Usually they are siblings in a main div/body.
+    var firstBreak = breaks[0];
+    var container = firstBreak.parentNode;
+    
+    // Walk up to find the container that holds the bulk of the report
+    while (container && container.childNodes.length <= 1 && container.tagName !== 'BODY') {
+        container = container.parentNode;
+    }
     if (!container) return [];
 
     var children = Array.from(container.childNodes);
@@ -266,23 +291,28 @@ function _groupByBreaks(doc, breaks) {
     var current = [];
 
     children.forEach(function (node) {
-        var isBreak = breaks.indexOf(node) >= 0;
+        current.push(node);
+        // Check if node is a break OR contains a break element
+        var isBreak = breaks.indexOf(node) >= 0 || 
+                      (node.querySelector && breaks.some(function(b) { return node.contains(b); }));
+        
         if (isBreak) {
             if (current.length > 0) groups.push(current);
             current = [];
-        } else {
-            current.push(node);
         }
     });
     if (current.length > 0) groups.push(current);
 
-    // Hide the break markers themselves so they don't show as blank lines
-    breaks.forEach(function (b) { b.style.display = 'none'; });
+    // Hide the break markers so they don't add extra whitespace
+    breaks.forEach(function (b) { 
+        try { if (b.style) b.style.display = 'none'; } catch(e){}
+    });
 
-    // Wrap each group in a <div> so we can toggle display
+    // Wrap each group in a <div> so we can toggle visibility
     return groups.map(function (nodes) {
         var wrapper = doc.createElement('div');
-        wrapper.style.cssText = 'display:block';
+        wrapper.className = 'ssrs-page-wrapper';
+        wrapper.style.cssText = 'display:block; width:100%;';
         nodes[0].parentNode.insertBefore(wrapper, nodes[0]);
         nodes.forEach(function (n) { wrapper.appendChild(n); });
         return wrapper;
