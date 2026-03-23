@@ -194,5 +194,31 @@ namespace ArmsServices.DataServices
         {
             throw new NotImplementedException();
         }
+
+        public PagedResult<GeneralLedgerTransferModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved)
+        {
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Searchterm", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+            };
+            List<GeneralLedgerTransferModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.GeneralLedgerTransfer.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+            return new PagedResult<GeneralLedgerTransferModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
+        }
     }
 }

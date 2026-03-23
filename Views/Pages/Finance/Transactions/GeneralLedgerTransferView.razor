@@ -52,7 +52,7 @@ else
         </div>
 
         <div class="admin-glass-card pa-0 overflow-hidden">
-            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+                    <MudTable ServerData="LoadServerData" T="GeneralLedgerTransferModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
                 <HeaderContent>
                     <MudTh><MudTableSortLabel SortBy="new Func<GeneralLedgerTransferModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<GeneralLedgerTransferModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
@@ -122,7 +122,7 @@ else
     private bool _isLoading = true;
     private DateTime _loadStartTime;
 
-    protected override List<GeneralLedgerTransferModel> collection { get; set; } = new List<GeneralLedgerTransferModel>();
+    protected override List<GeneralLedgerTransferModel> _collection { get; set; } = new List<GeneralLedgerTransferModel>();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 132,
@@ -134,9 +134,9 @@ else
         _loadStartTime = DateTime.Now;
         await base.OnInitializedAsync();
 
-        if (id != null && collection != null && collection.Any(g => g.LedgerTransferID == id))
+        if (id != null && _collection != null && _collection.Any(g => g.LedgerTransferID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.LedgerTransferID == id), true);
+            await OpenForm(_collection.FirstOrDefault(s => s.LedgerTransferID == id), true);
         }
         await EnsureMinimumLoadTime();
         _isLoading = false;
@@ -163,14 +163,14 @@ else
         DialogParameters parms = new DialogParameters();
         parms.Add("model", gModel.Clone());
         parms.Add("ReadOnly", ReadOnly);
-        parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, async() => await _table.ReloadServerData()));
         var _dialog = await dialogService.ShowAsync<GeneralLedgerTransferDialog>(gModel.LedgerTransferID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await _dialog.Result;
         if (!result.Canceled)
         {
             var ReturnData = (GeneralLedgerTransferModel)result.Data;
-        }
-        LoadData(ShowApproved, NumberOfRecords);
+            await _table.ReloadServerData();
+        }        
         await Task.Delay(200);
         _busy = false;
     }

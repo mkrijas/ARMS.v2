@@ -55,7 +55,7 @@
                 </MudItem>
                 <MudItem xs="12" md="2" Class="d-flex justify-end">
                     <div class="d-flex flex-column align-end">
-                        <MudText Typo="Typo.caption" Class="admin-subtitle">TOTAL ORDERS: @(collection?.Count ?? 0)</MudText>
+                    <MudText Typo="Typo.caption" Class="admin-subtitle">TOTAL ORDERS: @(TotalRecords)</MudText>
                     </div>
                 </MudItem>
             </MudGrid>
@@ -63,8 +63,7 @@
 
         <div class="admin-glass-card overflow-hidden">
             <MudTable T="PurchaseOrderModel"
-                  ServerData="LoadServerData"
-                  RowStyleFunc="TableRowStyle"
+                  ServerData="LoadServerData"                  
                   Dense="true"
                   Hover="true"
                   Striped="true"
@@ -129,20 +128,21 @@
 
 @code {
 
-    private bool _isLoading = true;
-    private DateTime _loadStartTime;
+    private bool _isLoading = true;  
 
     private PurchaseOrderModel model = new PurchaseOrderModel();
     private List<PurchaseOrderModel> collection = new List<PurchaseOrderModel>();
-    public bool IsApproved { get; set; } = false;
+
     private string searchPurchase = "";
     private bool _busy;
     [Parameter]
     public int? id { get; set; } = null;
     private MudTable<PurchaseOrderModel> _table;
-    public bool HasPermissionPurchaseOrderServiceEdit { get; set; } = false;
-    public bool HasPermissionPurchaseOrderServiceDelete { get; set; } = false;
-    public int DocTypeID = 17;
+    bool HasPermissionPurchaseOrderServiceEdit { get; set; } = false;
+    bool HasPermissionPurchaseOrderServiceDelete { get; set; } = false;
+    int DocTypeID = 17;
+    bool IsApproved { get; set; } = false;
+    int? TotalRecords = 0;
 
     #region SignaIR Notification
 
@@ -150,83 +150,43 @@
     #endregion
 
     protected override async Task OnInitializedAsync()
-    {
-        _loadStartTime = DateTime.Now;
+    {      
 
         CancellationTokenSource ctc = new CancellationTokenSource();
 
-        HasPermissionPurchaseOrderServiceEdit =
-            await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionPurchaseOrderServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
-        HasPermissionPurchaseOrderServiceDelete =
-            await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionPurchaseOrderServiceDelete =  await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);        
 
-        model = new();
-
-        await signalRService.StartAsync();
-
-        await EnsureMinimumLoadTime();
+        //await signalRService.StartAsync();       
 
         _isLoading = false;
     }
 
-    private async Task<TableData<PurchaseOrderModel>> LoadServerData(
-    TableState state,
-    CancellationToken token)
+    private async Task<TableData<PurchaseOrderModel>> LoadServerData( TableState state, CancellationToken token)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
-        var result = Iservice.SelectPending(
-            branchID,
-            state.Page,
-            state.PageSize,
-            searchPurchase   // pass search text
-        );
+        var list = Iservice.SelectAll( branchID, state.Page, state.PageSize, searchPurchase,IsApproved);
 
-        var list = result.Items;
+        collection = list.Items;
+        TotalRecords = list.TotalRecords;
 
-        if (IsApproved)
-            list = list.Where(x => x.AuthLevelID == 99).ToList();
-        else
-            list = list.Where(x => x.AuthLevelID != 99 && x.AuthLevelID != 100).ToList();
+        StateHasChanged();        
 
         return new TableData<PurchaseOrderModel>
         {
-            Items = list,
-            TotalItems = result.TotalRecords ?? 0
-        };
-    }
-
-    private async Task EnsureMinimumLoadTime()
-    {
-        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
-        if (elapsed < 100)
-        {
-            await Task.Delay(100 - (int)elapsed);
-        }
-    }
+            Items = collection,
+            TotalItems = list.TotalRecords??0
+        };        
+    }   
 
     async Task ApprovedChanged(bool value)
     {
         IsApproved = value;
         await _table.ReloadServerData();
-    }
-
-    // private async Task GetAll(bool val)
-    // {
-    //     var authprov = await auth.GetAuthenticationStateAsync();
-    //     var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-    //     int brancID = int.Parse(brancIDString);
-    //     if (val)
-    //     {
-    //         collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID == 99).ToList();
-    //     }
-    //     else
-    //     {
-    //         collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID != 99 && x.AuthLevelID != 100).ToList();
-    //     }
-    // }
+    }  
 
     private async Task OpenDialog(PurchaseOrderModel tds, bool ReadOnly, bool View)
     {
@@ -317,33 +277,12 @@
         }
     }
 
-    // private bool search(PurchaseOrderModel tds)
-    // {
-    //     if (tds.PONo != null && tds.PONo.Contains(searchPurchase, StringComparison.OrdinalIgnoreCase))
-    //     {
-    //         return true;
-    //     }
-    //     else if (tds.PONo == null)
-    //         return true;
-    //     return false;
-    // }
+  
 
     private async Task OnSearchKeyUp(KeyboardEventArgs args)
     {
         await _table.ReloadServerData();
     }
 
-    private string TableRowStyle(PurchaseOrderModel PO, int index)
-    {
-        if (PO.UserInfo.RecordStatus == 9)
-        {
-            return "background-color:#ff8080";
-        }
-        if (PO.AuthLevelID == 99)
-        {
-            return "background-color:#CCCCFF";
-        }
-        return string.Empty;
-    }
 }
 

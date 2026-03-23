@@ -22,15 +22,14 @@
             <div style="flex-grow: 1; min-width: 300px;">
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search by document number or payment mode..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
             </div>
-            <div class="d-flex align-center gap-4">
-                <MudTextField @bind-Value="@NumberOfRecords" Label="Max Records" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 100px;" Dense="true" />
+            <div class="d-flex align-center gap-4">                
                 <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
             </div>
         </div>
     </div>
 
     <div class="admin-glass-card pa-0 overflow-hidden">
-        <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+        <MudTable ServerData="LoadServerData" T="SundryPaymentAssetModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentAssetModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentAssetModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
@@ -89,7 +88,7 @@
 
 @code {
 
-    protected override List<SundryPaymentAssetModel> collection { get; set; } = new();
+    protected override List<SundryPaymentAssetModel> _collection { get; set; } = new();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 138,
@@ -106,9 +105,9 @@
         var User = authprov.User;
         BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
 
-        if (id != null && collection != null && collection.Any(g => g.SundryPaymentAssetID == id))
+        if (id != null && _collection != null && _collection.Any(g => g.SundryPaymentAssetID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.SundryPaymentAssetID == id), true);
+            await OpenForm(_collection.FirstOrDefault(s => s.SundryPaymentAssetID == id), true);
         }
     }
 
@@ -126,15 +125,16 @@
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model.Clone());
         parms.Add("ReadOnly", ReadOnly);
-        parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, async() => await _table.ReloadServerData()));
         var dialog = await dialogService.ShowAsync<SundryPaymentAssetDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         var isCancelled = result.Canceled;
         if (!isCancelled)
         {
             var ReturnData = (SundryPaymentAssetModel)result.Data;
+            await _table.ReloadServerData();
         }
-        LoadData(ShowApproved, NumberOfRecords);
+        
         await Task.Delay(200);
         _busy = false;
     }

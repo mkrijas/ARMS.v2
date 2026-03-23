@@ -34,20 +34,16 @@ else
                 <div style="flex-grow: 1; min-width: 300px;">
                     <MudTextField @bind-Value="searchTerm" Placeholder="Search by document number, branch or party..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
                 </div>
-                <div class="d-flex align-center gap-4">
+                <div class="d-flex align-center gap-4">                   
                     <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
-                        <MudText Typo="Typo.caption" Class="fw-700 opa-50 uppercase mr-2">Limit</MudText>
-                        <MudNumericField @bind-Value="@NumberOfRecords" Variant="Variant.Text" Margin="Margin.Dense" Style="width: 50px;" Class="fw-700 mt-0" HideSpinButtons="true" />
-                    </div>
-                    <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
-                        <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+                        <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="fw-600" />
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="admin-glass-card pa-0 overflow-hidden">
-            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+            <MudTable ServerData="LoadServerData" T="PaymentMemoModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
                 <HeaderContent>
                     <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.DocumentNumber)"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
@@ -136,10 +132,9 @@ else
 
 @code {
 
-    private bool _isLoading = true;
-    private DateTime _loadStartTime;
+    private bool _isLoading = true;  
 
-    protected override List<PaymentMemoModel> collection { get; set; } = new List<PaymentMemoModel>();
+    protected override List<PaymentMemoModel> _collection { get; set; } = new List<PaymentMemoModel>();
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
     {
@@ -149,30 +144,19 @@ else
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
-    {
-        _loadStartTime = DateTime.Now;
+    {        
         interbranch = true;
         await base.OnInitializedAsync();       
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var UserID = authprov.User.Identity.Name;
 
-        if (id != null && collection != null && collection.Any(g => g.PaymentMemoID == id))
+        if (id != null && _collection != null && _collection.Any(g => g.PaymentMemoID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.PaymentMemoID == id), true);
-        }
-        await EnsureMinimumLoadTime();
+            await OpenForm(_collection.FirstOrDefault(s => s.PaymentMemoID == id), true);
+        }       
         _isLoading = false;
-    }
-
-    private async Task EnsureMinimumLoadTime()
-    {
-        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
-        if (elapsed < 100)
-        {
-            await Task.Delay(100 - (int)elapsed);
-        }
-    }
+    } 
 
     // Method to open the dialog for adding or editing a payment memo
     protected override async Task OpenForm(PaymentMemoModel ppm, bool ReadOnly, bool DisableAddition = false)
@@ -192,8 +176,7 @@ else
         {
             var ReturnData = (PaymentMemoModel)result.Data;
         }
-        LoadData(ShowApproved, NumberOfRecords);
-        await Task.Delay(200);
+        await _table.ReloadServerData();
         _busy = false;
     }
    
@@ -209,7 +192,7 @@ else
             {
                 Iservice.Delete(PaymentMemoID, UserID); // Delete the payment memo
                 snackbar.Add("Deleted Successfully", Severity.Success);
-                LoadData(ShowApproved, NumberOfRecords);
+                await _table.ReloadServerData(); // Reload the table data
             }
         }
         catch (Exception ex)

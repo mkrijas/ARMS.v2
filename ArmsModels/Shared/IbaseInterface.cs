@@ -15,5 +15,6 @@ namespace ArmsServices.DataServices
         //T TDSReverseUpdate(T model);
         T Update(T model);
         int RemoveFile(int? ID, string UserID);
+        PagedResult<T> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved);
     }
 }

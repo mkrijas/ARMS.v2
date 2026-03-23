@@ -348,5 +348,31 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        public PagedResult<PaymentMemoModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved)
+        {
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Searchterm", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+            };
+            List<PaymentMemoModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+            return new PagedResult<PaymentMemoModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
+        }
     }
 }

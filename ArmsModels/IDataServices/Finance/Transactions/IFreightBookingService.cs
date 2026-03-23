@@ -5,25 +5,19 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace ArmsServices.DataServices
 {
-    public interface IFreightBillingService
+    public interface IFreightBillingService : IbaseInterface<ProformaInvoiceModel>
     {
         int? UpdateFinalInvoice(BillingModel model);  
-        int? UpdateProformaInvoice(ProformaInvoiceModel model);  //EditProformaInvoice
-        int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks,string InvoiceNumber, string InvoiceRefNumber, DateTime? InvoiceDate);  //Approve
-        int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID);  //ReverseProformaInvoice
-        int? UpdateConsolidatedDraftBill(ConsolidatedDraftBillModel model);  //EditConsolidatedDraftBill
-        BillingModel SelectFinalInvoice(int? ID);
-        ProformaInvoiceModel SelectProformaInvoice(int? ID);
-        ConsolidatedDraftBillModel SelectConsolidatedDraftBill(int? ID);
-        int ReverseFinalInvoice(int? ID, string UserID, string Remarks);
-        int DeleteProformaInvoice(int? ID,string UserID, string Remarks);  //Delete
+        int? Approve(int? ProformaInvoiceID, string userID, string Remarks,string InvoiceNumber, string InvoiceRefNumber, DateTime? InvoiceDate);  //Approve
+         int? UpdateConsolidatedDraftBill(ConsolidatedDraftBillModel model);  //EditConsolidatedDraftBill
+        BillingModel SelectFinalInvoice(int? ID);       
+        ConsolidatedDraftBillModel SelectConsolidatedDraftBill(int? ID);      
         int ReverseConsolidatedDraftBill(int? ID, string UserID);  //ReverseConsolidatedDraftBill
-        IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID,int? BranchId);
-        IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? BranchID, int? ID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID,int? BranchId);     
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
         IEnumerable<GcTariffModel> GetPending(int? PartyID,int? OrderID, short? TariffTypeID, int? GcTypeID, int? TruckID, DateTime? begin, DateTime? end);
         IEnumerable<GcTariffModel> GenerateTariffs(int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end);

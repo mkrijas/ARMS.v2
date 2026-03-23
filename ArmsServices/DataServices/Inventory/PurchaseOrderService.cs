@@ -114,47 +114,19 @@ namespace ArmsServices.DataServices
         }
 
         // Method to select pending purchase orders for a specific branch
-        public PagedResult<PurchaseOrderModel> SelectPending(int BranchID, int page, int pageSize, string search)
-        {
-            int? totalRecords = 0;
-
-            // COUNT QUERY
-            List<SqlParameter> countParams = new()
-            {
-                new SqlParameter("@BranchID", BranchID),
-                new SqlParameter("@Operation", "Count"),
-                new SqlParameter("@Search", search ?? "")
-            };
-
-            foreach (IDataRecord dr in Iservice.GetDataReader(
-                "[usp.Inventory.PurchaseOrder.Select]", countParams))
-            {
-                totalRecords = dr.GetInt32("TotalRecords");
-            }
-
+        IEnumerable<PurchaseOrderModel> IPurchaseOrderService.SelectPending(int BranchID)
+        {           
             // PAGED DATA QUERY
             List<SqlParameter> parameters = new()
             {
                 new SqlParameter("@BranchID", BranchID),
-                new SqlParameter("@Operation", "All"),
-                new SqlParameter("@Page", page),
-                new SqlParameter("@PageSize", pageSize),
-                new SqlParameter("@Search", search ?? "")
-            };
+                new SqlParameter("@Operation", "pending"),               
+            };        
 
-            List<PurchaseOrderModel> list = new();
-
-            foreach (IDataRecord dr in Iservice.GetDataReader(
-                "[usp.Inventory.PurchaseOrder.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
             {
-                list.Add(GetModel(dr));
-            }
-
-            return new PagedResult<PurchaseOrderModel>
-            {
-                Items = list,
-                TotalRecords = totalRecords
-            };
+                yield return GetModel(dr);
+            }        
         }
 
         // Method to select a purchase order by its ID
@@ -258,5 +230,35 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        public PagedResult<PurchaseOrderModel> SelectAll(int BranchID, int page, int pageSize, string search, bool _IsApproved)
+        {   
+            // PAGED DATA QUERY
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Search", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+            };
+
+            List<PurchaseOrderModel> list = new();
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if(countOf == 0)
+                    countOf =  dr.GetInt32("CountOf");
+            }           
+
+            return new PagedResult<PurchaseOrderModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
+        }        
+     
     }
 }

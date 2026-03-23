@@ -40,17 +40,13 @@ else
         <div class="d-flex align-center gap-4">
             <div style="flex-grow: 1;">
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Sundry Payments..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" @onkeyup="HandleSearchKeyUp" Clearable="true" />
-            </div>
-            <div class="d-flex align-center gap-2">
-                <MudText Typo="Typo.body2" Class="admin-td-secondary fw-600">Max Results:</MudText>
-                <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 80px; background: white;" />
-            </div>
+            </div>          
             <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
         </div>
     </div>
 
     <div class="admin-glass-card pa-0 overflow-hidden">
-        <MudTable Items="@collection" Dense="true" Hover="true" Elevation="0" Class="modern-admin-table">
+            <MudTable ServerData="LoadServerData" T="SundryPaymentModel" @ref="_table" Dense="true" Hover="true" Elevation="0" Class="modern-admin-table">
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.SundryPaymentID)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
@@ -117,7 +113,7 @@ else
     private bool _isLoading = true;
     private DateTime _loadStartTime;
 
-    protected override List<SundryPaymentModel> collection { get; set; } = new();
+    protected override List<SundryPaymentModel> _collection { get; set; } = new();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 11,
@@ -135,9 +131,9 @@ else
         var User = authprov.User;
         BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
 
-        if (id != null && collection != null && collection.Any(g => g.SundryPaymentID == id))
+        if (id != null && _collection != null && _collection.Any(g => g.SundryPaymentID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
+            await OpenForm(_collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
         }
         await EnsureMinimumLoadTime();
         _isLoading = false;
@@ -166,15 +162,15 @@ else
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model.Clone());
         parms.Add("ReadOnly", ReadOnly);
-        parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, async() => await _table.ReloadServerData()));
         var dialog = await dialogService.ShowAsync<SundryPaymentDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         var isCancelled = result.Canceled;
         if (!isCancelled)
         {
             var ReturnData = (SundryPaymentModel)result.Data;
-        }
-        LoadData(ShowApproved, NumberOfRecords);
+            await _table.ReloadServerData();
+        }        
         await Task.Delay(200);
         _busy = false;
     }

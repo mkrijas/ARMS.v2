@@ -33,15 +33,14 @@ else
             <div style="flex-grow: 1; min-width: 300px;">
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search by party, service type or document number..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
             </div>
-            <div class="d-flex align-center gap-4">
-                <MudTextField @bind-Value="@NumberOfRecords" Label="Max Records" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 100px;" Dense="true" />
+            <div class="d-flex align-center gap-4">               
                 <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
             </div>
         </div>
     </div>
 
     <div class="admin-glass-card pa-0 overflow-hidden">
-        <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+                <MudTable ServerData="LoadServerData" T="SundryMaintenanceModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<SundryMaintenanceModel, object>(x=> x.BreakDownType)"><span class="admin-header-text">SERVICE TYPE</span></MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<SundryMaintenanceModel, object>(x=> x.PartyInfo.TradeName)"><span class="admin-header-text">PARTY NAME</span></MudTableSortLabel></MudTh>
@@ -108,7 +107,7 @@ else
     private bool _isLoading = true;
     private DateTime _loadStartTime;
 
-    protected override List<SundryMaintenanceModel> collection { get; set; } = new List<SundryMaintenanceModel>();
+    protected override List<SundryMaintenanceModel> _collection { get; set; } = new List<SundryMaintenanceModel>();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 130,
@@ -121,9 +120,9 @@ else
         _loadStartTime = DateTime.Now;
         await base.OnInitializedAsync();
 
-        if (id != null && collection != null && collection.Any(g => g.ID == id))
+        if (id != null && _collection != null && _collection.Any(g => g.ID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.ID == id), true);
+            await OpenForm(_collection.FirstOrDefault(s => s.ID == id), true);
         }
         await EnsureMinimumLoadTime();
         _isLoading = false;
@@ -150,15 +149,14 @@ else
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ppm.Clone());
         parms.Add("ReadOnly", ReadOnly);
-        parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, async() => await _table.ReloadServerData()));
         var dialog = await dialogService.ShowAsync<SundryMaintenanceDialog>(ppm.ID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
         if (!result.Canceled)
         {
             var ReturnData = (SundryMaintenanceModel)result.Data;
-        }
-        LoadData(ShowApproved, NumberOfRecords);
-       
+            await _table.ReloadServerData();
+        }   
         await Task.Delay(200);
         _busy = false;
     }

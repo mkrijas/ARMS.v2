@@ -1,6 +1,7 @@
 @page "/TaxPurchase"
 @page "/TaxPurchase/{id:int}"
 @using Inventory.GoodsReceipt
+@using System.Threading
 @inherits ViewComponentBase<TaxPurchaseModel>
 @inject ITaxPurchaseService Iservice
 
@@ -44,11 +45,7 @@ else
                     </MudRadioGroup>
                 </div>
 
-                <div class="d-flex align-center gap-4">
-                    <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
-                        <MudText Typo="Typo.caption" Class="fw-700 opa-50 uppercase mr-2">Limit</MudText>
-                        <MudNumericField @bind-Value="@NumberOfRecords" Variant="Variant.Text" Margin="Margin.Dense" Style="width: 50px;" Class="fw-700 mt-0" HideSpinButtons="true" />
-                    </div>
+                <div class="d-flex align-center gap-4">                   
                     <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
                         <MudCheckBox T="bool" Label="Approved Only" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
                     </div>
@@ -57,7 +54,7 @@ else
         </div>
 
         <div class="admin-glass-card pa-0 overflow-hidden shadow-sm">
-            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+            <MudTable ServerData="LoadServerData" T="TaxPurchaseModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
                 <HeaderContent>
                     <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.InvoiceDate)"><span class="admin-header-text">INVOICE DATE</span></MudTableSortLabel></MudTh>
                     <MudTh><span class="admin-header-text">IDENTIFIERS</span></MudTh>
@@ -134,13 +131,12 @@ else
     </div>
 }
 
-@code {
+@code {    
 
-    private bool _isLoading = true;
-    private DateTime _loadStartTime;
+    protected override List<TaxPurchaseModel> _collection { get; set; } = new List<TaxPurchaseModel>();
 
-    protected override List<TaxPurchaseModel> collection { get; set; } = new List<TaxPurchaseModel>();
     public TaxPurchaseModel model { get; set; } = new TaxPurchaseModel();
+
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 9,
@@ -148,7 +144,7 @@ else
         };
 
     // Method to handle changes in the selected option
-    public void OnSelectedOptionChanged(string value)
+    public async Task OnSelectedOptionChanged(string value)
     {
         model.TaxPurchaseType = value;
         switch (value)
@@ -166,46 +162,21 @@ else
                 DocInfo.DocumentName = "Purchase";
                 break;
         }
-
-        LoadData(ShowApproved, NumberOfRecords);
-        // if (value == "Fuel")
-        // {
-
-        // }
-        // else if (value == "Maintenance")
-        // {
-
-        // }
-        // else
-        // {
-
-        // }
-        // StateHasChanged();
+        await _table.ReloadServerData(); 
     }
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
-    {
-        _loadStartTime = DateTime.Now;
+    {        
         await base.OnInitializedAsync();
         string type = model.TaxPurchaseType;
-        if (id != null && collection != null && collection.Any(g => g.PID == id))
+        if (id != null && _collection != null && _collection.Any(g => g.PID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.PID == id), true);
+            await OpenForm(_collection.FirstOrDefault(s => s.PID == id), true);
         }
-        model.TaxPurchaseType = "Normal";
-        await EnsureMinimumLoadTime();
+        model.TaxPurchaseType = "Normal";        
         _isLoading = false;
-    }
-
-    private async Task EnsureMinimumLoadTime()
-    {
-        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
-        if (elapsed < 100)
-        {
-            await Task.Delay(100 - (int)elapsed);
-        }
-    }
+    } 
 
     // Method to open the tax purchase form for adding or editing
     protected override async Task OpenForm(TaxPurchaseModel ppm, bool ReadOnly, bool DisableAddition = false)
@@ -219,29 +190,33 @@ else
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ppm.Clone());
         parms.Add("ReadOnly", ReadOnly);
-        parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, async() => await _table.ReloadServerData()));
         var dialog = await dialogService.ShowAsync<TaxPurchaseDialog>(ppm.PID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
         if (!result.Canceled)
         {
             var ReturnData = (TaxPurchaseModel)result.Data;
-        }
-        LoadData(ShowApproved, NumberOfRecords);
+            await _table.ReloadServerData();
+        }        
         await Task.Delay(200);
         _busy = false;
     }
 
-    // Method to load data based on approval status and number of records
-    protected override void LoadData(bool val, int numberOfRecords)
-    {
-        if (val)
+    //Load Data to table based on search and filters
+    protected override async Task<TableData<TaxPurchaseModel>> LoadServerData(TableState state, CancellationToken token)
+    {        
+
+        var list = Iservice.SelectAll(BranchID, searchTerm,"Purchase" ,model.TaxPurchaseType , state.Page, state.PageSize,  ShowApproved);
+
+        _collection = list.Items;       
+
+        StateHasChanged();
+
+        return new TableData<TaxPurchaseModel>
         {
-            collection = Iservice.SelectByApproved(BranchID, numberOfRecords, searchTerm, "Purchase", model.TaxPurchaseType).ToList(); // Fetch approved tax purchases
-        }
-        else
-        {
-            collection = Iservice.SelectByUnapproved(BranchID, numberOfRecords, searchTerm, "Purchase", model.TaxPurchaseType).ToList(); // Fetch unapproved tax purchases
-        }
+            Items = _collection,
+            TotalItems = list.TotalRecords ?? 0
+        };
     }
 
     // Method to open the GRN (Goods Receipt Note) dialog
@@ -256,8 +231,8 @@ else
         DialogParameters parms = new DialogParameters();
         var dialog = await dialogService.ShowAsync<InventoryGrnViewDialog>("GRN", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
         var result = await dialog.Result;
-        LoadData(ShowApproved, NumberOfRecords);
-        await Task.Delay(200);
+        await _table.ReloadServerData();
+        //await Task.Delay(200);
         _busy = false;
     }
 }
