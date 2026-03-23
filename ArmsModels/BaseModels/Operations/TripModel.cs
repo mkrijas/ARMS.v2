@@ -149,6 +149,7 @@ namespace ArmsModels.BaseModels
 
         public DateTime? Docdate = DateTime.Today;
         public string PaymentMode { get; set; }
+        [Required]
         public string PaymentArdCode { get; set; }
         public int? PaymentCoaID { get; set; }
         public string PaymentTool { get; set; }
