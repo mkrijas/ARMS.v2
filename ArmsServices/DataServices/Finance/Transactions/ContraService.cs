@@ -279,7 +279,7 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@Operation", "All"),
                 new SqlParameter("@Page", page),
                 new SqlParameter("@PageSize", pageSize),
-                new SqlParameter("@Search", search ?? ""),
+                new SqlParameter("@Searchterm", search ?? ""),
                 new SqlParameter("@IsApproved", _IsApproved),
             };
             List<ContraModel> list = new();

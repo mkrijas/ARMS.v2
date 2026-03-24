@@ -337,6 +337,8 @@ namespace Views
             services.AddScoped<IbaseInterface<CreditDebitTransferModel>, CreditDebitTransferService>();
             services.AddScoped<IbaseInterface<DriverSalaryPayableModel>, DriverSalaryPayableService>();
             services.AddScoped<IbaseInterface<ProformaInvoiceModel>, FreightBillingService>();
+            services.AddScoped<IbaseInterface<PaymentFinishModel>, PaymentFinalizeService>();
+            services.AddScoped<IbaseInterface<MileageShortageReceiptModel>, MileageShortageReceiptService>();
 
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();

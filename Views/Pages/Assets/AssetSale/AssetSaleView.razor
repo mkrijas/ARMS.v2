@@ -2,24 +2,13 @@
 @page "/AssetSale/{id:int}"
 @using System.Threading;
 @using Inventory
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
 @inherits ViewComponentBase<SaleModel>
 @inject SignalRService signalRService
-@inject IRoleService<RoleModel> Irole
 @inject ISaleService Iservice
-@inject IDialogService DialogService
-@inject MudBlazor.ISnackbar snackbar
-@inject IPushNotificationService IpushNotificationService
 
-@if (_isLoading)
-{
-    <LoaderComponent IsFullScreen="true" 
-                    ShowLogo="false" 
-                    Size="medium" 
-                    LoadingText="Loading Asset Sales" 
-                    SubText="Please wait..." />
-}
+
+
+
 
 <div @key="@("content")" class="admin-page-container">
     <div class="admin-header-tiered mb-6">
@@ -31,22 +20,25 @@
             <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenForm(new SaleModel(),false))" Disabled="@_busy">REGISTER SALE</MudButton>
         </div>
     </div>
-
     <div class="admin-glass-card mb-6 pa-4">
         <div class="d-flex align-center gap-4">
             <div style="flex-grow: 1;">
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Sales..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" @onkeyup="HandleSearchKeyUp" Clearable="true" />
-            </div>
-            <div class="d-flex align-center gap-2">
-                <MudText Typo="Typo.body2" Class="admin-td-secondary fw-600">Max Results:</MudText>
-                <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 80px; background: white;" />
-            </div>
-            <MudCheckBox T="bool" Label="Approved" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+            </div>            
+            <MudCheckBox T="bool" Label="Approved" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
         </div>
     </div>
-
     <div class="admin-glass-card pa-0 overflow-hidden">
-        <MudTable Items="@_collection" Dense="true" Hover="true" Elevation="0" @bind-place="model" Class="modern-admin-table">
+        <MudTable ServerData="LoadServerData" T="SaleModel" @ref="_table" Dense="true" Hover="true" Elevation="0" Class="modern-admin-table">
+            <LoadingContent>
+                <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                    <LoaderComponent IsFullScreen="false"
+                                     ShowLogo="false"
+                                     Size="large"
+                                     LoadingText="Loading...."
+                                     SubText="Fetching Data..." />
+                </div>
+            </LoadingContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.PartyInfo.TradeName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">TRADE NAME</span></MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">TOTAL AMOUNT</span></MudTableSortLabel></MudTh>
@@ -76,7 +68,7 @@
                             <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
                         </MudTooltip>
                         <MudTooltip Text="Delete">
-                            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Variant="Variant.Text" />
+                            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.SID))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Variant="Variant.Text" />
                         </MudTooltip>
                         @if (@context.AuthLevelId == 99)
                         {
@@ -93,26 +85,19 @@
                     </div>
                 </MudTd>
             </RowTemplate>
+            <PagerContent>
+                <div class="pa-4">
+                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                </div>
+            </PagerContent>
         </MudTable>
     </div>
 </div>
 
 
+@code { 
 
-
-@code {
-
-    private bool _isLoading = true;
-    private DateTime _loadStartTime;
-
-    private SaleModel model = new SaleModel();
     protected override List<SaleModel> _collection { get; set; } = new List<SaleModel>();
-    public bool IsApproved { get; set; } = false;
-    private int numberOfRecords = 100;
-    private string searchTerm = "";
-    private bool _busy;
-
-    public bool HasPermissionSaleServiceDelete { get; set; } = false;
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
     {
@@ -120,102 +105,37 @@
         DocumentName = "Journal"
     };
 
-    #region SignaIR Notification
 
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
-
-    // Method to handle search key up event
-    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await ReloadTable();
-        }
-    }
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
-    {
-        _loadStartTime = DateTime.Now;
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionSaleServiceDelete = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
-
-        await GetAll(IsApproved, NumberOfRecords);
-        await Task.Delay(200);
-        await signalRService.StartAsync();
+    {        
+        await base.OnInitializedAsync();        
         if (id != null && _collection != null && _collection.Any(g => g.SID == id))
         {
             await OpenForm(_collection.FirstOrDefault(s => s.SID == id), true);
-        }
-        await EnsureMinimumLoadTime();
-        _isLoading = false;
+        }       
     }
+  
 
-    private async Task EnsureMinimumLoadTime()
-    {
-        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
-        if (elapsed < 100)
-        {
-            await Task.Delay(100 - (int)elapsed);
-        }
-    }
-
-    // Method to handle changes in the approval status
-    async Task ApprovedChanged(bool value)
-    {
-        IsApproved = value;
-        await GetAll(IsApproved, NumberOfRecords);
-    }
-
+   
     // Method to retrieve all sales based on approval status and number of records
-    private async Task GetAll(bool val, int numberOfRecords)
+    protected override async Task<TableData<SaleModel>> LoadServerData(TableState state, CancellationToken token)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        int NumberOfRecords = numberOfRecords;
-        _collection = new List<SaleModel>();
-
-        // Retrieve sales based on approval status
-        if (val)
+        var list = Iservice.SelectAll(BranchID, state.Page, state.PageSize, searchTerm, ShowApproved);
+        _collection = list.Items;
+        return new TableData<SaleModel>
         {
-            _collection = Iservice.SelectByApproved(brancID, NumberOfRecords, searchTerm, "Asset").ToList();
-        }
-        else
-        {
-            _collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, searchTerm, "Asset").ToList();
-        }
+            Items = _collection,
+            TotalItems = list.TotalRecords ?? 0
+        };
     }
 
-    // Method to reload the sales table
-    private async Task ReloadTable()
-    {
-        await GetAll(IsApproved, NumberOfRecords);
-    }
 
-    // Property to manage the number of records displayed
-    private int NumberOfRecords
-    {
-        get => numberOfRecords;
-        set
-        {
-            if (numberOfRecords != value)
-            {
-                numberOfRecords = value;
-                _ = ReloadTable();
-            }
-        }
-    }
-
-    // Method to verify and refresh the sales list
-    private async Task Verified()
-    {
-        await GetAll(IsApproved, NumberOfRecords);
-    }
+  
 
     // Method to open a dialog for adding or editing a sale
-    protected override async Task OpenForm(SaleModel saleModel, bool ReadOnly, bool DisableAddition = false)
+    protected override async Task OpenForm(SaleModel _model, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -223,64 +143,22 @@
             return;
         }
         _busy = true;
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", saleModel.Clone());
+        parms.Add("model", _model.Clone());
         parms.Add("PageToRedirectLink", "/Sale");
         parms.Add("ReadOnly", ReadOnly);
-
-        // Show the dialog and wait for the result
-        var dialog = await DialogService.ShowAsync<AssetSaleDialog>(saleModel.SID == null ? "ADD" : "EDIT", parms, maxWidth);
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, async () => await _table.ReloadServerData()));
+        var dialog = await dialogService.ShowAsync<AssetSaleDialog>(_model.SID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
         if (!result.Canceled)
         {
-            var ReturnData = (SaleModel)result.Data;
-            // Prepare the notification message
-            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-            notificationMessage.RedirectedTo = 0;
-            notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.SID;
-            notificationMessage.MessageGroupID = "PendingVerification";
-            notificationMessage.PageToRedirectLink = "/Sale";
-            notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = DocInfo.DocumentTypeID;
-            notificationMessage.MsgDate = DateTime.Now;
-
-            // Send the notification via SignalR
-            await signalRService.Send(notificationMessage);
+            var ReturnData = (TaxPurchaseModel)result.Data;
+            await _table.ReloadServerData();
         }
-        await GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
-        _busy = false;
+        _busy = false;      
     }
-
-    // Method to delete a sale entry
-    private async Task Delete(SaleModel model)
-    {
-        if (HasPermissionSaleServiceDelete)
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.PartyInfo.TradeName + " (" + model.DocumentNumber + ") ?");
-            if (result == true)
-            {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                Iservice.Delete(model.SID, user.Identity.Name); // Call the service to delete the sale
-                snackbar.Add("Deleted Successfully", Severity.Success);
-                await GetAll(IsApproved, NumberOfRecords);
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Permission denied!",
-                "You don't have any permission to Delete Sale.");
-        }
-    }
+   
 
     // Dictionary to hold report parameters
     public Dictionary<string, string> ReportParameters { get; set; } = new();
@@ -295,6 +173,6 @@
         parameters.Add("ReportName", "PrintAssetSaleInvoice");
 
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        await DialogService.ShowAsync<PrintDialog>("PRINT", parameters, maxWidth);
+        await dialogService.ShowAsync<PrintDialog>("PRINT", parameters, maxWidth);
     }
 }

@@ -1,7 +1,8 @@
 ﻿using ArmsModels.BaseModels;
-using System.Collections.Generic;
-using System;
+using Core.BaseModels.Finance.Transactions;
 using Microsoft.Data.SqlClient;
+using System;
+using System.Collections.Generic;
 using System.Data;
 
 namespace ArmsServices.DataServices
@@ -15,7 +16,7 @@ namespace ArmsServices.DataServices
         }
 
         // Method to update a payment finalize entry 
-        public int? Update(PaymentFinishModel model)
+        public PaymentFinishModel Update(PaymentFinishModel model)
         {
             DataTable dt = new DataTable();
             dt.Columns.Add("ID");
@@ -52,7 +53,7 @@ namespace ArmsServices.DataServices
             {
                 model.PaymentFinalizeID = dr.GetInt32("PFID");
             }
-            return model.PaymentFinalizeID;
+            return model;
         }
 
         // Method to select payment finalize entries based on various parameters
@@ -135,5 +136,66 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-    }
+
+        public int Reverse(int? ID, string UserID, string Remarks)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Delete(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public PaymentFinishModel SelectByID(int? ID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<PaymentFinishModel> Select(int? BranchID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<PaymentFinishModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<PaymentFinishModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public PagedResult<PaymentFinishModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved)
+        { 
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Searchterm", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+            };
+            List<PaymentFinishModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Finish.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+            return new PagedResult<PaymentFinishModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
+        }
+    }    
 }

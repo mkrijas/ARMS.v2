@@ -282,7 +282,7 @@ namespace ArmsServices.DataServices
             };
             List<DriverSalaryPayableModel> list = [];
             int? countOf = 0;
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.DriverSalaryPayable.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.DriverSalaryPayable.Select]", parameters))
             {
                 list.Add(GetModel(dr));
                 if (countOf == 0)
