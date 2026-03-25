@@ -1,4 +1,4 @@
-﻿using ArmsModels.BaseModels;
+using ArmsModels.BaseModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -23,6 +23,7 @@ namespace ArmsServices
         int ExecuteNonQuery(string procedureName, List<SqlParameter> parameters);
         IEnumerable<IDataRecord> QuerySql(string Query, List<SqlParameter> parameters);
         object ExecuteScalar(string procedureName, List<SqlParameter> parameters);
+        Task<int> GetRecordCountAsync(string procedureName, List<SqlParameter> parameters);
         void ChangeConnectionString(string _ConnectionString);
         string GetCurrentConnectionString();
     }
@@ -184,6 +185,65 @@ namespace ArmsServices
                 }
                 connection.Open();
                 return cmd.ExecuteScalar();
+            }
+        }
+
+        public async Task<int> GetRecordCountAsync(string procedureName, List<SqlParameter> parameters)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(this.ConnectionString))
+                {
+                    await connection.OpenAsync();
+                    using (SqlCommand cmd = new SqlCommand(procedureName, connection))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        
+                        // Discover actual parameters to avoid "too many arguments" errors
+                        try {
+                            SqlCommandBuilder.DeriveParameters(cmd);
+                        } catch (Exception ex) {
+                             _logger.LogWarning($"[DbService] Could not derive parameters for {procedureName}: {ex.Message}. Falling back to manual assignment.");
+                        }
+
+                        if (parameters != null && parameters.Count > 0)
+                        {
+                            foreach (var p in parameters)
+                            {
+                                string pName = p.ParameterName.StartsWith("@") ? p.ParameterName : "@" + p.ParameterName;
+                                
+                                if (cmd.Parameters.Count > 0 && cmd.Parameters.Contains(pName))
+                                {
+                                    cmd.Parameters[pName].Value = p.Value ?? DBNull.Value;
+                                }
+                                else if (cmd.Parameters.Count == 0)
+                                {
+                                    // Fallback if DeriveParameters failed or wasn't supported
+                                    cmd.Parameters.Add(new SqlParameter(pName, p.Value ?? DBNull.Value));
+                                }
+                            }
+                        }
+
+                        int count = 0;
+                        using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                        {
+                            do {
+                                while (await dr.ReadAsync())
+                                {
+                                    count++;
+                                    if (count > 1) break; // We only need enough to know it's not empty
+                                }
+                                if (count > 1) break;
+                            } while (await dr.NextResultAsync());
+                        }
+                        return count;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"[DbService] Error getting record count for {procedureName}");
+                return -1; // Indicate error to trigger fallback
             }
         }
 

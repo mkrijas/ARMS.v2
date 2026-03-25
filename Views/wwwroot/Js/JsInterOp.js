@@ -14,8 +14,9 @@ function getHTTPObject() {
     return false;
 }
 
-function IFrameHightSetter() {
-    let frame = document.getElementById("PreviewClaim");
+function IFrameHightSetter(iframeId) {
+    let id = iframeId || "PreviewClaim";
+    let frame = document.getElementById(id);
     if (frame && frame.contentWindow && frame.contentWindow.document && frame.contentWindow.document.body) {
         let scrollHeight = frame.contentWindow.document.body.scrollHeight;
         frame.style.height = (scrollHeight ?? '3000') + 'px';
@@ -42,13 +43,14 @@ function IFrameHightSetter() {
 //}
 
 
-function runReport(url) {
-    var iframe = document.getElementById("PreviewClaim");
+function runReport(url, iframeId) {
+    var id = iframeId || "PreviewClaim";
+    var iframe = document.getElementById(id);
     if (iframe) {
         iframe.src = url;
         return true;
     } else {
-        console.error("Iframe with id 'PreviewClaim' not found.");
+        console.error("Iframe with id '" + id + "' not found.");
         return false;
     }
 }
@@ -57,16 +59,18 @@ function runReport(url) {
 // is never missed, then calls back into Blazor via DotNetObjectReference.
 // The iframe is already hidden via display:none by Blazor before this runs,
 // so no stale content flash — no need for an about:blank intermediate step.
-function runReportWithCallback(url, dotNetRef) {
-    var iframe = document.getElementById("PreviewClaim");
+function runReportWithCallback(iframeId, url, dotNetRef) {
+    if (window._ssrsLoadTimeout) clearTimeout(window._ssrsLoadTimeout);
+    
+    const iframe = document.getElementById(iframeId);
     if (!iframe) {
-        console.error("[runReportWithCallback] PreviewClaim iframe not found.");
+        console.error(`[runReportWithCallback] iframe not found: ${iframeId}`, dotNetRef);
         return false;
     }
 
-    // Safely clear old timeout if any
+    // Safely clear old timeout/handler if any
     if (window._ssrsLoadTimeout) clearTimeout(window._ssrsLoadTimeout);
-
+    
     // Register load handler BEFORE setting src
     iframe.onload = function () {
         if (window._ssrsLoadTimeout) clearTimeout(window._ssrsLoadTimeout);
@@ -77,14 +81,15 @@ function runReportWithCallback(url, dotNetRef) {
         }
     };
 
-    // Safety timeout: if SSRS fails to respond or is too slow, hide the loader after 15s
+    // Safety timeout: if SSRS fails to respond or is too slow, hide the loader after 12s
     window._ssrsLoadTimeout = setTimeout(function() {
         if (iframe.onload) {
             console.warn("[runReportWithCallback] Load timeout reached for " + url);
             iframe.onload();
         }
-    }, 15000);
+    }, 12000);
 
+    // Set src to start the load
     iframe.src = url;
     return true;
 }
@@ -174,63 +179,192 @@ function resetHorizontalScrollbarForElement(element) {
     }
 }
 
-// ─── Custom Report Toolbar Helpers ────────────────────────────────────────────
-
 /**
  * Initialise SSRS page pagination after iframe load.
- * Finds all page containers, hides pages 2..N, returns total page count.
- * Works across SSRS 2016+ (msrp-body-page), SSRS 2014 (_oReportCell IDs),
- * and older HTML4.0 renderers (page-break separators).
+ * Splits the all-pages HTML4.0 response into individually togglable divs.
  */
 function initReportPages(iframeId) {
-    try {
-        var iframe = document.getElementById(iframeId);
-        if (!iframe || !iframe.contentDocument) return 1;
-        var doc = iframe.contentDocument;
+    console.log("[initReportPages] Starting pagination scan for iframe:", iframeId);
+    return new Promise((resolve) => {
+        let attempts = 0;
+        const maxAttempts = 30;
+        const check = () => {
+            attempts++;
+            try {
+                var iframe = document.getElementById(iframeId);
+                if (!iframe || !iframe.contentDocument) {
+                    if (attempts < maxAttempts) { setTimeout(check, 200); return; }
+                    return resolve(1);
+                }
+                var doc = iframe.contentDocument;
 
-        var pages = _findSSRSPages(doc);
-        if (pages.length < 2) {
-            // Single page — nothing to hide; cache length 1 so "of 1" shows
-            iframe._ssrsPages = pages.length === 1 ? pages : null;
-            return pages.length || 1;
-        }
+                // Wait for SSRS processing indicator to clear
+                var isWaiting = doc.querySelector('[id*="WaitControl"], .WaitControl, [id*="Processing"]') !== null;
+                if (isWaiting && attempts < maxAttempts) {
+                    setTimeout(check, 200);
+                    return;
+                }
 
-        // Cache on the element; save original display so we can restore it
-        iframe._ssrsPages = pages;
-        pages.forEach(function (p, i) {
-            p._ssrsOrigDisplay = p.style.display || '';
-            p.style.display = i === 0 ? p._ssrsOrigDisplay : 'none';
-        });
+                var body = doc.body;
+                var bodyText = (body ? body.innerText : "") || "";
 
-        // Scroll to top of report
-        iframe.contentWindow.scrollTo(0, 0);
-        return pages.length;
-    } catch (e) {
-        console.warn('[initReportPages]', e);
-        return 1;
-    }
+                // If body is too short and still loading, retry
+                if (bodyText.trim().length < 30 && attempts < maxAttempts) {
+                    setTimeout(check, 200);
+                    return;
+                }
+
+                // Error detection — only match SSRS-specific error strings, NOT generic numbers
+                var errTerms = ["rsWrongItemType", "rsUnknownReportParameter", "rsReportParameterTypeMismatch", "Reporting Services Error", "The item '/"];
+                if (errTerms.some(t => bodyText.includes(t))) {
+                    console.warn("[initReportPages] SSRS error in content:", bodyText.substring(0, 200));
+                    return resolve(1);
+                }
+
+                // Empty report detection
+                if (bodyText.trim().length < 30) {
+                    return resolve(0);
+                }
+
+                // === Strategy 1: SSRS 2017+ modern renderer ===
+                var modernPages = Array.from(doc.querySelectorAll('.msrp-body-page'));
+                if (modernPages.length > 1) {
+                    console.log("[initReportPages] Strategy 1: Found", modernPages.length, "modern pages (.msrp-body-page)");
+                    return resolve(_wrapAndHidePages(modernPages, iframe));
+                }
+
+                // === Strategy 2: SSRS HTML4.0 — oReportCell divs ===
+                // Each page is a div/td with id containing "_oReportCell"
+                var reportCells = Array.from(doc.querySelectorAll('[id*="_oReportCell"]'));
+                // Filter to top-level ones only (remove nested)
+                reportCells = reportCells.filter(p => !reportCells.some(other => other !== p && other.contains(p)));
+                if (reportCells.length > 1) {
+                    console.log("[initReportPages] Strategy 2: Found", reportCells.length, "oReportCell pages");
+                    return resolve(_wrapAndHidePages(reportCells, iframe));
+                }
+
+                // === Strategy 3: page-break elements ===
+                // SSRS HTML4.0 puts <br style="page-break-after:always"> between pages
+                var breakSelector = [
+                    'div[style*="page-break"]',
+                    'br[style*="page-break"]',
+                    'td[style*="page-break"]',
+                    'tr[style*="page-break"]',
+                    'table[style*="page-break"]',
+                    'span[style*="page-break"]'
+                ].join(',');
+                var breaks = Array.from(doc.querySelectorAll(breakSelector));
+                if (breaks.length > 0) {
+                    console.log("[initReportPages] Strategy 3: Found", breaks.length, "page-break elements");
+                    // _groupByBreaks returns already-wrapped divs ready for show/hide
+                    var wrappers = _groupByBreaks(doc, breaks);
+                    if (wrappers.length > 1) {
+                        console.log("[initReportPages] Strategy 3: Created", wrappers.length, "wrapper pages from breaks");
+                        return resolve(_wrapAndHidePages(wrappers, iframe));
+                    }
+                }
+
+                // === Strategy 4: look for hidden input page markers ===
+                var hiddenCells = Array.from(doc.querySelectorAll('input[type="hidden"][id*="ReportCell"], input[type="hidden"][id*="PageCell"]'));
+                if (hiddenCells.length > 1) {
+                    var parentDivs = hiddenCells.map(h => {
+                        var p = h.parentNode;
+                        while (p && p.tagName !== 'DIV' && p.tagName !== 'TD' && p !== body) p = p.parentNode;
+                        return p;
+                    }).filter((v, i, self) => v && self.indexOf(v) === i);
+                    if (parentDivs.length > 1) {
+                        console.log("[initReportPages] Strategy 4: Found", parentDivs.length, "hidden-cell pages");
+                        return resolve(_wrapAndHidePages(parentDivs, iframe));
+                    }
+                }
+
+                // === Strategy 5: top-level large children of body ===
+                // This is a last-resort for reports that are flat lists of tables/divs
+                var topElements = Array.from(body.children).filter(el => {
+                    var tag = el.tagName;
+                    return (tag === 'TABLE' || tag === 'DIV') && el.offsetHeight > 100;
+                });
+                if (topElements.length > 1) {
+                    console.log("[initReportPages] Strategy 5: Found", topElements.length, "top-level elements as pages");
+                    return resolve(_wrapAndHidePages(topElements, iframe));
+                }
+
+                // === Strategy 6: Text-based Header Detection ===
+                // Search for the report title text which repeats on every page
+                var allDivs = Array.from(doc.querySelectorAll('div, span, td'));
+                var textBreaks = allDivs.filter(el => {
+                    var text = (el.innerText || el.textContent || "").trim().toUpperCase();
+                    return text.includes("CONSIGNMENT NOTE REPORT");
+                }).map(el => {
+                    // Walk up to the TR or top-level DIV that contains this header
+                    var p = el.parentNode;
+                    while (p && p.tagName !== 'TR' && p.tagName !== 'TABLE' && p !== body) {
+                        if (p.parentNode === body || (p.parentNode && p.parentNode.id === 'oReportCell')) break;
+                        p = p.parentNode;
+                    }
+                    return p || el;
+                });
+
+                // Remove duplicates (if multiple elements in same row matched)
+                textBreaks = textBreaks.filter((v, i, self) => v && self.indexOf(v) === i);
+
+                if (textBreaks.length > 1) {
+                    console.log("[initReportPages] Strategy 6: Found", textBreaks.length, "repeating headers as pages");
+                    var wrappers = _groupByBreaks(doc, textBreaks);
+                    if (wrappers.length > 1) {
+                        return resolve(_wrapAndHidePages(wrappers, iframe));
+                    }
+                }
+
+                // === Fallback: 1 page (body has content) ===
+                const pageBoundaries = _findSSRSPages(doc);
+                if (pageBoundaries.length > 1) { // Changed from 0 to 1 to match original logic of needing >1 page
+                    const pages = _groupByBreaks(doc, pageBoundaries);
+                    return resolve(_wrapAndHidePages(pages, iframe)); // Pass iframe to _wrapAndHidePages
+                }
+                iframe._ssrsPages = [body];
+                return resolve(1);
+
+            } catch (e) {
+                console.warn('[initReportPages] Exception:', e);
+                return resolve(1);
+            }
+        };
+        setTimeout(check, 300);
+    });
+}
+
+/** 
+ * Hide all pages except the first, store them on the iframe, return count.
+ */
+function _wrapAndHidePages(pages, iframe) {
+    iframe._ssrsPages = pages;
+    pages.forEach((p, i) => {
+        if (!p._origDisplay) p._origDisplay = p.style.display || (p.tagName === 'TBODY' ? 'table-row-group' : 'block');
+        p.style.display = i === 0 ? p._origDisplay : 'none';
+    });
+    if (iframe.contentWindow) iframe.contentWindow.scrollTo(0, 0);
+    return pages.length;
 }
 
 /**
  * Show pageNum (1-based) and hide all other pages.
- * Must be called AFTER initReportPages.
  */
 function showReportPage(iframeId, pageNum) {
     try {
         var iframe = document.getElementById(iframeId);
         if (!iframe || !iframe._ssrsPages) return;
-
         var pages = iframe._ssrsPages;
         var idx = Math.max(0, Math.min(pageNum - 1, pages.length - 1));
-        pages.forEach(function (p, i) {
-            p.style.display = i === idx ? p._ssrsOrigDisplay : 'none';
+        pages.forEach((p, i) => {
+            p.style.display = i === idx ? (p._origDisplay || 'block') : 'none';
         });
-
         if (iframe.contentWindow) iframe.contentWindow.scrollTo(0, 0);
     } catch (e) {
         console.warn('[showReportPage]', e);
     }
 }
+
 
 /** Internal: try multiple selectors to locate SSRS page elements */
 function _findSSRSPages(doc) {
@@ -276,47 +410,100 @@ function _findSSRSPages(doc) {
 function _groupByBreaks(doc, breaks) {
     if (!breaks || breaks.length === 0) return [];
 
-    // Find the common container. Usually they are siblings in a main div/body.
-    var firstBreak = breaks[0];
-    var container = firstBreak.parentNode;
-    
-    // Walk up to find the container that holds the bulk of the report
-    while (container && container.childNodes.length <= 1 && container.tagName !== 'BODY') {
-        container = container.parentNode;
+    // Helper: get the direct child of `ancestor` that contains (or is) `el`
+    function getDirectChild(ancestor, el) {
+        var node = el;
+        while (node && node.parentNode !== ancestor) {
+            node = node.parentNode;
+            if (!node || node === doc.documentElement) return null;
+        }
+        return node;
     }
-    if (!container) return [];
 
+    // 1. Determine common container (LCA or explicit)
+    var container = null;
+    var reportCell = doc.getElementById('oReportCell');
+    
+    if (breaks.length === 1) {
+        // Single break: just split its parent
+        container = breaks[0].parentNode;
+    } else {
+        // Multi-break: Find LCA
+        container = breaks[0].parentNode;
+        while (container && container !== doc.documentElement) {
+            var directChildren = breaks.map(b => getDirectChild(container, b)).filter(n => n);
+            var unique = new Set(directChildren);
+            
+            // If this container has children referencing multiple breaks, it's our split point
+            if (unique.size >= 2) break;
+            
+            // Heuristic: If we hit oReportCell or body, we MUST split here even if unique count is low
+            if (container === reportCell || container === body) break;
+            
+            container = container.parentNode;
+        }
+    }
+
+    if (!container || container === doc.documentElement) {
+        console.log("[_groupByBreaks] Failed to find common container for", breaks.length, "breaks");
+        return [];
+    }
+
+    console.log("[_groupByBreaks] Splitting container:", container.tagName, "ID:", container.id, "with", breaks.length, "breaks");
+
+    // 2. Identify the divider elements (direct children of container that lead to breaks)
+    var breakDividersList = breaks.map(b => getDirectChild(container, b)).filter(n => n);
+    var breakDividers = new Set(breakDividersList);
+    console.log("[_groupByBreaks] Unique dividers in container:", breakDividers.size);
+
+    // 3. Group childNodes
     var children = Array.from(container.childNodes);
     var groups = [];
     var current = [];
 
-    children.forEach(function (node) {
-        current.push(node);
-        // Check if node is a break OR contains a break element
-        var isBreak = breaks.indexOf(node) >= 0 || 
-                      (node.querySelector && breaks.some(function(b) { return node.contains(b); }));
-        
-        if (isBreak) {
-            if (current.length > 0) groups.push(current);
+    children.forEach(function(node) {
+        // If this node is a divider, start a new group
+        if (breakDividers.has(node)) {
+            if (current.length > 0) {
+                groups.push(current.slice());
+            }
             current = [];
         }
+        current.push(node);
     });
-    if (current.length > 0) groups.push(current);
+    if (current.length > 0) {
+        groups.push(current.slice());
+    }
 
-    // Hide the break markers so they don't add extra whitespace
-    breaks.forEach(function (b) { 
-        try { if (b.style) b.style.display = 'none'; } catch(e){}
-    });
+    console.log("[_groupByBreaks] Produced", groups.length, "groups");
 
-    // Wrap each group in a <div> so we can toggle visibility
-    return groups.map(function (nodes) {
-        var wrapper = doc.createElement('div');
-        wrapper.className = 'ssrs-page-wrapper';
-        wrapper.style.cssText = 'display:block; width:100%;';
-        nodes[0].parentNode.insertBefore(wrapper, nodes[0]);
-        nodes.forEach(function (n) { wrapper.appendChild(n); });
-        return wrapper;
-    });
+    // 4. Wrap each group in a container (div or tbody)
+    return groups
+        .filter(nodes => nodes.length > 0 && nodes[0] && nodes[0].parentNode)
+        .map(function(nodes, gIdx) {
+            var firstNode = nodes[0];
+            var parent = firstNode.parentNode;
+            
+            // Standard SSRS: TRs should be wrapped in TBODY, everything else in DIV
+            var isTableSplit = (firstNode.tagName === 'TR');
+            var wrapperTag = isTableSplit ? 'tbody' : 'div';
+            
+            var wrapper = doc.createElement(wrapperTag);
+            wrapper.className = 'ssrs-page-wrapper';
+            
+            if (isTableSplit) {
+                wrapper.style.display = 'table-row-group'; 
+                wrapper._origDisplay = 'table-row-group';
+            } else {
+                wrapper.style.display = 'block';
+                wrapper.style.width = '100%';
+                wrapper._origDisplay = 'block';
+            }
+
+            parent.insertBefore(wrapper, firstNode);
+            nodes.forEach(function(n) { wrapper.appendChild(n); });
+            return wrapper;
+        });
 }
 
 /**
