@@ -29,15 +29,15 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
 
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.Autosettle.Approve]", parameters);
         }
 
         // Method to auto-settle an outstanding bill
-        public int? AutoSettle(AutoSettleModel model)
+        public AutoSettleModel Update(AutoSettleModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "AutoSettle"),
+               new SqlParameter("@Operation", "Update"),
                new SqlParameter("@AutoSettleID", model.AutoSettleID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@BranchID", model.BranchID),
@@ -48,11 +48,39 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@Bills", model.Bills.ToDataTable()),
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Update]", parameters);
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.Autosettle.Update]", parameters))
+            {
+                return new AutoSettleModel()
+                {
+                    PartyInfo = new PartyModel()
+                    {
+                        PartyID = dr.GetInt32("PartyID"),
+                        TradeName = dr.GetString("tradeName"),
+                    },
+                    AutoSettleID = dr.GetInt32("AutoSettleID"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    DocumentDate = dr.GetDateTime("DocumentDate"),
+                    DocumentNumber = dr.GetString("DocumentNumber"),
+                    NatureOfTransaction = dr.GetString("NatureOfTransaction"),
+                    MID = dr.GetInt32("MID"),
+                    Narration = dr.GetString("Narration"),
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
+                    AuthLevelId = dr.GetInt32("AuthLevelId"),
+                    AuthStatus = dr.GetString("AuthStatus"),
+                    UserInfo =
+                    {
+                        UserID = dr.GetString("UserID"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        RecordStatus = dr?.GetByte("RecordStatus"),
+                    }
+                };
+            }
+            return null;            
         }
 
         // Method to delete an auto-settle entry
-        public int DeleteAutoSettle(int? ID, string userID)
+        public int Delete(int? ID, string userID)
         {
             //throw new NotImplementedException();
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -61,7 +89,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", userID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.Autosettle.Delete]", parameters);
         }
 
         // Method to delete an auto-settle entry
@@ -73,7 +101,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AutoSettleID", ID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.Autosettle.Select]", parameters))
             {
                 yield return new BillsPaidModel()
                 {
@@ -104,85 +132,7 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
-        }
-
-        // Method to select approved outstanding bills
-        public IEnumerable<AutoSettleModel> SelectAutoSettledEntriesByApproved(int? BranchID, int numberOfRecords)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByApproved"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@numberOfRecords", numberOfRecords),
-            };
-
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Select]", parameters))
-            {
-                yield return new AutoSettleModel()
-                {
-                    PartyInfo = new PartyModel()
-                    {
-                        PartyID = dr.GetInt32("PartyID"),
-                        TradeName = dr.GetString("tradeName"),
-                    },
-                    AutoSettleID = dr.GetInt32("AutoSettleID"),
-                    BranchID = dr.GetInt32("BranchID"),
-                    DocumentDate = dr.GetDateTime("DocumentDate"),
-                    DocumentNumber = dr.GetString("DocumentNumber"),
-                    NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                    MID = dr.GetInt32("MID"),
-                    Narration = dr.GetString("Narration"),
-                    TotalAmount = dr.GetDecimal("TotalAmount"),
-                    AuthLevelId = dr.GetInt32("AuthLevelId"),
-                    AuthStatus = dr.GetString("AuthStatus"),
-                    UserInfo =
-                    {
-                        UserID = dr.GetString("UserID"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        RecordStatus = dr?.GetByte("RecordStatus"),
-                    }
-                };
-            }
-        }
-
-        // Method to select unapproved outstanding bills
-        public IEnumerable<AutoSettleModel> SelectAutoSettledEntriesByUnapproved(int? BranchID, int numberOfRecords)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByUnapproved"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@numberOfRecords", numberOfRecords),
-            };
-
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Select]", parameters))
-            {
-                yield return new AutoSettleModel()
-                {
-                    PartyInfo = new PartyModel()
-                    {
-                        PartyID = dr.GetInt32("PartyID"),
-                        TradeName = dr.GetString("tradeName"),
-                    },
-                    AutoSettleID = dr.GetInt32("AutoSettleID"),
-                    BranchID = dr.GetInt32("BranchID"),
-                    DocumentDate = dr.GetDateTime("DocumentDate"),
-                    DocumentNumber = dr.GetString("DocumentNumber"),
-                    NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                    MID = dr.GetInt32("MID"),
-                    Narration = dr.GetString("Narration"),
-                    TotalAmount = dr.GetDecimal("TotalAmount"),
-                    AuthLevelId = dr.GetInt32("AuthLevelId"),
-                    AuthStatus = dr.GetString("AuthStatus"),
-                    UserInfo =
-                    {
-                        UserID = dr.GetString("UserID"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        RecordStatus = dr?.GetByte("RecordStatus"),
-                    }
-                };
-            }
-        }
+        }      
 
         // Method to select an outstanding bill by its ID
         public OutstandingBillsModel SelectByID(int? ID)
@@ -218,27 +168,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-        //public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID, int? PartyBranchID)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID)
-        //{
-        //    List<SqlParameter> parameters = new List<SqlParameter>
-        //    {
-        //       new SqlParameter("@PartyBranchID", PartyBranchID),
-        //       new SqlParameter("@PartyID", PartyID),
-        //       new SqlParameter("@BranchID", BranchID),
-        //    };
-
-        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.Select]", parameters))
-        //    {
-        //        yield return GetModel(dr);
-        //    }
-        //    //   throw new NotImplementedException();
-        //}
-
         // Method to select outstanding bills by date period
         public IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
@@ -253,49 +182,7 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-
-        //public IEnumerable<OutstandingBillsModel> SelectOutstandingPayments(int? PartyID, int? BranchID)
-        //{
-        //    List<SqlParameter> parameters = new List<SqlParameter>
-        //    {
-        //       new SqlParameter("@Operation", "ByBranch"),
-        //       new SqlParameter("@BranchID", BranchID),
-        //       new SqlParameter("@PartyID", PartyID),
-        //    };
-        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingPayments.Select]", parameters))
-        //    {
-        //        yield return new OutstandingBillsModel()
-        //        {
-        //            ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
-        //            ReferenceDocNo = dr.GetString("ReferenceDocNo"),
-        //            OutstandingAmount = dr.GetDecimal("OutstandingAmount"),                     
-        //             BranchName = dr.GetString("BranchName"),
-        //             PartyInfo = new PartyModel()
-        //             {
-        //                 PartyID = dr.GetInt32("PartyID"),
-        //                 PartyCode= dr.GetString("PartyID"),
-        //             },
-        //             //OpID = dr.GetInt32("OpID"),
-        //             //PaymentTransactionID = dr.GetInt32("PaymentTransactionID"),
-        //             //PaymentTransactionType = dr.GetString("PaymentTransactionType"),
-        //             //ReferenceDate = dr.GetDateTime("ReferenceDate"),
-        //             //ReferenceNumber = dr.GetString("ReferenceNumber"),
-        //        };
-        //    }
-        //}
-
-        //public int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills)
-        //{
-        //    List<SqlParameter> parameters = new List<SqlParameter>
-        //    {
-        //       new SqlParameter("@Operation", "Settle"),
-        //       new SqlParameter("@Bills", Bills.ToDataTable()),
-        //       new SqlParameter("@OPID", OPID),
-        //    };
-        //    return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingPayments.SettleBills]", parameters);
-
-        //}
-
+      
         // Private method to convert an IDataRecord to an OutstandingBillsModel
         private OutstandingBillsModel GetModel(IDataRecord dr)
         {
@@ -351,6 +238,86 @@ namespace ArmsServices.DataServices
                 BranchName = dr.GetString("BranchName"),
                 Amount = dr.GetDecimal("Amount"),
                 AccountName = dr.GetString("AccountName"),
+            };
+        }
+
+        public int Reverse(int? ID, string UserID, string Remarks)
+        {
+            throw new NotImplementedException();
+        }
+
+        AutoSettleModel IbaseInterface<AutoSettleModel>.SelectByID(int? ID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<AutoSettleModel> Select(int? BranchID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<AutoSettleModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<AutoSettleModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public PagedResult<AutoSettleModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved)
+        {
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Searchterm", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+            };
+            List<AutoSettleModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.Autosettle.Select]", parameters))
+            {
+                list.Add(
+                    new AutoSettleModel()
+                    {
+                        PartyInfo = new PartyModel()
+                        {
+                            PartyID = dr.GetInt32("PartyID"),
+                            TradeName = dr.GetString("tradeName"),
+                        },
+                        AutoSettleID = dr.GetInt32("AutoSettleID"),
+                        BranchID = dr.GetInt32("BranchID"),
+                        DocumentDate = dr.GetDateTime("DocumentDate"),
+                        DocumentNumber = dr.GetString("DocumentNumber"),
+                        NatureOfTransaction = dr.GetString("NatureOfTransaction"),
+                        MID = dr.GetInt32("MID"),
+                        Narration = dr.GetString("Narration"),
+                        TotalAmount = dr.GetDecimal("TotalAmount"),
+                        AuthLevelId = dr.GetInt32("AuthLevelId"),
+                        AuthStatus = dr.GetString("AuthStatus"),
+                        UserInfo =
+                            {
+                                UserID = dr.GetString("UserID"),
+                                TimeStampField = dr.GetDateTime("TimeStamp"),
+                                RecordStatus = dr?.GetByte("RecordStatus"),
+                            }
+                    });
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+            return new PagedResult<AutoSettleModel>
+            {
+                Items = list,
+                TotalRecords = countOf
             };
         }
     }

@@ -1,15 +1,9 @@
 @page "/AutoSettleView"
 @page "/AutoSettleView/{id:int}"
 @using System.Threading;
-
 @inject IOutstandingBillsService Iservice
-@inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
-@inject IDialogService DialogService
-@inject SignalRService signalRService
-@inject IPushNotificationService IpushNotificationService
+@inherits ViewComponentBase<AutoSettleModel>
+
 
 
 <style>
@@ -26,18 +20,7 @@
             }
 </style>
 
-@if (_isLoading)
-{
-    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
-        <LoaderComponent IsFullScreen="true" 
-                        ShowLogo="false" 
-                        Size="medium" 
-                        LoadingText="Loading Auto Settlements" 
-                        SubText="Please wait..." />
-    </div>
-}
-else
-{
+
     <div class="fade-in">
         <div class="admin-header-tiered mb-6">
             <div class="d-flex align-center justify-space-between">
@@ -45,7 +28,7 @@ else
                     <MudText Typo="Typo.h4" Class="admin-title">Auto Settlement</MudText>
                     <MudText Typo="Typo.body2" Class="admin-subtitle">Manage automated bill settlements and outstanding balances. Track settlement history and verify entries with integrated approval workflows.</MudText>
                 </div>
-                <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenDialogpayment(new AutoSettleModel(),false))" Disabled="@_busy">NEW SETTLEMENT</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenForm(new AutoSettleModel(),false))" Disabled="@_busy">NEW SETTLEMENT</MudButton>
             </div>
         </div>
 
@@ -54,15 +37,23 @@ else
                 <div style="flex-grow: 1; min-width: 300px;">
                     <MudTextField @bind-Value="searchTerm" Placeholder="Search by party or document number..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
                 </div>
-                <div class="d-flex align-center gap-4">
-                    <MudTextField @bind-Value="@NumberOfRecords" Label="Max Records" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 100px;" Dense="true" />
-                    <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+                <div class="d-flex align-center gap-4">                    
+                    <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
                 </div>
             </div>
         </div>
 
         <div class="admin-glass-card pa-0 overflow-hidden">
-            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true" T="AutoSettleModel">
+        <MudTable ServerData="LoadServerData" T="AutoSettleModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true" T="AutoSettleModel">
+            <LoadingContent>
+                <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                    <LoaderComponent IsFullScreen="false"
+                                     ShowLogo="false"
+                                     Size="large"
+                                     LoadingText="Loading...."
+                                     SubText="Fetching Data..." />
+                </div>
+            </LoadingContent>                
                 <HeaderContent>
                     <MudTh><MudTableSortLabel SortBy="new Func<AutoSettleModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<AutoSettleModel, object>(x=> x.PartyInfo.TradeName)"><span class="admin-header-text">PARTY NAME</span></MudTableSortLabel></MudTh>
@@ -88,31 +79,31 @@ else
                                 @if (context.MID == null)
                                 {
                                     <MudTooltip Text="Cancel Bill">
-                                        <MudIconButton OnClick="@(() => Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.DoNotDisturb" Size="Size.Small" Variant="Variant.Text" />
+                                        <MudIconButton OnClick="@(() => Delete(context.AutoSettleID))" Color="Color.Error" Icon="@Icons.Material.Filled.DoNotDisturb" Size="Size.Small" Variant="Variant.Text" />
                                     </MudTooltip>
                                 }
                                 else
                                 {
-                                    <EntryReversedComponent DocTypeID="PaymentDocTypeID" DocumentID="context.AutoSettleID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                                    <EntryReversedComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="context.AutoSettleID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
                                 }
                             }
                             else if (@context.AuthLevelId != 100)
                             {
                                 <MudTooltip Text="Verify Settlement">
-                                    <MudIconButton OnClick="@(()=> OpenDialogpayment(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
+                                    <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
                                 </MudTooltip>
                             }
 
                             <MudTooltip Text="View Details">
-                                <MudIconButton OnClick="@(()=> OpenDialogpayment(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                                <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
                             </MudTooltip>
                             
                             <MudTooltip Text="Edit Settlement">
-                                <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialogpayment(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
                             </MudTooltip>
 
                             <MudTooltip Text="Remove Settlement">
-                                <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                <MudIconButton Disabled="@(context.AutoSettleID != null)" OnClick="@(()=> Delete(context.AuthLevelId))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
                             </MudTooltip>
                         </div>
                     </MudTd>
@@ -125,119 +116,27 @@ else
             </MudTable>
         </div>
     </div>
-}
 
 @code {
 
-    private bool _isLoading = true;
-    private DateTime _loadStartTime;
+    protected override List<AutoSettleModel> _collection { get; set; } = [];
 
-    private AutoSettleModel model = new();
-    private List<AutoSettleModel> collection = new();
-    public bool IsApproved { get; set; } = false;
-    private int numberOfRecords = 100;
-    private string searchTerm = "";
-    private bool _busy;
-
-    [Parameter]
-    public int? id { get; set; } = null;
-    private int? branchID = null;
-    private string UserID = null;
-
-    #region SignaIR Notification
-
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
-
-    private int NumberOfRecords
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
     {
-        get => numberOfRecords;
-        set
-        {
-            if (numberOfRecords != value)
-            {
-                numberOfRecords = value;
-                ReloadTable();
-            }
-        }
-    }
+        DocumentTypeID = 118,
+        DocumentName = "AutoSettle"
+    };
 
-    public bool HasPermissionPaymentServiceDelete { get; set; } = false;
-    public int PaymentDocTypeID = 118;
-
-    public bool HasPermissionPaymentInitiatedServiceInitiate { get; set; } = false;
-    //  public int PaymentInitiatedDocTypeID = 15;
-
-    private void HandleSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            ReloadTable();
-        }
-    }
-
-    // Method to reload the auto-settlement table
-    private void ReloadTable()
-    {
-        GetAll(IsApproved, NumberOfRecords);
-    }
-
-    // Method to handle changes in the approval status
-    void ApprovedChanged(bool value)
-    {
-        IsApproved = value;
-        GetAll(IsApproved, NumberOfRecords);
-    }
-
-    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
-        _loadStartTime = DateTime.Now;
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionPaymentServiceDelete = await Irole.HasClaim(PaymentDocTypeID.ToString(), "Delete", ctc.Token);
-        //HasPermissionPaymentInitiatedServiceInitiate = await Irole.HasClaim(PaymentInitiatedDocTypeID.ToString(), "Initiate", ctc.Token);
-
-        model = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        var user = authprov.User;
-        UserID = user.Identity.Name;
-        GetAll(IsApproved, NumberOfRecords);
-        await Task.Delay(200);
-        await signalRService.StartAsync();
-        if (id != null && collection != null && collection.Any(g => g.AutoSettleID == id))
+        await base.OnInitializedAsync();
+        if (id != null && _collection != null && _collection.Any(g => g.AutoSettleID == id))
         {
-            await OpenDialogpayment(collection.FirstOrDefault(s => s.AutoSettleID == id), true);
-        }
-        await EnsureMinimumLoadTime();
-        _isLoading = false;
-    }
-
-    private async Task EnsureMinimumLoadTime()
-    {
-        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
-        if (elapsed < 100)
-        {
-            await Task.Delay(100 - (int)elapsed);
+            await OpenForm(_collection.FirstOrDefault(s => s.AutoSettleID == id), true);
         }
     }
-
-    // Method to retrieve all auto-settlements based on approval status and number of records
-    private void GetAll(bool val, int numberOfRecords)
-    {      
-        // Load auto-settlements based on approval status
-        if (val)
-        {
-            collection = Iservice.SelectAutoSettledEntriesByApproved(branchID, NumberOfRecords).ToList();
-        }
-        else
-        {
-            collection = Iservice.SelectAutoSettledEntriesByUnapproved(branchID, NumberOfRecords).ToList();
-        }
-    }
-
-    // Method to open the auto-settlement dialog for adding or editing
-    public async Task OpenDialogpayment(AutoSettleModel obj, bool ReadOnly)
+  
+    protected override async Task OpenForm(AutoSettleModel _model, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -245,59 +144,21 @@ else
             return;
         }
         _busy = true;
+        DialogOptions largeWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", obj.Clone());
+        parms.Add("model", _model.Clone());
         parms.Add("PageToRedirectLink", "/AutoSettleView");
         parms.Add("ReadOnly", ReadOnly);
-        var dialog = await DialogService.ShowAsync<AutoSettleDialog>(obj.AutoSettleID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var dialog = await dialogService.ShowAsync<JournalDialog>(_model == null ? "ADD" : "EDIT", parms, largeWidth);
         var result = await dialog.Result;
-        if (!result.Canceled)
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
         {
-            // var ReturnData = (Au)result.Data;
-            // notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            // notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            // notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-            // notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-            // notificationMessage.RedirectedTo = 0;
-            // notificationMessage.ExpiredBy = 7;
-            // notificationMessage.DocumentID = ReturnData.PaymentMemoID;
-            // notificationMessage.MessageGroupID = "PendingVerification";
-            // notificationMessage.PageToRedirectLink = "/PaymentMemoView";
-            // notificationMessage.ClaimValue = "Verify 1";
-            // notificationMessage.DocumentTypeID = PaymentDocTypeID;
-            // notificationMessage.MsgDate = DateTime.Now;
-            // await signalRService.Send(notificationMessage);
-
+            var ReturnData = (JournalModel)result.Data;
+            await _table.ReloadServerData();
         }
-        GetAll(IsApproved, NumberOfRecords);
+        
         await Task.Delay(200);
         _busy = false;
-    }
-
-    // Method to delete an auto-settlement
-    private async Task Delete(AutoSettleModel model)
-    {
-        if (HasPermissionPaymentServiceDelete)
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.PartyInfo.TradeName + " (" + model.DocumentDate + ") ?");
-            if (result == true)
-            {
-                // Call the service to delete the auto-settlement
-                Iservice.DeleteAutoSettle(model.AutoSettleID, UserID);
-                snackbar.Add("Deleted Successfully", Severity.Success);
-            }
-            GetAll(IsApproved, NumberOfRecords);
-            StateHasChanged();
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Permission denied!",
-                "You don't have permission to Delete record.");
-        }
-    }
-
-   
+    }   
 }
