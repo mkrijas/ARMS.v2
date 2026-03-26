@@ -303,6 +303,13 @@ namespace Views.Controllers
                 {
                     string content = await response.Content.ReadAsStringAsync();
                     
+                    if (fullUrl.Contains("ConsignmentNoteReport") && !isAjax)
+                    {
+                        try {
+                            System.IO.File.WriteAllText(@"c:\Swati\Projects\Updated ARMS\ARMS.v2\ARMS_Reports\ARMS_Reports\consignment_debug.html", content);
+                        } catch { }
+                    }
+                    
                     if (!isAjax)
                     {
                          string trace = content.Length > 1000 ? content.Substring(0, 1000) : content;
@@ -400,6 +407,20 @@ namespace Views.Controllers
                         // 4. Configuration object rewrites
                         content = content.Replace("\"/ReportServer\"", "\"/ssrs-proxy\"");
                         content = content.Replace("'/ReportServer'", "'/ssrs-proxy'");
+
+                        // 5. Inject UpdatePanel disabler to prevent SSRS from hanging on AJAX requests
+                        if (content.IndexOf("</body>", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            string disablerScript = @"
+<script>
+    window.addEventListener('load', function() {
+        if (typeof Sys !== 'undefined' && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+            Sys.WebForms.PageRequestManager.getInstance()._updatePanelIDs = [];
+        }
+    });
+</script>";
+                            content = System.Text.RegularExpressions.Regex.Replace(content, "</body>", disablerScript + "</body>", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        }
                     }
 
 

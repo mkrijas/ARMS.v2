@@ -1,6 +1,12 @@
 @using System.Net
 @implements IDisposable
 @inject IJSRuntime JSRuntime
+@inject IDbService DbService
+@inject ILogger<ReportViewer> Logger
+@using System.Data
+@using Microsoft.Data.SqlClient
+@using Microsoft.Extensions.Logging
+@using ArmsServices
 
 <style>
     /* ── Report card ──────────────────────────────────────── */
@@ -171,12 +177,29 @@
         top: 0; left: 0;
         width: 100%; height: 100%;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: rgba(245, 246, 250, 0.7);
-        backdrop-filter: blur(2px);
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(4px);
         z-index: 10;
+        animation: fadeIn 0.3s ease-out;
     }
+    .report-empty-state {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #fdfdfd;
+        z-index: 5;
+        text-align: center;
+    }
+    .opa-30 { opacity: 0.3; }
+    .opa-50 { opacity: 0.5; }
+    .opa-60 { opacity: 0.6; }
 </style>
 
 <div class="rv-card">
@@ -283,11 +306,22 @@
             </div>
         }
 
-        @* ── iframe ── *@
-        @if (_reportLoaded || _isLoading)
+        @* ── Empty State ── *@
+        @if (_reportLoaded && _totalPages <= 0)
         {
-            <iframe id="PreviewClaim"
-                    class="rptStyle"
+            <div class="report-empty-state fade-in">
+                <MudIcon Icon="@Icons.Material.Filled.ContentPasteSearch" Size="Size.Large" Class="opa-30 mb-4" Style="width:80px; height:80px;" />
+                <MudText Typo="Typo.h5" Class="opa-60 fw-700">No Data Found</MudText>
+                <MudText Typo="Typo.body1" Class="opa-50 px-6">The selected filters or date range returned no results from the system.</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-4" OnClick="Refresh">TRY REFRESH</MudButton>
+            </div>
+        }
+
+        @* ── iframe ── *@
+        @if (_isVisible)
+        {
+            <iframe id="@_iframeId"
+                    class="rptStyle @((_reportLoaded && _totalPages > 0) ? "" : "d-none")"
                     scrolling="auto">
             </iframe>
         }
@@ -298,23 +332,27 @@
 
 @code {
 
-    [Parameter] public string ReportName  { get; set; }
+    [Parameter] public string ReportName { get; set; }
     [Parameter] public Dictionary<string, string> Parameters { get; set; }
 
+    [Parameter] public string SpName { get; set; }
+    [Parameter] public int? DataCount { get; set; } = 0;
+
     // ── State ──────────────────────────────────────────────────────────────────
-    private bool   _renderRequested = false;
-    private string _pendingUrl      = string.Empty;
-    private string _baseReportUrl   = string.Empty;
-    private bool   _isLoading       = false;
-    private bool   _reportLoaded    = false;
-    private int    _currentPage     = 1;
-    private int    _totalPages      = 0;
-    private int    _zoom            = 100;
-    private string _findText        = string.Empty;
-    private DotNetObjectReference<ReportViewer> _dotNetRef;
+    private string _iframeId = "rv_" + Guid.NewGuid().ToString("N");
+    private bool _isVisible = true;
+    private bool _isLoading = false;
+    private bool _reportLoaded = false;
+    private string _reportUrl = "";
+    private string _errorMessage = null;
+    private string _alertMessage = null;
+    private int _currentPage = 1;
+    private int _totalPages = 0;
+    private int _zoom = 100;
+    private string _findText = string.Empty;
+    private DotNetObjectReference<ReportViewer> _objRef;
 
     // ── SVG Icon helper ───────────────────────────────────────────────────────
-    // Renders an inline SVG <path> so we don't need any external icon font.
     private RenderFragment NavSvg(string path, int w = 24, int h = 24) => __builder =>
     {
         __builder.OpenElement(0, "svg");
@@ -331,29 +369,7 @@
 
     protected override void OnInitialized()
     {
-        _dotNetRef = DotNetObjectReference.Create(this);
-    }
-
-    protected override Task OnParametersSetAsync()
-    {
-        if (_renderRequested && !string.IsNullOrEmpty(ReportName))
-        {
-            _renderRequested = false;
-            _currentPage    = 1;
-            _baseReportUrl  = BuildBaseUrl(ReportName);
-            _pendingUrl     = _baseReportUrl;
-        }
-        return Task.CompletedTask;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!string.IsNullOrEmpty(_pendingUrl))
-        {
-            var url     = _pendingUrl;
-            _pendingUrl = string.Empty;
-            await JSRuntime.InvokeVoidAsync("runReportWithCallback", url, _dotNetRef);
-        }
+        _objRef = DotNetObjectReference.Create(this);
     }
 
     // ── Public API ─────────────────────────────────────────────────────────────
@@ -362,44 +378,97 @@
 
     public async Task RenderReport(string reportNameOverride = null)
     {
-        _isLoading    = true;
-        _reportLoaded = false;
-        _pendingUrl   = string.Empty;
-        _currentPage  = 1;
-        _totalPages   = 0;
-
-        string targetReport = !string.IsNullOrEmpty(reportNameOverride) ? reportNameOverride : ReportName;
-
-        if (!string.IsNullOrEmpty(targetReport))
+        try
         {
-            _baseReportUrl = BuildBaseUrl(targetReport);
-            _pendingUrl    = _baseReportUrl;
-        }
+            _isLoading = true;
+            _reportLoaded = false;
+            _errorMessage = null;
+            _alertMessage = null;
+            _totalPages = 0;
+            _currentPage = 1;
+            StateHasChanged();
 
-        StateHasChanged();
-        await Task.CompletedTask;
+            // --- FAST COUNT CHECK ---
+            if (DataCount == 0 && !string.IsNullOrEmpty(SpName))
+            {
+                Logger.LogInformation($"[ReportViewer] Performing Fast Count check for {SpName}...");
+                List<SqlParameter> sqlParams = new List<SqlParameter>();
+                foreach (var p in Parameters)
+                {
+                    if (!p.Key.StartsWith("_") && !p.Key.Contains(":"))
+                        sqlParams.Add(new SqlParameter("@" + p.Key, p.Value));
+                }
+                try
+                {
+                    DataCount = await DbService.GetRecordCountAsync(SpName, sqlParams);
+                    Logger.LogInformation($"[ReportViewer] Fast Count Result: {DataCount}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, $"[ReportViewer] Failed to get count for {SpName}. Falling back.");
+                }
+            }
+
+            // if (DataCount == 0)
+            // {
+            //     _reportLoaded = true;
+            //     _totalPages = 0;
+            //     _isLoading = false;
+            //     StateHasChanged();
+            //     return;
+            // }
+
+            // --- NUCLEAR ISOLATION ---
+            _isVisible = false;
+            StateHasChanged();
+            _iframeId = "rv_" + Guid.NewGuid().ToString("N");
+            _isVisible = true;
+
+            string targetReport = !string.IsNullOrEmpty(reportNameOverride) ? reportNameOverride : ReportName;
+            _reportUrl = $"/ssrs-proxy/ARMS_V2/ARMS_Reports/{targetReport}?rs:Command=Render&rs:Format=HTML5&rc:Toolbar=false&rc:Parameters=false&rc:Zoom={_zoom}";
+            if (Parameters != null)
+                foreach (var item in Parameters)
+                    _reportUrl += $"&{item.Key}={Uri.EscapeDataString(item.Value)}";
+
+            StateHasChanged();
+            await Task.Delay(200);
+            await JSRuntime.InvokeVoidAsync("runReportWithCallback", _iframeId, _reportUrl, _objRef);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "Failed to load report: " + ex.Message;
+            _isLoading = false;
+            StateHasChanged();
+        }
     }
 
     [JSInvokable]
-    public async void OnIframeLoadComplete()
+    public async Task OnIframeLoadComplete()
     {
+        Console.WriteLine($"[ReportViewer] Load complete for {ReportName}");
+        
+        try
+        {
+            _totalPages = await JSRuntime.InvokeAsync<int>("initReportPages", _iframeId);
+            Console.WriteLine($"[ReportViewer] Pages detected: {_totalPages}");
+        }
+        catch (Exception ex) 
+        { 
+            Console.WriteLine($"[ReportViewer] Error initializing pages: {ex.Message}");
+            _totalPages = 1; 
+        }
+
         _isLoading    = false;
         _reportLoaded = true;
         _currentPage  = 1;
-        // initReportPages: hides pages 2..N, returns total page count
-        try
-        {
-            _totalPages = await JSRuntime.InvokeAsync<int>("initReportPages", "PreviewClaim");
-        }
-        catch { _totalPages = 1; }
-        StateHasChanged();
+        
+        await InvokeAsync(StateHasChanged);
     }
 
-    public void Dispose() => _dotNetRef?.Dispose();
+    public void Dispose() => _objRef?.Dispose();
 
     // ── Toolbar actions ─────────────────────────────────────────────────────────
 
-    // Page navigation — client-side show/hide, no iframe reload
     private async Task GoFirst()
     {
         if (_currentPage > 1) { _currentPage = 1; await ShowPage(_currentPage); }
@@ -429,72 +498,52 @@
         }
     }
 
-    // ShowPage: instant client-side — just toggles display in the already-loaded iframe
     private async Task ShowPage(int page)
     {
-        await JSRuntime.InvokeVoidAsync("showReportPage", "PreviewClaim", page);
+        await JSRuntime.InvokeVoidAsync("showReportPage", _iframeId, page);
         StateHasChanged();
     }
 
-    // Refresh: server round-trip to reload the full report
     private async Task Refresh()
     {
-        _isLoading  = true;
-        _pendingUrl = _baseReportUrl + $"&rc:Zoom={_zoom}";
-        StateHasChanged();
-        await Task.CompletedTask;
+        DataCount = null; // Clear to force fresh count check
+        await RenderReport();
     }
 
-    // Zoom: server round-trip (changes server-side rendering scale)
     private async Task OnZoomChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out int z)) _zoom = z;
-        _isLoading  = true;
-        _pendingUrl = _baseReportUrl + $"&rc:Zoom={_zoom}";
-        StateHasChanged();
-        await Task.CompletedTask;
+        await RenderReport();
     }
 
     private async Task OnExportChanged(ChangeEventArgs e)
     {
         var format = e.Value?.ToString();
         if (string.IsNullOrEmpty(format)) return;
-        // Export opens in a new tab — use base URL with format swapped
-        var exportUrl = _baseReportUrl.Replace("&rs:Format=HTML4.0", $"&rs:Format={format}");
+        
+        var exportUrl = _reportUrl.Replace("rs:Format=HTML5", $"rs:Format={format}");
         await JSRuntime.InvokeVoidAsync("open", exportUrl, "_blank");
     }
 
     private async Task PrintReport()
     {
-        await JSRuntime.InvokeVoidAsync("printIframe", "PreviewClaim");
+        await JSRuntime.InvokeVoidAsync("printIframe", _iframeId);
     }
 
     private async Task FindText()
     {
         if (!string.IsNullOrEmpty(_findText))
-            await JSRuntime.InvokeVoidAsync("findInIframe", "PreviewClaim", _findText, false);
+            await JSRuntime.InvokeVoidAsync("findInIframe", _iframeId, _findText, false);
     }
 
     private async Task FindNextText()
     {
         if (!string.IsNullOrEmpty(_findText))
-            await JSRuntime.InvokeVoidAsync("findInIframe", "PreviewClaim", _findText, true);
+            await JSRuntime.InvokeVoidAsync("findInIframe", _iframeId, _findText, true);
     }
 
     private async Task OnFindKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter") await FindText();
-    }
-
-    // ── Helpers ─────────────────────────────────────────────────────────────────
-
-    private string BuildBaseUrl(string reportName)
-    {
-        // No rc:StartPage — all pages fetched at once; JS hides pages 2..N
-        var url = $"/ssrs-proxy/ARMS_V2/ARMS_Reports/{reportName}?rs:Command=Render&rs:Format=HTML4.0&rc:Toolbar=false&rc:Parameters=false&rc:Zoom={_zoom}";
-        if (Parameters != null)
-            foreach (var item in Parameters)
-                url += $"&{item.Key}={Uri.EscapeDataString(item.Value)}";
-        return url;
     }
 }
