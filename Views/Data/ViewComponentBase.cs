@@ -75,7 +75,7 @@ namespace Views.Data
         
         // protected abstract void LoadData(bool val, int numberOfRecords);
 
-        protected abstract Task OpenForm(T editModel, bool ReadOnly, bool DisableAddition = false);
+        protected abstract Task OpenForm(T editModel, bool ReadOnly = true, bool DisableAddition = false);
 
         protected virtual async Task Delete(int? ID)
         {
