@@ -31,7 +31,7 @@ namespace Views.Data
         protected abstract DocumentInfoModel DocInfo { get; set; }
         public bool ShowApproved { get; set; } = false;        
         protected MudTable<T> _table;
-        protected abstract List<T> _collection { get; set; }
+        protected virtual List<T> _collection { get; set; }
 
         private int numberOfRecords = 100;
         protected string searchTerm = "";
@@ -75,7 +75,7 @@ namespace Views.Data
         
         // protected abstract void LoadData(bool val, int numberOfRecords);
 
-        protected abstract Task OpenForm(T editModel, bool ReadOnly, bool DisableAddition = false);
+        protected abstract Task OpenForm(T editModel, bool ReadOnly = true, bool DisableAddition = false);
 
         protected virtual async Task Delete(int? ID)
         {

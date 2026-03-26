@@ -1,32 +1,9 @@
 @page "/InterBranchContraView"
 @page "/InterBranchContraView/{id:int}"
-@using ArmsModels.BaseModels.Finance.Transactions
 @using System.Threading;
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
 @inherits ViewComponentBase<ContraModel>
-@inject NavigationManager uriHelper;
-@inject SignalRService signalRService
 @inject IContraService Iservice
-@inject ICostCenterService costIservice
-@inject IDimensionService dimensionIservice
-@inject MudBlazor.ISnackbar snackbar
-@inject IRoleService<RoleModel> Irole
-@inject IDialogService DialogService
-@inject IPushNotificationService IpushNotificationService
 
-@if (_isLoading)
-{
-    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
-        <LoaderComponent IsFullScreen="true" 
-                        ShowLogo="false" 
-                        Size="medium" 
-                        LoadingText="Loading Liquidity Portals" 
-                        SubText="Please wait..." />
-    </div>
-}
-else
-{
     <div class="fade-in">
         <div class="admin-header-tiered mb-6">
             <div class="d-flex align-center justify-space-between">
@@ -43,20 +20,25 @@ else
                 <div style="flex-grow: 1; min-width: 300px;">
                     <MudTextField @bind-Value="searchTerm" Placeholder="Search by document number or account name..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
                 </div>
-                <div class="d-flex align-center gap-4">
+                <div class="d-flex align-center gap-4">                   
                     <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
-                        <MudText Typo="Typo.caption" Class="fw-700 opa-50 uppercase mr-2">Limit</MudText>
-                        <MudNumericField @bind-Value="@NumberOfRecords" Variant="Variant.Text" Margin="Margin.Dense" Style="width: 50px;" Class="fw-700 mt-0" HideSpinButtons="true" />
-                    </div>
-                    <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
-                        <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+                        <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="admin-glass-card pa-0 overflow-hidden">
-            <MudTable Items="@_collection" Elevation="0" Class="modern-admin-table" Hover="true">
+        <MudTable ServerData="LoadServerData" T="ContraModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
+            <LoadingContent>
+                <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                    <LoaderComponent IsFullScreen="false"
+                                     ShowLogo="false"
+                                     Size="large"
+                                     LoadingText="Loading...."
+                                     SubText="Fetching Data..." />
+                </div>
+            </LoadingContent>
                 <HeaderContent>
                     <MudTh><MudTableSortLabel SortBy="new Func<ContraModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<ContraModel, object>(x=> x.DocumentNumber)"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
@@ -101,7 +83,7 @@ else
                                 </MudTooltip>
 
                                 <MudTooltip Text="Purge Entry">
-                                    <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                    <MudIconButton OnClick="@(()=> Delete(context.ContraID))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
                                 </MudTooltip>
                             }
                         </div>
@@ -115,23 +97,9 @@ else
             </MudTable>
         </div>
     </div>
-}
-}
+
 
 @code {
-
-    private bool _isLoading = true;
-    private DateTime _loadStartTime;
-
-    private ContraModel model = new ContraModel();
-    public bool IsApproved { get; set; } = false;
-    protected override List<ContraModel> _collection { get; set; } = new List<ContraModel>();
-    private int numberOfRecords = 100;
-    private string searchTerm = "";
-    private bool _busy;
-
-    public bool HasPermissionContraServiceDelete { get; set; } = false;
-    public bool HasPermissionContraServiceApprove { get; set; } = false;
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
     {
@@ -139,150 +107,16 @@ else
         DocumentName = "Contra"
     };
 
-    #region SignaIR Notification
-
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
-
-    private int NumberOfRecords
-    {
-        get => numberOfRecords;
-        set
-        {
-            if (numberOfRecords != value)
-            {
-                numberOfRecords = value;
-                _ = ReloadTable();
-            }
-        }
-    }
-
-    // Method to handle search key up event
-    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await ReloadTable();
-        }
-    }
-
-    // Method to reload the table with current filters
-    private async Task ReloadTable()
-    {
-        await GetAll(IsApproved, NumberOfRecords);
-    }
-
-    // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
-        _loadStartTime = DateTime.Now;
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionContraServiceDelete = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
-        HasPermissionContraServiceApprove = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Approve", ctc.Token);
-
-        model = new();
-        await GetAll(IsApproved, NumberOfRecords);
-        await Task.Delay(200);
-        await signalRService.StartAsync();
+        await base.OnInitializedAsync();
         if (id != null && _collection != null && _collection.Any(g => g.ContraID == id))
         {
-            await OpenForm(_collection.FirstOrDefault(s => s.ContraID == id), false, false);
-        }
-        await EnsureMinimumLoadTime();
-        _isLoading = false;
-    }
-
-    private async Task EnsureMinimumLoadTime()
-    {
-        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
-        if (elapsed < 100)
-        {
-            await Task.Delay(100 - (int)elapsed);
+            await OpenForm(_collection.FirstOrDefault(s => s.ContraID == id), true);
         }
     }
 
-    // Method to handle changes in the approval status
-    async Task ApprovedChanged(bool value)
-    {
-        IsApproved = value;
-        await GetAll(IsApproved, NumberOfRecords);
-    }
-
-    // Method to fetch all contra transactions based on approval status and number of records
-    private async Task GetAll(bool val, int numberOfRecords)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        int NumberOfRecords = numberOfRecords;
-        _collection = new List<ContraModel>();
-
-        // Fetch approved or unapproved transactions based on the value of 'val'
-        if (val)
-        {
-            _collection = Iservice.SelectInterBranchByApproved(brancID, NumberOfRecords, searchTerm).ToList(); // Fetch approved transactions
-        }
-        else
-        {
-            _collection = Iservice.SelectInterBranchByUnapproved(brancID, NumberOfRecords, searchTerm).ToList(); // Fetch unapproved transactions
-        }
-    }
-
-    // Method to delete a contra transaction
-    private async Task Delete(ContraModel model)
-    {
-        if (HasPermissionContraServiceDelete)
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
-            if (result == true)
-            {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var User = authprov.User;
-                var UserID = User.Identity.Name;
-                Iservice.Delete(model.ContraID, UserID); // Delete the contra transaction
-                snackbar.Add("Deleted Successfully", Severity.Success);
-            }
-            await GetAll(IsApproved, NumberOfRecords);
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Permission denied!",
-                "You don't have any permission to Delete Contra.");
-        }
-    }
-
-    // Method to approve a contra transaction
-    private async Task Approve(ContraModel tds)
-    {
-        if (HasPermissionContraServiceApprove)
-        {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.UserInfo.UserID = user.Identity.Name;
-            try
-            {
-                Iservice.Approve(tds.ContraID, model.UserInfo.UserID, ""); // Approve the transaction
-                snackbar.Add("Approved Successfully", Severity.Success);
-                await GetAll(IsApproved, NumberOfRecords);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Permission denied!",
-                "You don't have any permission to Approve Contra.");
-        }
-    }
-
-    // Method to open the dialog for adding or editing a contra transaction
-    protected override async Task OpenForm(ContraModel tds, bool ReadOnly, bool DisableAddition = false)
+    protected override async Task OpenForm(ContraModel _model, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -291,37 +125,22 @@ else
         }
         _busy = true;
 
-        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogOptions largeWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds.Clone());
+        parms.Add("model", _model.Clone());
         parms.Add("PageToRedirectLink", "/InterBranchContraView");
         parms.Add("ReadOnly", ReadOnly);
-        //parms.Add("IsView", View);
-        var dialog = await DialogService.ShowAsync<InterBranchContraDialog>(tds.ContraID == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var dialog = await dialogService.ShowAsync<InterBranchContraDialog>(_model.ContraID == null ? "ADD" : "EDIT", parms, largeWidth);
         var result = await dialog.Result;
-
         var isCancelled = result.Canceled;
         if (!isCancelled)
         {
-            var ReturnData = (ContraModel)result.Data;
-            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-            notificationMessage.RedirectedTo = 0;
-            notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.ContraID;
-            notificationMessage.MessageGroupID = "PendingVerification";
-            notificationMessage.PageToRedirectLink = "/InterBranchContraView";
-            notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = DocInfo.DocumentTypeID;
-            notificationMessage.MsgDate = DateTime.Now;
-            await signalRService.Send(notificationMessage);
+            var ReturnData = (JournalModel)result.Data;
+            await _table.ReloadServerData();
         }
-        await GetAll(IsApproved, NumberOfRecords);
-
+        
         await Task.Delay(200);
         _busy = false;
-    }
+    }   
 }
 
