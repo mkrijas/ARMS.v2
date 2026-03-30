@@ -99,8 +99,21 @@ window.truckMapInterop = {
         trucks.forEach(truck => {
             const position = { lat: truck.latitude, lng: truck.longitude };
             
-            // Premium sleek truck SVG
-            const lorrySvg = '<svg viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#E53935"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#C62828"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E3F2FD"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
+            // Dynamically assign icon SVG based on truck speed
+            let lorrySvg = '';
+            let popupSvg = '';
+            let popupBorder = '';
+            if (truck.speed > 0) {
+                // Green moving truck SVG
+                lorrySvg = '<svg viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#43A047"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#2E7D32"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E8F5E9"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
+                popupSvg = '<svg style="margin-right: 12px; width: 44px; height: 22px;" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#43A047"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#2E7D32"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E8F5E9"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
+                popupBorder = '2px solid #43A047';
+            } else {
+                // Red stopped truck SVG
+                lorrySvg = '<svg viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#E53935"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#C62828"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E3F2FD"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
+                popupSvg = '<svg style="margin-right: 12px; width: 44px; height: 22px;" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#E53935"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#C62828"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E3F2FD"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
+                popupBorder = '2px solid #E53935';
+            }
             
             const marker = new google.maps.Marker({
                 position: position,
@@ -116,15 +129,15 @@ window.truckMapInterop = {
                 },
                 label: {
                     text: truck.vehicleregnumber,
-                    className: "truck-marker-label",
-                    color: "#000000"
+                    className: truck.speed > 0 ? "truck-marker-label truck-marker-moving" : "truck-marker-label truck-marker-stopped",
+                    color: truck.speed > 0 ? "#2E7D32" : "#D32F2F"
                 }
             });
 
             const customContentHTML = `<div style="font-family: 'Roboto', sans-serif; width: 280px; padding: 22px; box-sizing: border-box; position: relative;">
                             <button class="close-popup-btn" style="position: absolute; top: 16px; right: 16px; background: #f0f0f0; border: none; font-size: 20px; color: #555; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">&times;</button>
-                            <div style="display: flex; align-items: center; justify-content: flex-start; border-bottom: 2px solid #E53935; padding-bottom: 12px; margin-bottom: 14px; padding-right: 32px;">
-                                <svg style="margin-right: 12px; width: 44px; height: 22px;" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#E53935"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#C62828"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E3F2FD"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>
+                            <div style="display: flex; align-items: center; justify-content: flex-start; border-bottom: ${popupBorder}; padding-bottom: 12px; margin-bottom: 14px; padding-right: 32px;">
+                                ${popupSvg}
                                 <h3 style="margin: 0; color: #333; font-size: 21px; font-weight: 700; line-height: 1;">${truck.vehicleregnumber}</h3>
                             </div>
                             <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; font-size: 14.5px; color: #444;">
