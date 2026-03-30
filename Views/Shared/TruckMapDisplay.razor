@@ -1,6 +1,8 @@
 @page "/TruckMap"
 @using ArmsModels.Shared
 @using Microsoft.JSInterop
+@using MudBlazor
+@implements IDisposable
 @inject IJSRuntime JSRuntime
 
 <style>
@@ -47,7 +49,12 @@
     }
 </style>
 
-<div class="truck-map-wrapper position-relative" style="width: 100%; height: @Height; overflow: hidden; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.2) !important; outline: 1px solid rgba(0,0,0,0.05); margin-bottom: 0;">
+<style>
+    /* Removes native MudBlazor dialog padding for edge-to-edge layout */
+    .mud-dialog-content { padding: 0 !important; overflow: hidden !important; }
+</style>
+
+<div class="truck-map-wrapper position-relative" style="width: 100%; height: @Height; overflow: hidden; border-radius: @(MudDialog != null ? "0" : "12px"); box-shadow: 0 12px 30px rgba(0,0,0,0.2) !important; outline: 1px solid rgba(0,0,0,0.05); margin-bottom: 0;">
     
     <!-- Floating Control Panel -->
     <div class="glass-panel" style="position: absolute; top: 20px; left: 20px; z-index: 10; padding: 15px 20px; border-radius: 10px; width: 280px; font-family: 'Roboto', sans-serif;">
@@ -108,7 +115,10 @@
 
 @code {
     [Parameter]
-    public List<TruckLocation> Trucks { get; set; } = new List<TruckLocation>();
+    public List<TruckLocation> Trucks { get; set; } = new();
+
+    [CascadingParameter]
+    public IMudDialogInstance MudDialog { get; set; }
 
     [Parameter]
     public string Height { get; set; } = "calc(100vh - 130px)";
@@ -183,12 +193,13 @@
     }
     
     public List<TruckLocation> TestTrucks { get; set; } = new List<TruckLocation>();
+    private System.Threading.Timer _refreshTimer;
+
     protected override void OnInitialized()
     {
         // Generating sample data for testing the Google Map
         TestTrucks = new List<TruckLocation>
         {
-            // First truck based on your exact API response sample
             new TruckLocation
             {
                 Vehicleregnumber = "TS07UF9587",
@@ -202,7 +213,6 @@
                 Ignition = 0,
                 Speed = 0
             },
-            // Second truck simulating an active driving state nearby
             new TruckLocation
             {
                 Vehicleregnumber = "TS08TR4021",
@@ -216,7 +226,6 @@
                 Ignition = 1,
                 Speed = 55.2
             },
-            // Third truck parked at a different branch location
             new TruckLocation
             {
                 Vehicleregnumber = "TS09MV1122",
@@ -232,5 +241,46 @@
             }
         };
         Trucks = TestTrucks;
+
+        // Initialize Background Refresh Polling Loop (Every 30 seconds)
+        _refreshTimer = new System.Threading.Timer(OnTimerFired, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private void OnTimerFired(object state)
+    {
+        // Simulating the required Database Fetch that takes the latest values
+        var random = new Random();
+        foreach (var truck in TestTrucks)
+        {
+            if (truck.Speed > 0)
+            {
+                // Jitter moving trucks along their path
+                truck.Latitude += (random.NextDouble() - 0.5) * 0.003;
+                truck.Longitude += (random.NextDouble() - 0.5) * 0.003;
+                truck.Speed = random.Next(20, 80);
+                truck.Odometer += (int)((truck.Speed / 60) * 0.5); // Update odometer
+            }
+            else
+            {
+                // Stopped truck may occasionally start moving
+                if (random.Next(0, 10) > 8)
+                {
+                    truck.Speed = random.Next(10, 30);
+                    truck.Ignition = 1;
+                }
+            }
+            truck.Datetime = DateTime.Now;
+        }
+
+        InvokeAsync(async () =>
+        {
+            // Pushes only coordinate deltas to Google Maps without triggering Blazor HTML tear-down
+            await JSRuntime.InvokeVoidAsync("truckMapInterop.updateMarkers", MapElementId, TestTrucks);
+        });
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
     }
 }
