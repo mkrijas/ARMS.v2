@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using Core.BaseModels.Operations.ROI;
+using Core.BaseModels.Operations;
 
 
 namespace ArmsServices.DataServices
@@ -36,6 +37,8 @@ namespace ArmsServices.DataServices
         IEnumerable<TruckStatusModel> GetTruckStatusByEvent(int? BranchID, string SelectedValue);
         IEnumerable<NoDriverTruckModel> GetNoDriverTruck(int? BranchID);
         TruckModel GetInfo(int? TruckID, string HomeOrOperation = "Operation");
+        IEnumerable<TelemetryModel> GetTelemetry( DateTime? dateTime, int? TruckID = 0);
+        int? UpdateTelemetry(List<TelemetryModel> model);
 
     }
 }

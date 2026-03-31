@@ -10,6 +10,7 @@ using Core.IDataServices.Operations.ROI;
 using Core.BaseModels.Operations.ROI;
 
 
+
 namespace ArmsServices.DataServices
 {
     public class TruckService : ITruckService
@@ -650,6 +651,53 @@ namespace ArmsServices.DataServices
                     EventType = dr.GetString("EventType")
                 };
             }
+        }
+
+        public IEnumerable<TelemetryModel> GetTelemetry(DateTime? dateTime, int? TruckID = 0)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@TruckID", TruckID),
+                new SqlParameter("@DateTime", dateTime ?? (object)DBNull.Value)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Telemetry.Select]", parameters))
+            {
+                yield return new TelemetryModel
+                {                    
+                    ID = dr.GetInt32("ID"),
+                    VehicleId = dr.GetString("VehicleId"),
+                    EventDateTime = dr.GetDateTime("EventDateTime"),
+                    GpsLatitude = dr.GetDouble("GpsLatitude"),
+                    GpsLongitude = dr.GetDouble("GpsLongitude"),
+                    Speed = dr.GetInt32("Speed"),
+                    FuelLevelPercent = dr.GetDouble("FuelLevel"),
+                    Odometer = dr.GetInt32("Odometer"),
+                    // Add other fields as per your TelemetryModel
+                };
+            }
+        }
+
+        public int? UpdateTelemetry(List<TelemetryModel> models)
+        {
+            int? rowsAffected = 0;
+            foreach (var model in models)
+            {
+                List<SqlParameter> parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@ID", model.ID),
+                    new SqlParameter("@VehicleId", model.VehicleId),
+                    new SqlParameter("@EventDateTime", model.EventDateTime),
+                    new SqlParameter("@GpsLatitude", model.GpsLatitude),
+                    new SqlParameter("@GpsLongitude", model.GpsLongitude),
+                    new SqlParameter("@Speed", model.Speed),
+                    new SqlParameter("@FuelLevelPercent", model.FuelLevelPercent),
+                    new SqlParameter("@Odometer", model.Odometer),
+                    // Add other fields as per your TelemetryModel
+                };
+                rowsAffected += Iservice.ExecuteNonQuery("[usp.Truck.Telemetry.Update]", parameters);
+            }
+            return rowsAffected;
         }
     }
 }

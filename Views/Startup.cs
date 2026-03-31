@@ -1,4 +1,5 @@
 using ArmsModels.BaseModels;
+using ArmsModels.BaseModels.Finance.Transactions;
 using ArmsServices;
 using ArmsServices.DataServices;
 using ArmsServices.DataServices.Finance.Transactions;
@@ -7,15 +8,39 @@ using ArmsServices.DataServices.General;
 using ArmsServices.DataServices.Inventory;
 using ArmsServices.DataServices.Operations;
 using Blazored.SessionStorage;
-using Microsoft.AspNetCore.SignalR.Client;
+using Core.BaseModels.Finance.Transactions;
+using Core.BaseModels.User;
+using Core.IDataServices.Finance;
+using Core.IDataServices.Finance.DayOpen;
+using Core.IDataServices.Finance.LedgerViews;
+using Core.IDataServices.Finance.Transactions;
+using Core.IDataServices.Operations;
+using Core.IDataServices.Operations.ROI;
+using Core.IDataServices.User;
+using DAL.DataServices;
+using DAL.DataServices.Finance;
+using DAL.DataServices.Finance.DayOpen;
+using DAL.DataServices.Finance.LedgerViews;
+using DAL.DataServices.Finance.Transactions;
+using DAL.DataServices.General;
+using DAL.DataServices.Operations;
+using DAL.DataServices.Operations.ROI;
+using DAL.DataServices.User;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -27,40 +52,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-
-using Views.Data;
-using Microsoft.AspNetCore.ResponseCompression;
-using Core.IDataServices.Finance.Transactions;
-using DAL.DataServices.Finance.Transactions;
-using System.Security.Cryptography;
-using DAL.DataServices.General;
-
-using Microsoft.AspNetCore.Identity.UI.Services;
-using static MudBlazor.Defaults;
-using Core.IDataServices.Finance.LedgerViews;
-using DAL.DataServices.Finance.LedgerViews;
-using Microsoft.AspNetCore.Http;
-using Core.IDataServices.Operations;
-using DAL.DataServices.Operations;
-using Core.IDataServices.Finance;
-using DAL.DataServices.Finance;
-using ArmsModels.BaseModels.Finance.Transactions;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Http.Features;
-using Core.IDataServices.Finance.DayOpen;
-using DAL.DataServices.Finance.DayOpen;
-using Core.BaseModels.Finance.Transactions;
-using Core.IDataServices.User;
-using Core.BaseModels.User;
-using DAL.DataServices.User;
-using DAL.DataServices.Operations.ROI;
-using Core.IDataServices.Operations.ROI;
-using System.Net.Http;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.HttpOverrides;
+using System.Threading.Tasks;
+using Views.Data;
+using static MudBlazor.Defaults;
 
 namespace Views
 {
@@ -373,16 +372,7 @@ namespace Views
 
 
             #endregion
-
-            //services.AddCors(options =>
-            //{
-            //    options.AddPolicy("CorsPolicy",
-            //        builder => builder
-            //            .WithOrigins("http://10.200.50.39:8484/") // Add the origin of your Blazor application
-            //            .AllowAnyMethod()
-            //            .AllowAnyHeader()
-            //            .AllowCredentials());
-            //});
+         
             #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
@@ -391,6 +381,7 @@ namespace Views
 
             //------------General-------------------
             services.AddScoped<IConfigTable, ConfigTable>();
+          
 
             #region--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
