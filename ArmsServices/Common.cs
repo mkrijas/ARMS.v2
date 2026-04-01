@@ -59,6 +59,12 @@ namespace ArmsServices
                 return val;
         }
 
+        public static double? GetDouble(this IDataRecord dr, string name)
+        {
+            var val = GetFieldValue<double?>(dr, name, null);            
+            return val;
+        }
+
         public static DateTime? GetDateTime(this IDataRecord dr, string name)
         {
             return GetFieldValue<DateTime?>(dr, name, null);
