@@ -3,27 +3,35 @@
 # Depending on the operating system of the host machines(s) that will build or run the containers, the image specified in the FROM statement may need to be changed.
 # For more information, please see https://aka.ms/containercompat
 
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
-FROM mcr.microsoft.com/dotnet/runtime:10.0-nanoserver-ltsc2022 AS base
+
+# Base runtime image (Linux)
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.2 AS base
+USER $APP_UID
 WORKDIR /app
+EXPOSE 8080
 
-
-# This stage is used to build the service project
-FROM mcr.microsoft.com/dotnet/sdk:10.0-nanoserver-ltsc2022 AS build
+# Build stage (Linux SDK)
+FROM mcr.microsoft.com/dotnet/sdk:10.0.201 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+
+# Copy project file and restore
 COPY ["GpsApiWorker/GpsApiWorker.csproj", "GpsApiWorker/"]
+COPY ["ArmsModels/Core.csproj", "ArmsModels/"]
+COPY ["ArmsServices/DAL.csproj", "ArmsServices/"]
 RUN dotnet restore "./GpsApiWorker/GpsApiWorker.csproj"
+
+# Copy everything else and build
 COPY . .
 WORKDIR "/src/GpsApiWorker"
-RUN dotnet build "./GpsApiWorker.csproj" -c %BUILD_CONFIGURATION% -o /app/build
+RUN dotnet build "./GpsApiWorker.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
+# Publish stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./GpsApiWorker.csproj" -c %BUILD_CONFIGURATION% -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./GpsApiWorker.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+# Final runtime image
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .

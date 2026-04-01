@@ -8,6 +8,7 @@ using ArmsModels.BaseModels;
 using System.Reflection;
 using Core.IDataServices.Operations.ROI;
 using Core.BaseModels.Operations.ROI;
+using Microsoft.IdentityModel.Abstractions;
 
 
 
@@ -172,7 +173,7 @@ namespace ArmsServices.DataServices
             return new TruckModel()
             {
                 RegNo = reader.GetString("RegNo"),
-                HomeBranchID = reader.GetInt32("HomeBranchID"),   
+                HomeBranchID = reader.GetInt32("HomeBranchID"),
                 CurrentBranchID = reader.GetInt32("CurrentBranchID"),
                 AssetID = reader.GetInt32("AssetID"),
                 BodyType = reader.GetString("BodyType"),
@@ -205,7 +206,7 @@ namespace ArmsServices.DataServices
                     EffectTo = reader.GetDateTime("EffectTo"),
                     TruckID = reader.GetInt32("TruckID"),
                     RC = reader.GetString("RC"),
-                },               
+                },
             };
         }
 
@@ -371,11 +372,11 @@ namespace ArmsServices.DataServices
 
 
 
-        public TruckModel GetInfo(int? TruckID,  string HomeOrOperation = "Operation")
+        public TruckModel GetInfo(int? TruckID, string HomeOrOperation = "Operation")
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TruckID", TruckID),               
+               new SqlParameter("@TruckID", TruckID),
                new SqlParameter("@HomeOrOperation", HomeOrOperation),
             };
 
@@ -653,6 +654,16 @@ namespace ArmsServices.DataServices
             }
         }
 
+    }
+
+
+    public class TelemetryService : ITelemetryService
+    {
+        IDbService Iservice;
+        public TelemetryService(IDbService iservice)
+        {
+            Iservice = iservice;
+        }
         public IEnumerable<TelemetryModel> GetTelemetry(DateTime? dateTime, int? TruckID = 0)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -661,43 +672,34 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@DateTime", dateTime ?? (object)DBNull.Value)
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Telemetry.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Telemetry.Get]", parameters))
             {
                 yield return new TelemetryModel
-                {                    
-                    ID = dr.GetInt32("ID"),
-                    VehicleId = dr.GetString("VehicleId"),
-                    EventDateTime = dr.GetDateTime("EventDateTime"),
-                    GpsLatitude = dr.GetDouble("GpsLatitude"),
-                    GpsLongitude = dr.GetDouble("GpsLongitude"),
-                    Speed = dr.GetInt32("Speed"),
-                    FuelLevelPercent = dr.GetDouble("FuelLevel"),
-                    Odometer = dr.GetInt32("Odometer"),
-                    // Add other fields as per your TelemetryModel
+                {
+                   
+                    REGN_NUMBER = dr.GetString("REGN_NUMBER"),
+                    DATE_TIME = dr.GetDateTime("DATE_TIME"),
+                    LATITUDE = dr.GetDouble("LATITUDE"),
+                    LONGITUDE = dr.GetDouble("LONGITUDE"),
+                    ALTITUDE = dr.GetDouble("ALTITUDE"),
+                    SPEED = dr.GetDecimal("SPEED"),
+                    FUEL_LEVEL = dr.GetDecimal("FUEL_LEVEL"),                    
+                    DEF_LEVEL = dr.GetDecimal("DEF_LEVEL"),
+                    ENGINE_SPEED = dr.GetDecimal("ENGINE_SPEED"),
+                    FUEL_CONS = dr.GetDecimal("FUEL_CONS"),
+                    GEAR_NUM = dr.GetInt32("GEAR_NUM"),
+
                 };
             }
         }
 
         public int? UpdateTelemetry(List<TelemetryModel> models)
         {
-            int? rowsAffected = 0;
-            foreach (var model in models)
-            {
                 List<SqlParameter> parameters = new List<SqlParameter>
                 {
-                    new SqlParameter("@ID", model.ID),
-                    new SqlParameter("@VehicleId", model.VehicleId),
-                    new SqlParameter("@EventDateTime", model.EventDateTime),
-                    new SqlParameter("@GpsLatitude", model.GpsLatitude),
-                    new SqlParameter("@GpsLongitude", model.GpsLongitude),
-                    new SqlParameter("@Speed", model.Speed),
-                    new SqlParameter("@FuelLevelPercent", model.FuelLevelPercent),
-                    new SqlParameter("@Odometer", model.Odometer),
-                    // Add other fields as per your TelemetryModel
+                    new SqlParameter("@data", models.ToDataTable()), 
                 };
-                rowsAffected += Iservice.ExecuteNonQuery("[usp.Truck.Telemetry.Update]", parameters);
-            }
-            return rowsAffected;
+               return Iservice.ExecuteNonQuery("[usp.Telemetry.Update]", parameters);  
         }
     }
 }

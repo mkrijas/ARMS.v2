@@ -35,7 +35,7 @@ namespace DAL.DataServices.Operations.ROI
             {
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@Wheels", model.Wheels),
-               new SqlParameter("@Speed", model.Speed),
+               new SqlParameter("@SPEED", model.Speed),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.WheelSpeed.Update]", parameters))
@@ -81,7 +81,7 @@ namespace DAL.DataServices.Operations.ROI
             {
                 ID = dr?.GetInt32("ID"),
                 Wheels = dr?.GetByte("Wheels"),
-                Speed = dr.GetDecimal("Speed"),
+                Speed = dr.GetDecimal("SPEED"),
                 UserInfo = new UserInfoModel
                 {
                     UserID = dr.GetString("UserID"),
