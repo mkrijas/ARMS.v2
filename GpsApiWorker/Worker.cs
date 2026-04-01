@@ -1,7 +1,12 @@
+using System.Text.Json;
+using ArmsModels.BaseModels;
+using ArmsServices.DataServices;
+
+
 namespace GpsApiWorker
 {
 
-    public class ApiPollingService(ILogger<ApiPollingService> _logger, IHttpClientFactory _clientFactory) : BackgroundService
+    public class ApiPollingService(ILogger<ApiPollingService> _logger, IHttpClientFactory _clientFactory,ITelemetryService _truckService) : BackgroundService
     {    
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -31,9 +36,23 @@ namespace GpsApiWorker
 
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                string content = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation("API call successful. Content length: {Length}", content.Length);
-                // Process the API response here
+
+                try
+                {
+                    List<TelemetryModel> items = JsonSerializer.Deserialize<List<TelemetryModel>>(content) ?? new List<TelemetryModel>();
+                    int? res = _truckService.UpdateTelemetry(items);
+                    _logger.LogInformation("Updated to database successfully");
+                }
+                catch (JsonException jsonEx)
+                {
+                    _logger.LogError(jsonEx, "Failed to deserialize API response.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occurred while processing the API response.");
+                }
             }
             else
             {
@@ -41,4 +60,6 @@ namespace GpsApiWorker
             }
         }
     } 
+
+
 }
