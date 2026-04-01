@@ -133,10 +133,10 @@ namespace Views.Pages.Operations.Gc
             if (HasPermissionGcServiceEdit)
             {
                 _busy = true;
-                model.OrderID = Order.OrderID;
-                model.RouteID = Route.RouteID;
-                model.ConsignorID = Consignor.ConsigneeID;
-                model.ConsigneeID = Consignee.ConsigneeID;                
+                model.OrderID = Order?.OrderID ?? model.OrderID;
+                model.RouteID = Route?.RouteID ?? model.RouteID;
+                model.ConsignorID = Consignor?.ConsigneeID ?? model.ConsignorID;
+                model.ConsigneeID = Consignee?.ConsigneeID ?? model.ConsigneeID;                
                 model.UserInfo.UserID = UserID; 
                 model.BranchID = BranchID;
                 model.Gcs.ForEach(x => x.UserInfo = model.UserInfo);
