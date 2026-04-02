@@ -228,6 +228,7 @@ namespace Views
             #region ------------Dashboard---------------
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IFinanceDashboardService, FinanceDashboardService>();
+            services.AddScoped<ITelemetryService, TelemetryService>();
             #endregion
 
             #region ------------FMS---------------

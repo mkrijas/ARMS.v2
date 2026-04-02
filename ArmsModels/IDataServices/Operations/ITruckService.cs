@@ -42,7 +42,7 @@ namespace ArmsServices.DataServices
 
     public interface ITelemetryService
     {
-        IEnumerable<TelemetryModel> GetTelemetry(DateTime? dateTime, int? TruckID = 0);
+        IEnumerable<TelemetryModel> GetTelemetry(DateTime? dateTime, string Reg_Number = "");
         int? UpdateTelemetry(List<TelemetryModel> model);
     }
 }

@@ -664,12 +664,12 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        public IEnumerable<TelemetryModel> GetTelemetry(DateTime? dateTime, int? TruckID = 0)
+        public IEnumerable<TelemetryModel> GetTelemetry(DateTime? dateTime, string REGN_NUMBER = "")
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@TruckID", TruckID),
-                new SqlParameter("@DateTime", dateTime ?? (object)DBNull.Value)
+                new SqlParameter("@REGN_NUMBER", REGN_NUMBER),
+                new SqlParameter("@QueryDateTime", dateTime ?? (object)DBNull.Value)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Telemetry.Get]", parameters))

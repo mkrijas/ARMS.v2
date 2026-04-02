@@ -1,9 +1,10 @@
 @page "/TruckMap"
-@using ArmsModels.Shared
+@using ArmsModels.BaseModels
 @using Microsoft.JSInterop
 @using MudBlazor
 @implements IDisposable
 @inject IJSRuntime JSRuntime
+@inject ITelemetryService TelemetryService
 
 <style>
     .truck-marker-label {
@@ -78,10 +79,10 @@
                 <div style="position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: white; border-radius: 6px; box-shadow: 0 6px 16px rgba(0,0,0,0.15); z-index: 20; max-height: 250px; overflow-y: auto; border: 1px solid #ddd;">
                     @foreach (var truck in SearchResults)
                     {
-                        <div style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s;" @onclick="() => FocusSpecificTruck(truck.Vehicleregnumber)" onmouseover="this.style.backgroundColor='#f5f5f5'" onmouseout="this.style.backgroundColor='white'">
-                            <div style="font-weight: 700; color: #1976D2; font-size: 14px;">@truck.Vehicleregnumber</div>
+                        <div style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s;" @onclick="() => FocusSpecificTruck(truck.REGN_NUMBER)" onmouseover="this.style.backgroundColor='#f5f5f5'" onmouseout="this.style.backgroundColor='white'">
+                            <div style="font-weight: 700; color: #1976D2; font-size: 14px;">@truck.REGN_NUMBER</div>
                             <div style="font-size: 12px; color: #777; margin-top: 2px;">
-                                Speed: @truck.Speed km/h | Ign: @(truck.Ignition == 1 ? "On" : "Off")
+                                Speed: @truck.SPEED km/h | Ign: @(truck.GEAR_NUM > 0 ? "On" : "Off")
                             </div>
                         </div>
                     }
@@ -115,7 +116,10 @@
 
 @code {
     [Parameter]
-    public List<TruckLocation> Trucks { get; set; } = new();
+    public List<TelemetryModel> Trucks { get; set; } = new();
+
+    [Parameter]
+    public string RegNo { get; set; } = null;      
 
     [CascadingParameter]
     public IMudDialogInstance MudDialog { get; set; }
@@ -128,7 +132,7 @@
 
     public string FocusedTruckReg { get; set; } = "";
     public string SearchQuery { get; set; } = "";
-    public List<TruckLocation> SearchResults { get; set; } = new();
+    public List<TelemetryModel> SearchResults { get; set; } = new();
 
     private async Task FocusNextTruck()
     {
@@ -142,7 +146,7 @@
         DoSearch();
         if (e.Key == "Enter" && SearchResults.Count == 1)
         {
-            _ = FocusSpecificTruck(SearchResults.First().Vehicleregnumber);
+            _ = FocusSpecificTruck(SearchResults.First().REGN_NUMBER);
         }
     }
 
@@ -151,7 +155,7 @@
         DoSearch();
         if (SearchResults.Count == 1)
         {
-            _ = FocusSpecificTruck(SearchResults.First().Vehicleregnumber);
+            _ = FocusSpecificTruck(SearchResults.First().REGN_NUMBER);
         }
     }
 
@@ -165,8 +169,7 @@
         }
         
         SearchResults = Trucks
-            .Where(t => t.Vehicleregnumber.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+            .Where(t => t.REGN_NUMBER.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
             
         if (SearchResults.Count == 0)
         {
@@ -192,55 +195,18 @@
         }
     }
     
-    public List<TruckLocation> TestTrucks { get; set; } = new List<TruckLocation>();
+    public List<TelemetryModel> TestTrucks { get; set; } = new List<TelemetryModel>();
     private System.Threading.Timer _refreshTimer;
 
     protected override void OnInitialized()
-    {
-        // Generating sample data for testing the Google Map
-        TestTrucks = new List<TruckLocation>
+    {        
+       if(!Trucks.Any())
         {
-            new TruckLocation
-            {
-                Vehicleregnumber = "TS07UF9587",
-                Latitude = 12.234606742858887,
-                Longitude = 78.19510650634766,
-                Altitude = 440.5,
-                Datetime = DateTime.Parse("2019-06-17 15:53:16.0"),
-                Odometer = 16732,
-                Heading = 116,
-                Batlevel = 24.34,
-                Ignition = 0,
-                Speed = 0
-            },
-            new TruckLocation
-            {
-                Vehicleregnumber = "TS08TR4021",
-                Latitude = 12.254606, 
-                Longitude = 78.215106,
-                Altitude = 450.0,
-                Datetime = DateTime.Now,
-                Odometer = 24050,
-                Heading = 90,
-                Batlevel = 88.5,
-                Ignition = 1,
-                Speed = 55.2
-            },
-            new TruckLocation
-            {
-                Vehicleregnumber = "TS09MV1122",
-                Latitude = 12.210500,
-                Longitude = 78.155106,
-                Altitude = 430.2,
-                Datetime = DateTime.Now.AddHours(-2),
-                Odometer = 88900,
-                Heading = 0,
-                Batlevel = 12.0,
-                Ignition = 0,
-                Speed = 0
-            }
-        };
-        Trucks = TestTrucks;
+            var currentDatTime = DateTime.Now;
+             Trucks = TelemetryService.GetTelemetry(currentDatTime).ToList();
+        };  
+        SearchQuery = RegNo ?? "";
+        DoSearch();
 
         // Initialize Background Refresh Polling Loop (Every 30 seconds)
         _refreshTimer = new System.Threading.Timer(OnTimerFired, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
@@ -248,30 +214,8 @@
 
     private void OnTimerFired(object state)
     {
-        // Simulating the required Database Fetch that takes the latest values
-        var random = new Random();
-        foreach (var truck in TestTrucks)
-        {
-            if (truck.Speed > 0)
-            {
-                // Jitter moving trucks along their path
-                truck.Latitude += (random.NextDouble() - 0.5) * 0.003;
-                truck.Longitude += (random.NextDouble() - 0.5) * 0.003;
-                truck.Speed = random.Next(20, 80);
-                truck.Odometer += (int)((truck.Speed / 60) * 0.5); // Update odometer
-            }
-            else
-            {
-                // Stopped truck may occasionally start moving
-                if (random.Next(0, 10) > 8)
-                {
-                    truck.Speed = random.Next(10, 30);
-                    truck.Ignition = 1;
-                }
-            }
-            truck.Datetime = DateTime.Now;
-        }
-
+       var currentDatTime = DateTime.Now;
+             Trucks = TelemetryService.GetTelemetry(currentDatTime).ToList();
         InvokeAsync(async () =>
         {
             try
