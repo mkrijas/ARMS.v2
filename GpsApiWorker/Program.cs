@@ -1,6 +1,7 @@
 using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
+using Microsoft.AspNetCore.Authentication;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -28,8 +29,13 @@ namespace GpsApiWorker
             builder.Services.AddSingleton<IDbService,DbService>();
             builder.Services.AddSingleton<ITelemetryService, TelemetryService>();
 
+            builder.Services.AddAuthentication("ApiKey").AddScheme<AuthenticationSchemeOptions, ApiKeyAuthHandler>("ApiKey", null);
+            builder.Services.AddAuthorization();
+
             var app = builder.Build();
-            
+
+            app.UseAuthentication();
+            app.UseAuthorization();
             // Map the route handlers (ApiSubscriberController)
             app.MapControllers();
             

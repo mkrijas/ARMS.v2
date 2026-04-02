@@ -1,5 +1,6 @@
-﻿using ArmsModels.BaseModels;
+using ArmsModels.BaseModels;
 using ArmsServices.DataServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ namespace GpsApiWorker
     public class ApiSubscriberController(ILogger<ApiPollingService> _logger, ITelemetryService _truckService) : ControllerBase
     {
         [HttpPost("/")]
+        [Authorize(AuthenticationSchemes ="ApiKey")]
         public IActionResult Post([FromBody] List<TelemetryModel> body)
         {
             if (body == null)
