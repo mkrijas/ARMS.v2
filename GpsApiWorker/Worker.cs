@@ -16,7 +16,7 @@ namespace GpsApiWorker
             {
                 try
                 {
-                    await CallApiAsync();
+                    //await CallApiAsync();
                 }
                 catch (System.Exception ex)
                 {

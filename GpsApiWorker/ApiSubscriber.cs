@@ -13,9 +13,9 @@ namespace GpsApiWorker
     public class ApiSubscriberController(ILogger<ApiPollingService> _logger, ITelemetryService _truckService) : ControllerBase
     {
         [HttpPost("/")]
-        public IActionResult ReceiveData([FromBody] List<TelemetryModel> data)
+        public IActionResult Post([FromBody] List<TelemetryModel> body)
         {
-            if (data == null)
+            if (body == null)
                 return BadRequest("Invalid data");
 
             // Process data (store in DB, queue, etc.)
@@ -23,7 +23,7 @@ namespace GpsApiWorker
 
             try
             {                
-                int? res = _truckService.UpdateTelemetry(data);
+                int? res = _truckService.UpdateTelemetry(body);
                 _logger.LogInformation("Updated to database successfully");
             }
             catch (JsonException jsonEx)

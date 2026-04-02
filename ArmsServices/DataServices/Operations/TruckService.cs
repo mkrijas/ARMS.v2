@@ -687,7 +687,7 @@ namespace ArmsServices.DataServices
                     DEF_LEVEL = dr.GetDecimal("DEF_LEVEL"),
                     ENGINE_SPEED = dr.GetDecimal("ENGINE_SPEED"),
                     FUEL_CONS = dr.GetDecimal("FUEL_CONS"),
-                    GEAR_NUM = dr.GetInt32("GEAR_NUM"),
+                    GEAR_NUM = (decimal)dr.GetInt32("GEAR_NUM"),
 
                 };
             }

@@ -1,5 +1,8 @@
+using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GpsApiWorker
 {
@@ -11,7 +14,11 @@ namespace GpsApiWorker
             
             // Add Web API Controller support
             builder.Services.AddControllers();
-
+            builder.Services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new CustomDateTimeConverter());
+            });
             builder.Services.AddHttpClient("MyApi", client =>
             {
                 client.BaseAddress = new Uri("https://api.example.com"); // Set the base address of your API                
@@ -29,4 +36,5 @@ namespace GpsApiWorker
             app.Run();
         }
     }
+   
 }
