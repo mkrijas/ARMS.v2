@@ -82,10 +82,21 @@ window.truckMapInterop = {
             return;
         }
 
+        const validTrucks = trucks.filter(t => {
+            const lat = Number(t.LATITUDE || t.latitude);
+            const lng = Number(t.LONGITUDE || t.longitude);
+            return !isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0);
+        });
+
+        if (validTrucks.length === 0) {
+            console.warn("No valid truck coordinates available.");
+            return;
+        }
+
         const bounds = new google.maps.LatLngBounds();
         const mapOptions = {
             zoom: 6,
-            center: { lat: trucks[0].LATITUDE, lng: trucks[0].LONGITUDE },
+            center: { lat: Number(validTrucks[0].LATITUDE || validTrucks[0].latitude), lng: Number(validTrucks[0].LONGITUDE || validTrucks[0].longitude) },
             mapTypeId: google.maps.MapTypeId.ROADMAP,
             mapTypeControl: false,
             streetViewControl: false,
@@ -96,14 +107,22 @@ window.truckMapInterop = {
 
         const markers = [];
 
-        trucks.forEach(truck => {
-            const position = { lat: truck.LATITUDE, lng: truck.LONGITUDE };
+        validTrucks.forEach(truck => {
+            const position = { lat: Number(truck.LATITUDE || truck.latitude), lng: Number(truck.LONGITUDE || truck.longitude) };
             
+            const gear = truck.GEAR_NUM ?? truck.gear_NUM ?? truck.gearNum ?? truck.gear_num ?? 'N/A';
+            const rpm = truck.ENGINE_SPEED ?? truck.enginE_SPEED ?? truck.engine_SPEED ?? truck.engineSpeed ?? '0';
+            const fuel = truck.FUEL_LEVEL ?? truck.fueL_LEVEL ?? truck.fuel_LEVEL ?? truck.fuelLevel ?? '0';
+            const def = truck.DEF_LEVEL ?? truck.deF_LEVEL ?? truck.def_LEVEL ?? truck.defLevel ?? '0';
+            const alt = truck.ALTITUDE ?? truck.altitude ?? '0';
+            const speed = truck.SPEED ?? truck.speed ?? 0;
+            const regn = truck.REGN_NUMBER ?? truck.regN_NUMBER ?? truck.regn_NUMBER ?? 'Unknown';
+
             // Dynamically assign icon SVG based on truck speed
             let lorrySvg = '';
             let popupSvg = '';
             let popupBorder = '';
-            if (truck.SPEED > 0) {
+            if (truck.speed > 0) {
                 // Green moving truck SVG
                 lorrySvg = '<svg viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#43A047"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#2E7D32"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E8F5E9"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
                 popupSvg = '<svg style="margin-right: 12px; width: 44px; height: 22px;" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#43A047"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#2E7D32"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E8F5E9"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
@@ -118,7 +137,7 @@ window.truckMapInterop = {
             const marker = new google.maps.Marker({
                 position: position,
                 map: map,
-                title: truck.REGN_NUMBER,
+                title: regn,
                 optimized: false, // Prevents label and icon from interleaving incorrectly
                 zIndex: 1,
                 icon: {
@@ -128,27 +147,26 @@ window.truckMapInterop = {
                     labelOrigin: new google.maps.Point(32, 48) // Push label clearly below the 32px height marker
                 },
                 label: {
-                    text: truck.REGN_NUMBER,
-                    className: truck.SPEED > 0 ? "truck-marker-label truck-marker-moving" : "truck-marker-label truck-marker-stopped",
-                    color: truck.SPEED > 0 ? "#2E7D32" : "#D32F2F"
+                    text: regn,
+                    className: truck.speed > 0 ? "truck-marker-label truck-marker-moving" : "truck-marker-label truck-marker-stopped",
+                    color: truck.speed > 0 ? "#2E7D32" : "#D32F2F"
                 }
             });
 
-            const customContentHTML = `<div style="font-family: 'Roboto', sans-serif; width: 280px; padding: 22px; box-sizing: border-box; position: relative;">
+            const customContentHTML = `<div style="font-family: 'Roboto', sans-serif; width: 300px; padding: 22px; box-sizing: border-box; position: relative;">
                             <button class="close-popup-btn" style="position: absolute; top: 16px; right: 16px; background: #f0f0f0; border: none; font-size: 20px; color: #555; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">&times;</button>
                             <div style="display: flex; align-items: center; justify-content: flex-start; border-bottom: ${popupBorder}; padding-bottom: 12px; margin-bottom: 14px; padding-right: 32px;">
                                 ${popupSvg}
-                                <h3 style="margin: 0; color: #333; font-size: 21px; font-weight: 700; line-height: 1;">${truck.REGN_NUMBER}</h3>
+                                <h3 style="margin: 0; color: #333; font-size: 21px; font-weight: 700; line-height: 1;">${regn}</h3>
                             </div>
-                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; font-size: 14.5px; color: #444;">
-                                <strong style="color: #666;">Speed:</strong> <span style="font-weight: 500;">${truck.SPEED} km/h</span>
-                                <strong style="color: #666;">Ignition:</strong> 
-                                //<span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: ${truck.ignition === 1 ? '#2E7D32' : '#D32F2F'};">
-                                //    <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${truck.ignition === 1 ? '#2E7D32' : '#D32F2F'}; display: inline-block;"></span>
-                                //    ${truck.ignition === 1 ? 'Running' : 'Off'}
-                                //</span>
-                                //<strong style="color: #666;">Odometer:</strong> <span style="font-weight: 500;">${truck.odometer.toLocaleString()} km</span>
-                                <strong style="color: #666;">Update:</strong> <span style="font-size: 13.5px; font-weight: 500; color: #888;">${new Date(truck.datetime).toLocaleString()}</span>
+                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 14px; color: #444;">
+                                <strong style="color: #555;">Speed:</strong> <span style="font-weight: 500;">${Math.round(speed)} km/h</span>
+                                <strong style="color: #555;">Gear:</strong> <span style="font-weight: 500;">${gear}</span>
+                                <strong style="color: #555;">Engine:</strong> <span style="font-weight: 500;">${rpm} RPM</span>
+                                <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel}%</span>
+                                <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def}%</span>
+                                <strong style="color: #555;">Altitude:</strong> <span style="font-weight: 500;">${alt} m</span>
+                                <strong style="color: #555;">Update:</strong> <span style="font-size: 13px; font-weight: 500; color: #888;">${truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A'}</span>
                             </div>
                           </div>`;
             
@@ -211,7 +229,7 @@ window.truckMapInterop = {
         const data = this.mapsData[elementId];
         if (!data || data.markers.length === 0 || !regNumber) return null;
 
-        const index = data.markers.findIndex(m => m.getTitle() === regNumber);
+        const index = data.markers.findIndex(m => m.getTitle() && m.getTitle().toLowerCase() === regNumber.toLowerCase());
 
         if (index === -1) return null; // Not found
 
@@ -247,17 +265,29 @@ window.truckMapInterop = {
 
         updatedTrucks.forEach(truck => {
             // Find existing marker
-            const marker = data.markers.find(m => m.getTitle() === truck.REGN_NUMBER);
+            const marker = data.markers.find(m => m.getTitle() === (truck.REGN_NUMBER || truck.regN_NUMBER || truck.regn_NUMBER));
             if (marker) {
-                const newPos = { lat: truck.LATITUDE, lng: truck.LONGITUDE };
+                const lat = Number(truck.LATITUDE || truck.latitude);
+                const lng = Number(truck.LONGITUDE || truck.longitude);
+                if (isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0)) return;
+
+                const newPos = { lat, lng };
                 // Smooth literal position jump
                 marker.setPosition(newPos);
+
+                const gear = truck.GEAR_NUM ?? truck.gear_NUM ?? truck.gearNum ?? truck.gear_num ?? 'N/A';
+                const rpm = truck.ENGINE_SPEED ?? truck.enginE_SPEED ?? truck.engine_SPEED ?? truck.engineSpeed ?? '0';
+                const fuel = truck.FUEL_LEVEL ?? truck.fueL_LEVEL ?? truck.fuel_LEVEL ?? truck.fuelLevel ?? '0';
+                const def = truck.DEF_LEVEL ?? truck.deF_LEVEL ?? truck.def_LEVEL ?? truck.defLevel ?? '0';
+                const alt = truck.ALTITUDE ?? truck.altitude ?? '0';
+                const speed = truck.SPEED ?? truck.speed ?? 0;
+                const regn = truck.REGN_NUMBER ?? truck.regN_NUMBER ?? truck.regn_NUMBER ?? 'Unknown';
 
                 // Update Icon Colors dynamically
                 let lorrySvg = '';
                 let popupSvg = '';
                 let popupBorder = '';
-                if (truck.SPEED > 0) {
+                if (truck.speed > 0) {
                     lorrySvg = '<svg viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#43A047"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#2E7D32"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E8F5E9"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
                     popupSvg = '<svg style="margin-right: 12px; width: 44px; height: 22px;" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#43A047"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#2E7D32"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E8F5E9"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
                     popupBorder = '2px solid #43A047';
@@ -274,27 +304,26 @@ window.truckMapInterop = {
                     labelOrigin: new google.maps.Point(32, 48)
                 });
                 marker.setLabel({
-                    text: truck.REGN_NUMBER,
-                    className: truck.SPEED > 0 ? "truck-marker-label truck-marker-moving" : "truck-marker-label truck-marker-stopped",
-                    color: truck.SPEED > 0 ? "#2E7D32" : "#D32F2F"
+                    text: regn,
+                    className: truck.speed > 0 ? "truck-marker-label truck-marker-moving" : "truck-marker-label truck-marker-stopped",
+                    color: truck.speed > 0 ? "#2E7D32" : "#D32F2F"
                 });
 
                 // Update Background custom HTML string
-                const customContentHTML = `<div style="font-family: 'Roboto', sans-serif; width: 280px; padding: 22px; box-sizing: border-box; position: relative;">
+                const customContentHTML = `<div style="font-family: 'Roboto', sans-serif; width: 300px; padding: 22px; box-sizing: border-box; position: relative;">
                             <button class="close-popup-btn" style="position: absolute; top: 16px; right: 16px; background: #f0f0f0; border: none; font-size: 20px; color: #555; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">&times;</button>
                             <div style="display: flex; align-items: center; justify-content: flex-start; border-bottom: ${popupBorder}; padding-bottom: 12px; margin-bottom: 14px; padding-right: 32px;">
                                 ${popupSvg}
-                                <h3 style="margin: 0; color: #333; font-size: 21px; font-weight: 700; line-height: 1;">${truck.REGN_NUMBER}</h3>
+                                <h3 style="margin: 0; color: #333; font-size: 21px; font-weight: 700; line-height: 1;">${regn}</h3>
                             </div>
-                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; font-size: 14.5px; color: #444;">
-                                <strong style="color: #666;">Speed:</strong> <span style="font-weight: 500;">${Math.round(truck.SPEED)} km/h</span>
-                                <strong style="color: #666;">Ignition:</strong> 
-                                //<span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: ${truck.ignition === 1 ? '#2E7D32' : '#D32F2F'};">
-                                //    <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${truck.ignition === 1 ? '#2E7D32' : '#D32F2F'}; display: inline-block;"></span>
-                                //    ${truck.ignition === 1 ? 'Running' : 'Off'}
-                                //</span>
-                                //<strong style="color: #666;">Odometer:</strong> <span style="font-weight: 500;">${Math.round(truck.odometer).toLocaleString()} km</span>
-                                <strong style="color: #666;">Update:</strong> <span style="font-size: 13.5px; font-weight: 500; color: #888;">${truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A'}</span>
+                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 14px; color: #444;">
+                                <strong style="color: #555;">Speed:</strong> <span style="font-weight: 500;">${Math.round(speed)} km/h</span>
+                                <strong style="color: #555;">Gear:</strong> <span style="font-weight: 500;">${gear}</span>
+                                <strong style="color: #555;">Engine:</strong> <span style="font-weight: 500;">${rpm} RPM</span>
+                                <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel}%</span>
+                                <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def}%</span>
+                                <strong style="color: #555;">Altitude:</strong> <span style="font-weight: 500;">${alt} m</span>
+                                <strong style="color: #555;">Update:</strong> <span style="font-size: 13px; font-weight: 500; color: #888;">${truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A'}</span>
                             </div>
                           </div>`;
                 marker.customHtml = customContentHTML;
