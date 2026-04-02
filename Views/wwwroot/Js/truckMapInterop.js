@@ -110,7 +110,7 @@ window.truckMapInterop = {
         validTrucks.forEach(truck => {
             const position = { lat: Number(truck.LATITUDE || truck.latitude), lng: Number(truck.LONGITUDE || truck.longitude) };
             
-            const gear = truck.GEAR_NUM ?? truck.gear_NUM ?? truck.gearNum ?? truck.gear_num ?? 'N/A';
+            const gear = truck.GEAR_NUM ?? truck.gear_NUM ?? truck.gearNum ?? truck.gear_num ?? truck.geaR_NUM ?? 'N/A';
             const rpm = truck.ENGINE_SPEED ?? truck.enginE_SPEED ?? truck.engine_SPEED ?? truck.engineSpeed ?? '0';
             const fuel = truck.FUEL_LEVEL ?? truck.fueL_LEVEL ?? truck.fuel_LEVEL ?? truck.fuelLevel ?? '0';
             const def = truck.DEF_LEVEL ?? truck.deF_LEVEL ?? truck.def_LEVEL ?? truck.defLevel ?? '0';
@@ -163,8 +163,8 @@ window.truckMapInterop = {
                                 <strong style="color: #555;">Speed:</strong> <span style="font-weight: 500;">${Math.round(speed)} km/h</span>
                                 <strong style="color: #555;">Gear:</strong> <span style="font-weight: 500;">${gear}</span>
                                 <strong style="color: #555;">Engine:</strong> <span style="font-weight: 500;">${rpm} RPM</span>
-                                <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel}%</span>
-                                <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def}%</span>
+                                <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel}</span>
+                                <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def}</span>
                                 <strong style="color: #555;">Altitude:</strong> <span style="font-weight: 500;">${alt} m</span>
                                 <strong style="color: #555;">Update:</strong> <span style="font-size: 13px; font-weight: 500; color: #888;">${truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A'}</span>
                             </div>
@@ -320,8 +320,8 @@ window.truckMapInterop = {
                                 <strong style="color: #555;">Speed:</strong> <span style="font-weight: 500;">${Math.round(speed)} km/h</span>
                                 <strong style="color: #555;">Gear:</strong> <span style="font-weight: 500;">${gear}</span>
                                 <strong style="color: #555;">Engine:</strong> <span style="font-weight: 500;">${rpm} RPM</span>
-                                <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel}%</span>
-                                <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def}%</span>
+                                <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel}</span>
+                                <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def}</span>
                                 <strong style="color: #555;">Altitude:</strong> <span style="font-weight: 500;">${alt} m</span>
                                 <strong style="color: #555;">Update:</strong> <span style="font-size: 13px; font-weight: 500; color: #888;">${truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A'}</span>
                             </div>
