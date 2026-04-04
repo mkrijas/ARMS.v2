@@ -117,7 +117,7 @@ window.truckMapInterop = {
             const alt = truck.ALTITUDE ?? '0';
             const speed = truck.SPEED ?? 0;
             const regn = truck.REGN_NUMBER ?? 'Unknown';
-            const odo = truck.ODOMETER ?? 0;
+            const odo = truck.VEHICLE_ODO ?? 0;
 
             // Dynamically assign icon SVG based on truck speed
             let lorrySvg = '';
@@ -284,7 +284,7 @@ window.truckMapInterop = {
                 const alt = truck.ALTITUDE ?? '0';
                 const speed = truck.SPEED ?? 0;
                 const regn = truck.REGN_NUMBER ?? 'Unknown';
-                const odo = truck.ODOMETER ?? 0;
+                const odo = truck.VEHICLE_ODO ?? 0;
 
                 // Update Icon Colors dynamically
                 let lorrySvg = '';

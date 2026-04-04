@@ -688,7 +688,7 @@ namespace ArmsServices.DataServices
                     ENGINE_SPEED = dr.GetDecimal("ENGINE_SPEED"),
                     FUEL_CONS = dr.GetDecimal("FUEL_CONS"),
                     GEAR_NUM = (decimal)dr.GetInt32("GEAR_NUM"),
-                    ODOMETER = dr.GetDecimal("ODOMETER")
+                    VEHICLE_ODO = dr.GetDecimal("VEHICLE_ODO")
                 };
             }
         }

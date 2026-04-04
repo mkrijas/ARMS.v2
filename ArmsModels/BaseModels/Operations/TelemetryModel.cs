@@ -30,8 +30,8 @@ namespace ArmsModels.BaseModels
         public decimal? FUEL_CONS { get; set; }
         [JsonPropertyName("DEF_LEVEL")]
         public decimal? DEF_LEVEL { get; set; }
-        [JsonPropertyName("ODOMETER")]
-        public decimal? ODOMETER { get; set; }
+        [JsonPropertyName("VEHICLE_ODO")]
+        public decimal? VEHICLE_ODO { get; set; }
     }
 
     public class CustomDateTimeConverter : JsonConverter<DateTime>
