@@ -6,6 +6,8 @@
 @inject ITruckService Itruck
 @inject IDriverService Idriver
 @inject IEventService Ievent
+@inject ISnackbar snackbar
+@using System.Threading
 
 <div class="admin-page-container">
     <div class="admin-header-tiered mb-6">
@@ -51,23 +53,35 @@
         </MudGrid>
     </div>
 
-    @if(!ListView && collection.Any())
+    @if (IsLoading)
     {
+        <div style="display: flex; justify-content: center; align-items: center; min-height: 400px; width: 100%;" class="fade-in">
+            <LoaderComponent IsFullScreen="false" ShowLogo="false" Size="medium" LoadingText="Scanning Trips..." SubText="Retrieving logistics data" />
+        </div>
+    }
+    else if (!ListView && collection.Any())
+    {
+        <div class="d-flex justify-center mt-8 fade-in mb-4">
+            <MudPagination Color="Color.Primary" Count="@_totalPages" SelectedChanged="OnPageChanged" Selected="@_currentPage" Variant="Variant.Filled" Class="premium-pagination" />
+        </div>
         <MudGrid Class="fade-in">
-            @foreach (var item in collection)
+            @foreach (var item in PaginatedCollection)
             {
-                <MudItem xs="12" xl="6" lg="6">
+                <MudItem xs="12" xl="6" lg="6" @key="item.TripID">
                     <div class="admin-glass-card pa-0 overflow-hidden hover-scale transition-standard">
                         <TripDetailsCard Trip="item" IsLocked="item.IsLocked" IsMileageOverride="item.IsMileageOverride"></TripDetailsCard>
                     </div>
                 </MudItem>
             }
         </MudGrid>
+        <div class="d-flex justify-center mt-8 fade-in">
+            <MudPagination Color="Color.Primary" Count="@_totalPages" SelectedChanged="OnPageChanged" Selected="@_currentPage" Variant="Variant.Filled" Class="premium-pagination" />
+        </div>
     }
-    else if (ListView && collection.Any())
+    else if (ListView)
     {
         <div class="admin-glass-card pa-0 overflow-hidden fade-in">
-            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+            <MudTable ServerData="@ServerReload" T="TripModel" Elevation="0" Class="modern-admin-table" Hover="true" @ref="_table">
                 <HeaderContent>
                     <MudTh><span class="admin-header-text">MISSION AUTH</span></MudTh>
                     <MudTh><span class="admin-header-text">DEPLOYMENT DATE</span></MudTh>
@@ -88,13 +102,13 @@
                     <MudTd DataLabel="Truck">
                         <div class="d-flex align-center gap-2">
                            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" Class="opa-40" />
-                           <span class="fw-700">@tripInfoDictionary[context.TripID].Truck</span>
+                           <span class="fw-700">@(context.TruckID.HasValue && truckNames.ContainsKey(context.TruckID.Value) ? truckNames[context.TruckID.Value] : "")</span>
                         </div>
                     </MudTd>
                     <MudTd DataLabel="Driver">
                          <div class="d-flex align-center">
-                            <MudAvatar Color="Color.Primary" Variant="Variant.Text" Size="Size.Small" Class="mr-3 fw-800 border-solid border-1">@tripInfoDictionary[context.TripID].Driver?.Substring(0,1).ToUpper()</MudAvatar>
-                            <span class="fw-600">@tripInfoDictionary[context.TripID].Driver</span>
+                            <MudAvatar Color="Color.Primary" Variant="Variant.Text" Size="Size.Small" Class="mr-3 fw-800 border-solid border-1">@(context.DriverID.HasValue && driverNames.ContainsKey(context.DriverID.Value) && !string.IsNullOrEmpty(driverNames[context.DriverID.Value]) ? driverNames[context.DriverID.Value].Substring(0,1).ToUpper() : "")</MudAvatar>
+                            <span class="fw-600">@(context.DriverID.HasValue && driverNames.ContainsKey(context.DriverID.Value) ? driverNames[context.DriverID.Value] : "")</span>
                         </div>
                     </MudTd>
                     <MudTd DataLabel="Actions" Style="text-align: right;">
@@ -113,38 +127,113 @@
 
 @code {
 
+    private MudTable<TripModel> _table;
     public TruckModel SelectedTruck { get; set; }
     private List<TripModel> collection = new List<TripModel>();
     private string tripnumber = string.Empty;
     public DateTime? FromDate { get; set; } = null;
     public DateTime? ToDate { get; set; } = null;
     public bool ListView { get; set; }
-    private Dictionary<long?, TripInfoModel> tripInfoDictionary = new Dictionary<long?, TripInfoModel>();
+    
+    // Pagination variables
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private int _totalItems = 0;
+    private int _totalPages => (int)Math.Ceiling((double)_totalItems / _pageSize) == 0 ? 1 : (int)Math.Ceiling((double)_totalItems / _pageSize);
+    private IEnumerable<TripModel> PaginatedCollection => collection;
+
+    // Performance optimized lookup dictionaries
+    private Dictionary<int, string> truckNames = new Dictionary<int, string>();
+    private Dictionary<int, string> driverNames = new Dictionary<int, string>();
+    
+    private bool IsLoading = false;
 
     public async Task fetch()
     {
+        if (ListView && _table != null)
+        {
+            await _table.ReloadServerData();
+            return;
+        }
+    
+        IsLoading = true;
+        _currentPage = 1; 
+        StateHasChanged();
+        await Task.Delay(100);
+        await LoadPageData();
+    }
+    
+    private async Task OnPageChanged(int page)
+    {
+        if (_currentPage != page)
+        {
+            _currentPage = page;
+            IsLoading = true;
+            StateHasChanged();
+            await Task.Delay(10);
+            await LoadPageData();
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task LoadPageData(int? customPageSize = null)
+    {
+        int pSize = customPageSize ?? _pageSize;
         collection = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int branchID = int.Parse(brancIDString);
+        truckNames = new();
+        driverNames = new();
+
+        var authprovState = await auth.GetAuthenticationStateAsync();
+        int? branchID = authprovState.User.HasClaim(c => c.Type == "BranchID") ? (int?)Convert.ToInt32(authprovState.User.Claims.First(c => c.Type == "BranchID").Value) : null;
+
         if (string.IsNullOrEmpty(tripnumber) || (tripnumber.Length >= 3))
         {
-            await foreach (var item in tripIservice.SearchTrips(SelectedTruck?.TruckID, branchID, tripnumber, FromDate, ToDate))
+            try
             {
-                collection.Add(item);
-                if (item.TripID != null)
+                await foreach (var item in tripIservice.SearchTrips(SelectedTruck?.TruckID, branchID, tripnumber, FromDate, ToDate, _currentPage, pSize))
                 {
-                    var tripInfo = tripIservice.GetTripInfo(item.TripID);
-                    tripInfoDictionary[item.TripID] = tripInfo;
+                    collection.Add(item);
+                    if (item.TotalSearchCount > _totalItems) _totalItems = item.TotalSearchCount ?? 0;
                 }
+
+                if (!collection.Any()) _totalItems = 0;
+
+                // O(1) Unique ID Extraction for exactly this visible chunk
+                var distinctTruckIds = collection.Where(x => x.TruckID.HasValue).Select(x => x.TruckID.Value).Distinct();
+                var distinctDriverIds = collection.Where(x => x.DriverID.HasValue).Select(x => x.DriverID.Value).Distinct();
+
+                // Fetch missing unique trucks
+                foreach(var tId in distinctTruckIds)
+                {
+                    var t = Itruck.SelectByID(tId);
+                    if (t != null) truckNames[tId] = t.RegNo;
+                }
+
+                // Fetch missing unique drivers
+                foreach(var dId in distinctDriverIds)
+                {
+                    var d = Idriver.SelectByID(dId);
+                    if (d != null) driverNames[dId] = d.DriverName;
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add("Error loading data: " + ex.Message, Severity.Error);
             }
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
-                "Warning !",
-                "There should be atleast 3 numbers in Trip Number.");
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync("Warning !", "There should be atleast 3 numbers in Trip Number.");
         }
+        IsLoading = false;
+    }
+
+    private async Task<TableData<TripModel>> ServerReload(TableState state, CancellationToken token)
+    {
+        _currentPage = state.Page + 1;
+        await LoadPageData(state.PageSize);
+        return new TableData<TripModel>() { TotalItems = _totalItems, Items = collection };
     }
 
     private async void OpenTripCard(TripModel Trip)

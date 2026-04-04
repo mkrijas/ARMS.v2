@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -96,7 +96,7 @@ namespace ArmsServices.DataServices
         // Helper method to map data record to TripModel
         private TripModel GetModel(IDataRecord reader)
         {
-            return new TripModel
+            var model = new TripModel()
             {
                 BranchID = reader.GetInt32("BranchID"),
                 DriverID = reader.GetInt32("DriverID"),
@@ -117,6 +117,9 @@ namespace ArmsServices.DataServices
                     UserID = reader.GetString("UserID"),
                 },
             };
+            
+            try { model.TotalSearchCount = reader.GetInt32("TotalCount"); } catch { }
+            return model;
         }
 
         // Method to cancel a trip  
@@ -279,7 +282,7 @@ namespace ArmsServices.DataServices
                     Driver = reader.GetString("Driver"),
                     Fuel = reader.GetDecimal("Fuel"),
                     RunKM = reader.GetInt32("RunKm"),
-                    RunDuration = reader.GetInt32("TimeDifference"),
+                    RunDuration = reader.GetDecimal("TimeDifference"),
                     TripID = reader.GetInt64("TripID"),
                     TripNumber = reader.GetString("TripNumber"),
                     Truck = reader.GetString("Truck"),
@@ -295,7 +298,7 @@ namespace ArmsServices.DataServices
         }
 
         // Method to search trips based on various filters
-        public async IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString, DateTime? FromDate, DateTime? ToDate)
+        public async IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString, DateTime? FromDate, DateTime? ToDate, int pageNumber = 1, int pageSize = 10)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -304,6 +307,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckID", TruckID),
                new SqlParameter("@FromDate", FromDate),
                new SqlParameter("@ToDate", ToDate),
+               new SqlParameter("@PageNumber", pageNumber),
+               new SqlParameter("@PageSize", pageSize),
                new SqlParameter("@Operation", "SearchTrip"),
             };
             await foreach (var reader in Iservice.GetDataReaderAsync("[usp.Operation.Trip.Select]", parameters))
@@ -358,7 +363,7 @@ namespace ArmsServices.DataServices
                     Fuel = dr.GetDecimal("Fuel"),
                     IsMileageOverride = dr.GetBoolean("OverrideMileageShortage"),
                     Mileage = dr.GetDecimal("Mileage"),
-                    RunDuration = dr.GetInt32("TimeDifference"),
+                    RunDuration = dr.GetDecimal("TimeDifference"),
                     RunKM = dr.GetInt32("RunKm"),
                     SettledKm = dr.GetDecimal("SettledKm"),
                     Truck = dr.GetString("Truck"),
