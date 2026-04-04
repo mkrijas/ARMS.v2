@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualBasic;
+using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -47,6 +47,7 @@ namespace ArmsModels.BaseModels
         public bool IsLocked { get; set; }
         public bool IsMileageOverride { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+        public int? TotalSearchCount { get; set; }
         [ValidateComplexType]
         public EventModel StartEvent { get; set; }
     }
