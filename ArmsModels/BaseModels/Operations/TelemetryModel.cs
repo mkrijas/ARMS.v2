@@ -10,16 +10,28 @@ namespace ArmsModels.BaseModels
         [JsonPropertyName("DATE_TIME")]
         [JsonConverter(typeof(CustomDateTimeConverter))]
         public DateTime? DATE_TIME { get; set; }
+        [JsonPropertyName("REGN_NUMBER")]
         public string REGN_NUMBER { get; set; }
+        [JsonPropertyName("LATITUDE")]
         public double? LATITUDE { get; set; }
+        [JsonPropertyName("LONGITUDE")]
         public double? LONGITUDE { get; set; }
+        [JsonPropertyName("ALTITUDE")]
         public double? ALTITUDE { get; set; }
+        [JsonPropertyName("ENGINE_SPEED")]
         public decimal? ENGINE_SPEED { get; set; }
+        [JsonPropertyName("SPEED")]
         public decimal? SPEED { get; set; }
+        [JsonPropertyName("GEAR_NUM")]
         public decimal? GEAR_NUM { get; set; }
+        [JsonPropertyName("FUEL_LEVEL")]
         public decimal? FUEL_LEVEL { get; set; }
+        [JsonPropertyName("FUEL_CONS")]
         public decimal? FUEL_CONS { get; set; }
+        [JsonPropertyName("DEF_LEVEL")]
         public decimal? DEF_LEVEL { get; set; }
+        [JsonPropertyName("ODOMETER")]
+        public decimal? ODOMETER { get; set; }
     }
 
     public class CustomDateTimeConverter : JsonConverter<DateTime>

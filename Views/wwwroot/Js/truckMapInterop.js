@@ -110,19 +110,20 @@ window.truckMapInterop = {
         validTrucks.forEach(truck => {
             const position = { lat: Number(truck.LATITUDE || truck.latitude), lng: Number(truck.LONGITUDE || truck.longitude) };
             
-            const gear = truck.GEAR_NUM ?? truck.gear_NUM ?? truck.gearNum ?? truck.gear_num ?? truck.geaR_NUM ?? 'N/A';
-            const rpm = truck.ENGINE_SPEED ?? truck.enginE_SPEED ?? truck.engine_SPEED ?? truck.engineSpeed ?? '0';
-            const fuel = truck.FUEL_LEVEL ?? truck.fueL_LEVEL ?? truck.fuel_LEVEL ?? truck.fuelLevel ?? '0';
-            const def = truck.DEF_LEVEL ?? truck.deF_LEVEL ?? truck.def_LEVEL ?? truck.defLevel ?? '0';
-            const alt = truck.ALTITUDE ?? truck.altitude ?? '0';
-            const speed = truck.SPEED ?? truck.speed ?? 0;
-            const regn = truck.REGN_NUMBER ?? truck.regN_NUMBER ?? truck.regn_NUMBER ?? 'Unknown';
+            const gear = truck.GEAR_NUM ?? 'N/A';
+            const rpm = truck.ENGINE_SPEED ?? '0';
+            const fuel = truck.FUEL_LEVEL ?? '0';
+            const def = truck.DEF_LEVEL ?? '0';
+            const alt = truck.ALTITUDE ?? '0';
+            const speed = truck.SPEED ?? 0;
+            const regn = truck.REGN_NUMBER ?? 'Unknown';
+            const odo = truck.ODOMETER ?? 0;
 
             // Dynamically assign icon SVG based on truck speed
             let lorrySvg = '';
             let popupSvg = '';
             let popupBorder = '';
-            if (truck.speed > 0) {
+            if (speed > 0) {
                 // Green moving truck SVG
                 lorrySvg = '<svg viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#43A047"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#2E7D32"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E8F5E9"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
                 popupSvg = '<svg style="margin-right: 12px; width: 44px; height: 22px;" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#43A047"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#2E7D32"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E8F5E9"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
@@ -148,8 +149,8 @@ window.truckMapInterop = {
                 },
                 label: {
                     text: regn,
-                    className: truck.speed > 0 ? "truck-marker-label truck-marker-moving" : "truck-marker-label truck-marker-stopped",
-                    color: truck.speed > 0 ? "#2E7D32" : "#D32F2F"
+                    className: speed > 0 ? "truck-marker-label truck-marker-moving" : "truck-marker-label truck-marker-stopped",
+                    color: speed > 0 ? "#2E7D32" : "#D32F2F"
                 }
             });
 
@@ -166,6 +167,7 @@ window.truckMapInterop = {
                                 <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel}</span>
                                 <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def}</span>
                                 <strong style="color: #555;">Altitude:</strong> <span style="font-weight: 500;">${alt} m</span>
+                                <strong style="color: #555;">Odometer:</strong> <span style="font-weight: 500;">${odo} km</span>
                                 <strong style="color: #555;">Update:</strong> <span style="font-size: 13px; font-weight: 500; color: #888;">${truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A'}</span>
                             </div>
                           </div>`;
@@ -275,19 +277,20 @@ window.truckMapInterop = {
                 // Smooth literal position jump
                 marker.setPosition(newPos);
 
-                const gear = truck.GEAR_NUM ?? truck.gear_NUM ?? truck.gearNum ?? truck.gear_num ?? 'N/A';
-                const rpm = truck.ENGINE_SPEED ?? truck.enginE_SPEED ?? truck.engine_SPEED ?? truck.engineSpeed ?? '0';
-                const fuel = truck.FUEL_LEVEL ?? truck.fueL_LEVEL ?? truck.fuel_LEVEL ?? truck.fuelLevel ?? '0';
-                const def = truck.DEF_LEVEL ?? truck.deF_LEVEL ?? truck.def_LEVEL ?? truck.defLevel ?? '0';
-                const alt = truck.ALTITUDE ?? truck.altitude ?? '0';
-                const speed = truck.SPEED ?? truck.speed ?? 0;
-                const regn = truck.REGN_NUMBER ?? truck.regN_NUMBER ?? truck.regn_NUMBER ?? 'Unknown';
+                const gear = truck.GEAR_NUM ?? 'N/A';
+                const rpm = truck.ENGINE_SPEED ?? '0';
+                const fuel = truck.FUEL_LEVEL ?? '0';
+                const def = truck.DEF_LEVEL ?? '0';
+                const alt = truck.ALTITUDE ?? '0';
+                const speed = truck.SPEED ?? 0;
+                const regn = truck.REGN_NUMBER ?? 'Unknown';
+                const odo = truck.ODOMETER ?? 0;
 
                 // Update Icon Colors dynamically
                 let lorrySvg = '';
                 let popupSvg = '';
                 let popupBorder = '';
-                if (truck.speed > 0) {
+                if (speed > 0) {
                     lorrySvg = '<svg viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#43A047"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#2E7D32"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E8F5E9"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
                     popupSvg = '<svg style="margin-right: 12px; width: 44px; height: 22px;" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="38" height="20" rx="3" fill="#43A047"/><path d="M 44 10 L 52 10 C 54 10 56 12 57 14 L 60 19 C 60.5 20 60.5 21 60 22 L 59 24 H 44 Z" fill="#2E7D32"/><path d="M 46 12 L 51 12 C 52 12 53 14 54 14 L 56 18 H 46 Z" fill="#E8F5E9"/><rect x="4" y="23" width="55" height="2" fill="#555"/><circle cx="12" cy="24" r="5" fill="#212121"/><circle cx="24" cy="24" r="5" fill="#212121"/><circle cx="50" cy="24" r="5" fill="#212121"/><circle cx="12" cy="24" r="2" fill="#E0E0E0"/><circle cx="24" cy="24" r="2" fill="#E0E0E0"/><circle cx="50" cy="24" r="2" fill="#E0E0E0"/></svg>';
                     popupBorder = '2px solid #43A047';
@@ -305,8 +308,8 @@ window.truckMapInterop = {
                 });
                 marker.setLabel({
                     text: regn,
-                    className: truck.speed > 0 ? "truck-marker-label truck-marker-moving" : "truck-marker-label truck-marker-stopped",
-                    color: truck.speed > 0 ? "#2E7D32" : "#D32F2F"
+                    className: speed > 0 ? "truck-marker-label truck-marker-moving" : "truck-marker-label truck-marker-stopped",
+                    color: speed > 0 ? "#2E7D32" : "#D32F2F"
                 });
 
                 // Update Background custom HTML string
@@ -323,6 +326,7 @@ window.truckMapInterop = {
                                 <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel}</span>
                                 <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def}</span>
                                 <strong style="color: #555;">Altitude:</strong> <span style="font-weight: 500;">${alt} m</span>
+                                <strong style="color: #555;">Odometer:</strong> <span style="font-weight: 500;">${odo} km</span>
                                 <strong style="color: #555;">Update:</strong> <span style="font-size: 13px; font-weight: 500; color: #888;">${truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A'}</span>
                             </div>
                           </div>`;
