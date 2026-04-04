@@ -26,5 +26,6 @@ namespace ArmsServices.DataServices
         IEnumerable<object> GetOutstandingBills(long? TripID);
         IEnumerable<GcTariffModel> GetTariffs(long? TripID);
         IEnumerable<EventCardModel> GetEventList(long? TripID);
+        IEnumerable<NeutralRunningEventModel> GetNeutralRunningEvents(int? TruckID, DateTime? FromDate, DateTime? ToDate);
     }
 }

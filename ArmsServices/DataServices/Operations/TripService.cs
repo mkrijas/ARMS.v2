@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Net.Http;
 
 
 namespace ArmsServices.DataServices
@@ -255,7 +256,7 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-
+                
         // Method to get trip information
         public TripInfoModel GetTripInfo(long? TripID)
         {
@@ -322,6 +323,62 @@ namespace ArmsServices.DataServices
                     TariffTypeName = dr.GetString("TariffTypeName"),
                 };
             }
+        }
+
+        IEnumerable<NeutralRunningEventModel> ITripService.GetNeutralRunningEvents(int? TruckID, DateTime? FromDate, DateTime? ToDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@FromDate", FromDate),
+               new SqlParameter("@ToDate", ToDate)
+            };
+
+            foreach (var reader in Iservice.GetDataReader("[usp.NeutralRunning.Select]", parameters))
+            {
+                yield return GetNeutralRunningEvents(reader);
+            }
+        }
+
+        private NeutralRunningEventModel GetNeutralRunningEvents(IDataRecord reader)
+        {
+            var startLat = reader.GetDouble(reader.GetOrdinal("StartLat"));
+            var startLng = reader.GetDouble(reader.GetOrdinal("StartLng"));
+            var endLat = reader.GetDouble(reader.GetOrdinal("EndLat"));
+            var endLng = reader.GetDouble(reader.GetOrdinal("EndLng"));
+
+            return new NeutralRunningEventModel
+            {
+                REGN_NUMBER = reader.GetString("REGN_NUMBER"),
+                StartTime = reader.GetDateTime("StartTime"),
+                EndTime = reader.GetDateTime("EndTime"),
+                DurationSeconds = reader.GetDecimal("DurationSeconds"),
+                DurationMinutes = reader.GetDecimal("DurationMinutes"),
+                StartLat = startLat,
+                StartLng = startLng,
+                EndLat = endLat,
+                EndLng = endLng,
+                DistanceKM = reader.GetDecimal("DistanceKM"),
+                StartLocation = GetAddress(startLat, startLng).GetAwaiter().GetResult(),
+                EndLocation = GetAddress(endLat, endLng).GetAwaiter().GetResult(),
+            };
+        }
+
+        public async Task<string> GetAddress(double lat, double lng)
+        {
+            var apiKey = "AIzaSyCvBqso9Nzx2cIcZsnG4zb24fkgLwSHmys";
+
+            var url = $"https://maps.googleapis.com/maps/api/geocode/json?latlng={lat},{lng}&key={apiKey}";
+
+            using var client = new HttpClient();
+            var response = await client.GetStringAsync(url);
+
+            dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(response);
+
+            if (json.status == "OK")
+                return json.results[0].formatted_address;
+
+            return "Unknown Location";
         }
     }
 }
