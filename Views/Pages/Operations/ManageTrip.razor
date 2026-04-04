@@ -51,7 +51,13 @@
         </MudGrid>
     </div>
 
-    @if(!ListView && collection.Any())
+    @if (IsLoading)
+    {
+        <div style="display: flex; justify-content: center; align-items: center; min-height: 400px; width: 100%;" class="fade-in">
+            <LoaderComponent IsFullScreen="false" ShowLogo="false" Size="medium" LoadingText="Scanning Trips..." SubText="Retrieving logistics data" />
+        </div>
+    }
+    else if (!ListView && collection.Any())
     {
         <MudGrid Class="fade-in">
             @foreach (var item in collection)
@@ -88,13 +94,13 @@
                     <MudTd DataLabel="Truck">
                         <div class="d-flex align-center gap-2">
                            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" Class="opa-40" />
-                           <span class="fw-700">@tripInfoDictionary[context.TripID].Truck</span>
+                           <span class="fw-700">@(tripInfoDictionary.ContainsKey(context.TripID) ? tripInfoDictionary[context.TripID].Truck : "")</span>
                         </div>
                     </MudTd>
                     <MudTd DataLabel="Driver">
                          <div class="d-flex align-center">
-                            <MudAvatar Color="Color.Primary" Variant="Variant.Text" Size="Size.Small" Class="mr-3 fw-800 border-solid border-1">@tripInfoDictionary[context.TripID].Driver?.Substring(0,1).ToUpper()</MudAvatar>
-                            <span class="fw-600">@tripInfoDictionary[context.TripID].Driver</span>
+                            <MudAvatar Color="Color.Primary" Variant="Variant.Text" Size="Size.Small" Class="mr-3 fw-800 border-solid border-1">@(tripInfoDictionary.ContainsKey(context.TripID) && !string.IsNullOrEmpty(tripInfoDictionary[context.TripID].Driver) ? tripInfoDictionary[context.TripID].Driver.Substring(0,1).ToUpper() : "")</MudAvatar>
+                            <span class="fw-600">@(tripInfoDictionary.ContainsKey(context.TripID) ? tripInfoDictionary[context.TripID].Driver : "")</span>
                         </div>
                     </MudTd>
                     <MudTd DataLabel="Actions" Style="text-align: right;">
@@ -120,24 +126,40 @@
     public DateTime? ToDate { get; set; } = null;
     public bool ListView { get; set; }
     private Dictionary<long?, TripInfoModel> tripInfoDictionary = new Dictionary<long?, TripInfoModel>();
+    private bool IsLoading = false;
 
     public async Task fetch()
     {
+        IsLoading = true;
         collection = new();
+        tripInfoDictionary = new();
+        StateHasChanged();
+        
+        // Critical: Yield thread to allow Blazor to render the loader UI before blocking it
+        await Task.Delay(100);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int branchID = int.Parse(brancIDString);
+        
         if (string.IsNullOrEmpty(tripnumber) || (tripnumber.Length >= 3))
         {
+            var tempCollection = new List<TripModel>();
+            var tempDict = new Dictionary<long?, TripInfoModel>();
+
             await foreach (var item in tripIservice.SearchTrips(SelectedTruck?.TruckID, branchID, tripnumber, FromDate, ToDate))
             {
-                collection.Add(item);
+                tempCollection.Add(item);
                 if (item.TripID != null)
                 {
                     var tripInfo = tripIservice.GetTripInfo(item.TripID);
-                    tripInfoDictionary[item.TripID] = tripInfo;
+                    tempDict[item.TripID] = tripInfo;
                 }
+                await Task.Yield(); // Prevent UI lockup during N+1 loops
             }
+
+            collection = tempCollection;
+            tripInfoDictionary = tempDict;
         }
         else
         {
@@ -145,6 +167,9 @@
                 "Warning !",
                 "There should be atleast 3 numbers in Trip Number.");
         }
+
+        IsLoading = false;
+        StateHasChanged();
     }
 
     private async void OpenTripCard(TripModel Trip)

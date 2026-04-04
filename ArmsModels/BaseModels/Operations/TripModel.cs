@@ -64,7 +64,7 @@ namespace ArmsModels.BaseModels
         public string Destination { get; set; }
         public int? Distance { get; set; }
         public int? RunKM { get; set; }
-        public int? RunDuration { get; set; }
+        public decimal? RunDuration { get; set; }
         public decimal? Fuel { get; set; }
         public decimal? Freight { get; set; }
         public decimal? Expenses { get; set; }

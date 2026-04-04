@@ -12,13 +12,13 @@ namespace ArmsServices
     public static class ext
     {
         public static string GetLatLongString(this IDataRecord dr, string name)
-        {            
+        {
             SqlGeography geo = GetFieldValue<SqlGeography>(dr, name, null);
             return string.Empty;
         }
         public static bool IsDBNull(this IDataRecord dr, string name)
         {
-            return dr.IsDBNull(dr.GetOrdinal(name));            
+            return dr.IsDBNull(dr.GetOrdinal(name));
         }
 
         public static string GetString(this IDataRecord dr, string name)
@@ -28,8 +28,8 @@ namespace ArmsServices
         public static int? GetInt32(this IDataRecord dr, string name)
         {
             return GetFieldValue<int?>(dr, name, null);
-        }    
-        
+        }
+
         public static short? GetInt16(this IDataRecord dr, string name)
         {
             return GetFieldValue<short?>(dr, name, null);
@@ -53,15 +53,25 @@ namespace ArmsServices
 
         public static decimal? GetDecimal(this IDataRecord dr, string name)
         {
-            var val =  GetFieldValue<decimal?>(dr, name, null);
+            var val = GetFieldValue<decimal?>(dr, name, null);
             if (val != null)
-                return val/1.000000000000000000000000000000000m;
-                return val;
+                return val / 1.000000000000000000000000000000000m;
+            return val;
+        }
+
+        public static string ToTimeString(this decimal? val)
+        {
+            if (val != null)
+            {
+                TimeSpan ts = TimeSpan.FromHours((double)val);
+                return String.Format("{0}:{1}", Convert.ToInt32(Math.Floor(ts.TotalHours)), ts.Minutes);
+            }
+            return "";
         }
 
         public static double? GetDouble(this IDataRecord dr, string name)
         {
-            var val = GetFieldValue<double?>(dr, name, null);            
+            var val = GetFieldValue<double?>(dr, name, null);
             return val;
         }
 
@@ -70,7 +80,7 @@ namespace ArmsServices
             return GetFieldValue<DateTime?>(dr, name, null);
         }
         public static T GetFieldValue<T>(this IDataRecord dr, string fieldName, T defaultvalue = default(T))
-        {            
+        {
             try
             {
                 if (!dr.HasColumn(fieldName))
@@ -89,10 +99,10 @@ namespace ArmsServices
 
         public static DataTable ToDataTable(this List<int> items)
         {
-            DataTable dataTable = new DataTable("IntCol");                         
+            DataTable dataTable = new DataTable("IntCol");
             dataTable.Columns.Add("IntCol", typeof(int));
             foreach (int item in items)
-            {              
+            {
                 dataTable.Rows.Add(item);
             }
             return dataTable;
@@ -107,8 +117,8 @@ namespace ArmsServices
             PropertyInfo[] Props = (typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)).Where(x => x.GetGetMethod().IsVirtual == false).ToArray();
             foreach (PropertyInfo prop in Props)
             {
-                if(!prop.GetGetMethod().IsVirtual)
-                dataTable.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
+                if (!prop.GetGetMethod().IsVirtual)
+                    dataTable.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
             }
             int length = Props.Where(x => x.GetGetMethod().IsVirtual == false).ToArray().Length;
             foreach (T item in items)
