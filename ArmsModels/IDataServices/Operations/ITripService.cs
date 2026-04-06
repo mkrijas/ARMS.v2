@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
@@ -27,5 +27,6 @@ namespace ArmsServices.DataServices
         IEnumerable<GcTariffModel> GetTariffs(long? TripID);
         IEnumerable<EventCardModel> GetEventList(long? TripID);
         IEnumerable<NeutralRunningEventModel> GetNeutralRunningEvents(int? TruckID, DateTime? FromDate, DateTime? ToDate);
+        Task<IEnumerable<NeutralRunningEventModel>> GetNeutralRunningEventsAsync(int? TruckID, DateTime? FromDate, DateTime? ToDate);
     }
 }

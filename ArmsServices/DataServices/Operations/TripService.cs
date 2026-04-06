@@ -340,6 +340,24 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public async Task<IEnumerable<NeutralRunningEventModel>> GetNeutralRunningEventsAsync(int? TruckID, DateTime? FromDate, DateTime? ToDate)
+        {
+            var list = ((ITripService)this).GetNeutralRunningEvents(TruckID, FromDate, ToDate).ToList();
+
+            var fetchTasks = new List<Task>();
+            foreach (var item in list)
+            {
+                fetchTasks.Add(Task.Run(async () =>
+                {
+                    item.StartLocation = await GetAddress(item.StartLat, item.StartLng);
+                    item.EndLocation = await GetAddress(item.EndLat, item.EndLng);
+                }));
+            }
+
+            await Task.WhenAll(fetchTasks);
+            return list;
+        }
+
         private NeutralRunningEventModel GetNeutralRunningEvents(IDataRecord reader)
         {
             var startLat = reader.GetDouble(reader.GetOrdinal("StartLat"));
@@ -359,13 +377,19 @@ namespace ArmsServices.DataServices
                 EndLat = endLat,
                 EndLng = endLng,
                 DistanceKM = reader.GetDecimal("DistanceKM"),
-                StartLocation = GetAddress(startLat, startLng).GetAwaiter().GetResult(),
-                EndLocation = GetAddress(endLat, endLng).GetAwaiter().GetResult(),
             };
         }
 
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _locationCache = new();
+
         public async Task<string> GetAddress(double lat, double lng)
         {
+            var cacheKey = $"{Math.Round(lat, 3)},{Math.Round(lng, 3)}";
+            if (_locationCache.TryGetValue(cacheKey, out string cachedAddress))
+            {
+                return cachedAddress;
+            }
+
             var apiKey = "AIzaSyCvBqso9Nzx2cIcZsnG4zb24fkgLwSHmys";
 
             var url = $"https://maps.googleapis.com/maps/api/geocode/json?latlng={lat},{lng}&key={apiKey}";
@@ -376,7 +400,11 @@ namespace ArmsServices.DataServices
             dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(response);
 
             if (json.status == "OK")
-                return json.results[0].formatted_address;
+            {
+                var formattedAddress = (string)json.results[0].formatted_address;
+                _locationCache.TryAdd(cacheKey, formattedAddress);
+                return formattedAddress;
+            }
 
             return "Unknown Location";
         }

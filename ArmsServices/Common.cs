@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -53,10 +53,10 @@ namespace ArmsServices
 
         public static decimal? GetDecimal(this IDataRecord dr, string name)
         {
-            var val =  GetFieldValue<decimal?>(dr, name, null);
-            if (val != null)
-                return val/1.000000000000000000000000000000000m;
-                return val;
+            if (!dr.HasColumn(name)) return null;
+            var val = dr[name];
+            if (val == DBNull.Value || val == null) return null;
+            return Convert.ToDecimal(val) / 1.000000000000000000000000000000000m;
         }
 
         public static DateTime? GetDateTime(this IDataRecord dr, string name)
