@@ -154,6 +154,8 @@ namespace DAL.DataServices.Finance.Transactions
                new SqlParameter("@AllottedMileage", model.AllottedMileage),
                new SqlParameter("@AllottedDistance", model.AllottedDistance),
                new SqlParameter("@FuelPrice", model.FuelPrice),
+               new SqlParameter("@NeutralKM", model.NeutralKM),
+               new SqlParameter("@NeutralAmount", model.NeutralAmount),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@AllowanceAmount", model.AllowanceAmount),
                new SqlParameter("@Narration", model.Narration),
@@ -197,7 +199,8 @@ namespace DAL.DataServices.Finance.Transactions
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 AllowanceAmount = dr.GetDecimal("AllowanceAmount"),
                 Narration = dr.GetString("Narration"),
-
+                NeutralKM = dr.GetDecimal("NeutralKM"),
+                NeutralAmount = dr.GetDecimal("NeutralAmount"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
