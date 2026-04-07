@@ -1,4 +1,4 @@
-﻿@inject IMileageShortageReceiptService Iservice
+@inject IMileageShortageReceiptService Iservice
 @using System.Threading;
 @using ArmsModels.BaseModels.Finance.Transactions
 @using Core.BaseModels.Finance.Transactions;
@@ -41,8 +41,6 @@
                      <MudItem xs="12" md="4">
                          <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
                      </MudItem>
-                     <MudItem md="4">
-                     </MudItem>
                      <MudItem xs="12" md="4">
                          <MudTextField ReadOnly="ReadOnly" @bind-Value="model.RunningKM" Label="Running KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RunningKM)" Disabled></MudTextField>
                      </MudItem>
@@ -58,11 +56,17 @@
                      <MudItem xs="12" md="4">
                          <MudNumericField HideSpinButtons @bind-Value="model.FuelPrice" Label="Fuel Price" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.FuelPrice)"></MudNumericField>
                      </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="model.NeutralKM" Label="Neutral KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.NeutralKM)" ReadOnly></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField HideSpinButtons @bind-Value="model.NeutralAmount" Label="Neutral Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.NeutralAmount)"></MudNumericField>
+                    </MudItem>
                      <MudItem xs="12" md="4">
                          <MudTooltip Text="Calculate">
                              <MudButton OnClick="CalculateTotalAmountToDeduct" Variant="Variant.Filled" Color="Color.Primary">Calculate Amount</MudButton>
                          </MudTooltip>
-                     </MudItem>
+                     </MudItem>                     
                      <MudItem xs="12" md="4">
                          <MudTextField @bind-Value="model.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)" Disabled></MudTextField>
                      </MudItem>
@@ -152,6 +156,19 @@
                 model.RunningKM = info.RunKM;
                 model.Narration = string.Format("Trip : {0}; Truck : {1}; Driver : {2};", info.TripNumber, info.Truck, info.Driver);
                 model.AllottedDistance = info.SettledKm;
+
+                var tripModel = tripService.Select(model.TripID);
+                if (tripModel != null && tripModel.TruckID != null)
+                {
+                    var eventList = tripService.GetEventList(model.TripID).ToList();
+                    if (eventList.Any(x => x.EventDateTime.HasValue))
+                    {
+                        var fromDate = eventList.Where(x => x.EventDateTime.HasValue).Min(x => x.EventDateTime);
+                        var toDate = eventList.Where(x => x.EventDateTime.HasValue).Max(x => x.EventDateTime);
+                        var events = tripService.GetNeutralRunningEvents(tripModel.TruckID, fromDate, toDate).ToList();
+                        model.NeutralKM = events.Sum(x => x.DistanceKM) ?? 0;
+                    }
+                }
             }
             model.NatureOfTransaction = "Mileage Shortage";
             model.BranchID = branchID;
@@ -160,6 +177,12 @@
         {
 
         }
+
+        if (model.NeutralKM == null)
+        {
+            model.NeutralKM = 0;            
+        }
+
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
@@ -300,7 +323,7 @@
         }
         var fuelConsumed = model.AllottedMileage != 0 ? (model.AllottedDistance / model.AllottedMileage) : 0;
         var fuelDifference = model.ConsumedFuel - fuelConsumed;
-        model.TotalAmount = Math.Round(Convert.ToDecimal(fuelDifference * model.FuelPrice), 0);      
+        model.TotalAmount = Math.Round(Convert.ToDecimal(fuelDifference * model.FuelPrice), 0) + model.NeutralAmount;
         validationMessageStore.Clear();
         editContext.NotifyValidationStateChanged();
     }
