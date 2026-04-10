@@ -1,5 +1,58 @@
 window.truckMapInterop = {
     mapsData: {},
+    locationCache: {},
+    pendingGeocodes: {},
+
+    getAddress: async function (lat, lng) {
+        const latLngKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+        if (this.locationCache[latLngKey]) {
+            return this.locationCache[latLngKey];
+        }
+        if (this.pendingGeocodes[latLngKey]) {
+            return await this.pendingGeocodes[latLngKey];
+        }
+
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyCvBqso9Nzx2cIcZsnG4zb24fkgLwSHmys`;
+        const promise = fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "OK" && data.results.length > 0) {
+                    let address = data.results[0].formatted_address;
+                    this.locationCache[latLngKey] = address;
+                    return address;
+                }
+                return "Unknown Location";
+            })
+            .catch(e => "Location Fetch Error");
+
+        this.pendingGeocodes[latLngKey] = promise;
+        return promise;
+    },
+
+    buildCustomHtml: function (speed, gear, rpm, fuel, def, alt, odo, date, regn, popupSvg, popupBorder, locStr) {
+        const cleanRegn = regn.replace(/\W/g, '');
+        return `<div style="font-family: 'Roboto', sans-serif; width: 440px; padding: 22px; box-sizing: border-box; position: relative;">
+                    <button class="close-popup-btn" style="position: absolute; top: 16px; right: 16px; background: #f0f0f0; border: none; font-size: 20px; color: #555; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 2;">&times;</button>
+                    <div style="display: flex; align-items: center; justify-content: flex-start; border-bottom: ${popupBorder}; padding-bottom: 12px; margin-bottom: 14px; padding-right: 32px;">
+                        ${popupSvg}
+                        <h3 style="margin: 0; color: #333; font-size: 21px; font-weight: 700; line-height: 1;">${regn}</h3>
+                    </div>
+                    <div style="margin-bottom: 14px; background: #f4f6f8; padding: 10px 12px; border-radius: 8px; border: 1px solid #e1e4e8; display: flex; align-items: flex-start; gap: 8px;">
+                        <svg style="min-width: 16px; width: 16px; height: 16px; margin-top: 2px;" fill="#D32F2F" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        <span style="font-size: 13px; font-weight: 500; color: #444; line-height: 1.4;" class="loc-text-${cleanRegn}">${locStr}</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 10px 15px; font-size: 13px; color: #444;">
+                        <strong style="color: #555;">Speed:</strong> <span style="font-weight: 600; color: ${speed > 0 ? '#2E7D32' : '#333'}">${Math.round(speed)} km/h</span>
+                        <strong style="color: #555;">Gear:</strong> <span style="font-weight: 500;">${gear}</span>
+                        <strong style="color: #555;">Engine:</strong> <span style="font-weight: 500;">${rpm} RPM</span>
+                        <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel} %</span>
+                        <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def} %</span>
+                        <strong style="color: #555;">Altitude:</strong> <span style="font-weight: 500;">${alt} m</span>
+                        <strong style="color: #555;">Odo:</strong> <span style="font-weight: 500;">${odo} km</span>
+                        <strong style="color: #555;">Update:</strong> <span style="font-size: 12px; font-weight: 500; color: #888;">${date}</span>
+                    </div>
+                </div>`;
+    },
 
     setupPopupClass: function() {
         if (window.TruckPopup) return;
@@ -154,25 +207,17 @@ window.truckMapInterop = {
                 }
             });
 
-            const customContentHTML = `<div style="font-family: 'Roboto', sans-serif; width: 300px; padding: 22px; box-sizing: border-box; position: relative;">
-                            <button class="close-popup-btn" style="position: absolute; top: 16px; right: 16px; background: #f0f0f0; border: none; font-size: 20px; color: #555; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">&times;</button>
-                            <div style="display: flex; align-items: center; justify-content: flex-start; border-bottom: ${popupBorder}; padding-bottom: 12px; margin-bottom: 14px; padding-right: 32px;">
-                                ${popupSvg}
-                                <h3 style="margin: 0; color: #333; font-size: 21px; font-weight: 700; line-height: 1;">${regn}</h3>
-                            </div>
-                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 14px; color: #444;">
-                                <strong style="color: #555;">Speed:</strong> <span style="font-weight: 500;">${Math.round(speed)} km/h</span>
-                                <strong style="color: #555;">Gear:</strong> <span style="font-weight: 500;">${gear}</span>
-                                <strong style="color: #555;">Engine:</strong> <span style="font-weight: 500;">${rpm} RPM</span>
-                                <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel}</span>
-                                <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def}</span>
-                                <strong style="color: #555;">Altitude:</strong> <span style="font-weight: 500;">${alt} m</span>
-                                <strong style="color: #555;">Odometer:</strong> <span style="font-weight: 500;">${odo} km</span>
-                                <strong style="color: #555;">Update:</strong> <span style="font-size: 13px; font-weight: 500; color: #888;">${truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A'}</span>
-                            </div>
-                          </div>`;
+            const dateStr = truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A';
+            marker.customHtml = this.buildCustomHtml(speed, gear, rpm, fuel, def, alt, odo, dateStr, regn, popupSvg, popupBorder, 'Fetching location...');
             
-            marker.customHtml = customContentHTML;
+            const cleanRegn = regn.replace(/\W/g, '');
+            this.getAddress(position.lat, position.lng).then(loc => {
+                marker.customHtml = this.buildCustomHtml(speed, gear, rpm, fuel, def, alt, odo, dateStr, regn, popupSvg, popupBorder, loc);
+                const locElements = document.getElementsByClassName(`loc-text-${cleanRegn}`);
+                for (let i = 0; i < locElements.length; i++) {
+                    locElements[i].innerText = loc;
+                }
+            });
 
             marker.addListener('click', () => {
                 const mapData = window.truckMapInterop.mapsData[elementId];
@@ -312,25 +357,17 @@ window.truckMapInterop = {
                     color: speed > 0 ? "#2E7D32" : "#D32F2F"
                 });
 
-                // Update Background custom HTML string
-                const customContentHTML = `<div style="font-family: 'Roboto', sans-serif; width: 300px; padding: 22px; box-sizing: border-box; position: relative;">
-                            <button class="close-popup-btn" style="position: absolute; top: 16px; right: 16px; background: #f0f0f0; border: none; font-size: 20px; color: #555; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">&times;</button>
-                            <div style="display: flex; align-items: center; justify-content: flex-start; border-bottom: ${popupBorder}; padding-bottom: 12px; margin-bottom: 14px; padding-right: 32px;">
-                                ${popupSvg}
-                                <h3 style="margin: 0; color: #333; font-size: 21px; font-weight: 700; line-height: 1;">${regn}</h3>
-                            </div>
-                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 14px; color: #444;">
-                                <strong style="color: #555;">Speed:</strong> <span style="font-weight: 500;">${Math.round(speed)} km/h</span>
-                                <strong style="color: #555;">Gear:</strong> <span style="font-weight: 500;">${gear}</span>
-                                <strong style="color: #555;">Engine:</strong> <span style="font-weight: 500;">${rpm} RPM</span>
-                                <strong style="color: #555;">Fuel Lvl:</strong> <span style="font-weight: 500;">${fuel}</span>
-                                <strong style="color: #555;">DEF Lvl:</strong> <span style="font-weight: 500;">${def}</span>
-                                <strong style="color: #555;">Altitude:</strong> <span style="font-weight: 500;">${alt} m</span>
-                                <strong style="color: #555;">Odometer:</strong> <span style="font-weight: 500;">${odo} km</span>
-                                <strong style="color: #555;">Update:</strong> <span style="font-size: 13px; font-weight: 500; color: #888;">${truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A'}</span>
-                            </div>
-                          </div>`;
-                marker.customHtml = customContentHTML;
+                const dateStr = truck.DATE_TIME ? new Date(truck.DATE_TIME).toLocaleString() : 'N/A';
+                marker.customHtml = this.buildCustomHtml(speed, gear, rpm, fuel, def, alt, odo, dateStr, regn, popupSvg, popupBorder, 'Fetching location...');
+
+                const cleanRegn = regn.replace(/\W/g, '');
+                this.getAddress(lat, lng).then(loc => {
+                    marker.customHtml = this.buildCustomHtml(speed, gear, rpm, fuel, def, alt, odo, dateStr, regn, popupSvg, popupBorder, loc);
+                    const locElements = document.getElementsByClassName(`loc-text-${cleanRegn}`);
+                    for (let i = 0; i < locElements.length; i++) {
+                        locElements[i].innerText = loc;
+                    }
+                });
 
                 // Sync the active popup if it is open
                 if (data.activePopup && data.activePopup.position && 
@@ -341,7 +378,19 @@ window.truckMapInterop = {
                     // Update overlay position and HTML DOM natively
                     data.activePopup.position = newPos;
                     const cDiv = data.activePopup.container.children[1];
-                    if (cDiv) cDiv.innerHTML = customContentHTML;
+                    if (cDiv) {
+                        cDiv.innerHTML = marker.customHtml;
+                        // Re-attach close button listener since we replaced the HTML
+                        let closeBtn = data.activePopup.container.querySelector('.close-popup-btn');
+                        if(closeBtn) {
+                            closeBtn.addEventListener('click', (e) => {
+                                data.activePopup.close();
+                                e.stopPropagation();
+                            });
+                            closeBtn.addEventListener('mouseover', () => closeBtn.style.background = '#e0e0e0');
+                            closeBtn.addEventListener('mouseout', () => closeBtn.style.background = '#f0f0f0');
+                        }
+                    }
                     // Automatically re-draw its position over the active map
                     data.activePopup.draw();
                 }
