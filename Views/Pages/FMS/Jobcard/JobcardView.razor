@@ -42,12 +42,68 @@
     }
 
     .jobcard-tabs .mud-tab {
-        padding-right: 24px !important;
+        padding: 0 32px !important;
+        font-size: 0.95rem;
+        letter-spacing: 0.2px;
+        min-height: 56px;
     }
     
     .jobcard-tabs .mud-tabs-panels {
         min-height: 450px !important;
     }
+
+    .job-card-premium {
+        background: rgba(var(--mud-palette-surface-rgb), 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(var(--mud-palette-surface-rgb), 0.3);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .job-card-premium:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    }
+    .job-card-premium::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        opacity: 0.8;
+    }
+    .status-finished::before {
+        background: linear-gradient(90deg, var(--mud-palette-success) 0%, #81c784 100%);
+    }
+    .status-unfinished::before {
+        background: linear-gradient(90deg, var(--mud-palette-warning) 0%, #ffb74d 100%);
+    }
+
+    .remarks-premium {
+        background: linear-gradient(to right, rgba(var(--mud-palette-error-rgb), 0.05), transparent);
+        border-left: 3px solid var(--mud-palette-error);
+        border-radius: 0 8px 8px 0;
+        padding: 12px 16px;
+    }
+
+    .add-job-card-premium {
+        background: rgba(var(--mud-palette-primary-rgb), 0.02);
+        border: 2px dashed rgba(var(--mud-palette-primary-rgb), 0.3);
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .add-job-card-premium:hover {
+        background: rgba(var(--mud-palette-primary-rgb), 0.05);
+        border-color: var(--mud-palette-primary);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(var(--mud-palette-primary-rgb), 0.12);
+    }
+    .hover-up { transition: transform 0.2s ease; }
+    .hover-up:hover { transform: translateY(-2px); }
 </style>
 
 <div class="admin-page-container">
@@ -247,128 +303,150 @@
                             @foreach (var item in JipList)
                             {
                                 <MudItem xs="12" md="6" lg="4">
-                                    <MudCard Elevation="3" Style="border-radius: 12px; height: 100%; display: flex; flex-direction: column; overflow: visible;">
-                                        <MudCardHeader Style="padding-bottom: 0;">
-                                            <CardHeaderContent>
-                                                @if (EditingJob == item)
-                                                {
-                                                    <div class="d-flex flex-column gap-2 mb-2">
-                                                        <MudAutocomplete T="RepairJobModel"
-                                                                         Variant="Variant.Outlined"
-                                                                         Margin="Margin.Dense"
-                                                                         Label="Select Job Group"
-                                                                         Value="EditedJobGroup"
-                                                                         ValueChanged="GroupChanged"
-                                                                         ResetValueOnEmptyText="true"
-                                                                         SearchFunc="@(async (string s, CancellationToken t) => await SearchGroup(s, t))"
-                                                                         ToStringFunc="@(e => (e?.JobGroup == null || e?.JobSubGroup == null)
-                                                                         ? null
-                                                                         : $"{e.JobGroup.Title} | {e.JobSubGroup.Title}")" />
-                                                        <MudAutocomplete T="RepairJobModel"
-                                                                         Variant="Variant.Outlined"
-                                                                         Margin="Margin.Dense"
-                                                                         Label="Select Job"
-                                                                         Value="EditedJob"
-                                                                         ValueChanged="JobChanged"
-                                                                         ResetValueOnEmptyText="true"
-                                                                         SearchFunc="@(async (string s, CancellationToken t) => await SearchJob(s, t))"
-                                                                         ToStringFunc="@(e => e == null ? null : e.Title)" />
+                                    <div class="job-card-premium @(item.JobStatus == 1 ? "status-unfinished" : "status-finished") d-flex flex-column h-100">
+                                        <div class="pa-5 pb-3">
+                                            <div class="d-flex justify-space-between align-start mb-3">
+                                                <div class="d-flex align-center gap-3">
+                                                    <div class="icon-badge @(item.JobStatus == 1 ? "warning-badge-soft" : "success-badge-soft")" style="width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                                        <MudIcon Icon="@(item.JobStatus == 1 ? Icons.Material.Filled.Build : Icons.Material.Filled.CheckCircle)" Size="Size.Medium" />
                                                     </div>
-                                                }
-                                                else
-                                                {
-                                                    <MudText Typo="Typo.h6" Class="fw-bold">@item.RepairJobTitle</MudText>
-                                                }
-                                            </CardHeaderContent>
-                                            <CardHeaderActions>
-                                                @if (EditingJob == item)
-                                                {
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Success" OnClick="@(() => SaveEditingJob(item))" Title="Save" Size="Size.Small" />
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" OnClick="CancelEditingJob" Title="Cancel" Size="Size.Small" />
-                                                }
-                                                else
-                                                {
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => StartEditingJob(item))" Title="Edit" Size="Size.Small" />
-                                                }
-                                            </CardHeaderActions>
-                                        </MudCardHeader>
-                                        
-                                        <MudCardContent Class="flex-grow-1" Style="padding-top: 8px;">
-                                            <div class="d-flex justify-space-between align-center mb-4">
-                                                <MudChip T="string" Size="Size.Small" Color="@(item.JobStatus == 1 ? Color.Warning : Color.Success)" Variant="Variant.Filled" Class="fw-bold">
-                                                    @item.JobStatusText
-                                                </MudChip>
-                                                <MudText Typo="Typo.caption" Color="Color.Secondary">@item.CreatedOn?.ToString("MMM dd, yyyy HH:mm")</MudText>
-                                            </div>
-
-                                            @if (item.WarrantyCheck)
-                                            {
-                                                <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Class="mb-3 py-1 px-2" Style="font-size: 0.8rem;">
-                                                    Under Warranty till @item.WarrantyExpiryDate
-                                                </MudAlert>
-                                            }
-
-                                            @if (!string.IsNullOrEmpty(item.Remarks))
-                                            {
-                                                <div class="mb-3 p-2 rounded" style="background-color: var(--mud-palette-background-grey);">
-                                                    <MudText Typo="Typo.caption" Color="Color.Error" Class="fw-bold d-block">REMARKS:</MudText>
-                                                    <MudText Typo="Typo.body2">@item.Remarks</MudText>
+                                                    <div>
+                                                        @if (EditingJob == item)
+                                                        {
+                                                            <div class="d-flex flex-column gap-2 mb-2" style="min-width: 200px;">
+                                                                <MudAutocomplete T="RepairJobModel"
+                                                                                 Variant="Variant.Outlined"
+                                                                                 Margin="Margin.Dense"
+                                                                                 Label="Select Job Group"
+                                                                                 Value="EditedJobGroup"
+                                                                                 ValueChanged="GroupChanged"
+                                                                                 ResetValueOnEmptyText="true"
+                                                                                 SearchFunc="@(async (string s, CancellationToken t) => await SearchGroup(s, t))"
+                                                                                 ToStringFunc="@(e => (e?.JobGroup == null || e?.JobSubGroup == null)
+                                                                                 ? null
+                                                                                 : $"{e.JobGroup.Title} | {e.JobSubGroup.Title}")" />
+                                                                <MudAutocomplete T="RepairJobModel"
+                                                                                 Variant="Variant.Outlined"
+                                                                                 Margin="Margin.Dense"
+                                                                                 Label="Select Job"
+                                                                                 Value="EditedJob"
+                                                                                 ValueChanged="JobChanged"
+                                                                                 ResetValueOnEmptyText="true"
+                                                                                 SearchFunc="@(async (string s, CancellationToken t) => await SearchJob(s, t))"
+                                                                                 ToStringFunc="@(e => e == null ? null : e.Title)" />
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <MudText Typo="Typo.h6" Class="fw-800" Style="line-height: 1.2;">@item.RepairJobTitle</MudText>
+                                                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="fw-600">@item.CreatedOn?.ToString("MMM dd, yyyy  •  HH:mm")</MudText>
+                                                        }
+                                                    </div>
                                                 </div>
-                                            }
-                                            
-                                            <div class="d-flex align-center justify-space-between mt-auto pt-3 border-t">
-                                                <div class="d-flex align-center flex-grow-1">
-                                                    <MudNumericField HideSpinButtons @bind-Value="item.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.TotalAmount)" Class="mr-2" />
-                                                    @if (item.JobStatus == 2)
+                                                <div>
+                                                    @if (EditingJob == item)
                                                     {
-                                                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Success" OnClick="@(() => UpdateJob(item, 2))" Class="px-3" Style="height: fit-content; align-self: center;">Update</MudButton>
+                                                        <div class="d-flex gap-1" style="margin-left: -8px;">
+                                                            <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Success" OnClick="@(() => SaveEditingJob(item))" Size="Size.Small" Variant="Variant.Outlined" />
+                                                            <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" OnClick="CancelEditingJob" Size="Size.Small" Variant="Variant.Outlined" />
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <MudIconButton Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => StartEditingJob(item))" Size="Size.Small" Color="Color.Primary" Class="hover-bg-primary-soft rounded-circle" />
                                                     }
                                                 </div>
+                                            </div>
+                                            @if (item.WarrantyCheck)
+                                            {
+                                                <div class="d-inline-flex align-center gap-1 mt-1 px-3 py-1 color-success" style="font-size: 0.75rem; border: 1px solid rgba(var(--mud-palette-success-rgb), 0.3); background: rgba(var(--mud-palette-success-rgb), 0.05); border-radius: 20px;">
+                                                    <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Size="Size.Small" />
+                                                    <span class="fw-bold">Warranty valid till @item.WarrantyExpiryDate</span>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div class="px-5 flex-grow-1">
+                                            @if (!string.IsNullOrEmpty(item.Remarks))
+                                            {
+                                                <div class="remarks-premium mb-4">
+                                                    <div class="d-flex align-center gap-2 mb-1">
+                                                        <MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Small" Color="Color.Error" />
+                                                        <MudText Typo="Typo.caption" Color="Color.Error" Class="fw-800" Style="letter-spacing: 0.5px;">REMARKS</MudText>
+                                                    </div>
+                                                    <MudText Typo="Typo.body2" Class="opacity-80 fw-500" Style="line-height: 1.5;">@item.Remarks</MudText>
+                                                </div>
+                                            }
+                                        </div>
+                                        
+                                        <div class="px-5 pb-4 mt-auto">
+                                            <div class="d-flex align-center justify-space-between pa-3" style="background: rgba(var(--mud-palette-surface-rgb), 0.5); border-radius: 12px; border: 1px solid rgba(var(--mud-palette-surface-rgb), 0.2);">
+                                                <div class="d-flex align-center gap-3">
+                                                    <div class="icon-badge success-badge-soft" style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                        <MudIcon Icon="@Icons.Material.Outlined.Payments" Color="Color.Success" Size="Size.Small" />
+                                                    </div>
+                                                    <MudNumericField HideSpinButtons @bind-Value="item.TotalAmount" Variant="Variant.Text" Margin="Margin.Dense" For="@(() => item.TotalAmount)" Adornment="Adornment.Start" AdornmentText="₹" Style="font-weight: 800; font-size: 1.1rem; max-width: 100px; margin-top: 0;" Underline="false" />
+                                                </div>
                                                 
-                                                @if (item.JobStatus == 1 && EditingJob != item)
+                                                <div class="d-flex gap-2 align-center">
+                                                    @if (item.JobStatus == 2)
+                                                    {
+                                                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Success" OnClick="@(() => UpdateJob(item, 2))" Class="px-4 fw-800 rounded-pill shadow-sm" Style="height: 36px;">UPDATE</MudButton>
+                                                    }
+                                                    @if (item.JobStatus == 1 && EditingJob != item)
+                                                    {
+                                                        <MudTooltip Text="Mark Finished">
+                                                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Medium" OnClick="@(() => UpdateJob(item, 2))" Class="shadow-sm bg-white hover-up" />
+                                                        </MudTooltip>
+                                                        <MudTooltip Text="Cancel Job">
+                                                            <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Medium" OnClick="@(() => UpdateJob(item, 0))" Class="shadow-sm bg-white hover-up" />
+                                                        </MudTooltip>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="px-5 py-3" style="background: rgba(var(--mud-palette-primary-rgb), 0.02); border-top: 1px solid rgba(var(--mud-palette-surface-rgb), 0.1);">
+                                            <div class="d-flex align-center flex-wrap gap-2">
+                                                <MudText Typo="Typo.caption" Class="fw-800 text-muted mr-1" Style="letter-spacing: 0.5px;">MECHANICS:</MudText>
+                                                @foreach (var mech in item.Mechanics)
                                                 {
-                                                    <div class="d-flex gap-1 ml-2">
-                                                        <MudTooltip Text="Finished">
-                                                            <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => UpdateJob(item, 2))" />
-                                                        </MudTooltip>
-                                                        <MudTooltip Text="Cancel">
-                                                            <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => UpdateJob(item, 0))" />
-                                                        </MudTooltip>
+                                                    bool isActive = mech.EndedOn == null;
+                                                    <div class="d-inline-flex align-center gap-1 px-3 py-1 rounded-pill" style="font-size: 0.75rem; font-weight: 700; border: 1px solid @(isActive ? "rgba(var(--mud-palette-primary-rgb), 0.3)" : "rgba(var(--mud-palette-surface-rgb), 0.2)"); background: @(isActive ? "rgba(var(--mud-palette-primary-rgb), 0.05)" : "transparent"); color: @(isActive ? "var(--mud-palette-primary)" : "var(--mud-palette-text-secondary)")">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Style="font-size: 14px;" />
+                                                        <span>@mech.MechanicName</span>
+                                                        @if (isActive)
+                                                        {
+                                                            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => RemoveMechanic(mech))" Style="padding: 2px; margin: -2px -4px -2px 2px; font-size: 12px;" />
+                                                        }
                                                     </div>
                                                 }
+                                                @if (item.JobStatus == 1)
+                                                {
+                                                    <MudTooltip Text="Assign Mechanic">
+                                                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Add" OnClick="(() => OpenMechanicSelector(item))" Color="Color.Primary" Variant="Variant.Outlined" Class="ml-auto rounded-circle border-dashed" Style="border-width: 2px;" />
+                                                    </MudTooltip>
+                                                }
                                             </div>
-                                        </MudCardContent>
-                                        
-                                        <MudDivider />
-                                        
-                                        <MudCardActions Class="px-4 py-2 flex-wrap gap-2" Style="background-color: rgba(var(--mud-palette-surface-rgb), 0.5);">
-                                            <MudText Typo="Typo.caption" Class="fw-bold mr-2">Mechanics:</MudText>
-                                            @foreach (var mech in item.Mechanics)
-                                            {
-                                                bool isActive = mech.EndedOn == null;
-                                                <MudChip T="string" Size="Size.Small" Variant="@(isActive ? Variant.Filled : Variant.Outlined)" Color="@(isActive ? Color.Primary : Color.Default)" OnClose="@(isActive ? (() => RemoveMechanic(mech)) : null)">
-                                                    @mech.MechanicName
-                                                </MudChip>
-                                            }
-                                            @if (item.JobStatus == 1)
-                                            {
-                                                <MudTooltip Text="Assign Mechanic">
-                                                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Add" OnClick="(() => OpenMechanicSelector(item))" Color="Color.Primary" Variant="Variant.Outlined" Class="ml-auto" />
-                                                </MudTooltip>
-                                            }
-                                        </MudCardActions>
-                                    </MudCard>
+                                        </div>
+                                    </div>
+                                </MudItem>
+                            }
+                            @if (CurrentWorkshop != null && SelectedJobcard?.UserInfo?.RecordStatus == 3)
+                            {
+                                <MudItem xs="12" md="6" lg="4">
+                                    <div class="add-job-card-premium d-flex align-center justify-center cursor-pointer h-100" style="min-height: 250px;" @onclick="OpenAddJobDialog">
+                                        <div class="text-center pa-6">
+                                            <div class="icon-badge primary-badge-soft mx-auto mb-4" style="width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: 0 8px 16px rgba(var(--mud-palette-primary-rgb), 0.15);">
+                                                <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Large" Color="Color.Primary" />
+                                            </div>
+                                            <MudText Typo="Typo.h5" Class="fw-800 color-primary mb-1">Add New Job</MudText>
+                                            <MudText Typo="Typo.body2" Class="opacity-70 fw-600">in @CurrentWorkshop.WorkshopName</MudText>
+                                        </div>
+                                    </div>
                                 </MudItem>
                             }
                         </MudGrid>
-                        @if (CurrentWorkshop != null && SelectedJobcard?.UserInfo?.RecordStatus == 3)
-                        {
-                            <div class="d-flex justify-start mt-4">
-                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddJobDialog" Size="Size.Medium" Class="fw-bold px-6" Style="border-radius: 8px; border-style: dashed; border-width: 2px; background-color: rgba(var(--mud-palette-primary-rgb), 0.05);">
-                                    Add New Job in @CurrentWorkshop.WorkshopName
-                                </MudButton>
-                            </div>
-                        }
                 </div>
             </MudPaper>
         </MudTabPanel>
