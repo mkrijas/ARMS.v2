@@ -363,15 +363,11 @@
                         </MudGrid>
                         @if (CurrentWorkshop != null && SelectedJobcard?.UserInfo?.RecordStatus == 3)
                         {
-                            <MudCard Elevation="2" Class="mt-6" Style="border-radius: 12px; border: 1px dashed var(--mud-palette-primary); background-color: rgba(var(--mud-palette-primary-rgb), 0.05);">
-                                <MudCardContent Class="d-flex align-end flex-wrap gap-4">
-                                    <div class="flex-grow-1">
-                                        <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mb-3 fw-bold"><MudIcon Icon="@Icons.Material.Filled.AddAlert" Size="Size.Small" Class="mr-1" /> Add New Job in @CurrentWorkshop.WorkshopName:</MudText>
-                                        <JobInProgressView workshop="CurrentWorkshop" model="NewJob" @ref="jipView"></JobInProgressView>
-                                    </div>
-                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddJob" Size="Size.Large" Class="fw-bold px-6" Style="border-radius: 8px; height: 48px; margin-bottom: 4px;">Create Job</MudButton>
-                                </MudCardContent>
-                            </MudCard>
+                            <div class="d-flex justify-start mt-4">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddJobDialog" Size="Size.Medium" Class="fw-bold px-6" Style="border-radius: 8px; border-style: dashed; border-width: 2px; background-color: rgba(var(--mud-palette-primary-rgb), 0.05);">
+                                    Add New Job in @CurrentWorkshop.WorkshopName
+                                </MudButton>
+                            </div>
                         }
                 </div>
             </MudPaper>
@@ -467,24 +463,6 @@
     </MudTabs>
 }
 </div>
-<MudDialog @bind-IsVisible="visibleMechanicSelector" DisableSidePadding="true">
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3" /> Assign Mechanics
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Style="height: 300px; overflow-y: auto">
-            <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p => p.MechanicName)" @bind-SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
-                @foreach (var item in Mechanics)
-                {
-                    <MudSelectItem T="MechanicModel" Value="@item">@item.MechanicName</MudSelectItem>
-                }
-            </MudSelect>
-            <MudButton Color="Color.Success" OnClick="AddMechanic">Add</MudButton>
-        </MudContainer>
-    </DialogContent>
-</MudDialog>
 
 @code {
 
@@ -510,8 +488,9 @@
     string ColorCancelled = Colors.Gray.Lighten5;
     JobInProgressView jipView;
     bool visibleMechanicSelector = false;
+    bool visibleAddJobDialog = false;
     private List<MechanicModel> Mechanics = new();
-    private IReadOnlyCollection<MechanicModel> SelectedMechanics;
+    private IReadOnlyCollection<MechanicModel> SelectedMechanics { get; set; } = new HashSet<MechanicModel>();
     private JobInProgressModel SelectedJob = new();
     private RepairJobModel EditedJob = new();
     private RepairJobModel EditedJobGroup = new();
@@ -779,43 +758,36 @@
         }
     }
 
-    // Method to add a new job in progress
-    private async Task AddJob()
+    // Method to add a new job in progress via Dialog
+    private async Task OpenAddJobDialog()
     {
+        if (CurrentWorkshop == null) 
+        {
+             snackbar.Add("No active workshop", Severity.Error);
+             return;
+        }
+
         var authProvider = await auth.GetAuthenticationStateAsync();
-        NewJob.CreatedOn = DateTime.Now;
-        if (NewJob.RepairJobID == null || NewJob.RepairJobID == 0)
-        {
-            snackbar.Add("Please select job.", Severity.Error);
-            return;
-        }
-        // if (NewJob.Mechanics == null || NewJob.Mechanics.Count() == 0)
-        // {
-        //     snackbar.Add("Please select mechanic;", Severity.Error);
-        //     return;
-        // }
-        if (NewJob.WarrantyCheck == true && NewJob.WarrantyExpiryDate == null)
-        {
-            snackbar.Add("Please enter Warranty Expiry Date.", Severity.Error);
-            return;
-        }
-        try
-        {
-            NewJob.JobCardID = SelectedJobcard.JobcardID;
-            jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
-            CurrentWorkshop = Workshops.First(y => y.WorkshopID == jwList.First(x => x.ExitOn == null).WorkshopID);
-            NewJob.WorkshopID = CurrentWorkshop.WorkshopID;
+        NewJob = new JobInProgressModel() {
+            CreatedOn = DateTime.Now,
+            JobCardID = SelectedJobcard.JobcardID,
+            WorkshopID = CurrentWorkshop.WorkshopID,
+            JobStatus = 1,
+            UserInfo = new() { UserID = authProvider.User.Identity.Name }
+        };
+        
+        var parameters = new DialogParameters();
+        parameters.Add("CurrentWorkshop", CurrentWorkshop);
+        parameters.Add("NewJob", NewJob);
+        
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<AddJobDialog>("Add New Job", parameters, options);
+        var result = await dialog.Result;
 
-            await jipView.UpdateJob(NewJob);
-
-            snackbar.Add("Jobs Added.", Severity.Success);
+        if (!result.Canceled)
+        {
             setJipList(SelectedJobcard);
             NewJob = new();
-            jipView.clearmodel();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Error);
         }
     }
 
@@ -884,43 +856,43 @@
     }
 
     // Method to open the mechanic selector dialog
-    void OpenMechanicSelector(JobInProgressModel jipModel)
+    async Task OpenMechanicSelector(JobInProgressModel jipModel)
     {
-        SelectedMechanics = new HashSet<MechanicModel>();
-        Mechanics = Imechanic.SelectByWorkshop(CurrentWorkshop.WorkshopID).ToList()
+        var availableMechanics = Imechanic.SelectByWorkshop(jipModel.WorkshopID ?? CurrentWorkshop?.WorkshopID).ToList()
             .Where(x => jipModel.Mechanics.Where(z => z.EndedOn == null).All(y => y.MechanicID != x.MechanicID)).ToList();
-        SelectedJob = jipModel;
-        visibleMechanicSelector = true;
-    }
 
-    // Method to add selected mechanics to a job
-    async Task AddMechanic()
-    {
-        if (HasPermissionJobcardServiceEdit)
+        var parameters = new DialogParameters();
+        parameters.Add("Mechanics", availableMechanics);
+        
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<AddMechanicDialog>("Assign Mechanics", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is IReadOnlyCollection<MechanicModel> selected)
         {
-            var authProvider = await auth.GetAuthenticationStateAsync();
-            foreach (var item in SelectedMechanics)
+            if (HasPermissionJobcardServiceEdit)
             {
-                ImechanicJob.Update(new MechanicJobModel()
-                    {
-                        AssignedOn = DateTime.Now,
-                        JipID = SelectedJob.JipID,
-                        MechanicID = item.MechanicID,
-                        MechanicName = item.MechanicName,
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel()
+                var authProvider = await auth.GetAuthenticationStateAsync();
+                foreach (var item in selected)
+                {
+                    ImechanicJob.Update(new MechanicJobModel()
                         {
-                            UserID = authProvider.User.Identity.Name
-                        }
-                    });
+                            AssignedOn = DateTime.Now,
+                            JipID = jipModel.JipID,
+                            MechanicID = item.MechanicID,
+                            MechanicName = item.MechanicName,
+                            UserInfo = new ArmsModels.SharedModels.UserInfoModel()
+                            {
+                                UserID = authProvider.User.Identity.Name
+                            }
+                        });
+                }
+                setJipList(SelectedJobcard);
             }
-            setJipList(SelectedJobcard);
-            visibleMechanicSelector = false;
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Permission denied!",
-                "You don't have any permission to Edit Jobcard.");
+            else
+            {
+                await DialogService.ShowMessageBoxAsync("Permission denied!", "You don't have permission.");
+            }
         }
     }
 
