@@ -211,7 +211,7 @@ namespace ArmsServices.DataServices
             {
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 Odometer = dr.GetInt32("Odometer"),
-                JobCardID = dr.GetInt32("JobCardID"),
+                JobCardID = dr.GetInt32("WorkOrderID"),
                 JobcardNumber = dr.GetInt32("JobcardNumber"),
                 
             };

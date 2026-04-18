@@ -177,7 +177,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByJobCardID"),
-               new SqlParameter("@JobCardID", JobCardID),
+               new SqlParameter("@WorkOrderID", JobCardID),
                new SqlParameter("@Active",Active)
             };
 
@@ -194,7 +194,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@Operation", "GetJobsByJobCardID"),
-                new SqlParameter("@JobCardID", JobCardID),
+                new SqlParameter("@WorkOrderID", JobCardID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Select]", parameters))
