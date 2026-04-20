@@ -79,7 +79,7 @@
 
     protected bool Validate()
     {
-        if (!SelectedBranches.Any())
+        if (SelectedBranches == null || !SelectedBranches.Any())
         {
             snackbar.Add("Please select branch.", Severity.Error);
             return false;
@@ -94,7 +94,7 @@
             snackbar.Add("Please select End-Date.", Severity.Error);
             return false;
         }
-        if (SelectedAccount.CoaID == null)
+        if (SelectedAccount == null || SelectedAccount.CoaID == null)
         {
             snackbar.Add("Please select Account", Severity.Error);
             return false;
@@ -104,18 +104,36 @@
 
     public async Task RenderReportViewer()
     {
-        ShowReport = false;
-        if (Validate())
-        {            
-            ReportName = detailed ? "FinanceAccountLedgerDetailed" : "FinanceAccountLedger";
-            ReportParameters.Clear();
-            ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
-            ReportParameters.Add("CoaID", SelectedAccount.CoaID.ToString());
-            ReportParameters.Add("StartDate", StartDate.Value.ToString("yyyy-MM-dd"));
-            ReportParameters.Add("EndDate", EndDate.Value.ToString("yyyy-MM-dd"));
-            ReportParameters.Add("Reference", MoreParameter != null ? MoreParameter.Reference : "");
-            ShowReport = true;
-            await report.RenderReport(ReportName);
+        try 
+        {
+            ShowReport = false;
+            StateHasChanged();
+
+            if (Validate())
+            {            
+                ReportName = detailed ? "FinanceAccountLedgerDetailed" : "FinanceAccountLedger";
+                ReportParameters.Clear();
+                ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+                ReportParameters.Add("CoaID", SelectedAccount.CoaID.Value.ToString());
+                ReportParameters.Add("StartDate", StartDate.Value.ToString("yyyy-MM-dd"));
+                ReportParameters.Add("EndDate", EndDate.Value.ToString("yyyy-MM-dd"));
+                ReportParameters.Add("Reference", MoreParameter?.Reference ?? "");
+                
+                ShowReport = true;
+                StateHasChanged();
+                
+                if (report == null)
+                {
+                    snackbar.Add("Report Viewer not initialized. Please try again.", Severity.Warning);
+                    return;
+                }
+
+                await report.RenderReport(ReportName);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add("Error loading report: " + ex.Message, Severity.Error);
         }
     }
 }

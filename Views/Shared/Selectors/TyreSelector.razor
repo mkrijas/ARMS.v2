@@ -6,10 +6,10 @@
 @if (IsLoaded)
 {
     <MudAutocomplete Variant="Variant.Outlined" SelectValueOnTab @ref="_autoComplete" 
-    Class="@Class" T="TyreModel" OnKeyUp="Enter" Label="@Label" @bind-Value="Value" 
-    AdornmentColor="Color.Secondary" AdornmentIcon="@Icons.Material.Rounded.Add" ResetValueOnEmptyText="true"
-    OnAdornmentClick="AddTyres" For="@For"
-    Clearable="true" SearchFunc="SearchTyre" ToStringFunc="@(e => e == null ? null : string.Format("{0}",e.TyreSerialNumber))" ></MudAutocomplete>
+    Class="@Class" T="TyreModel" Label="@Label" @bind-Value="Value" 
+    AdornmentColor="Color.Secondary" AdornmentIcon="@Icons.Material.Rounded.Add" 
+    OnAdornmentClick="AddTyres" For="@For" DebounceInterval="300" MinCharacters="1"
+    Clearable="false" SearchFunc="SearchTyre" ToStringFunc="@(e => e == null ? null : string.Format("{0}",e.TyreSerialNumber))" ></MudAutocomplete>
 
 }
 else
@@ -36,28 +36,21 @@ else
         }
     }
 
-    private async Task Enter(KeyboardEventArgs e)
-    {
-        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+    [Parameter]
+    public EventCallback<TyreModel> ValueChanged { get; set; }
+
+    [Parameter]
+    public string Class { get; set; }
+
+    private async Task AddTyres()
+    {        
+        if (Value != null)
         {
             await SetTyres.InvokeAsync();
             await _autoComplete.ResetAsync();
             await SearchTyre("", CancellationToken.None);
         }
     }
-
-    private async Task AddTyres()
-    {        
-        await SetTyres.InvokeAsync();
-        await _autoComplete.ResetAsync();
-        await SearchTyre("", CancellationToken.None);
-    }
-
-    [Parameter]
-    public EventCallback<TyreModel> ValueChanged { get; set; }
-
-    [Parameter]
-    public string Class { get; set; }
 
     private TyreModel _value;
     private bool IsLoaded = false;
@@ -70,7 +63,7 @@ else
 
     private async Task<IEnumerable<TyreModel>> SearchTyre(string searchString, CancellationToken token)
     {
-        await Task.Delay(3, token);
+        if (string.IsNullOrWhiteSpace(searchString)) return TyreList;
 
         if (PassedListTyres != null && PassedListTyres.Count() != 0)
         {
@@ -80,25 +73,22 @@ else
         else
         {
             return TyreList.Where(x => x.TyreSerialNumber.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
-
         }
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnParametersSet()
     {
-        
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-         var BranchID = int.Parse(brancIDString);
-        if (PassedListTyres != null && PassedListTyres.Count() != 0)
+        if (BranchID != 0)
         {
-            TyreList = Iasset.SelectUnmontedTyresByBranch(BranchID).Where(s => !PassedListTyres.Any(g => g.TyreID == s.TyreID)).ToList();
+            if (PassedListTyres != null && PassedListTyres.Count() != 0)
+            {
+                TyreList = Iasset.SelectUnmontedTyresByBranch(BranchID).Where(s => !PassedListTyres.Any(g => g.TyreID == s.TyreID)).ToList();
+            }
+            else
+            {
+                TyreList = Iasset.SelectUnmontedTyresByBranch(BranchID).ToList();
+            }
+            IsLoaded = true;
         }
-        else
-        {
-            TyreList = Iasset.SelectUnmontedTyresByBranch(BranchID).ToList();
-        }
-        IsLoaded = true;
     }
 }
