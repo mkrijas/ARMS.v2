@@ -53,7 +53,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByApproved"),
                new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
             };
 
@@ -104,7 +104,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByApproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@InterBranch", true),
-               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
             };
 
@@ -139,14 +139,14 @@ namespace ArmsServices.DataServices
         }
 
         // Method to approve a Contra transaction
-        public int Approve(int? ID, string UserID,string Remarks)
+        public int Approve(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ContraID", ID),
                new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
-               
+
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Contra.Approve]", parameters);
         }
@@ -176,14 +176,14 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchIDOther", model.OtherBranchID),
                new SqlParameter("@ContraModeOther", model.ContraModeOther),
                new SqlParameter("@ArdCodeOther", model.ArdCodeOther),
-               new SqlParameter("@CoaIDOther", model.CoaIDOther),               
+               new SqlParameter("@CoaIDOther", model.CoaIDOther),
                new SqlParameter("@Reference", model.EntryReference),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),
                new SqlParameter("@PaymentTool", model.PaymentTool),
                new SqlParameter("@BankCharges", model.BankCharges),
-               new SqlParameter("@IsPayment", model.IsPayment),              
+               new SqlParameter("@IsPayment", model.IsPayment),
                new SqlParameter("@ChequeNumber", model.ChequeInfo.ChequeNumber),
                new SqlParameter("@ChequeDate", model.ChequeInfo.ChequeDate),
                new SqlParameter("@CostCenter", model.CostCenter),
@@ -208,7 +208,7 @@ namespace ArmsServices.DataServices
         private ContraModel GetModel(IDataRecord dr)
         {
             return new ContraModel
-            {              
+            {
                 ContraID = dr.GetInt32("ContraID"),
 
                 BranchID = dr.GetInt32("BranchID"),
@@ -224,7 +224,7 @@ namespace ArmsServices.DataServices
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 EntryReference = dr.GetString("Reference"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
-                AuthStatus = dr.GetString("AuthStatus"),                
+                AuthStatus = dr.GetString("AuthStatus"),
                 IsPayment = dr.GetBoolean("IsPayment"),
                 PaymentTool = dr.GetString("PaymentTool"),
                 BankCharges = dr.GetDecimal("BankCharges"),
@@ -235,7 +235,7 @@ namespace ArmsServices.DataServices
                 {
                     ChequeDate = dr.GetDateTime("ChequeDate"),
                     ChequeNumber = dr.GetString("ChequeNumber"),
-                },               
+                },
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 MID = dr.GetInt32("MID"),
@@ -296,6 +296,33 @@ namespace ArmsServices.DataServices
                 TotalRecords = countOf
             };
         }
-      }
+
+        public PagedResult<ContraModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved, bool IsInterBranch = false)
+        {
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Searchterm", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+                new SqlParameter("@IsInterBranch", IsInterBranch),
+            };
+            List<ContraModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+            return new PagedResult<ContraModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
+        }
     }
+}
 

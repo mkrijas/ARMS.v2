@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Data.SqlClient;
 
 namespace ArmsServices.DataServices
 {
@@ -60,7 +61,7 @@ namespace ArmsServices.DataServices
                     InvoiceDate = dr.GetDateTime("ReferenceDocDate"),
                     InvoiceNumber = dr.GetString("ReferenceDocNo"),
                     ReceiptAmount = dr.GetDecimal("ReceiptAmount"),
-                    CoaID = dr.GetInt32("CoaID"),                    
+                    CoaID = dr.GetInt32("CoaID"),
                 };
             }
         }
@@ -281,6 +282,33 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@PageSize", pageSize),
                 new SqlParameter("@Searchterm", search ?? ""),
                 new SqlParameter("@IsApproved", _IsApproved),
+            };
+            List<ReceiptModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Receipt.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+            return new PagedResult<ReceiptModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
+        }
+
+        public PagedResult<ReceiptModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved, bool IsInterBranch = false)
+        {
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Searchterm", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+                new SqlParameter("@IsInterBranch", IsInterBranch),
             };
             List<ReceiptModel> list = [];
             int? countOf = 0;
