@@ -79,7 +79,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@JwID", model.JwID),
                new SqlParameter("@EnteredOn", model.EnteredOn),
                new SqlParameter("@ExitOn", model.ExitOn),
-               new SqlParameter("@WorkOrderID", model.JobCardID),
+               new SqlParameter("@JobCardID", model.JobCardID),
                new SqlParameter("@WorkshopID", model.WorkshopID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@Odometer", model.Odometer)
