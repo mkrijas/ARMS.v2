@@ -11,6 +11,8 @@ namespace ArmsServices.DataServices
     public interface ISundryReceiptService : IbaseInterface<SundryReceiptModel>
     {        
         IEnumerable<SundryReceiptModel> Select();       
-        IEnumerable<SundryReceiptEntryModel> GetEntries(int? SID);       
+        IEnumerable<SundryReceiptEntryModel> GetEntries(int? SID);
+        public PagedResult<SundryReceiptModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved, bool IsInterBranch = false);
+
     }
 }
