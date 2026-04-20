@@ -32,7 +32,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
                new SqlParameter("@CreditCoaID", model.CreditCoaID),
                new SqlParameter("@Area", model.Area),
-               new SqlParameter("@WorkOrderID", model.JobCardID),
+               new SqlParameter("@JobCardID", model.JobCardID),
                new SqlParameter("@PaymentArdCode", model.PaymentArdCode),
                new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@TruckID", model.TruckID),
