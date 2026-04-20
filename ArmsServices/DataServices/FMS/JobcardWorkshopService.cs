@@ -79,7 +79,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@JwID", model.JwID),
                new SqlParameter("@EnteredOn", model.EnteredOn),
                new SqlParameter("@ExitOn", model.ExitOn),
-               new SqlParameter("@WorkOrderID", model.JobCardID),
+               new SqlParameter("@JobCardID", model.JobCardID),
                new SqlParameter("@WorkshopID", model.WorkshopID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@Odometer", model.Odometer)
@@ -100,7 +100,7 @@ namespace ArmsServices.DataServices
                 JwID = dr.GetInt32("JwID"),
                 EnteredOn = dr.GetDateTime("EnteredOn"),
                 ExitOn = dr.GetDateTime("ExitOn"),
-                JobCardID = dr.GetInt32("WorkOrderID"),
+                JobCardID = dr.GetInt32("JobCardID"),
                 WorkshopID = dr.GetInt32("WorkshopID"),
                 WorkshopName = dr.GetString("WorkshopName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
