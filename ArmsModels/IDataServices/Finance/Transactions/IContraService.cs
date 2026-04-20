@@ -21,5 +21,7 @@ namespace ArmsServices.DataServices
         IEnumerable<ContraModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         int Approve(int? ID, string UserID, string Remarks);  //Approve
         int Reverse(int? ID, string UserID, string Remarks);  //Reverse
+        public PagedResult<ContraModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved, bool IsInterBranch = false);
+
     }
 }
