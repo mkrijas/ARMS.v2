@@ -1,44 +1,51 @@
-﻿@page "/ClosingReport"
+@page "/ClosingReport"
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject ISnackbar Snackbar
 @inject IBranchService Ibranchservice
 @inherits ReportComponentBase
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudPaper Class="mb-5 p-4">
-            <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
-                <MudRadioGroup T="string" Value="@ReportName" ValueChanged="@((e)=> OnSelectionChanged(e))">
-                    <MudRadio Value="@("ClosingReport")" Color="Color.Primary">Closing</MudRadio>
-                    <MudRadio Value="@("ClosingReportTripBased")" Color="Color.Secondary">Closing(TripDate)</MudRadio>       
-                    <MudRadio Disabled Value="@("ClosingReportMonthwise")" Color="Color.Tertiary">Closing(Monthwise)</MudRadio>
-                    </MudRadioGroup>            
-            </MudToolBar>
-            <MudDivider />
-            <MudGrid Style="padding-top: 22px;">
-                <MudItem xs="3">
-                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                </MudItem>
-                <MudItem xs="3">
-                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                </MudItem>
-                <MudItem xs="3">
-                <MudCheckBox Value="@Monthwise" T="bool" ValueChanged="ReportChanged" Label="Show Monthwise"> </MudCheckBox>
-                </MudItem>
-                <MudItem xs="3" Style="display: flex; align-items: center;">
-                    <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
-                    <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
-                </MudItem>
-            </MudGrid>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
-<MudGrid Style="@(ShowReport?"":"Display:none")">
-    <MudItem xs="12">
-        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
-    </MudItem>
-</MudGrid>
+<div class="fade-in">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">Closing Report</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Analyze daily, trip-based, or monthly closing statuses. Review operational finalization and reconciliation across all selected branches.</MudText>
+            </div>
+            <div class="admin-glass-card pa-2 px-4 shadow-none border-lighter">
+                <MudRadioGroup T="string" Value="@ReportName" ValueChanged="@((e)=> OnSelectionChanged(e))" Class="d-flex gap-4">
+                    <MudRadio Value="@("ClosingReport")" Color="Color.Primary" Dense="true" Class="fw-700">Closing</MudRadio>
+                    <MudRadio Value="@("ClosingReportTripBased")" Color="Color.Secondary" Dense="true" Class="fw-700">Trip Based</MudRadio>       
+                    <MudRadio Disabled Value="@("ClosingReportMonthwise")" Color="Color.Tertiary" Dense="true" Class="fw-700 opa-50">Monthwise</MudRadio>
+                </MudRadioGroup>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-glass-card mb-6 pa-6">
+        <MudGrid Spacing="4" Class="align-center">
+            <MudItem xs="12" sm="4">
+                <MudDatePicker Label="From Date" @bind-Date="@FromDate" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudDatePicker Label="To Date" @bind-Date="@ToDate" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" />
+            </MudItem>
+            <MudItem xs="12" sm="2">
+                <MudCheckBox Value="@Monthwise" T="bool" ValueChanged="ReportChanged" Label="Monthwise" Color="Color.Primary" Class="fw-700" />
+            </MudItem>
+            <MudItem xs="12" sm="2" Class="d-flex align-center gap-2">
+                <MudTooltip Text="Select Branches">
+                    <MudIconButton Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches" Class="rounded-lg" />
+                </MudTooltip>
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary" OnClick="RenderReportViewer" Class="admin-register-btn">VIEW REPORT</MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    <div class="admin-glass-card pa-0 overflow-hidden shadow-sm @(ShowReport ? "" : "d-none")">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters SpName="@(_reportSpName)" @ref="@report"></ReportViewer>
+    </div>
+</div>
 
 @code {
     ReportViewer report;
@@ -48,6 +55,8 @@
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; } = "ClosingReport";
     public BranchModel CurrentBranch { get; set; } = new();
+
+    private string _reportSpName => ReportName == "ClosingReportTripBased" ? "rptFinanceClosingTripDateBased" : "rptFinanceClosingGroup";
 
     private bool Monthwise = false;
 
@@ -93,8 +102,8 @@
         ReportParameters.Clear();
         ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
         ReportParameters.Add("BranchName", CurrentBranch.BranchName);
-        ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
-        ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
-        await report.RenderReport();
+        ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy-MM-dd"));
+        ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy-MM-dd"));
+        await report.RenderReport(ReportName);
     }
 }

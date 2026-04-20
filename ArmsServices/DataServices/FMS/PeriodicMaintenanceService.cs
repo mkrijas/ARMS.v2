@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -125,7 +125,7 @@ namespace ArmsServices.DataServices
                 Remarks = dr.GetString("Remarks"),
                 Title = dr.GetString("Title"),
                 TruckID = dr.GetInt32("TruckID"),
-                JobCardID = dr.GetInt32("JobCardID"),
+                WorkOrderID = dr.GetInt32("WorkOrderID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

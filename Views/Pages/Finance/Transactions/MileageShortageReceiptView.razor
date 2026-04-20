@@ -1,181 +1,147 @@
-﻿@page "/MileageShortageReceiptView"
+@page "/MileageShortageReceiptView"
 @page "/MileageShortageReceiptView/{id:int}"
 @using System.Threading;
-@using ArmsModels.BaseModels.Finance.Transactions
-@using Core.BaseModels.Finance.Transactions;
+@inherits ViewComponentBase<MileageShortageReceiptModel>
 @inject IMileageShortageReceiptService Iservice
-@inject ICostCenterService costIservice
-@inject IDimensionService dimensionIservice
-@inject NavigationManager uriHelper;
-@inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
-@inject IDialogService DialogService
-@inject SignalRService signalRService
-@inject IPushNotificationService IpushNotificationService
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Mileage Shortage Receipt </MudText>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Mileage Shortage Receipt..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
-                </MudTextField>
-                <div class="tablefont">
-                    <span style="margin-right: 10px;">Maximum Records: </span>
+
+
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Mileage Shortage Receipt</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Process and audit receipts related to mileage shortages. Link entries to specific drivers and transactions with built-in verification.</MudText>
                 </div>
-                <MudItem xs="1">
-                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
-                </MudItem>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-            </ToolBarContent>
+                @* <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenForm(new MileageShortageReceiptModel(),false))" Disabled="@_busy">NEW RECEIPT ENTRY</MudButton> *@
+            </div>
+        </div>
+
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+                <div style="flex-grow: 1; min-width: 300px;">
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search by document number or receipt mode..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
+                </div>
+            <div class="d-flex align-center gap-4">
+                <div class="d-flex align-center gap-2 bg-glass rounded-pill px-4 py-1">
+                    <MudCheckBox T="bool" Label="Approved Log" ValueChanged="((bool value) => ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden">
+        <MudTable ServerData="LoadServerData" T="MileageShortageReceiptModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
+            <LoadingContent>
+                <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                    <LoaderComponent IsFullScreen="false"
+                                     ShowLogo="false"
+                                     Size="large"
+                                     LoadingText="Loading...."
+                                     SubText="Fetching Data..." />
+                </div>
+            </LoadingContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.ReceiptMode)">Receipt Mode</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.TotalAmount)">Amount</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="DocumentNumber">
-                    @context.DocumentNumber
-                    @if (context.AuthLevelId == 100)
-                    {
-                        <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
-                    }
-                </MudTd>
-                <MudTd DataLabel="PaymentMode">@context.ReceiptMode</MudTd>
-                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
-                <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
-                    @if (@context.AuthLevelId == 99)
-                    {
-                        @if (@context.MID != null)
-                        {
-                            <EntryReversedComponent DocTypeID="MileageShortageReceiptDocTypeID" DocumentID="context.MileageShortageReceiptID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
-                        }
-                        else
-                        {
-                            <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Filled" />
-                        }
-                        <MudIconButton OnClick="@(()=> Print(context.MileageShortageReceiptID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                    else if (@context.AuthLevelId != 100)
-                    {
-                        <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+                    <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.ReceiptMode)"><span class="admin-header-text">RECEIPT MODE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.TotalAmount)"><span class="admin-header-text">AMOUNT</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Date"><span class="fw-500">@context.DocumentDate?.ToString("dd MMM yyyy")</span></MudTd>
+                    <MudTd DataLabel="DocNumber">
+                        <div class="d-flex flex-column">
+                            <span class="admin-td-primary fw-700">@context.DocumentNumber</span>
+                            @if (context.AuthLevelId == 100)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Error" Class="fw-700">REJECTED</MudText>
+                            }
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Mode"><span class="fw-600">@context.ReceiptMode</span></MudTd>
+                    <MudTd DataLabel="Amount">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="fw-700">@context.TotalAmount?.ToString("N2")</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            @if (@context.AuthLevelId == 99)
+                            {
+                                @if (@context.MID != null)
+                                {
+                                    <EntryReversedComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="context.MileageShortageReceiptID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                                }
+                                else
+                                {
+                                    <MudTooltip Text="Reverse Transaction (Manual)">
+                                        <MudIconButton OnClick="@(()=> Delete(context.MileageShortageReceiptID))" Color="Color.Error" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                }
+                                <MudTooltip Text="Print Proof">
+                                    <MudIconButton OnClick="@(()=> Print(context.MileageShortageReceiptID))" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+                            else if (@context.AuthLevelId != 100)
+                            {
+                                <MudTooltip Text="Verify Receipt">
+                                    <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+
+                            <MudTooltip Text="View Details">
+                            <MudIconButton OnClick="@(() => OpenForm(context, true))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            
+                            <MudTooltip Text="Edit Receipt">
+                            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(() => OpenForm(context, false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+
+                            <MudTooltip Text="Remove Receipt">
+                                <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.MileageShortageReceiptID))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+
 
 @code {
 
-    public bool IsApproved { get; set; } = false;
-    private List<MileageShortageReceiptModel> collection = new List<MileageShortageReceiptModel>();
-    private int numberOfRecords = 100;
-    private string searchTerm = "";
-    private bool _busy;
-    public string BranchName = "";
-    public Dictionary<string, string> ReportParameters { get; set; } = new();
+    protected override List<MileageShortageReceiptModel> _collection { get; set; } = [];
 
-    [Parameter]
-    public int? id { get; set; } = null;
-
-    public bool HasPermissionMileageShortageReceiptServiceDelete { get; set; } = false;
-    public int MileageShortageReceiptDocTypeID = 30;
-    private int? branchID = null;
-
-    #region SignaIR Notification
-
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
-
-    private int NumberOfRecords
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
     {
-        get => numberOfRecords;
-        set
-        {
-            if (numberOfRecords != value)
-            {
-                numberOfRecords = value;
-                _ = ReloadTable();
-            }
-        }
-    }
-
-    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await ReloadTable();
-        }
-    }
-
-    private async Task ReloadTable()
-    {
-        GetAll(IsApproved, NumberOfRecords);
-    }
+        DocumentTypeID = 30,
+        DocumentName = "Mileage Shortage Receipt"
+    };
 
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionMileageShortageReceiptServiceDelete = await Irole.HasClaim(MileageShortageReceiptDocTypeID.ToString(), "Delete", ctc.Token);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        BranchName = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
-        GetAll(IsApproved, NumberOfRecords);
-
-        await Task.Delay(200);
-        await signalRService.StartAsync();
-        if (id != null && collection != null && collection.Any(g => g.MileageShortageReceiptID == id))
+        await base.OnInitializedAsync();
+        if (id != null && _collection != null && _collection.Any(g => g.MileageShortageReceiptID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.MileageShortageReceiptID == id), true);
+            await OpenForm(_collection.FirstOrDefault(s => s.MileageShortageReceiptID == id), true);
         }
-    }
+    }  
 
-    // Method to retrieve mileage shortage receipts based on approval status and number of records
-    private void GetAll(bool val, int numberOfRecords)
-    {
-        int NumberOfRecords = numberOfRecords;
-        
-        // Retrieve approved or unapproved mileage shortage receipts based on the value of 'val'
-        if (val)
-        {
-            collection = Iservice.SelectByApproved(branchID, NumberOfRecords, searchTerm).ToList();
-        }
-        else
-        {
-            collection = Iservice.SelectByUnapproved(branchID, NumberOfRecords, searchTerm).ToList();
-        }
-    }
-
-    // Method to handle changes in approval status
-    void ApprovedChanged(bool value)
-    {
-        IsApproved = value;
-        GetAll(IsApproved, NumberOfRecords);
-    }
-
-    // Method to open a dialog for adding or editing a mileage shortage receipt
-    private async Task OpenDialog(MileageShortageReceiptModel RModel, bool ReadOnly)
+    protected override async Task OpenForm(MileageShortageReceiptModel _model, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
             snackbar.Add("Please wait while form is closing!", Severity.Warning);
             return;
         }
-        if (RModel.AllowanceAmount != 0 && RModel.AllowanceAmount != null)
+        _busy = true;
+
+        var MileageShortageReceiptDocTypeID = 0;
+        if (_model.AllowanceAmount != null && _model.AllowanceAmount != 0)
         {
             MileageShortageReceiptDocTypeID = 129;
         }
@@ -183,74 +149,39 @@
         {
             MileageShortageReceiptDocTypeID = 30;
         }
-        _busy = true;
-        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+        DialogOptions largeWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", RModel.Clone());
+        parms.Add("model", _model.Clone());
         parms.Add("PageToRedirectLink", "/MileageShortageReceiptView");
         parms.Add("ReadOnly", ReadOnly);
         parms.Add("MileageShortageReceiptDocTypeID", MileageShortageReceiptDocTypeID);
-        var dialog = DialogService.Show<MileageShortageReceiptDialog>(RModel.MileageShortageReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var dialog = await dialogService.ShowAsync<MileageShortageReceiptDialog>(_model.MileageShortageReceiptID == null ? "ADD" : "EDIT", parms, largeWidth);
         var result = await dialog.Result;
         var isCancelled = result.Canceled;
         if (!isCancelled)
         {
             var ReturnData = (MileageShortageReceiptModel)result.Data;
-            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-            notificationMessage.RedirectedTo = 0;
-            notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.MileageShortageReceiptID;
-            notificationMessage.MessageGroupID = "PendingVerification";
-            notificationMessage.PageToRedirectLink = "/MileageShortageReceiptView";
-            notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = MileageShortageReceiptDocTypeID;
-            notificationMessage.MsgDate = DateTime.Now;
-            await signalRService.Send(notificationMessage);
+            await _table.ReloadServerData();
         }
-        GetAll(IsApproved, NumberOfRecords);
+        
         await Task.Delay(200);
         _busy = false;
     }
 
-    // Method to delete a mileage shortage receipt
-    private async Task Delete(MileageShortageReceiptModel model)
-    {
-        if (HasPermissionMileageShortageReceiptServiceDelete)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
-            if (result == true)
-            {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                Iservice.Delete(model.MileageShortageReceiptID, user.Identity.Name); // Call service to delete the mileage shortage receipt
-                snackbar.Add("Deleted Successfully", Severity.Success);
-            }
-            GetAll(IsApproved, NumberOfRecords);
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Delete MileageShortageReceipt.");
-        }
-    }
-
+    public Dictionary<string, string> ReportParameters { get; set; } = new();     
+  
     // Method to print the mileage shortage receipt
     private async Task Print(int? MileageShortageReceiptID)
     {
         ReportParameters.Clear();
         ReportParameters.Add("MileageShortageReceiptID", MileageShortageReceiptID.ToString());
-        ReportParameters.Add("BranchName", BranchName);
+        ReportParameters.Add("BranchName", "");
         var parameters = new DialogParameters();
         parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
         parameters.Add("ReportName", "PrintMileageShortageReceipt");
 
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+        var result = await dialogService.ShowAsync<PrintDialog>("PRINT", parameters, maxWidth);
     }
 }

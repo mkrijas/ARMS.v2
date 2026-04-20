@@ -1,4 +1,4 @@
-﻿@inherits DialogFormComponentBase<OpTranModel>
+@inherits DialogFormComponentBase<OpTranModel>
 @using ArmsModels.BaseModels.General
 @using Core.BaseModels.Operations;
 @using Core.IDataServices.Operations;
@@ -26,148 +26,176 @@
 @inject ITripAdvanceService advanceService
 @inject IOperationPostingGroupService IOpsArd
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Trip Settlement" formID="Optranform" DocumentDetails="DocInfo" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Trip Settlement" Subtitle="Optimize trip settlements with automated expense tracking, reimbursements, and advance reconciliation." Icon="@Icons.Material.Filled.LocalShipping" AdminStyle="true" formID="Optranform" DocumentDetails="DocInfo" model="@model" _busy="_busy">
     <FormContent>
-        <MudPaper Class="p-3">
+        <div class="dialog-content-wrapper">
             <EditForm id="Optranform" EditContext="editContext" OnValidSubmit="@OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudGrid>
-                    <MudItem xs="12" md="12">
-                        <h6>Transaction</h6>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudDatePicker ReadOnly="@ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudSelect Label="Select Payment Mode" Value="model.PaymentMode" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" ValueChanged="OnPaymentModeChanged">
-                            @foreach (var mode in PaymentModes)
-                            {
-                                <MudSelectItem Value="@mode">@mode</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-
-                    <MudItem xs="12" md="4">
-                        <MudAutocomplete T="PaymentCodeModel"
-                                         Value="SelectedArd"
-                                         ValueChanged="OnAccountChanged"
-                                         SearchFunc="SearchAccounts"
-                                         ToStringFunc="@(e =>
-                                                            e == null
-                                                                ? string.Empty
-                                                                : string.Format("{0} | {1}",
-                                                                    string.IsNullOrWhiteSpace(e.ArdCode) ? "--" : e.ArdCode,
-                                                                    string.IsNullOrWhiteSpace(e.Title) ? "--" : e.Title)
-                                                        )"
-                                         Label="Select A/c"
-                                         Variant="Variant.Outlined"
-                                         Margin="Margin.Dense"
-                                         Dense="true"
-                                         ResetValueOnEmptyText="true"
-                                         CoerceValue="true"/>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Elevation="0">
-                             <thead>
-                                 <tr>
-                                     <th>Particulars</th>
-                                     <th>Reference</th>
-                                     <th>Cost Center</th>
-                                     <th>Dimension</th>
-                                     <th>Amount</th>
-                                     <th style="width:150px;">Quantity</th>
-                                     <th style="width:150px;">Unit</th>
-                                     <th style="width:150px;">Reimbursement</th>
-                                 </tr>
-                             </thead>
-                             <tbody>
-                                 @foreach (var item in model.Transactions)
+                
+                <div class="admin-glass-card pa-6 mb-6">
+                    <span class="admin-section-label">Transaction Context</span>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="4">
+                            <MudDatePicker ReadOnly="@ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" Class="admin-input-group" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudSelect For="@(() => model.PaymentMode)" Label="Payment Mode" Value="model.PaymentMode" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" ValueChanged="OnPaymentModeChanged" Class="admin-input-group">
+                                @foreach (var mode in PaymentModes)
                                 {
-                                    <tr>
-                                        <td>@item.ExpenseUsageCode - @item.ExpenseTitle</td>
-                                        <td>@item.Reference</td>
-                                        <td>@item.CostCenterVal</td>
-                                        <td>@item.DimensionVal</td>
-                                        <td>@item.Amount</td>
-                                        <td>@item.Quantity</td>
-                                        <td>@item.Unit</td>
-                                        <td>@item.Reimbursement</td>
-                                        @if (!ReadOnly)
-                                        {
-                                            <td><MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /></td>
-                                        }
-                                    </tr>
+                                    <MudSelectItem Value="@mode">@mode</MudSelectItem>
                                 }
-                            </tbody>
-                        </MudSimpleTable>
-                        @if (!ReadOnly)
-                        {
-                            <MudGrid>
-                                <MudItem xs="12" md="5" lg="5">
-                                    <MudAutocomplete SelectValueOnTab T="OperationPostingGroupModel" Label="Particulars"
-                                                              CoerceValue
-                                                      Value="opTranSubModel.OperationPostingGroupModel" ValueChanged="AddOperationPostingGroup"
-                                                      ResetValueOnEmptyText="true" @ref="@OperationTitleControl"
-                                                      SearchFunc="@SearchOperationPostingGroup" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                      ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} ",e.Title))"></MudAutocomplete>
-                                 </MudItem>
-                                 <MudItem xs="12" md="3" lg="3">
-                                     <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
-                                 </MudItem>
-                                 <MudItem xs="12" md="4" lg="4">
-                                     <MudTextField @bind-Value="opTranSubModel.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-                                 </MudItem>
-                                 <MudItem xs="12" md="3" lg="3">
-                                     <CostCenterSelector @bind-Value="opTranSubModel.CostCenter" @bind-ValueText="@opTranSubModel.CostCenterVal" ReadOnly="@ReadOnly" />
-                                 </MudItem>
-                                 <MudItem xs="12" md="3" lg="3">
-                                     <DimensionSelector @bind-Value="opTranSubModel.Dimension" @bind-ValueText="@opTranSubModel.DimensionVal" ReadOnly="@ReadOnly" />
-                                 </MudItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete T="PaymentCodeModel"
+                                             Value="SelectedArd"
+                                             ValueChanged="OnAccountChanged"
+                                             SearchFunc="@(async (string s, CancellationToken t) => await SearchAccounts(s, t))"
+                                             ToStringFunc="@(e => e == null ? string.Empty : string.Format("{0} | {1}", string.IsNullOrWhiteSpace(e.ArdCode) ? "--" : e.ArdCode, string.IsNullOrWhiteSpace(e.Title) ? "--" : e.Title))"
+                                             Label="Payment Source A/c"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             Dense="true"
+                                             ResetValueOnEmptyText="true"
+                                             CoerceText="true"
+                                             Class="admin-input-group" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField ReadOnly="@ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Execution Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)" Class="admin-input-group"></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                </div>
 
-                                 <MudItem xs="12" md="2" lg="2">
-                                     <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
-                                 </MudItem>
-                                 <MudItem xs="12" md="1" lg="1">
-                                     <MudTextField @bind-Value="opTranSubModel.Unit" Label="Unit" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-                                 </MudItem>
-                                <MudItem xs="12" md="2" lg="2" Class="d-flex align-content-center">
-                                    <MudCheckBox Label="Reimbursement" CheckedChanged="((bool value)=>ToggleData(value))" Checked="@opTranSubModel.IsReimbursed" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+                <div class="admin-glass-card pa-0 overflow-hidden mb-6">
+                    <div class="px-6 py-4 border-bottom-subtle" style="background: rgba(255, 159, 67, 0.02);">
+                        <span class="admin-section-label mb-0">Expense Particulars</span>
+                    </div>
+                    
+                    <div class="modern-admin-table">
+                         <MudGrid Class="admin-table-header px-6 py-3">
+                             <MudItem xs="3"><span class="admin-header-text">PARTICULARS / REF</span></MudItem>
+                             <MudItem xs="2"><span class="admin-header-text">COST CENTER / DIM.</span></MudItem>
+                             <MudItem xs="2"><span class="admin-header-text">QTY / UNIT</span></MudItem>
+                             <MudItem xs="2"><span class="admin-header-text">REIMBURSE</span></MudItem>
+                             <MudItem xs="2" Class="text-right"><span class="admin-header-text">AMOUNT</span></MudItem>
+                             <MudItem xs="1"></MudItem>
+                         </MudGrid>
+
+                         @foreach (var item in model.Transactions)
+                         {
+                            <MudGrid Class="px-6 py-3 border-bottom-subtle align-center">
+                                <MudItem xs="3">
+                                    <MudText Typo="Typo.body2" Style="font-weight: 700;">@item.ExpenseTitle</MudText>
+                                    <MudText Typo="Typo.caption" Style="color: #667085;">@item.Reference</MudText>
                                 </MudItem>
-                                 <MudItem xs="12" md="1" lg="1" Class="d-flex align-content-center">
-                                     <MudIconButton OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" Title="ADD" Edge="Edge.False" />
-                                 </MudItem>
-                             </MudGrid>
-                        }
+                                <MudItem xs="2">
+                                    <MudText Typo="Typo.body2">@item.CostCenterVal</MudText>
+                                    <MudText Typo="Typo.caption">@item.DimensionVal</MudText>
+                                </MudItem>
+                                <MudItem xs="2">
+                                    <MudText Typo="Typo.body2">@item.Quantity @item.Unit</MudText>
+                                </MudItem>
+                                <MudItem xs="2">
+                                    <MudChip T="string" Size="Size.Small" Color="@(item.Reimbursement == "True" || item.Reimbursement == "1" ? Color.Success : Color.Default)" Variant="Variant.Text">
+                                        @(item.Reimbursement == "True" || item.Reimbursement == "1" ? "Yes" : "No")
+                                    </MudChip>
+                                </MudItem>
+                                <MudItem xs="2" Class="text-right">
+                                    <MudText Typo="Typo.body1" Style="font-weight: 800; color: #FF9F43;">₹ @item.Amount</MudText>
+                                </MudItem>
+                                <MudItem xs="1" Class="d-flex justify-end">
+                                    @if (!ReadOnly)
+                                    {
+                                        <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" />
+                                    }
+                                </MudItem>
+                            </MudGrid>
+                         }
 
+                         @if (!ReadOnly)
+                         {
+                             <div class="pa-6" style="background: rgba(255, 159, 67, 0.03); border-top: 1px dashed rgba(255,159,67,0.3);">
+                                 <MudGrid Spacing="2" AlignItems="AlignItems.End">
+                                     <!-- Row 1 -->
+                                     <MudItem xs="12" md="4">
+                                         <MudAutocomplete SelectValueOnTab T="OperationPostingGroupModel" Label="Expense Particulars"
+                                                                  Class="admin-input-group"
+                                                           Value="opTranSubModel.OperationPostingGroupModel" ValueChanged="AddOperationPostingGroup"
+                                                           ResetValueOnEmptyText="true" @ref="@OperationTitleControl"
+                                                           SearchFunc="@(async (string s, CancellationToken t) => await SearchOperationPostingGroup(s, t))" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                           ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} ",e.Title))"></MudAutocomplete>
+                                     </MudItem>
+                                     <MudItem xs="12" md="2">
+                                         <CostCenterSelector For="@(() => opTranSubModel.CostCenter)" @bind-Value="opTranSubModel.CostCenter" @bind-ValueText="@opTranSubModel.CostCenterVal" ReadOnly="@ReadOnly" Class="admin-input-group" />
+                                     </MudItem>
+                                     <MudItem xs="12" md="2">
+                                         <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Label="Qty" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group"></MudNumericField>
+                                     </MudItem>
+                                     <MudItem xs="12" md="3">
+                                         <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.CurrencyRupee" AdornmentColor="Color.Primary" Class="admin-input-group"></MudNumericField>
+                                     </MudItem>
+                                     <MudItem xs="12" md="1">
+                                     </MudItem>
 
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField ReadOnly="@ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                    </MudItem>
-                    <MudItem>
-                        <div class="d-flex"> <b>
-                        <MudText Class="d-inline-flex" Typo="Typo.h6" Color="Color.Error">Trip Advance: @Advance.Amount</MudText>
-                        <MudSpacer></MudSpacer>
-                        <MudText Class="d-inline-flex" Typo="Typo.h6" Color="Color.Primary">
-                        @if (AdvanceBalance > 0)
-                        {
-                             @string.Format(" Payment will be deducted from Advance..{0} will be pending!" , displayBalance ) 
-                        }
-                        else
-                        {
-                           @string.Format(" Payable Amount: {0}",displayBalance) 
-                        }
-                        </MudText>
-                        </b>
-                        </div>
-                    </MudItem>
-                </MudGrid>
+                                     <!-- Row 2 -->
+                                     <MudItem xs="12" md="4">
+                                         <MudTextField @bind-Value="opTranSubModel.Reference" Label="Bill/Ref Number" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group"></MudTextField>
+                                     </MudItem>
+                                     <MudItem xs="12" md="2">
+                                         <DimensionSelector For="@(() => opTranSubModel.Dimension)" @bind-Value="opTranSubModel.Dimension" @bind-ValueText="@opTranSubModel.DimensionVal" ReadOnly="@ReadOnly" Class="admin-input-group" />
+                                     </MudItem>
+                                     <MudItem xs="12" md="2">
+                                         <MudTextField @bind-Value="opTranSubModel.Unit" Label="Unit" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group"></MudTextField>
+                                     </MudItem>
+                                     <MudItem xs="12" md="3">
+                                        <div class="d-flex align-center px-3" style="background: white; border: 1px solid #c4c4c4; border-radius: 4px; height: 40px; margin-top: 30px; padding-top: 10px;">
+                                             <MudCheckBox T="bool" Label="Reimbursement" ValueChanged="((bool value)=>ToggleData(value))" Value="@opTranSubModel.IsReimbursed" Color="Color.Primary" Dense="true" Style="margin-top: -2px;" />
+                                         </div>
+                                     </MudItem>
+                                     <MudItem xs="12" md="1" Class="d-flex justify-start">
+                                        <MudIconButton OnClick="AddItems" Color="Color.Primary" Variant="Variant.Filled" Style="background: #FF9F43; border-radius: 8px; height: 40px; width: 60px; margin-bottom: 22px; left:5px;" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Title="ADD" />
+                                     </MudItem>
+                                 </MudGrid>
+                             </div>
+                         }
+                    </div>
+                </div>
+
+                <div class="admin-glass-card pa-4" style="background: rgba(255, 159, 67, 0.05); border: 1px solid rgba(255,159,67,0.2);">
+                    <MudGrid Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudItem xs="12" md="4">
+                            <div class="d-flex align-center">
+                                <div class="pa-2 rounded-lg mr-3" style="background: rgba(244, 67, 54, 0.1);">
+                                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Error" />
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.caption" Style="color: #667085;">Trip Advance Received</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 800; color: #F44336;">₹ @Advance.Amount</MudText>
+                                </div>
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="8">
+                            <div class="d-flex flex-column align-end">
+                                <MudText Typo="Typo.caption" Style="color: #667085;">Reconciliation Status</MudText>
+                                <MudText Typo="Typo.h6" Style="font-weight: 800; color: #FF9F43;">
+                                    @if (AdvanceBalance > 0)
+                                    {
+                                        <span style="font-size: 0.9rem; color: #2E7D32;">✓ Deducting from advance. Pending: ₹ @displayBalance</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Total Payable Amount: ₹ @displayBalance</span>
+                                    }
+                                </MudText>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </div>
             </EditForm>
-        </MudPaper>
+        </div>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocNumber="@DocNumber" DocumentID="model.OpTranID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocNumber="@DocNumber" DocumentID="@model.OpTranID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
@@ -246,7 +274,7 @@
         }
     }
 
-    private async Task<IEnumerable<PaymentCodeModel>> SearchAccounts(string searchString)
+    private async Task<IEnumerable<PaymentCodeModel>> SearchAccounts(string searchString, CancellationToken token)
     {
         await Task.Delay(5);
         string search = searchString ?? string.Empty;
@@ -290,8 +318,8 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (OperationTitleControl is not null && firstRender)
-            await OperationTitleControl.FocusAsync();
+        // if (OperationTitleControl is not null && firstRender)
+        //    await OperationTitleControl.FocusAsync();
     }
 
     // Method to toggle reimbursement status
@@ -308,7 +336,7 @@
     }
 
     // Method to search for operation posting groups based on a search string
-    private async Task<IEnumerable<OperationPostingGroupModel>> SearchOperationPostingGroup(string searchString)
+    private async Task<IEnumerable<OperationPostingGroupModel>> SearchOperationPostingGroup(string searchString, CancellationToken token)
     {
         return await Task.FromResult(OperationPostingList.Where(x => x.ADCode.Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase) ||
                                                                 x.Title.Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase)));
@@ -360,7 +388,7 @@
             opTranSubModel = new() { OperationPostingGroupModel = null };
             //gstusge = new();
             SetTotal();
-            await OperationTitleControl.Clear();
+            await OperationTitleControl.ResetAsync();
             await OperationTitleControl.FocusAsync();
             //await JsRuntime.InvokeVoidAsync("resetHorizontalScrollbarForElement", ScrollableDiv);
         }
@@ -392,7 +420,7 @@
             if (AdvanceBalance > 0)
             {
                 {
-                    yesno = await DialogService.ShowMessageBox(
+                    yesno = await DialogService.ShowMessageBoxAsync(
                     "Advance",
                     "Do you want to Use This Advance",
                     yesText: "Yes!", noText: "No");
@@ -483,3 +511,4 @@
 
 
 }
+

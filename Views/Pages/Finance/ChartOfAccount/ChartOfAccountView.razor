@@ -1,4 +1,4 @@
-﻿@page "/ChartOfAccount"
+@page "/ChartOfAccount"
 @inject IChartOfAccountService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -9,40 +9,59 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
-<style>
-    .subledger {
-        color: blue;
-    }
+@if (_isLoading)
+{
+    <LoaderComponent IsFullScreen="true" 
+                    ShowLogo="false" 
+                    Size="medium" 
+                    LoadingText="Loading Chart of Accounts" 
+                    SubText="Please wait..." />
+}
+else
+{
+    <div class="admin-page-container">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Chart of Accounts</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Design and manage your organizational financial structure, ledger hierarchies, and account groups.</MudText>
+                </div>
+                <div class="d-flex gap-2">
+                    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@addledgerbyicon" Disabled="@_busy">NEW LEDGER</MudButton>
+                </div>
+            </div>
+        </div>
 
-    .fixed {
-        position: absolute;
-    }
-
-</style>
-<MudGrid>
-    <MudItem xs="12" md="6">
-        <MudPaper Class="p-5">
-            <MudText Typo="Typo.h5" Style="font-weight:450" Class="mb-5">
-                CHART OF ACCOUNTS
-                <MudIconButton Style="margin-bottom:4px;" Icon="@Icons.Material.Filled.Add" Disabled="@_busy" Title="Add Ledger" Color="Color.Dark" Size="Size.Small" OnClick="@addledgerbyicon"></MudIconButton>
-            </MudText>
-            <MudDivider DividerType="DividerType.Middle"></MudDivider>
-            <MudTreeView Color="Color.Primary" 
-           
-            Items="TreeItems" T="TreeItemData" SelectedValueChanged="OnSelected">
+        <div class="admin-glass-card mb-6 pa-6">
+            <MudTreeView T="ChartOfAccountModel" Color="Color.Primary"
+                         Items="TreeItems" Hover="true" ServerData="LoadChildren"
+                         SelectedValueChanged="@((ChartOfAccountModel i) => OnSelected(i))"
+                         Style="background: transparent;">
                 <ItemTemplate>
-                    <ContextMenuTrigger MenuId="@(context.SummaryAccount ? "myMenu" : "myeditMenu")" Data="@context">
-                        <MudTreeViewItem id="@context.ID" OnClick="@(()=> getcoordinates(context.ID))" @bind-Expanded="@context.IsExpanded" 
-                            TextClass="@(context.SummaryAccount?"":"subledger")" LoadingIconColor="Color.Info" Value="@context" Text="@context.Title" 
-                            Icon="@context.Icon" CanExpand="@(context.SummaryAccount? true : false)" Items="@context.TreeItems">
-                        </MudTreeViewItem>
-                    </ContextMenuTrigger>
+                    <MudTreeViewItem Text="@context.Text"
+                                     T="ChartOfAccountModel"                                     
+                                     @bind-Expanded="@context.Expanded"
+                                     Items="@context.Children"                                     
+                                     Value="@context.Value"
+                                     LoadingIconColor="Color.Info"
+                                     CanExpand="@context.Expandable">
+                        <BodyContent Context="item">
+                            <ContextMenuTrigger MenuId="@(context.Value.SummaryAccount ? "myMenu" : "myeditMenu")" Data="@context">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" @onclick="@(() => getcoordinates(context.Value.CoaID))" Class="py-1">
+                                    <MudIcon Icon="@context.Icon" Color="@(context.Value.SummaryAccount ? Color.Primary : Color.Default)" Size="Size.Small" />
+                                    <MudText Typo="@(context.Value.SummaryAccount? Typo.body1: Typo.body2)"
+                                             Class="@(context.Value.SummaryAccount ? "fw-600 admin-td-primary" : "admin-td-secondary")">
+                                        @context.Text
+                                    </MudText>
+                                </MudStack>
+                            </ContextMenuTrigger>
+                        </BodyContent>
+                    </MudTreeViewItem>
                 </ItemTemplate>
             </MudTreeView>
-
-        </MudPaper>
-    </MudItem>
-</MudGrid>
+        </div>
+    </div>
+}
 
 
 <div id="targetBox" Class="float-left fixed" style="left: 0; top: 0;">
@@ -52,13 +71,13 @@
         <MudPaper Width="350px" MaxHeight="494px" Class="overflow-y-auto" Elevation="1">
             <div>
                 <div style="height:30px">
-                    <MudCheckBox Style="height:60px" Checked="allSelected" CheckedChanged="((bool a)=>SelectAll(a))"><b>SELECT ALL</b></MudCheckBox>
+                    <MudCheckBox T="bool" Style="height:60px" Value="allSelected" ValueChanged="((bool a) => SelectAll(a))"><b>SELECT ALL</b></MudCheckBox>
                 </div>
                 <hr style="margin-bottom:0px;">
                 @foreach (var item in AllocatedBranches)
                 {
                     <div style="height:40px; margin-bottom:0px;">
-                        <MudCheckBox Style="height:60px;" Checked="@item.IsSelected" Label="@item.BranchName" CheckedChanged="((bool value)=>BranchCheckedChanged(value,item))"></MudCheckBox>
+                        <MudCheckBox T="bool" Style="height:60px;" Value="@item.IsSelected" Label="@item.BranchName" ValueChanged="((bool value) => BranchCheckedChanged(value, item))"></MudCheckBox>
                     </div>
                 }
             </div>
@@ -72,12 +91,15 @@
 <ContextMenu Id="myeditMenu">
     <Item OnClick="@ContextEditMenuOnClick">Edit Ledger</Item>
 </ContextMenu>
+}
 
 @code {
 
-    private HashSet<TreeItemData> TreeItems { get; set; } = new HashSet<TreeItemData>();
-    TreeItemData ContextmenuSource = new();
-    TreeItemData SelectedValue;
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
+    private List<TreeItemData<ChartOfAccountModel>> TreeItems { get; set; } = new();
+    TreeItemData<ChartOfAccountModel> ContextmenuSource = new();
+    TreeItemData<ChartOfAccountModel> SelectedValue;
     protected List<CoaBranchAvailabilityModel> AllocatedBranches = new();
     protected bool visible = true;
     private bool _busy;
@@ -88,17 +110,6 @@
 
     List<ChartOfAccountModel> collection;
 
-    // Class representing tree item data
-    public class TreeItemData
-    {
-        public string Title { get; set; }
-        public string Icon { get; set; }
-        public bool IsExpanded { get; set; } = false;
-        public bool SummaryAccount { get; set; } = false;
-        public int? ID { get; set; }
-        public string AccountCode { get; set; }
-        public HashSet<TreeItemData> TreeItems { get; set; }
-    }
 
     // Class to hold element coordinates
     public class ElementCoordinates
@@ -117,78 +128,93 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionChartOfAccountServiceEdit = await Irole.HasClaim(ChartOfAccountDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionChartOfAccountServiceUpdateSelect = await Irole.HasClaim(ChartOfAccountDocTypeID.ToString(), "UpdateSelect", ctc.Token);
 
-        // Load all ledgers and populate the tree items
+        // Load all ledgers and populate only root nodes
         collection = Iservice.AllLedgers().ToList();
-        var baseGroups = collection.Where(x=> x.ParentID == 0).ToList();
+        var baseGroups = collection.Where(x => x.ParentID == 0).OrderBy(x => x.SummaryAccount).ThenBy(y => y.AccountName).ToList();
 
         foreach (var item in baseGroups)
-        {
-            TreeItems.Add(new TreeItemData
-                {
-                    ID = item.CoaID,
-                    Title = item.AccountName,
-                    SummaryAccount = item.SummaryAccount,
-                    Icon = item.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                    IsExpanded = true,  
-                    TreeItems = LoadServerData(item.CoaID),
-                });
+        {            
+            var treeItem = new TreeItemData<ChartOfAccountModel>
+            {
+                Value = item,
+                Text = item.AccountName.ToUpper(),
+                Icon = Icons.Material.Filled.Edit,
+                Expanded = false,
+                Expandable = true,
+                Children = null // Do not load children yet
+            };
+            TreeItems.Add(treeItem);
         }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
     }
 
-    // Method to load server data for tree items
-    public HashSet<TreeItemData> LoadServerData(int? CoaID)
+    private async Task EnsureMinimumLoadTime()
     {
-       //await Task.Delay(3);
-        var TreeItems = new HashSet<TreeItemData>();
-        var children = collection.Where(z => z.ParentID == CoaID).OrderBy(x => x.SummaryAccount).ThenBy(y => y.AccountName);
-        foreach (var item in children)
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
         {
-            TreeItems.Add(new TreeItemData
-                {
-                    ID = item.CoaID,
-                    AccountCode = item.AccountCode,
-                    Title = item.AccountName + (item.SummaryAccount ? "" : (" (" + item.AccountCode + ")")),
-                    SummaryAccount = item.SummaryAccount,
-                    Icon = item.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                    TreeItems =  LoadServerData(item.CoaID),
-                    IsExpanded = true
-                });
+            await Task.Delay(100 - (int)elapsed);
         }
-        //parentNode.Icon = "";
-        return TreeItems;
     }
+   
+
+    // Method to load children for a node (one level only, for lazy loading)
+    public async Task<IReadOnlyCollection<TreeItemData<ChartOfAccountModel>>> LoadChildren(ChartOfAccountModel Coa)
+    {
+        await Task.Delay(50); // Simulate some delay
+        var CoaItems = collection.Where(z => z.ParentID == Coa.CoaID).OrderBy(x => x.SummaryAccount).ThenBy(y => y.AccountName);
+        var result = new List<TreeItemData<ChartOfAccountModel>>();
+        foreach (var item in CoaItems)
+        {            
+            //var hasChildren = collection.Any(x => x.ParentID == item.CoaID);
+            result.Add(new TreeItemData<ChartOfAccountModel>
+            {
+                Value = item,
+                Text =  item.SummaryAccount? item.AccountName : $"{item.AccountCode} | {item.AccountName}",
+                Icon = item.SummaryAccount ? null : Icons.Material.Filled.Money,
+                Expanded = false,
+                Expandable = item.SummaryAccount,
+                Children = null // Do not load children yet
+            });
+        }
+        return result;
+    }
+    
 
     //Function to create group / ledger
 
     // Method to handle context menu clicks
+    // Method to handle context menu clicks
     protected async Task ContextMenuOnClick(ItemClickEventArgs e)
     {
-        ContextmenuSource = (TreeItemData)e.Data;
+        ContextmenuSource = (TreeItemData<ChartOfAccountModel>)e.Data; // e.Data comes from ContextMenuTrigger which is wrapper
         var authstate = await auth.GetAuthenticationStateAsync();
         var parameters = new DialogParameters
+        {
+            ["model"] = new ChartOfAccountModel
             {
-                ["model"] = new ChartOfAccountModel
-                {
-                    ParentID = ContextmenuSource.ID,
-                    SummaryAccount = e.MenuItem.Id == "group",
-                    UserInfo = { UserID = authstate.User.Identity.Name }
-                },
-            };
+                ParentID = ContextmenuSource.Value.CoaID,
+                SummaryAccount = e.MenuItem.Id == "group",
+                UserInfo = { UserID = authstate.User.Identity.Name }
+            },
+        };
         IDialogReference dialog = null;
 
         // Show the appropriate dialog based on the menu item clicked
         switch (e.MenuItem.Id)
         {
             case "group":
-                dialog = DialogService.Show<AddLedgerDialog>("Add Group under - " + ContextmenuSource.Title, parameters);
+                dialog = await DialogService.ShowAsync<AddLedgerDialog>("Add Group under - " + ContextmenuSource.Text, parameters);
                 break;
 
             case "account":
-                dialog = DialogService.Show<AddSubledgerDialog>("Add Ledger under - " + ContextmenuSource.Title, parameters);
+                dialog = await DialogService.ShowAsync<AddSubledgerDialog>("Add Ledger under - " + ContextmenuSource.Text, parameters);
                 break;
         }
 
@@ -201,20 +227,23 @@
                 try
                 {
                     var newledger = Iservice.Update(UpdatedModel); // Update the ledger
-                    //ContextmenuSource.TreeItems = await LoadServerData(ContextmenuSource);
-                    ContextmenuSource = GetTreeItem(TreeItems, UpdatedModel.ParentID);
-                    if (ContextmenuSource.TreeItems == null)
+                    // Finding the parent node in TreeItems
+                    var parentNode = GetTreeItemData(TreeItems, UpdatedModel.ParentID);
+                    if (parentNode != null)
                     {
-                        ContextmenuSource.TreeItems = new HashSet<TreeItemData>();
-                    }
-                    ContextmenuSource.TreeItems.Add(new TreeItemData
+                        var newNode = new TreeItemData<ChartOfAccountModel>
                         {
-                            ID = newledger.CoaID,
-                            Title = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
-                            SummaryAccount = newledger.SummaryAccount,
-                            Icon = newledger.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                        });
-                    snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
+                            Value = newledger,
+                            Text = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
+                            Icon = newledger.SummaryAccount ? null : Icons.Material.Filled.Description,
+                            Expanded = true
+                        };
+
+                        var children = parentNode.Children?.Cast<TreeItemData<ChartOfAccountModel>>().ToList() ?? new List<TreeItemData<ChartOfAccountModel>>();
+                        children.Add(newNode);
+                        parentNode.Children = children;
+                        snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
+                    }
                 }
                 catch (Exception a)
                 {
@@ -224,7 +253,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit ChartOfAccount.");
         }
@@ -233,17 +262,17 @@
     // Method to handle context menu edit clicks
     protected async Task ContextEditMenuOnClick(ItemClickEventArgs e)
     {
-        TreeItemData item = (TreeItemData)e.Data;
-        if (!item.SummaryAccount)
+        var item = (TreeItemData<ChartOfAccountModel>)e.Data;
+        if (!item.Value.SummaryAccount)
         {
-            ChartOfAccountModel model = Iservice.SelectByID(item.ID); // Fetch the model for editing
-            ContextmenuSource = (TreeItemData)e.Data;
+            ChartOfAccountModel model = Iservice.SelectByID(item.Value.CoaID); // Fetch the model for editing
+            ContextmenuSource = item;
             var authstate = await auth.GetAuthenticationStateAsync();
             var parameters = new DialogParameters
-                {
-                    ["model"] = model.Clone(),
-                };
-            var editledge = DialogService.Show<AddSubledgerDialog>("Edit Ledger - " + item.Title, parameters);
+            {
+                ["model"] = model.Clone(),
+            };
+            var editledge = await DialogService.ShowAsync<AddSubledgerDialog>("Edit Ledger - " + item.Text, parameters);
 
             if (HasPermissionChartOfAccountServiceEdit)
             {
@@ -252,15 +281,14 @@
                 if (!result.Canceled)
                 {
                     var newresult = Iservice.Update(UpdatedModel); // Update the ledger
-                    item.Title = newresult.AccountName + (newresult.SummaryAccount ? "" : (" (" + newresult.AccountCode + ")"));
-                    item.SummaryAccount = newresult.SummaryAccount;
-                    item.Icon = Icons.Material.Filled.Book;
+                    item.Text = newresult.AccountName + (newresult.SummaryAccount ? "" : (" (" + newresult.AccountCode + ")"));
+                    item.Value.AccountName = newresult.AccountName;
                     snackbar.Add(newresult.AccountName + " Edited successfully", Severity.Success);
                 }
             }
             else
             {
-                bool? result = await DialogService.ShowMessageBox(
+                bool? result = await DialogService.ShowMessageBoxAsync(
                     "Permission denied!",
                     "You don't have any permission to Edit ChartOfAccount.");
             }
@@ -279,15 +307,15 @@
 
         var authstate = await auth.GetAuthenticationStateAsync();
         var parameters = new DialogParameters
+        {
+            ["model"] = new ChartOfAccountModel
             {
-                ["model"] = new ChartOfAccountModel
-                {
-                    ParentID = null,
-                    SummaryAccount = false,
-                    UserInfo = { UserID = authstate.User.Identity.Name }
-                },
-            };
-        IDialogReference dialog = DialogService.Show<AddSubledgerDialog>("Add Ledger", parameters);
+                ParentID = null,
+                SummaryAccount = false,
+                UserInfo = { UserID = authstate.User.Identity.Name }
+            },
+        };
+        IDialogReference dialog = await DialogService.ShowAsync<AddSubledgerDialog>("Add Ledger", parameters);
 
         if (HasPermissionChartOfAccountServiceEdit)
         {
@@ -298,18 +326,30 @@
                 try
                 {
                     var newledger = Iservice.Update(UpdatedModel); // Update the ledger
-                    ContextmenuSource = GetTreeItem(TreeItems, UpdatedModel.ParentID);
-                    if (ContextmenuSource != null)
+                                                                   // Finding the parent node in TreeItems
+                    var parentNode = GetTreeItemData(TreeItems, UpdatedModel.ParentID);
+
+                    var newNode = new TreeItemData<ChartOfAccountModel>
                     {
-                        ContextmenuSource.TreeItems.Add(new TreeItemData
-                            {
-                                ID = newledger.CoaID,
-                                Title = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
-                                SummaryAccount = newledger.SummaryAccount,
-                                Icon = newledger.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                            });
-                        snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
+                        Value = newledger,
+                        Text = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
+                        Icon = newledger.SummaryAccount ? null : Icons.Material.Filled.Description,
+                        Expanded = true
+                    };
+
+                    if (parentNode != null)
+                    {
+                        var children = parentNode.Children?.Cast<TreeItemData<ChartOfAccountModel>>().ToList() ?? new List<TreeItemData<ChartOfAccountModel>>();
+                        children.Add(newNode);
+                        parentNode.Children = children;
                     }
+                    else if (UpdatedModel.ParentID == 0 || UpdatedModel.ParentID == null)
+                    {
+                        TreeItems.Add(newNode);
+                    }
+
+                    snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
+
                 }
                 catch (Exception a)
                 {
@@ -319,7 +359,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit ChartOfAccount.");
         }
@@ -327,22 +367,11 @@
         _busy = false;
     }
 
-    //recursion through treeview
-
-    //void LoadTreeItem(HashSet<TreeItemData> itemTree,int? ID)
-    //{
-    //    var item = itemTree.First(x => x.ID == ID);
-    //    item.TreeItems = Task.Run(async () => await LoadServerData(item)).Result;
-    //    item.IsExpanded = true;
-    //}
-
-    //public bool allSelected { get; set; } = false;
-
     // Method to check if all branches are selected
     public bool allSelected { get { return AllocatedBranches.All(ab => ab.IsSelected); } }
     public int? AllSelectCoaId;
 
-    public void OnSelected(TreeItemData item)
+    public void OnSelected(ChartOfAccountModel item)
     {
         //if (item != null && !item.SummaryAccount)
         //{
@@ -376,11 +405,11 @@
             else if (!a)
             {
                 Iservice.UnSelectAll(AllSelectCoaId, UserID); // Unselect all branches
-            } 
+            }
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to UpdateSelect ChartOfAccount.");
         }
@@ -408,38 +437,49 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to UpdateSelect ChartOfAccount.");
         }
     }
 
     // Method to handle menu appearing events
-    async Task OnAppearing(MenuAppearingEventArgs e)
+    void OnAppearing(MenuAppearingEventArgs e)
     {
-        TreeItemData item = (TreeItemData)e.Data;
-        e.PreventShow = !item.SummaryAccount;
+        var item = (TreeItemData<ChartOfAccountModel>)e.Data;
+        e.PreventShow = !item.Value.SummaryAccount;
     }
 
-    // Recursive method to get a tree item by ID
-    TreeItemData GetTreeItem(HashSet<TreeItemData> tree, int? ID)
+    // Recursive method to get a CoaTreeItem by ID
+    ITreeItemData<ChartOfAccountModel> GetTreeItemData(List<TreeItemData<ChartOfAccountModel>> tree, int? ID)
     {
         if (tree != null)
         {
             foreach (var i in tree)
             {
-                if (i.ID == ID)
+                if (i.Value.CoaID == ID)
                 {
                     return i;
                 }
-                else
+                else if (i.Children != null)
                 {
-                    var item = GetTreeItem(i.TreeItems, ID);
-                    if (item != null)
-                    {
-                        return item;
-                    }
+                    var result = GetTreeItemDataRecursive(i.Children, ID);
+                    if (result != null) return result;
                 }
+            }
+        }
+        return null;
+    }
+
+    ITreeItemData<ChartOfAccountModel> GetTreeItemDataRecursive(IReadOnlyCollection<ITreeItemData<ChartOfAccountModel>> children, int? ID)
+    {
+        foreach (var child in children)
+        {
+            if (child.Value.CoaID == ID) return child;
+            if (child.Children != null)
+            {
+                var res = GetTreeItemDataRecursive(child.Children, ID);
+                if (res != null) return res;
             }
         }
         return null;

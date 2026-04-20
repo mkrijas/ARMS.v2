@@ -1,4 +1,4 @@
-﻿@page "/UnReconciledBankEntryView/{bankModel}"
+@page "/UnReconciledBankEntryView/{bankModel}"
 @page "/UnReconciledBankEntryView"
 @inject IUnreconciledBankEntryService Iservice
 @inject MudBlazor.ISnackbar snackbar
@@ -8,48 +8,106 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
-    <ToolBarContent>
-        @if (bankModel != null && bankModel.BankAccountInfo != null)
-        {
-            <MudText Typo="Typo.h6">@(bankModel.BankAccountInfo.BankTitle) - List of Opening Unreconciled Entries</MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.h6">No Bank account selected</MudText>
-        }
-        <MudTooltip Text="Add UnReconciled Transaction">
-            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> AddEditUnreconciled(new UnReconciledBankEntryModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-        </MudTooltip>
-        <MudSpacer></MudSpacer>
-    </ToolBarContent>
-    <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<UnReconciledBankEntryModel, object>(x=> x.Nature)" InitialDirection="SortDirection.Ascending">Nature</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<UnReconciledBankEntryModel, object>(x=> x.TransactionDate)" InitialDirection="SortDirection.Ascending">Transaction Date</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<UnReconciledBankEntryModel, object>(x=> x.ArdCode)" InitialDirection="SortDirection.Ascending">Ard Code</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<UnReconciledBankEntryModel, object>(x=> x.InstrumentType)" InitialDirection="SortDirection.Ascending">Instrument Type</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<UnReconciledBankEntryModel, object>(x=> x.InstrumentDate)" InitialDirection="SortDirection.Ascending">Instrument Date</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<UnReconciledBankEntryModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
-        <MudTh>Actions</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Title">@context.NatureName</MudTd>
-        <MudTd DataLabel="BeneficiaryName">@context.TransactionDate?.ToShortDateString()</MudTd>
-        <MudTd DataLabel="AccountNumber">@context.ArdCode</MudTd>
-        <MudTd DataLabel="Place">@context.InstrumentType</MudTd>
-        <MudTd DataLabel="BankCode">@context.InstrumentDate?.ToShortDateString()</MudTd>
-        <MudTd DataLabel="BankCode">@context.Amount</MudTd>
-        <MudTd DataLabel="">
-            <MudFab @onclick="@(()=> AddEditUnreconciled(context))" Title="Edit" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-            <MudFab @onclick="@(()=> Delete(context))" Title="Delete" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-        </MudTd>
-    </RowTemplate>
-    <PagerContent>
-        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-    </PagerContent>
-</MudTable>
+@@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Reconciliation Data" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Opening Bank Reconcile Adjustments</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">
+                        @if (bankModel != null && bankModel.BankAccountInfo != null)
+                        {
+                            <span>Manage opening unreconciled bank entries for <span class="fw-700">@bankModel.BankAccountInfo.BankTitle</span>. bridge discrepancies during system migration.</span>
+                        }
+                        else
+                        {
+                            <span class="text-error">Warning: No bank account selected. Please select a bank from the parent view.</span>
+                        }
+                    </MudText>
+                </div>
+                <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> AddEditUnreconciled(new UnReconciledBankEntryModel()))" Disabled="@_busy">ADD ADJUSTMENT</MudButton>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<UnReconciledBankEntryModel, object>(x=> x.Nature)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">ADJUSTMENT NATURE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<UnReconciledBankEntryModel, object>(x=> x.TransactionDate)"><span class="admin-header-text">TRANS. DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><span class="admin-header-text">INSTRUMENT DETAILS</span></MudTh>
+                    <MudTh Style="text-align: right;"><MudTableSortLabel SortBy="new Func<UnReconciledBankEntryModel, object>(x=> x.Amount)"><span class="admin-header-text">AMOUNT</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Nature">
+                        <div class="d-flex align-center gap-2">
+                            <div class="@(context.NatureName.Contains("Credit", StringComparison.OrdinalIgnoreCase) ? "admin-icon-square-vibrant small accent-success" : "admin-icon-square-vibrant small accent-error")">
+                                <MudIcon Icon="@(context.NatureName.Contains("Credit", StringComparison.OrdinalIgnoreCase) ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown)" Size="Size.Small" />
+                            </div>
+                            <span class="fw-700 admin-td-primary">@context.NatureName</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Date">
+                        <span class="fw-600">@context.TransactionDate?.ToString("dd MMM yyyy")</span>
+                    </MudTd>
+                    <MudTd DataLabel="Instrument">
+                        <div class="d-flex flex-column small">
+                            <div class="d-flex align-center gap-2 mb-1">
+                                <MudIcon Icon="@Icons.Material.Filled.ConfirmationNumber" Size="Size.Small" Style="font-size: 0.8rem;" Class="opa-40" />
+                                <span class="fw-600">@context.InstrumentType (@(context.InstrumentDate?.ToString("dd MMM yyyy") ?? "-"))</span>
+                            </div>
+                            <div class="d-flex align-center gap-2">
+                                <MudIcon Icon="@Icons.Material.Filled.Label" Size="Size.Small" Style="font-size: 0.8rem;" Class="opa-40" />
+                                <span class="fw-600 opa-50">ARD: @context.ArdCode</span>
+                            </div>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Amount" Style="text-align: right;">
+                        <span class="fw-700 text-vibrant font-monospace" style="font-size: 1rem;">@string.Format("{0:N2}", context.Amount)</span>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            <MudTooltip Text="Edit Entry">
+                                <MudIconButton OnClick="@(()=> AddEditUnreconciled(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            <MudTooltip Text="Purge Record">
+                                <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <div class="pa-12 text-center opa-40">
+                        <MudIcon Icon="@Icons.Material.Filled.Inbox" Size="Size.Large" Class="mb-2" />
+                        <MudText>No unreconciled entries found for this bank.</MudText>
+                    </div>
+                </NoRecordsContent>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
+
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private UnReconciledBankEntryModel model = new();
     [Parameter]
@@ -63,6 +121,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionUnreconciledBankEntryServiceDelete = await Irole.HasClaim(UnreconciledBankEntryDocTypeID.ToString(), "Delete", ctc.Token);
 
@@ -72,6 +131,17 @@
             model.ArdCode = bankModel.BankCode;
         }
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to add or edit an un-reconciled bank entry
@@ -95,7 +165,8 @@
         }
         _busy = true;
         var parameters = new DialogParameters { ["model"] = unrec.Clone() };
-        var dialog = DialogService.Show<UnReconciledBankEntryDialog>("Add/Edit Unreconciled Entries", parameters);
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<UnReconciledBankEntryDialog>("Add/Edit Unreconciled Entries", parameters, maxWidth);
         var result = await dialog.Result;
 
         // you can check if the modal was cancelled
@@ -113,7 +184,7 @@
     {
         if (HasPermissionUnreconciledBankEntryServiceDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 "Are you sure, you want to delete - " + model.Nature + " (" + model.TransactionDate + ") ?");
             if (result == true)
@@ -127,7 +198,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Delete UnreconciledBankEntry.");
         }
@@ -139,3 +210,4 @@
         collection = Iservice.Select(model.BankID, true).ToList(); // Load un-reconciled bank entries
     }
 }
+

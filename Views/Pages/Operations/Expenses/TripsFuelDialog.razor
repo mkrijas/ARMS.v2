@@ -1,4 +1,4 @@
-﻿@attribute [Authorize]
+@attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @using System.Threading;
 @using System.Transactions;
@@ -19,94 +19,95 @@
 @inject IPushNotificationService notiService
 
 
-<EditForm id="formfuel" Model="@Tmodel" OnValidSubmit="OnValidSubmit">
-    <ObjectGraphDataAnnotationsValidator />
-    <ValidationSummary />
-    <MudDialog>
-        <TitleContent>
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
-                Fueling
-            </MudText>
-        </TitleContent>
-        <DialogContent>
-            <MudContainer Style="min-height:300px;max-height:800px;">
-                <MudGrid Spacing="3">
-                    <MudItem xs="12" md="12">
-                        <MudRadioGroup @bind-Value="Tmodel.ItemType">
-                            <MudRadio Value="@("Fuel")" Color="Color.Primary">Fuel</MudRadio>
-                            <MudRadio Value="@("AdBlue")" Color="Color.Primary">AdBlue</MudRadio>
-                        </MudRadioGroup>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="Tmodel.EntryDate" Disabled/>
-                    </MudItem>
-                    @if (Tmodel.ItemType == "Fuel")
-                    {
-                        <MudItem xs="12" md="4">
-                            <InventoryItemSelector Value="invItem" CurrentVariant="Variant.Outlined" CurrentMargine="Margin.Dense" ValueChanged="FuelItemSelected" ItemGroup2="Fuel" ItemGroup="@FuelGroupID"></InventoryItemSelector>
+<DialogForm @ref="@dialogForm" Title="Fueling Management" Subtitle="Register energy consumption and reconcile purchase invoices for operational manifests." Icon="@Icons.Material.Filled.LocalGasStation" AdminStyle="true" formID="formfuel" model="@Tmodel" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <EditForm id="formfuel" Model="@Tmodel" OnValidSubmit="OnValidSubmit">
+                <div class="admin-glass-card pa-6">
+                    <ObjectGraphDataAnnotationsValidator />
+                    <ValidationSummary />
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="12">
+                            <MudRadioGroup T="string" @bind-Value="Tmodel.ItemType">
+                                <MudRadio Value="@("Fuel")" Color="Color.Primary">Fuel</MudRadio>
+                                <MudRadio Value="@("AdBlue")" Color="Color.Primary">AdBlue</MudRadio>
+                            </MudRadioGroup>
                         </MudItem>
-                    }
-                    @if (Tmodel.ItemType == "AdBlue")
-                    {
                         <MudItem xs="12" md="4">
-                            <InventoryItemSelector Value="invItem" CurrentVariant="Variant.Outlined" CurrentMargine="Margin.Dense" ValueChanged="FuelItemSelected" ItemGroup2="AdBlue" ItemGroup="@AdBlueGroupID"></InventoryItemSelector>
+                            <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="Tmodel.EntryDate" Disabled Class="modern-input" />
                         </MudItem>
-                    }
-                    <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="Tmodel.Quantity" TextChanged="(()=> Tmodel.Amount = Tmodel.RatePerLitre * Tmodel.Quantity)" Adornment="Adornment.End" AdornmentText="@invItem?.UoM" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.Quantity)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="Tmodel.RefInvoiceNo" Label="Reference Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.RefInvoiceNo)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4" >
-                        <CostCenterSelector @bind-Value="@Tmodel.CostCenter" ></CostCenterSelector>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <DimensionSelector @bind-Value="@Tmodel.Dimension"   ></DimensionSelector>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudCheckBox ValueChanged="((bool e)=>SetUsedItem(e))" Value="Tmodel.IsUsedItem" Label="Used Item" Color="Color.Primary"></MudCheckBox>
-                    </MudItem>
+                        @if (Tmodel.ItemType == "Fuel")
+                        {
+                            <MudItem xs="12" md="4">
+                                <InventoryItemSelector Value="invItem" CurrentVariant="Variant.Outlined" CurrentMargine="Margin.Dense" ValueChanged="FuelItemSelected" ItemGroup2="Fuel" ItemGroup="@FuelGroupID" Class="modern-input"></InventoryItemSelector>
+                                <ValidationMessage For="@(() => Tmodel.FuelItemID)">Please select an item</ValidationMessage>
+                            </MudItem>
+                        }
+                        @if (Tmodel.ItemType == "AdBlue")
+                        {
+                            <MudItem xs="12" md="4">
+                                <InventoryItemSelector Value="invItem" CurrentVariant="Variant.Outlined" CurrentMargine="Margin.Dense" ValueChanged="FuelItemSelected" ItemGroup2="AdBlue" ItemGroup="@AdBlueGroupID" Class="modern-input"></InventoryItemSelector>
+                                <ValidationMessage For="@(() => Tmodel.FuelItemID)">Please select an item</ValidationMessage>
+                            </MudItem>
+                        }
+                        <MudItem xs="12" md="4">
+                            <MudTextField T="decimal?" Value="@Tmodel.Quantity" ValueChanged="(decimal? v) => OnQuantityChanged(v)" Adornment="Adornment.End" AdornmentText="@invItem?.UoM" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" For="@(() => Tmodel.Quantity)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="Tmodel.RefInvoiceNo" Label="Reference Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" For="@(() => Tmodel.RefInvoiceNo)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <CostCenterSelector For="@(() => Tmodel.CostCenter)" @bind-Value="@Tmodel.CostCenter" Class="modern-input"></CostCenterSelector>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <DimensionSelector For="@(() => Tmodel.Dimension)" @bind-Value="@Tmodel.Dimension" Class="modern-input"></DimensionSelector>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudCheckBox T="bool" ValueChanged="((bool e)=>SetUsedItem(e))" Value="Tmodel.IsUsedItem" Label="Used Item" Color="Color.Primary"></MudCheckBox>
+                        </MudItem>
 
-                    @if (Tmodel.IsPurchase)
-                    {
-                        <MudItem xs="12">
-                            <MudText Typo="Typo.h4" Class="mt-4">Invoice Details</MudText>
-                            <MudDivider DividerType="DividerType.Middle" Class="my-6" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <PartySelector @bind-Value="Tmodel.PurchaseModel.PartyInfo" BranchID="branchID" NatureOfBusiness="Supplier"></PartySelector>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="Tmodel.PurchaseModel.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.PurchaseModel.InvoiceNo)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudDatePicker Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="Tmodel.PurchaseModel.InvoiceDate" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="Tmodel.RatePerLitre" TextChanged="(()=> Tmodel.Amount = Tmodel.RatePerLitre * Tmodel.Quantity)" Label="Rate Per Liter" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.RatePerLitre)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="Tmodel.Amount" TextChanged="(()=>  Tmodel.RatePerLitre  = Tmodel.Amount / Tmodel.Quantity)" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.Amount)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="Tmodel.PurchaseModel.Narration" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.PurchaseModel.Narration)"></MudTextField>
-                        </MudItem>
-                    }
-                </MudGrid>
-            </MudContainer>
-        </DialogContent>
-        <DialogActions>
-            <MudCheckBox @bind-Value="@Tmodel.IsPurchase" Color="Color.Primary" Label="Is Purchase?"></MudCheckBox>
-            <MudButton Disabled="@_busy" form="formfuel" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-            <MudButton @onclick="Cancel" Variant="Variant.Filled" Color="Color.Primary">Cancel</MudButton>
-        </DialogActions>
-    </MudDialog>
-</EditForm>
+                        @if (Tmodel.IsPurchase)
+                        {
+                            <MudItem xs="12">
+                                <div class="d-flex align-center mt-6">
+                                    <MudIcon Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary" Class="mr-2" />
+                                    <MudText Typo="Typo.h6" Class="admin-title">Invoice Specifications</MudText>
+                                </div>
+                                <div class="title-accent" style="width: 100px;"></div>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <PartySelector For="@(() => Tmodel.PurchaseModel.PartyInfo)" @bind-Value="Tmodel.PurchaseModel.PartyInfo" BranchID="branchID" NatureOfBusiness="Supplier" Class="modern-input"></PartySelector>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="Tmodel.PurchaseModel.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" For="@(() => Tmodel.PurchaseModel.InvoiceNo)"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="Tmodel.PurchaseModel.InvoiceDate" Class="modern-input" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField T="decimal?" Value="@Tmodel.RatePerLitre" ValueChanged="(decimal? v) => OnRateChanged(v)" Label="Rate Per Liter" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" For="@(() => Tmodel.RatePerLitre)"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField T="decimal?" Value="@Tmodel.Amount" ValueChanged="(decimal? v) => OnAmountChanged(v)" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" For="@(() => Tmodel.Amount)"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="Tmodel.PurchaseModel.Narration" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" For="@(() => Tmodel.PurchaseModel.Narration)"></MudTextField>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </div>
+            </EditForm>
+        </div>
+    </FormContent>
+    <Actions>
+        <MudCheckBox T="bool" @bind-Value="@Tmodel.IsPurchase" Color="Color.Primary" Label="Procurement Mode?"></MudCheckBox>
+        <MudSpacer />
+    </Actions>
+</DialogForm>
 
 @code {
 
+    private DialogForm dialogForm;
     [Parameter]
     public TripFuelModel Tmodel { get; set; }
     [Parameter]
@@ -116,7 +117,7 @@
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
     //public bool? IsPur = null;
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     private InventoryItemModel invItem;
     private int FuelGroupID;
     private int AdBlueGroupID;
@@ -129,7 +130,7 @@
     string UserID;
 
     // Method called on form submission
-    private async void OnValidSubmit()
+    private async Task OnValidSubmit()
     {
         if (_busy)
         {
@@ -192,13 +193,16 @@
                         // Calculate TDS based on the party and item
                         var tdsRate = tdsService.GetTdsRate(Tmodel.PurchaseModel.PartyInfo.PartyID ?? 0, item.CoaID ?? 0);
                         item.TDS = Math.Round((item.Amount ?? 0) * tdsRate / 100, MidpointRounding.AwayFromZero);
-                        Tmodel.Amount = item.Amount + (item.CGST??0) + (item.SGST??0) + (item.IGST??0);
+                        Tmodel.Amount = item.Amount + (item.CGST ?? 0m) + (item.SGST ?? 0m) + (item.IGST ?? 0m);
 
                         Tmodel.PurchaseModel.TaxPurchaseType = "Fuel";
 
                         // Update the purchase model
                         Tmodel.PurchaseModel = taxPurchase.Update(Tmodel.PurchaseModel);
-                        notiService.CreateAuthNotifications(branchID, 9, Tmodel.PurchaseModel.PID.Value);
+                        if (Tmodel.PurchaseModel.PID != null)
+                        {
+                            notiService.CreateAuthNotifications(branchID, 9, Tmodel.PurchaseModel.PID.Value);
+                        }
 
 
                     }
@@ -221,7 +225,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit TripFuel.");
         }
@@ -267,8 +271,16 @@
         }
 
         // Retrieve fuel group and AdBlue group IDs from configuration
-        int.TryParse(IConfig.GetByInventoryFuelGroupID().ValueString, out FuelGroupID);
-        int.TryParse(IConfig.GetByInventoryAdBlueGroupID().ValueString, out AdBlueGroupID);
+        var fuelGroupConfig = IConfig.GetByInventoryFuelGroupID();
+        if (fuelGroupConfig != null)
+        {
+            int.TryParse(fuelGroupConfig.ValueString, out FuelGroupID);
+        }
+        var adBlueGroupConfig = IConfig.GetByInventoryAdBlueGroupID();
+        if (adBlueGroupConfig != null)
+        {
+            int.TryParse(adBlueGroupConfig.ValueString, out AdBlueGroupID);
+        }
 
 
         if (Tmodel.ItemType == null)
@@ -290,7 +302,7 @@
     }
 
     // Method to show tax information in a dialog
-    void ShowTaxInfo()
+    async Task ShowTaxInfo()
     {
         var item = Tmodel.PurchaseModel.Items[0];
         GstModel gst = new GstModel()
@@ -303,6 +315,27 @@
             };
         DialogParameters parms = new DialogParameters();
         parms.Add("tax", gst.Clone());
-        var dialog = DialogService.Show<TaxRatedialog>("Tax Details", parms);
+        var dialog = await DialogService.ShowAsync<TaxRatedialog>("Tax Details", parms);
+    }
+
+    private void OnQuantityChanged(decimal? val)
+    {
+        Tmodel.Quantity = val;
+        Tmodel.Amount = (Tmodel.RatePerLitre ?? 0) * (Tmodel.Quantity ?? 0);
+    }
+
+    private void OnRateChanged(decimal? val)
+    {
+        Tmodel.RatePerLitre = val;
+        Tmodel.Amount = (Tmodel.RatePerLitre ?? 0) * (Tmodel.Quantity ?? 0);
+    }
+
+    private void OnAmountChanged(decimal? val)
+    {
+        Tmodel.Amount = val;
+        if ((Tmodel.Quantity ?? 0) > 0)
+        {
+            Tmodel.RatePerLitre = Tmodel.Amount / Tmodel.Quantity;
+        }
     }
 }

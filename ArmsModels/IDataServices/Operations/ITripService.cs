@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,9 +22,10 @@ namespace ArmsServices.DataServices
         int OverrideMileageShortage(long? TripID, bool Override, string UserID);
         bool IsSettled(long? TripID);
         TripInfoModel GetTripInfo(long? TripID);
-        IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString, DateTime? FromDate, DateTime? ToDate);
+        IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString, DateTime? FromDate, DateTime? ToDate, int pageNumber = 1, int pageSize = 10);
         IEnumerable<object> GetOutstandingBills(long? TripID);
         IEnumerable<GcTariffModel> GetTariffs(long? TripID);
         IEnumerable<EventCardModel> GetEventList(long? TripID);
+        IEnumerable<TripInfoModel> GetTripsByTruckID(int? TruckID, DateTime? FromDate, DateTime? ToDate);
     }
 }

@@ -1,4 +1,4 @@
-﻿@page "/gc"
+@page "/gc"
 @page "/gc/{id:int}"
 @using System.Threading;
 @attribute [Authorize]
@@ -11,20 +11,48 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 
-<MudText Typo="Typo.h5" GutterBottom="true">
-    UNASSIGNED CONSIGNMENTS
-    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@Add" Color="Color.Dark" Size="Size.Medium"></MudIconButton>
-</MudText>
-<MudGrid>
-    @foreach (var item in collection)
-    {
-        <MudItem xs="12" md="4" xl="3">
-            <GcItemCard item="item" MessageDocumentID="id" OnGcDeleted="Deleted"></GcItemCard>
-        </MudItem>
-    }
-</MudGrid>
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading GCs" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+<div class="admin-page-container">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">Unassigned Consignments</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Process and manage goods consignments awaiting trip assignment.</MudText>
+            </div>
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@Add" Disabled="@_busy">ADD GC</MudButton>
+        </div>
+    </div>
+
+    @* Optional Search/Filter card could be added here if needed in future *@
+
+    <MudGrid Spacing="4">
+        @foreach (var item in collection)
+        {
+            <MudItem xs="12" md="4" xl="3">
+                <GcItemCard item="item" MessageDocumentID="id" OnGcDeleted="Deleted"></GcItemCard>
+            </MudItem>
+        }
+    </MudGrid>
+</div>
+}
+
+
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private int BranchID;
     private List<GcSetModel> collection = new();
@@ -40,6 +68,7 @@
     // Method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionGcServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionGCServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
@@ -49,6 +78,17 @@
         BranchID = int.Parse(BranchIDString);
 
         GetAll(BranchID);
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch all unassigned GcSetModels
@@ -79,13 +119,13 @@
             var parameters = new DialogParameters();
             parameters.Add("model", new GcSetModel() { BranchID = BranchID });
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var result = DialogService.Show<GcDialog>("Create New GC", parameters, maxWidth);
+            var result = await DialogService.ShowAsync<GcDialog>("Create New GC", parameters, maxWidth);
             var data = await result.Result;
             GetAll(BranchID);
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit GC.");
         }
@@ -97,7 +137,7 @@
     // {
     //     if (HasPermissionGCServiceDelete)
     //     {
-    //         bool? result = await DialogService.ShowMessageBox(
+    //         bool? result = await DialogService.ShowMessageBoxAsync(
     //             "Warning !",
     //             "Are you sure, you want to delete ?");
     //         if (result == true)
@@ -111,7 +151,7 @@
     //     }
     //     else
     //     {
-    //         bool? result = await DialogService.ShowMessageBox(
+    //         bool? result = await DialogService.ShowMessageBoxAsync(
     //             "Permission denied!",
     //             "You don't have any permission to Delete GC.");
     //     }

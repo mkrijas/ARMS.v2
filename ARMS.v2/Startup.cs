@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsServices.DataServices;
 using ArmsServices;
+using MudBlazor.Services;
 
 namespace ARMS.v2
 {
@@ -29,6 +30,7 @@ namespace ARMS.v2
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddMudServices();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ARMS.v2", Version = "v1" });

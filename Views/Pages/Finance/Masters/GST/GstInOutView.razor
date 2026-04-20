@@ -1,39 +1,108 @@
-﻿@page "/gst"
+@page "/gst"
 @inject IGstItemService Iservice
 
-<MudItem xs="12">
-    <MudTable Items="@model" >
-        <ToolBarContent>
-            <MudText Typo="Typo.h6">GST Input-Output View</MudText>
-        </ToolBarContent>
-        <HeaderContent>
-            <MudTh>Tax Type</MudTh>
-            <MudTh>Input Account</MudTh>
-            <MudTh>Output Account</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Tax Type">@context.GstType</MudTd>
-            <MudTd DataLabel="Input Account">@context.InputAccount</MudTd>
-            <MudTd DataLabel="Output Account">@context.OutputAccount</MudTd>
-        </RowTemplate>
-        <PagerContent>
-            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-        </PagerContent>
-    </MudTable>
-</MudItem>
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Ledger Mappings" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">GST General Ledger Mapping</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Configuration of system-wide mappings for GST tax types against input and output general ledger accounts. verified mappings ensure compliant tax accounting.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+                <div style="flex-grow: 1; min-width: 300px;">
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search by tax type or account..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" />
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTable Items="@FilteredModel" Elevation="0" Class="modern-admin-table" Hover="true">
+                <HeaderContent>
+                    <MudTh><span class="admin-header-text">TAX TYPE</span></MudTh>
+                    <MudTh><span class="admin-header-text">INPUT LEDGER ACCOUNT</span></MudTh>
+                    <MudTh><span class="admin-header-text">OUTPUT LEDGER ACCOUNT</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Tax Type">
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" Color="Color.Primary" Class="opa-50" />
+                            <span class="fw-700 admin-td-primary">@context.GstType</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Input Account">
+                        <div class="d-flex flex-column">
+                            <span class="fw-600">@context.InputAccount</span>
+                            <span class="tiny opa-50 uppercase">Input Ledger</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Output Account">
+                        <div class="d-flex flex-column">
+                            <span class="fw-600">@context.OutputAccount</span>
+                            <span class="tiny opa-50 uppercase">Output Ledger</span>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
+
 
 @code {
 
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
+
+    private string searchTerm = "";
     private List<GstInOutModel> model = new List<GstInOutModel>();
+
+    private IEnumerable<GstInOutModel> FilteredModel => model
+        .Where(x => string.IsNullOrWhiteSpace(searchTerm) || 
+                   x.GstType.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || 
+                   (x.InputAccount?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) || 
+                   (x.OutputAccount?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         {
             model = new List<GstInOutModel>();
 
             // Fetch GST In/Out data asynchronously and populate the model
             model = await Task.Run(() => Iservice.GetInOut().ToList());
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 }

@@ -2,7 +2,7 @@
 using ArmsServices;
 using Core.IDataServices.Finance.LedgerViews;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System;
 using Core.BaseModels.Finance.LedgerViews;
@@ -29,7 +29,7 @@ namespace DAL.DataServices.Finance.LedgerViews
                new SqlParameter("@ToDate", ToDate),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[rptFinanceReportLedgerSelectByArdCodeParty]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[rptFinanceLedgerByArdCode]", parameters))
             {
                 yield return new LedgerViewsModel()
                 {

@@ -1,55 +1,98 @@
-﻿@using ArmsModels.BaseModels.General
+@using ArmsModels.BaseModels.General
 @inject AuthenticationStateProvider auth
 @inject MudBlazor.ISnackbar snackbar
 @inject ITyreService IServices
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" Class="mr-3" />Usage of Tyre  @TyreSerial
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px; margin-bottom:20px;">
-            <MudTable Items="@list" Dense="true" Hover="true" Striped="true">              
-                <HeaderContent>
-                    <MudTh>Title</MudTh>
-                    <MudTh>Info</MudTh>
-                    <MudTh>Position</MudTh>
-                    <MudTh>From Date</MudTh>
-                    <MudTh>To Date</MudTh>
-                    <MudTh>Km From</MudTh>
-                    <MudTh>Km To</MudTh>                                   
-                    <MudTh>Run KM</MudTh>                                   
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Title">@context.Title</MudTd>
-                    <MudTd DataLabel="Info">@context.Info</MudTd>
-                    <MudTd DataLabel="Position">@context.Position</MudTd>
-                    <MudTd DataLabel="DateFrom">@context.DateFrom</MudTd>
-                    <MudTd DataLabel="DateTo">@context.DateTo</MudTd>
-                    <MudTd DataLabel="KmFrom">@context.KmFrom</MudTd>
-                    <MudTd DataLabel="KmTo">@context.KmTo</MudTd>   
-                    <MudTd DataLabel="RunKM">@context.RunKM</MudTd>
-                </RowTemplate>
-                <FooterContent>
-                    <MudTd></MudTd>
-                    <MudTd></MudTd>
-                    <MudTd></MudTd>
-                    <MudTd></MudTd>
-                    <MudTd></MudTd>
-                    <MudTd></MudTd>
-                    <MudTd><strong>Totals:</strong></MudTd>
-                    <MudTd><strong>@list.Sum(x => x.RunKM)</strong></MudTd>
-                </FooterContent>
-            </MudTable>            
-        </MudContainer>
-    </DialogContent>    
-</MudDialog>
+<DialogForm @ref="@dialogForm" Title="Asset Utilization History" Subtitle="Detailed audit trail of operational deployment, axial transitions, and cumulative mileage for the designated asset." Icon="@Icons.Material.Filled.HistoryEdu" AdminStyle="true" IsView="true">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <div class="admin-glass-card pa-0 overflow-hidden">
+                <div class="pa-6 border-b">
+                    <div class="d-flex align-center justify-space-between">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Timeline" Color="Color.Primary" Class="mr-2" />
+                            <span class="admin-section-label mb-0">Operational Lifecycle Feed</span>
+                        </div>
+                        <div class="admin-badge secondary px-4 py-1 rounded-pill">
+                            <span class="fw-700">Serial: @TyreSerial</span>
+                        </div>
+                    </div>
+                </div>
+
+                <MudTable Items="@list" Dense="true" Hover="true" Elevation="0" Class="modern-table no-border-radius" HeaderClass="admin-table-header">
+                    <HeaderContent>
+                        <MudTh>Activity Event</MudTh>
+                        <MudTh>Axial Loc.</MudTh>
+                        <MudTh>Deployment Window</MudTh>
+                        <MudTh Style="text-align: right">Odometer Cycle</MudTh>
+                        <MudTh Style="text-align: right">Interval KM</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Event">
+                            <div class="d-flex flex-column">
+                                <span class="fw-700 color-primary">@context.Title</span>
+                                <span class="small opacity-50">@context.Info</span>
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Position">
+                            @if (!string.IsNullOrEmpty(context.Position))
+                            {
+                                <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.LocationOn" Class="fw-600">@context.Position</MudChip>
+                            }
+                            else
+                            {
+                                <span class="opacity-30">—</span>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Window">
+                            <div class="d-flex flex-column">
+                                <div class="d-flex align-center mb-1">
+                                    <MudIcon Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Small" Color="Color.Success" Class="mr-1" />
+                                    <span class="small fw-500">@context.DateFrom?.ToString("dd MMM yyyy")</span>
+                                </div>
+                                @if (context.DateTo.HasValue)
+                                {
+                                    <div class="d-flex align-center">
+                                        <MudIcon Icon="@Icons.Material.Filled.Stop" Size="Size.Small" Color="Color.Error" Class="mr-1" />
+                                        <span class="small fw-500">@context.DateTo?.ToString("dd MMM yyyy")</span>
+                                    </div>
+                                }
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Odometer" Style="text-align: right">
+                            <div class="d-flex flex-column">
+                                <span class="small">F: <span class="fw-600">@context.KmFrom?.ToString("N0")</span></span>
+                                <span class="small">T: <span class="fw-600">@context.KmTo?.ToString("N0")</span></span>
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Run KM" Style="text-align: right">
+                            <span class="fw-800 color-success">@context.RunKM?.ToString("N0")</span>
+                        </MudTd>
+                    </RowTemplate>
+                    <FooterContent>
+                        <MudTd colspan="4" Style="text-align: right">
+                            <span class="fw-700 uppercase opacity-50 mr-4">Total Aggregate Distance:</span>
+                        </MudTd>
+                        <MudTd Style="text-align: right">
+                            <div class="admin-badge primary px-4 py-2 rounded-lg">
+                                <span class="fw-800 h6 mb-0">@list.Sum(x => x.RunKM)?.ToString("N0") KM</span>
+                            </div>
+                        </MudTd>
+                    </FooterContent>
+                    <NoRecordsContent>
+                        <div class="pa-12 text-center color-muted gray-bg">
+                            <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Large" Class="mb-2 opacity-30" />
+                            <MudText Typo="Typo.body2">No historical utilization records available for this asset.</MudText>
+                        </div>
+                    </NoRecordsContent>
+                </MudTable>
+            </div>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
-
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
 
     [Parameter]
     public int? TyreID { get; set; } = 0;   

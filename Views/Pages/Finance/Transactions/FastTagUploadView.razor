@@ -1,4 +1,4 @@
-﻿@page "/FasTagTollUploadView"
+@page "/FasTagTollUploadView"
 @attribute [Authorize(Policy = "Limited_To_HO")]
 @inject AuthenticationStateProvider auth
 @using System.Security.Claims
@@ -18,41 +18,83 @@
 @using System.Threading;
 @using OfficeOpenXml.Style
 
-<MudTable Items="@MainModel" Class="item-shadow" Filter="new Func<FastTagTollModel, bool>(search)" @bind-model="model">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6">FastTag Upload List</MudText>
-        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> EditView(0, false, false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-        <MudIconButton OnClick="ExcelDownload" Title="Export Unprocessed Tolls" Icon="@Icons.Material.Outlined.Download"  Color="Color.Primary" ButtonType="ButtonType.Button"/>
-        <MudSpacer></MudSpacer>
-        <MudTextField @bind-Value="searchmodel" Placeholder="Search Document... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
-        <MudCheckBox Style="margin: 0px; margin-right: 20px;" Label="Completed List" ValueChanged="((bool value)=>Completed(value))" Value="@IsCompleted" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
-    </ToolBarContent>
-    <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<FastTagTollModel, object>(x=> x.FastTagUploadID)" InitialDirection="SortDirection.Descending">DocumentDate</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<FastTagTollModel, object>(x=> x.DocumentNumber)">Document</MudTableSortLabel></MudTh>
-        <MudTh>Actions</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="DocumentDate">@context.DocumentDate.Value.ToString("dd-MM-yyyy")</MudTd>
-        <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
-        <MudTd DataLabel="">
-            @if (!IsCompleted)
-            {
-                <MudTooltip Text="Edit">
-                    <MudFab Style="font-size:5px" @onclick="@(()=> EditView(context.FastTagUploadID, true, true))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                </MudTooltip>
-            }
-            <MudTooltip Text="View">
-                <MudFab Style="font-size:5px" @onclick="@(()=> EditView(context.FastTagUploadID, true, false))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-            </MudTooltip>
-        </MudTd>
-    </RowTemplate>
-    <PagerContent>
-        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-    </PagerContent>
-</MudTable>
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading FastTag Upload List" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div @key="@("content")">
+<div class="fade-in">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">FastTag Upload List</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Upload and manage FastTag toll transaction files. Monitor processing status and export unprocessed records for verification.</MudText>
+            </div>
+            <div class="d-flex gap-3">
+                <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> EditView(0, false, false))">NEW UPLOAD</MudButton>
+                <MudButton StartIcon="@Icons.Material.Outlined.Download" Variant="Variant.Outlined" Color="Color.Primary" Class="admin-action-btn" OnClick="ExcelDownload">EXPORT UNPROCESSED</MudButton>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-glass-card mb-6 pa-4">
+        <div class="d-flex align-center gap-4 flex-wrap">
+            <div style="flex-grow: 1; min-width: 300px;">
+                <MudTextField @bind-Value="searchmodel" Placeholder="Search by document number..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" />
+            </div>
+            <div class="d-flex align-center gap-4">
+                <MudCheckBox T="bool" Label="Completed List" ValueChanged="((bool value)=>Completed(value))" Value="@IsCompleted" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-glass-card pa-0 overflow-hidden">
+        <MudTable Items="@MainModel" Elevation="0" Class="modern-admin-table" Hover="true" Filter="new Func<FastTagTollModel, bool>(search)">
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<FastTagTollModel, object>(x=> x.FastTagUploadID)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<FastTagTollModel, object>(x=> x.DocumentNumber)"><span class="admin-header-text">DOCUMENT NUMBER</span></MudTableSortLabel></MudTh>
+                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Date"><span class="fw-500">@context.DocumentDate?.ToString("dd MMM yyyy")</span></MudTd>
+                <MudTd DataLabel="DocNumber"><span class="admin-td-primary fw-700">@context.DocumentNumber</span></MudTd>
+                <MudTd DataLabel="Actions" Style="text-align: right;">
+                    <div class="d-flex justify-end gap-2">
+                        @if (!IsCompleted)
+                        {
+                            <MudTooltip Text="Edit Upload">
+                                <MudIconButton OnClick="@(()=> EditView(context.FastTagUploadID, true, true))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        }
+                        <MudTooltip Text="View Details">
+                            <MudIconButton OnClick="@(()=> EditView(context.FastTagUploadID, true, false))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                    </div>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <div class="pa-4">
+                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                </div>
+            </PagerContent>
+        </MudTable>
+    </div>
+</div>
+</div>
+}
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<FastTagTollModel> MainModel = new List<FastTagTollModel>();
     private TruckModel model = new TruckModel();
@@ -65,6 +107,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         branchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
@@ -97,6 +140,17 @@
             IsCompleted = false; // Or set to default value
         }
        await GetCollection();
+       await EnsureMinimumLoadTime();
+       _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
 
@@ -214,3 +268,4 @@
         return false;
     }
 }
+

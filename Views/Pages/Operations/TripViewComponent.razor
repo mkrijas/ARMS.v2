@@ -1,4 +1,4 @@
-﻿@using Views.Pages.Operations.Gc
+@using Views.Pages.Operations.Gc
 @inject IGcService Igc
 @inject IEventService Ievent
 @inject ITruckService Itruck
@@ -7,68 +7,76 @@
 
 @if (CancelledStatus != string.Empty)
 {
-    <MudItem xs="12">
-        <MudPaper Style="padding:20px; margin:18px 0px; text-align-last: center; background-color:#ff969c;">
-            <MudText Typo="Typo.h5" Style="display:inline-block;" Class="text-uppercase text-danger"><b>@CancelledStatus</b></MudText>
-        </MudPaper>
-    </MudItem>
+    <div class="admin-glass-card pa-4 mb-4 text-center bg-light-error border-error-subtle">
+        <MudText Typo="Typo.h5" Color="Color.Error" Class="fw-700 uppercase"><b>@CancelledStatus</b></MudText>
+    </div>
 }
-<MudExpansionPanels MultiExpansion="true" Class="mt-4" hidden="@hidden">
-    <MudExpansionPanel>
-        <TitleContent>
-            <div class="d-flex px-3">
-                <MudBadge Content="@EventCount" Color="Color.Primary" Overlap="true" Class="d-flex">
-                    <MudIcon Icon="@Icons.Material.Filled.AccessTimeFilled"></MudIcon>
-                </MudBadge>
-                <MudText Class="ml-3"><strong>@Truck?.RegNo</strong> @TruckStatus </MudText>
+<MudGrid Spacing="3">
+    <MudItem xs="12" md="6">
+        <div class="admin-glass-card h-100 overflow-hidden">
+            <div class="admin-header-tiered pa-4 border-bottom-subtle">
+                <div class="d-flex align-center justify-space-between w-100">
+                    <div class="d-flex align-center">
+                        <MudBadge Content="@EventCount" Color="Color.Primary" Overlap="true" Class="mr-4">
+                            <MudIcon Icon="@Icons.Material.Filled.History" Color="Color.Primary" />
+                        </MudBadge>
+                        <MudText Typo="Typo.h6" Class="admin-title">Trip Timeline</MudText>
+                    </div>
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Secondary" Size="Size.Small" />
+                        <MudText Typo="Typo.subtitle2" Class="fw-700 text-secondary">@Truck?.RegNo @TruckStatus</MudText>
+                    </div>
+                </div>
             </div>
-        </TitleContent>
-        <ChildContent>
-            <TripEventsComponent Trip="@_trip"></TripEventsComponent>
-        </ChildContent>
-    </MudExpansionPanel>
+            <div class="pa-4">
+                <TripEventsComponent Trip="@_trip"></TripEventsComponent>
+            </div>
+        </div>
+    </MudItem>
+
     @if (AssignedGCs != null)
     {
-        <MudExpansionPanel>
-            <TitleContent>
-                <div class="d-flex px-3">
-                    <MudBadge Content="@(AssignedGCs.Count)" Color="Color.Primary" Overlap="true" Class="d-flex">
-                        <MudIcon Icon="@Icons.Material.Filled.Event"></MudIcon>
-                    </MudBadge>
-                    <MudText Class="ml-3"><strong>Assigned Consignments</strong></MudText>
+        <MudItem xs="12" md="6">
+            <div class="admin-glass-card h-100 overflow-hidden">
+                <div class="admin-header-tiered pa-4 border-bottom-subtle">
+                    <div class="d-flex align-center">
+                        <MudBadge Content="@(AssignedGCs.Count)" Color="Color.Secondary" Overlap="true" Class="mr-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Secondary" />
+                        </MudBadge>
+                        <MudText Typo="Typo.h6" Class="admin-title">Assigned Consignments</MudText>
+                    </div>
                 </div>
-            </TitleContent>
-            <ChildContent>
-                <MudGrid Spacing="4">
-                    @foreach (var gc in AssignedGCs)
-                    {
-                        <MudItem xs="6" lg="4">
-                            <GcItemCard IsLoading="Isloading" item="gc" Style="@($"background:{Colors.Brown.Lighten5};")" OnGcRemoved="gcRemoved"></GcItemCard>
-                        </MudItem>
-                    }
-                </MudGrid>
-            </ChildContent>
-        </MudExpansionPanel>
+                <div class="pa-4">
+                    <MudGrid Spacing="3">
+                        @foreach (var gc in AssignedGCs)
+                        {
+                            <MudItem xs="12">
+                                <GcItemCard IsLoading="Isloading" item="gc" Style="border: 1px solid var(--mud-palette-divider);" OnGcRemoved="gcRemoved"></GcItemCard>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </div>
+            </div>
+        </MudItem>
     }
-</MudExpansionPanels>
+</MudGrid>
 
 @code {
 
     [Parameter]
-    public TripModel Trip
+    public TripModel Trip { get; set; }    
+
+    private TripModel _trip
     {
-        get { return _trip; }
+        get { return Trip; }
         set
         {
-            if (_trip?.TripID != value?.TripID)
+            if (Trip?.TripID != value?.TripID)
             {
-                _trip = value;
-                LoadAll();
-                OnTripStatusUpdated.InvokeAsync();
+                Trip = value;                
             }
         }
-    }
-    private TripModel _trip;
+    }    
 
     [Parameter]
     public EventCallback<EventModel> OnTripStatusUpdated { get; set; }
@@ -88,6 +96,8 @@
     protected override void OnInitialized()
     {
         hidden = false;
+        LoadAll();
+        OnTripStatusUpdated.InvokeAsync();
     }
 
     protected void gcRemoved(long? gcSetID)
@@ -97,10 +107,10 @@
 
     public void LoadAll()
     {
-        if (_trip != null)
+        if (Trip != null)
         {
             hidden = false;
-            if (Itrip.Select(_trip.TripID)?.UserInfo.RecordStatus == 4)
+            if (Itrip.Select(Trip.TripID)?.UserInfo.RecordStatus == 4)
             {
                 CancelledStatus = "Cancelled";
             }
@@ -181,7 +191,7 @@
         parameters.Add("Truck", Truck);
         parameters.Add("CurrentTrip", Itrip.Select(ev.TripID));
         parameters.Add("model", ev.Clone());
-        var result = DialogService.Show<UpdateEventView>("Edit Event", parameters);
+        var result = await DialogService.ShowAsync<UpdateEventView>("Edit Event", parameters);
         var Data = await result.Result;
         if (!Data.Canceled)
         {

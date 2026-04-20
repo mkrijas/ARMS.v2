@@ -1,4 +1,4 @@
-﻿@using ArmsModels.BaseModels.General;
+@using ArmsModels.BaseModels.General;
 @using ArmsServices.DataServices.Inventory;
 @using System.ComponentModel.DataAnnotations;
 @inject MudBlazor.ISnackbar snackbar
@@ -11,67 +11,87 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Mount @SelectedTyre.ItemType
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+<DialogForm @ref="@dialogForm" Title="Asset Deployment (Mounting)" Subtitle="Initiate high-precision asset deployment and axial synchronization for the selected fleet unit." Icon="@Icons.Material.Filled.VerticalAlignBottom" AdminStyle="true" formID="formMount" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
             <EditForm id="formMount" Model="@model" OnValidSubmit="Mount">
                 <DataAnnotationsValidator />
-                <ValidationSummary />
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <MudSelect T="TyreModel" Variant="Variant.Outlined" Disabled="IsTyreDisabled" Margin="Margin.Dense" Label="Tyre" ToStringFunc="@(e => e == null ? null : $"{e.TyreSerialNumber}")" Value="@SelectedTyre" ValueChanged="OnTyreChanged">
-                        @foreach (TyreModel Tyre in TyreList)
+                
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Storage" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Core Deployment Identity</span>
+                    </div>
+
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudSelect T="TyreModel" Variant="Variant.Outlined" Disabled="IsTyreDisabled" Margin="Margin.Normal" Label="Designated Asset (Tyre)" ToStringFunc="@(e => e == null ? null : $"{e.TyreSerialNumber}")" Value="@SelectedTyre" ValueChanged="OnTyreChanged" Class="modern-input" AdornmentIcon="@Icons.Material.Filled.Lens">
+                                @foreach (TyreModel Tyre in TyreList)
+                                {
+                                    <MudSelectItem Value="@Tyre">@Tyre.TyreSerialNumber</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudSelect For="@(() => SelectInventoryRequest)" Label="Linked Procurement Request" T="InventoryRequestModel" Value="SelectInventoryRequest" ValueChanged="OnChangeSelectedInventoryRequest" ToStringFunc="@(e => e == null ? null : $"{e.RequestNumber}")" Variant="Variant.Outlined" Margin="Margin.Normal" AdornmentColor="Color.Secondary" Class="modern-input" AdornmentIcon="@Icons.Material.Filled.AssignmentInd">
+                                @foreach (var ditem in InventoryRequestList)
+                                {
+                                    <MudSelectItem Value="@ditem">@ditem.RequestNumber</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <TruckSelector For="@(() => SelectedTruck)" Value="SelectedTruck" ValueChanged="OnValueChanged" IsDisabled="IsTruckDisabled" Filter="All" Class="modern-selector"></TruckSelector>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Construction" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Technical Mounting Specifications</span>
+                    </div>
+
+                    <MudGrid Spacing="3">
+                        @if(SelectedTyre.ItemType == "Tyre")
                         {
-                            <MudSelectItem Value="@Tyre">@Tyre.TyreSerialNumber</MudSelectItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="TyrePositionModel" Variant="Variant.Outlined" Margin="Margin.Normal" ToStringFunc="@(e => e== null ? null : $"{e.Description}")" Label="Assigned Axial Position" Required="true" RequiredError="Axial position is mandatory" Value="@SelectedTyrePosition" ValueChanged="OnTyrePositionChanged" Class="modern-input" AdornmentIcon="@Icons.Material.Filled.LocationSearching">
+                                    @foreach (TyrePositionModel TyrePosition in TyrePositionListForMountAndUnMount)
+                                    {
+                                        <MudSelectItem Value="@TyrePosition">@TyrePosition.Description</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
                         }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <MudSelect Label="Select Request" T="InventoryRequestModel" Value="SelectInventoryRequest" ValueChanged="OnChangeSelectedInventoryRequest" ToStringFunc="@(e => e == null ? null : $"{e.RequestNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
-                        @foreach (var ditem in InventoryRequestList)
-                        {
-                            <MudSelectItem Value="@ditem">@ditem.RequestNumber</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <TruckSelector Value="SelectedTruck" ValueChanged="OnValueChanged" IsDisabled="IsTruckDisabled" Filter="All"></TruckSelector>
-                </MudItem>
-                @if(SelectedTyre.ItemType == "Tyre")
-                {
-                    <MudItem xs="11" md="11" Class="mb-6">
-                        <MudSelect T="TyrePositionModel" Variant="Variant.Outlined" Margin="Margin.Dense" ToStringFunc="@(e => e== null ? null : $"{e.Description}")" Label="Tyre Position" Required="true" RequiredError="Tyre position is required" Value="@SelectedTyrePosition" ValueChanged="OnTyrePositionChanged">
-                            @foreach (TyrePositionModel TyrePosition in TyrePositionListForMountAndUnMount)
-                            {
-                                <MudSelectItem Value="@TyrePosition">@TyrePosition.Description</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                }
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <MudTextField @bind-Value="@model.MountedKM" Label="Mount KM" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-                </MudItem>
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <CostCenterSelector @bind-Value="model.CostCenter" />
-                </MudItem>
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <DimensionSelector @bind-Value="model.Dimension" />
-                </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@model.MountedKM" Label="Current Odometer (Mount KM)" Variant="Variant.Outlined" Margin="Margin.Normal" Class="modern-input" Adornment="Adornment.End" AdornmentText="KM" />
+                        </MudItem>
+                    </MudGrid>
+                </div>
+
+                <div class="admin-glass-card pa-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Balance" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Financial & Resource Allocation</span>
+                    </div>
+
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <CostCenterSelector For="@(() => model.CostCenter)" @bind-Value="model.CostCenter" Class="modern-selector" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <DimensionSelector For="@(() => model.Dimension)" @bind-Value="model.Dimension" Class="modern-selector" />
+                        </MudItem>
+                    </MudGrid>
+                </div>
             </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Disabled="@_busy" form="formMount" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Mount</MudButton>
-    </DialogActions>
-</MudDialog>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
-
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
     [Parameter]
     public TyreMountedModel model { get; set; } = new();
     [Parameter]
@@ -188,7 +208,7 @@
 
     void Cancel()
     {
-        MudDialog.Cancel();
+        dialogForm.Cancel();
     }
 
     public async Task Mount()
@@ -238,13 +258,13 @@
                     snackbar.Add(ex.Message, Severity.Error);
                 }
             }
-            MudDialog.Close(DialogResult.Ok(true));
+            dialogForm.Close(DialogResult.Ok(true));
             await Task.Delay(200);
             _busy = false;
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit Tyre.");
         }

@@ -1,10 +1,9 @@
-﻿using ArmsModels.BaseModels.Finance.Transactions;
-using ArmsServices;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Data;
+﻿using ArmsServices;
 using ArmsServices.DataServices;
-using Core.BaseModels.Finance.Transactions;
+using Microsoft.Data.SqlClient;
+using System.Collections.Generic;   
+using System.Data;
+using ArmsModels.BaseModels;
 using ArmsModels.BaseModels.General;
 using ArmsServices.DataServices.General;
 
@@ -31,7 +30,6 @@ namespace DAL.DataServices.Finance.Transactions
 
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.MileageShortageReceipt.Delete]", parameters);
-
         }
 
         // Method to select all mileage shortage receipts
@@ -69,40 +67,6 @@ namespace DAL.DataServices.Finance.Transactions
             {
                new SqlParameter("@Operation", "ByTransferID"),
                new SqlParameter("@RequestApprovalHistoryID", RequestApprovalHistoryID)
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.MileageShortageReceipt.Select]", parameters))
-            {
-                yield return GetModel(dr);
-            }
-        }
-
-        // Method to select approved mileage shortage receipts
-        public IEnumerable<MileageShortageReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByApproved"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@numberOfRecords", NumberOfRecords),
-               new SqlParameter("@searchTerm", searchTerm)
-
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.MileageShortageReceipt.Select]", parameters))
-            {
-                yield return GetModel(dr);
-            }
-        }
-
-        // Method to select unapproved mileage shortage receipts
-        public IEnumerable<MileageShortageReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByUnapproved"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@numberOfRecords", NumberOfRecords),
-               new SqlParameter("@searchTerm", searchTerm)
-
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.MileageShortageReceipt.Select]", parameters))
             {
@@ -210,7 +174,7 @@ namespace DAL.DataServices.Finance.Transactions
                 MileageShortageReceiptID = dr.GetInt32("MileageShortageReceiptID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 ReceiptMode = dr.GetString("ReceiptMode"),
-                TripID = dr.GetInt32("TripID"),
+                TripID = (long)dr.GetInt64("TripID"),
                 TripNo = dr.GetString("TripNo"),
                 AssetTransferID = dr.GetInt32("AssetTransferID"),
                 RequestApprovalHistoryID = dr.GetInt32("RequestApprovalHistoryID"),
@@ -240,6 +204,52 @@ namespace DAL.DataServices.Finance.Transactions
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
+            };
+        }
+
+        public IEnumerable<MileageShortageReceiptModel> Select(int? BranchID)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public IEnumerable<MileageShortageReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public IEnumerable<MileageShortageReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public PagedResult<MileageShortageReceiptModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved)
+        {
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Searchterm", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+            };
+            List<MileageShortageReceiptModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.MileageShortageReceipt.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+            return new PagedResult<MileageShortageReceiptModel>
+            {
+                Items = list,
+                TotalRecords = countOf
             };
         }
     }

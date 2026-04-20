@@ -1,0 +1,298 @@
+﻿@page "/AssetPurchase"
+@page "/AssetPurchase/{id:int}"
+@using System.Threading
+@* @using Views.Pages.Finance.Transactions.PurchaseAndPayment *@
+@inherits ViewComponentBase<TaxPurchaseModel>
+@inject ITaxPurchaseService Iservice 
+@inject IAssetService IassetService 
+@inject IChartOfAccountService accountService 
+
+<div class="admin-page-container">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">Asset Purchase</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Manage capitalization, CWIP, and tax-inclusive asset acquisition records.</MudText>
+            </div>
+            @* <MudButton StartIcon="@Icons.Material.Filled.AddBusiness" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> SelectAssets())" Disabled="@_busy">REGISTER PURCHASE</MudButton> *@
+        </div>
+    </div>
+
+    <div class="admin-glass-card pa-0 overflow-hidden">
+        <MudTable ServerData="LoadServerData" T="TaxPurchaseModel" @ref="_table" Hover="true" Elevation="0" Class="modern-admin-table" @bind>
+            <ToolBarContent>
+                <div class="d-flex align-center gap-4 w-100 px-4 py-2">
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search by Invoice or Document No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group flex-grow-1" @onkeyup="HandleSearchKeyUp" Clearable />
+                    <div class="d-flex align-center px-4 py-1 rounded-lg" style="background: rgba(255, 159, 67, 0.05); border: 1px solid rgba(255, 159, 67, 0.3);">
+                        <MudCheckBox Label="Show Approved" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" UncheckedColor="Color.Default" T="bool" />
+                    </div>
+                </div>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><span class="admin-header-text">INVOICE DATE</span></MudTh>
+                <MudTh><span class="admin-header-text">INVOICE NO</span></MudTh>
+                <MudTh><span class="admin-header-text">DOC DATE</span></MudTh>
+                <MudTh><span class="admin-header-text">DOC NO</span></MudTh>
+                <MudTh><span class="admin-header-text">TOTAL AMOUNT</span></MudTh>
+                <MudTh><span class="admin-header-text">STATUS</span></MudTh>
+                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="InvoiceDate">
+                    <div class="d-flex flex-column">
+                        <MudText Typo="Typo.body2" Class="admin-td-primary">@context.InvoiceDate?.ToString("dd MMM yyyy")</MudText>
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="InvoiceNo">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" Class="fw-700">@context.InvoiceNo</MudChip>
+                </MudTd>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToString("dd/MM/yyyy")</MudTd>
+                <MudTd DataLabel="DocumentNumber">
+                    <div class="d-flex align-center gap-2">
+                        <MudText Typo="Typo.body2" Class="admin-td-secondary">@context.DocumentNumber</MudText>
+                        @if (context.AuthLevelId == 100)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Style="font-size: 0.7rem; height: 20px;">REJECTED</MudChip>
+                        }
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="TotalAmount">
+                    <MudText Typo="Typo.body2" Class="admin-td-amount">₹ @context.TotalAmount?.ToString("N2")</MudText>
+                </MudTd>
+                <MudTd DataLabel="Status">
+                    @if (context.AuthLevelId == 99)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Icon="@Icons.Material.Filled.Verified" Class="admin-chip-approved">APPROVED</MudChip>
+                    }
+                    else if (context.AuthLevelId == 100)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text" Icon="@Icons.Material.Filled.Error" Class="admin-chip-rejected">REJECTED</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text" Icon="@Icons.Material.Filled.Pending" Class="admin-chip-pending">PENDING</MudChip>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Actions" Style="text-align: right;">
+                    <div class="d-flex justify-end gap-1">
+                        <MudTooltip Text="View Details">
+                            <MudIconButton OnClick="@(()=> OpenForm(context,true,false))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                        @if (context.AuthLevelId == null || context.AuthLevelId == 100)
+                        {
+                            <MudTooltip Text="Edit Entry">
+                                <MudIconButton OnClick="@(() => OpenForm(context, false, false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            <MudTooltip Text="Delete Entry">
+                                <MudIconButton OnClick="@(()=> Delete(context.PID))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        }
+                        @if (context.AuthLevelId != 99 && context.AuthLevelId != 100)
+                        {
+                            <MudTooltip Text="Verify & Approve">
+                                <MudIconButton OnClick="@(() => OpenForm(context, true, false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Gavel" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        }
+                    </div>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <div class="px-6 py-4">
+                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                </div>
+            </PagerContent>
+        </MudTable>
+    </div>
+</div>
+
+
+@code 
+{
+    //bool IsOpen = false;
+
+    private bool _isLoading = true;
+
+    protected override List<TaxPurchaseModel> _collection { get; set; } = new List<TaxPurchaseModel>();
+
+    public TaxPurchaseModel model { get; set; } = new TaxPurchaseModel();
+
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+    {
+        DocumentTypeID = 117,
+        DocumentName = "Asset_Purchase"
+    };
+
+    // Method to initialize the component
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        string type = model.TaxPurchaseType;
+        if (id != null && _collection != null && _collection.Any(g => g.PID == id))
+        {
+            await OpenForm(_collection.FirstOrDefault(s => s.PID == id), true);
+        }
+        model.TaxPurchaseType = "Normal";
+        _isLoading = false;       
+    }
+
+    // Method to select assets for purchase
+    // private async Task SelectAssets()
+    // {
+    //     if (EditPermission)
+    //     {
+    //         TaxPurchaseModel tds = new TaxPurchaseModel();
+    //         DialogParameters parms = new DialogParameters();
+    //         parms.Add("BranchID", BranchID);
+    //         var dialog = await DialogService.ShowAsync<AssetPOConsolidateSelectionDialog>("Asset Purchase", parms, maxWidth);
+    //         var result = await dialog.Result;
+    //         if (!result.Canceled)
+    //         {
+    //             var data = (List<AssetModel>)result.Data;
+    //             AssetPurchaseModel PI = new AssetPurchaseModel()
+    //                 {
+    //                     BranchID = BranchID,
+    //                     UserInfo = new ArmsModels.SharedModels.UserInfoModel() { UserID = UserID },
+    //                     SelectedAssets = new(),
+    //                 };
+    //             foreach(var item in data)
+    //             {
+    //                 var AssetPO = new AssetPOModel();
+    //                 AssetPO.CoaID = item.AssetStatus == "WIP" ? Iservice.GetCWIPCoaID(item.AssetID) : Iservice.GetCapitalizationCoaID(item.AssetID);
+    //                 AssetPO.SubARDCode = item.AssetStatus == "WIP" ? "ASTCWIP" : "ASTCAP";
+    //                 AssetPO.AccountName = accountService.SelectByID(AssetPO.CoaID).AccountName;
+    //                 AssetPO.AssetID = item.AssetID;
+    //                 AssetPO.AssetCode = item.AssetCode;
+    //                 AssetPO.AssetStatus = item.AssetStatus;
+    //                 AssetPO.TaxRate = item.TaxRate;
+    //                 AssetPO.BookValue = item.BookValue;
+    //                 AssetPO.BranchID = item.BranchID;
+    //                 AssetPO.GstMechanism = item.GstMechanism;
+    //                 AssetPO.Description = item.Description;
+    //                 AssetPO.GSTValue = item.GSTValue;
+    //                 AssetPO.PID = item.PID;
+    //                 PI.SelectedAssets.Add(AssetPO);
+    //             }
+
+
+
+    //             parms = new DialogParameters();
+    //             parms.Add("model", model.Clone());
+    //             parms.Add("PI", PI);
+    //             parms.Add("ReadOnly", false);
+    //             var dialog2 = await DialogService.ShowAsync<AssetPurchaseConsolidateDialog>("Asset Purchase", parms, maxWidth);
+    //             var result2 = await dialog2.Result;
+    //             if (!result2.Canceled)
+    //             {
+    //                 var ResultData = (TaxPurchaseModel)result2.Data;
+    //                 IpushNotificationService.CreateAuthNotifications(BranchID, DocTypeID, ResultData.PID.Value);
+    //                 await GetAll(IsApproved, NumberOfRecords);
+    //             }
+    //         }
+
+    //     }
+    //     else
+    //     {
+    //         bool? result = await DialogService.ShowMessageBoxAsync(
+    //         "Permission denied!",
+    //         "You don't have any permission to Create AssetPurchase.");
+    //     }
+    // }
+
+    protected override async Task OpenForm(TaxPurchaseModel _model, bool ReadOnly, bool DisableAddition = false)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        var DialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+
+        AssetPurchaseModel PI = new AssetPurchaseModel()
+        {
+            BranchID = BranchID,
+            UserInfo = new ArmsModels.SharedModels.UserInfoModel() { UserID = UserID },
+            SelectedAssets = new(),
+        };
+
+        if (_model.PID is null || _model.PID == 0)
+        {
+            //TaxPurchaseModel tds = new TaxPurchaseModel();
+            DialogParameters parms = new DialogParameters();
+            parms.Add("BranchID", BranchID);
+            var dialogSelected = await dialogService.ShowAsync<AssetPOConsolidateSelectionDialog>("Select Assets", parms, DialogOptions);
+            var resultSelecetdAssets = await dialogSelected.Result;
+            if (!resultSelecetdAssets.Canceled)
+            {
+                var data = (List<AssetModel>)resultSelecetdAssets.Data;
+                foreach (var item in data)
+                {
+                    var AssetPO = new AssetPOModel();
+                    AssetPO.CoaID = item.AssetStatus == "WIP" ? IassetService.GetCWIPCoaID(item.AssetID) : IassetService.GetCapitalizationCoaID(item.AssetID);
+                    AssetPO.SubARDCode = item.AssetStatus == "WIP" ? "ASTCWIP" : "ASTCAP";
+                    AssetPO.AccountName = accountService.SelectByID(AssetPO.CoaID).AccountName;
+                    AssetPO.AssetID = item.AssetID;
+                    AssetPO.AssetCode = item.AssetCode;
+                    AssetPO.AssetStatus = item.AssetStatus;
+                    AssetPO.TaxRate = item.TaxRate;
+                    AssetPO.BookValue = item.BookValue;
+                    AssetPO.BranchID = item.BranchID;
+                    AssetPO.GstMechanism = item.GstMechanism;
+                    AssetPO.Description = item.Description;
+                    AssetPO.GSTValue = item.GSTValue;
+                    AssetPO.PID = item.PID;
+                    PI.SelectedAssets.Add(AssetPO);
+                }
+            }
+            DialogParameters parmsMain = new DialogParameters();
+            parmsMain.Add("model", _model.Clone());
+            parmsMain.Add("PI", PI);
+            parmsMain.Add("ReadOnly", ReadOnly);
+            var dialog = await dialogService.ShowAsync<AssetPurchaseConsolidateDialog>("ADD", parmsMain, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                var ReturnData = (TaxPurchaseModel)result.Data;
+                await _table.ReloadServerData();
+            }
+        }
+        else
+        {
+            DialogParameters parmsPur = new DialogParameters();
+            parmsPur.Add("model", _model.Clone());
+            parmsPur.Add("ReadOnly", ReadOnly);
+            parmsPur.Add("PageToRedirectLink", "/TaxPurchase");
+            //parmsPur.Add("OnApproved", new EventCallbackFactory().Create(this, async () => await _table.ReloadServerData()));
+            var dialogPur = await dialogService.ShowAsync<AssetTaxPurchaseDialog>("Edit", parmsPur, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+            var result = await dialogPur.Result;
+            if (!result.Canceled)
+            {
+                var ReturnData = (TaxPurchaseModel)result.Data;
+                await _table.ReloadServerData();
+            }
+        }
+
+         await Task.Delay(200);
+            _busy = false;
+    }
+    //Load Data to table based on search and filters
+    protected override async Task<TableData<TaxPurchaseModel>> LoadServerData(TableState state, CancellationToken token)
+    {
+
+        var list = Iservice.SelectAll(BranchID, searchTerm, "Asset", model.TaxPurchaseType, state.Page, state.PageSize, ShowApproved);
+
+        _collection = list.Items;
+
+        StateHasChanged();
+
+        return new TableData<TaxPurchaseModel>
+        {
+            Items = _collection,
+            TotalItems = list.TotalRecords ?? 0
+        };
+    }
+
+
+}
+

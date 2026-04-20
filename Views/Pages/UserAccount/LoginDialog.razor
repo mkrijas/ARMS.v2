@@ -1,0 +1,197 @@
+@using Views.Data
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using ArmsModels.BaseModels
+
+@inject AuthenticationStateProvider auth
+@inject NavigationManager nav
+@inject ISessionStorageService sessionStorage
+@inject UserManager<UserModel> _userManager
+@inject MudBlazor.ISnackbar snackbar
+
+@inject IJSRuntime JSRuntime
+
+<MudDialog DisableSidePadding="true" Class="login-dialog-transparent" Options="dialogOptions">
+    <DialogContent>
+        <!-- Rope Container - Clicks here trigger Cancel (Close Animation) -->
+        <div class="rope-container @(isClosing ? "exiting" : "")" @onclick="Cancel">
+            <!-- Constrained Wrapper for Alignment - Handles Horizontal Sway -->
+            <div class="rope-align-wrapper" @onclick:stopPropagation>
+                <!-- Ropes (Siblings for independent animation) -->
+                <div class="rope rope-left"></div>
+                <div class="rope rope-right"></div>
+                
+                <!-- Card Container with Animation -->
+                <div class="hanging-card">
+                    <!-- Hooks -->
+                    <div class="hook hook-left">
+                        <div class="screw-head screw-close-btn" @onclick="Cancel" title="Close"></div>
+                    </div>
+                    <div class="hook hook-right">
+                        <!-- Close Button as Screw -->
+                        <div class="screw-head screw-close-btn" @onclick="Cancel" title="Close"></div>
+                    </div>
+                    
+                    <!-- Main Login Card -->
+                    <MudPaper Elevation="0" Class="pa-10 auth-dialog-card">
+
+                        <div class="d-flex flex-column align-center">
+                            <div class="icon-badge mb-4" style="background: rgba(255, 159, 67, 0.3); color: #FF9F43;">
+                                <MudIcon Icon="@Icons.Material.Filled.LockPerson" Size="Size.Large" />
+                            </div>
+                            <MudText Typo="Typo.h5" Class="admin-title mb-1">Welcome Back</MudText>
+                            <MudText Typo="Typo.body2" Class="admin-subtitle mb-8">Sign in to continue to ARMS</MudText>
+    
+                            <EditForm Model="user" OnValidSubmit="OnValidSubmit" style="width: 100%;">
+                                <DataAnnotationsValidator />
+                                
+                                <MudTextField @bind-Value="user.UserID"
+                                              id="login-username"
+                                              Label="User Identity" 
+                                              Variant="Variant.Outlined" 
+                                              Class="glass-input mb-4"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.PersonOutline"
+                                              FullWidth="true" 
+                                              Margin="Margin.Normal"
+                                              For="@(() => user.UserID)" />
+                                
+                                <MudTextField InputType="@(_showPassword ? InputType.Text : InputType.Password)" 
+                                              @bind-Value="user.Password" 
+                                              Label="Access Code" 
+                                              Variant="Variant.Outlined" 
+                                              Class="glass-input mb-2"
+                                              Adornment="Adornment.Start" 
+                                              AdornmentIcon="@Icons.Material.Filled.VpnKey"
+                                              OnAdornmentClick="TogglePasswordVisibility"
+                                              FullWidth="true" 
+                                              Margin="Margin.Normal" 
+                                              For="@(() => user.Password)" />
+                                
+                                <div class="d-flex justify-space-between align-center mb-6">
+                                    <MudCheckBox T="bool" Label="Keep me signed in" Color="Color.Warning" Dense="true" Size="Size.Small" />
+                                    <MudLink Href="#" Underline="Underline.None" Typo="Typo.caption" Style="color: #FF9F43; font-weight: 700;">Forgot Access?</MudLink>
+                                </div>
+    
+                                <MudButton ButtonType="ButtonType.Submit" 
+                                           Variant="Variant.Filled" 
+                                           Color="Color.Warning" 
+                                           Size="Size.Large" 
+                                           FullWidth="true" 
+                                           Class="action-btn-primary py-3"
+                                           Style="background: #FF9F43 !important; color: white !important; box-shadow: 0 12px 24px -6px rgba(255, 159, 67, 0.4) !important;">
+                                    @if (_loading)
+                                    {
+                                        <MudProgressCircular Class="ms-n1" Color="Color.Inherit" Size="Size.Small" Indeterminate="true" />
+                                        <MudText Class="ms-2" Style="color: white !important;">Validating...</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText>Sign In</MudText>
+                                    }
+                                </MudButton>
+                            </EditForm>
+                        </div>
+                    </MudPaper>
+                </div>
+            </div>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    private User user = new User();
+    private DialogOptions dialogOptions = new DialogOptions() { NoHeader = true, BackgroundClass = "login-overlay", MaxWidth = MaxWidth.Small };
+    private bool _showPassword = false;
+    private void TogglePasswordVisibility() => _showPassword = !_showPassword;
+    private bool isClosing = false;
+    // Removed _usernameField
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try {
+                await JSRuntime.InvokeVoidAsync("SoundEffects.playLoginEntry");
+            } catch { }
+
+            await Task.Delay(1100); // Wait for the new shorter hard impact animation
+            try {
+                // Robust Focus: Find the wrapper, then the input
+                await JSRuntime.InvokeVoidAsync("eval", "var el = document.getElementById('login-username'); if(el) { var inp = el.querySelector('input'); if(inp) inp.focus(); else el.focus(); }");
+            } catch {}
+        }
+    }
+
+    private bool _loading = false;
+
+    private async Task<bool> OnValidSubmit()
+    {
+        if (_loading) return false;
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            var appUser = await _userManager.FindByIdAsync(user.UserID);
+            
+            if (appUser == null)
+            {
+                snackbar.Add("Invalid Username or Password", Severity.Error);
+                _loading = false;
+                return false;
+            }
+
+            var checkPassword = await _userManager.CheckPasswordAsync(appUser, user.Password);
+
+            if (!checkPassword)
+            {
+                snackbar.Add("Invalid Username or Password", Severity.Error);
+                _loading = false;
+                return false;
+            }
+
+            await ((CustomAuthenticationSatetProvider)auth).AuthenticateUser(user.UserID);
+            await sessionStorage.SetItemAsync("userID", user.UserID);
+            MudDialog.Close(DialogResult.Ok(true));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add("Error during login: " + ex.Message, Severity.Error);
+            _loading = false;
+            return false;
+        }
+        finally
+        {
+            // Note: If success, dialog closes, so no need to set _loading=false here usually, 
+            // but for safety in case of non-exceptional failures:
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Cancel()
+    {
+        isClosing = true;
+        try {
+            await JSRuntime.InvokeVoidAsync("SoundEffects.playLoginExit");
+        } catch { }
+
+        StateHasChanged(); // Trigger UI update to apply .exiting class
+        await Task.Delay(1300); // Wait for fall animation to complete
+        MudDialog.Cancel();
+    }
+
+    class User
+    {
+        [Required(ErrorMessage = "Username is required")]
+        public string UserID { get; set; }
+        [Required(ErrorMessage = "Password is required")]
+        public string Password { get; set; }
+    }
+}

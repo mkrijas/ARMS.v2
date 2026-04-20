@@ -1,14 +1,17 @@
-﻿@inject ITripService ITrip
+@inject ITripService ITrip
+@using System.Threading
+@using System.Linq.Expressions
 
 
-<MudAutocomplete Variant="Variant.Outlined" Margin="Margin.Dense" SelectValueOnTab @ref="_autoComplete" Class="@Class" T="TripModel" OnKeyUp="Enter" Label="@Label" @bind-Value="Value" AdornmentColor="Color.Secondary" ResetValueOnEmptyText="true"
-                 Clearable="true" SearchFunc="SearchTrip" ToStringFunc="@(e => e == null ? null : string.Format("{0}",(e.TripPrefix + e.TripNumber?.ToString()??"")))"></MudAutocomplete>
+<MudAutocomplete SelectValueOnTab Clearable ResetValueOnEmptyText Strict T="TripModel" 
+                 Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Trip"
+                 @bind-Value="Value" For="@For" SearchFunc="SearchTrip" Class="@Class" Disabled="@IsDisabled"
+                 ToStringFunc="@(e => e == null ? null : $"{e.TripNumber}")"></MudAutocomplete>
 
 
 @code {
 
     [Parameter] public EventCallback<bool> SetTrips { get; set; }
-    [Parameter] public string Label { get; set; } = "Select Trip";
     [Parameter] public int? BranchID { get; set; } = 0;
     [Parameter] public int? SubClassID { get; set; } = null;
 
@@ -29,17 +32,6 @@
     private MudAutocomplete<TripModel> _autoComplete { get; set; }
 
 
-
-    private async Task Enter(KeyboardEventArgs e)
-    {
-        if (e.Code == "Enter" || e.Code == "NumpadEnter")
-        {
-            await SetTrips.InvokeAsync();
-            await _autoComplete.Clear();
-            await SearchTrip("");
-        }
-    }
-
     [Parameter]
     public EventCallback<TripModel> ValueChanged { get; set; }
 
@@ -50,18 +42,24 @@
     [Parameter]
     public int? NumberOfRecords { get; set; } = 20;
 
+    [Parameter]
+    public Expression<Func<TripModel>> For { get; set; }
+
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
     private TripModel _value;
 
     [Parameter]
     public List<TripModel> PassedListTrips { get; set; }
 
-    private async Task<IEnumerable<TripModel>> SearchTrip(string searchString)
+    private async Task<IEnumerable<TripModel>> SearchTrip(string searchString, CancellationToken token)
     {
 
         if (searchString.Count() >= 3)
         {
             await GetAll(searchString);
-            await Task.Delay(3);
+            await Task.Delay(3, token);
             if (PassedListTrips != null && PassedListTrips.Count() != 0)
             {
                 var result = TripList.Where(x => (!PassedListTrips.Any(g => g.TripID == x.TripID)) && (x.TripPrefix + x.TripNumber.ToString()).Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));

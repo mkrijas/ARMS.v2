@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace ArmsServices.DataServices
 {
@@ -41,39 +42,6 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
             {
                 yield return GetTariffEntries(dr);
-            }
-        }
-
-        // Method to select pending proforma invoices
-        public IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? BranchID, int? NumberOfRecords, string searchTerm)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "PENDING"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@numberOfRecords", NumberOfRecords),
-               new SqlParameter("@searchTerm", searchTerm)
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
-            {
-                yield return GetProformaInvoiceModel(dr);
-            }
-        }
-
-        // Method to select proforma invoices based on various criteria
-        public IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? BranchID, int? ID, int? NumberOfRecords, string searchTerm)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByID"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@ProformaInvoiceID", ID),
-               new SqlParameter("@numberOfRecords", NumberOfRecords),
-               new SqlParameter("@searchTerm", searchTerm)
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
-            {
-                yield return GetProformaInvoiceModel(dr);
             }
         }
 
@@ -309,44 +277,7 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
-        }
-
-        // Method to update a proforma invoice
-        public int? UpdateProformaInvoice(ProformaInvoiceModel model)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@ProformaInvoiceID", model.ProformaInvoiceID),
-               new SqlParameter("@DraftBillID", model.DraftBillID),
-               new SqlParameter("@OrderID", model.OrderID),
-               new SqlParameter("@PartyID", model.Party?.PartyID),
-               new SqlParameter("@AddressID", model.AddressID),
-               new SqlParameter("@PartyCoaID", model.PartyCoa),
-               new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
-               new SqlParameter("@UsageCode", model.TariffType.UsageCode),
-               new SqlParameter("@Reference", model.Reference),
-               new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@DocumentDate", model.DocumentDate),
-               new SqlParameter("@DocumentNumber", model.DocumentNumber),
-               new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),
-               new SqlParameter("@FreightAmount", model.FreightAmount),
-               new SqlParameter("@TotalAmount", model.TotalAmount),
-               new SqlParameter("@Narration", model.Narration),
-               new SqlParameter("@GstRate", model.Gst.GstRate),
-               new SqlParameter("@FilePath", model.FileName),
-               new SqlParameter("@Cgst", model.Gst.CGST),
-               new SqlParameter("@Sgst", model.Gst.SGST),
-               new SqlParameter("@Igst", model.Gst.IGST),
-               new SqlParameter("@UserID", model.UserInfo.UserID),
-            };
-            int? ID = null;
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Update]", parameters))
-            {
-                ID = dr.GetInt32("ProformaInvoiceID");
-            }
-            return ID;
-        }
+        }      
 
         // Method to update a consolidated draft bill
         public int? UpdateConsolidatedDraftBill(ConsolidatedDraftBillModel model)
@@ -383,7 +314,7 @@ namespace ArmsServices.DataServices
         }
 
         // Method to select a proforma invoice by ID
-        public ProformaInvoiceModel SelectProformaInvoice(int? ID)
+        public ProformaInvoiceModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -410,19 +341,7 @@ namespace ArmsServices.DataServices
                 model = GetConsolidatedDraftBillModel(dr);
             }
             return model;
-        }
-
-        // Method to delete a proforma invoice
-        public int DeleteProformaInvoice(int? ID, string UserID, string Remarks)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@BillingID", ID),
-               new SqlParameter("@Remarks", Remarks),
-               new SqlParameter("@UserID", UserID),
-            };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Delete]", parameters);
-        }
+        }       
 
         // Method to reverse a consolidated draft billc
         public int ReverseConsolidatedDraftBill(int? ID, string UserID)
@@ -499,7 +418,7 @@ namespace ArmsServices.DataServices
         }
 
         // Method to approve a proforma invoice
-        public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks, string InvoiceNumber, string InvoiceRefNumber, DateTime? InvoiceDate)
+        public int? Approve(int? ProformaInvoiceID, string userID, string Remarks, string InvoiceNumber, string InvoiceRefNumber, DateTime? InvoiceDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -514,15 +433,7 @@ namespace ArmsServices.DataServices
         }
 
         // Method to reverse a proforma invoice
-        public int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@ProformaInvoiceID", ProformaInvoiceID),
-               new SqlParameter("@UserID", userID)
-            };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Reverse]", parameters);
-        }
+        
 
         // Method to get GST rate based on draft bill ID
         public GstModel GetGstRate(int? DraftBillID)
@@ -543,6 +454,135 @@ namespace ArmsServices.DataServices
                 };
             }
             return new GstModel();
+        }
+
+        public PagedResult<ProformaInvoiceModel> SelectAll(int? BranchID, int Page, int PageSize, string searchterm, bool IsApproved)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "All"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Page", Page),
+               new SqlParameter("@PageSize", PageSize),
+               new SqlParameter("@searchTerm", searchterm),
+               new SqlParameter("@IsApproved", IsApproved)
+            };      
+
+            List<ProformaInvoiceModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
+            {
+                list.Add(GetProformaInvoiceModel(dr));
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+
+            return new PagedResult<ProformaInvoiceModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
+        }
+
+        public int Approve(int? ID, string UserID, string Remarks)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Reverse(int? ID, string UserID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ProformaInvoiceID", ID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Remarks", Remarks ),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Reverse]", parameters);
+        }
+
+        public int Delete(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BillingID", ID),               
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Delete]", parameters);
+        }
+
+        public IEnumerable<ProformaInvoiceModel> Select(int? BranchID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<ProformaInvoiceModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByID"),
+               new SqlParameter("@BranchID", BranchID),               
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
+            {
+                yield return GetProformaInvoiceModel(dr);
+            }
+        }
+
+        public IEnumerable<ProformaInvoiceModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "PENDING"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
+            {
+                yield return GetProformaInvoiceModel(dr);
+            }
+        }
+
+        ProformaInvoiceModel IbaseInterface<ProformaInvoiceModel>.Update(ProformaInvoiceModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ProformaInvoiceID", model.ProformaInvoiceID),
+               new SqlParameter("@DraftBillID", model.DraftBillID),
+               new SqlParameter("@OrderID", model.OrderID),
+               new SqlParameter("@PartyID", model.Party?.PartyID),
+               new SqlParameter("@AddressID", model.AddressID),
+               new SqlParameter("@PartyCoaID", model.PartyCoa),
+               new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
+               new SqlParameter("@UsageCode", model.TariffType.UsageCode),
+               new SqlParameter("@Reference", model.Reference),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@DocumentDate", model.DocumentDate),
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),
+               new SqlParameter("@CostCenter", model.CostCenter),
+               new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@FreightAmount", model.FreightAmount),
+               new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@GstRate", model.Gst.GstRate),
+               new SqlParameter("@FilePath", model.FileName),
+               new SqlParameter("@Cgst", model.Gst.CGST),
+               new SqlParameter("@Sgst", model.Gst.SGST),
+               new SqlParameter("@Igst", model.Gst.IGST),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Update]", parameters))
+            {
+                return GetProformaInvoiceModel(dr);               
+            }
+            return null;
+        }        
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
         }
     }
 }

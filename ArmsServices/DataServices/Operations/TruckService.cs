@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,6 +8,8 @@ using ArmsModels.BaseModels;
 using System.Reflection;
 using Core.IDataServices.Operations.ROI;
 using Core.BaseModels.Operations.ROI;
+using Microsoft.IdentityModel.Abstractions;
+
 
 
 namespace ArmsServices.DataServices
@@ -195,6 +197,16 @@ namespace ArmsServices.DataServices
                     TimeStampField = reader.GetDateTime("TimeStamp"),
                     UserID = reader.GetString("UserID"),
                 },
+                BSType = reader.GetString("BSType"),
+                CurrentRegistration = new TruckRegistrationModel
+                {
+                    RegID = reader.GetInt32("RegID"),
+                    RegNo = reader.GetString("RegNo"),
+                    EffectFrom = reader.GetDateTime("EffectFrom"),
+                    EffectTo = reader.GetDateTime("EffectTo"),
+                    TruckID = reader.GetInt32("TruckID"),
+                    RC = reader.GetString("RC"),
+                },
             };
         }
 
@@ -311,6 +323,23 @@ namespace ArmsServices.DataServices
             return DriverID;
         }
 
+        //DriverModel ITruckService.GetAssignedDriverModel(int? TruckID)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@TruckID", TruckID),
+        //    };
+        //    int? DriverID = null;
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Driver.Assignment.Select]", parameters))
+        //    {
+        //        if (dr.GetBoolean("AssignedStatus"))
+        //        {
+        //            DriverID = dr.GetInt32("DriverID");
+        //        }
+        //    }
+        //    return DriverID;
+        //}
+
         // Method to get the current trip for a truck
         public long? GetCurrentTrip(int? TruckID)
         {
@@ -340,6 +369,80 @@ namespace ArmsServices.DataServices
             }
             return TripID;
         }
+
+
+
+        public TruckModel GetInfo(int? TruckID, string HomeOrOperation = "Operation")
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@HomeOrOperation", HomeOrOperation),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Select]", parameters))
+            {
+                return new TruckModel()
+                {
+                    AssetID = dr.GetInt32("AssetID"),
+                    RegNo = dr.GetString("RegNo"),
+                    TruckID = dr.GetInt32("TruckID"),
+                    HomeBranchID = dr.GetInt32("HomeBranchID"),
+                    HomeBranchName = dr.GetString("HomeBranchName"),
+                    OperatingBranchName = dr.GetString("OperatingBranchName"),
+                    TruckTypeID = dr.GetInt16("TruckTypeID"),
+                    TruckType = dr.GetString("TruckType"),
+                    BSType = dr.GetString("BSType"),
+                    wheels = dr.GetByte("wheels"),
+                    TransmissionType = dr.GetString("TransmissionType"),
+                    FuelType = dr.GetString("FuelType"),
+                    FuelTankCapacity = dr.GetDecimal("FuelTankCapacity"),
+                    BodyType = dr.GetString("BodyType"),
+                    ManufacturedYear = dr.GetInt16("ManufacturedYear"),
+                    EngineNumber = dr.GetString("EngineNumber"),
+                    ChassisNumber = dr.GetString("ChassisNumber"),
+                    GrossWeight = dr.GetDecimal("GrossWeight"),
+                    UnladenWeight = dr.GetDecimal("UnladenWeight"),
+                    PurchaseDate = dr.GetDateTime("PurchaseDate"),
+                    DriverName = dr.GetString("DriverName"),
+                    Mobile = dr.GetString("Mobile"),
+                    CurrentRegistration = new()
+                    {
+                        RegID = dr.GetInt32("RegID"),
+                        RegNo = dr.GetString("RegNo"),
+                        RC = dr.GetString("RC"),
+                        EffectFrom = dr.GetDateTime("EffectFrom"),
+                        EffectTo = dr.GetDateTime("EffectTo"),
+                    },
+                    CurrentEvent = new EventModel()
+                    {
+                        BranchID = dr.GetInt32("BranchID"),
+                        BranchName = dr.GetString("BranchName"),
+                        DestinationID = dr.GetInt32("DestinationID"),
+                        DriverID = dr.GetInt32("DriverID"),
+                        EventReading = dr.GetInt64("EventReading"),
+                        EventTime = dr.GetDateTime("EventTime"),
+                        EventTypeID = dr.GetByte("EventTypeID"),
+                        GcSetID = dr.GetInt64("GcSetID"),
+                        OriginID = dr.GetInt32("OriginID"),
+                        TripID = dr.GetInt64("TripID"),
+                        TruckEventID = dr.GetInt64("EventID"),
+                        TruckID = dr.GetInt32("TruckID"),
+                        OriginName = dr.GetString("OriginName"),
+                        DestinationName = dr.GetString("DestinationName")
+                    },
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                    SecondFuelTankCapacity = dr.GetDecimal("SecondFuelTankCapacity"),
+                };
+            }
+            return null;
+        }
+
 
         // Method to select trucks by branch with optional filters
         public IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer, string HomeOrOperation = "Operation")
@@ -549,6 +652,54 @@ namespace ArmsServices.DataServices
                     EventType = dr.GetString("EventType")
                 };
             }
+        }
+
+    }
+
+
+    public class TelemetryService : ITelemetryService
+    {
+        IDbService Iservice;
+        public TelemetryService(IDbService iservice)
+        {
+            Iservice = iservice;
+        }
+        public IEnumerable<TelemetryModel> GetTelemetry(DateTime? dateTime, string REGN_NUMBER = "")
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@REGN_NUMBER", REGN_NUMBER),
+                new SqlParameter("@QueryDateTime", dateTime ?? (object)DBNull.Value)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Telemetry.Get]", parameters))
+            {
+                yield return new TelemetryModel
+                {
+                   
+                    REGN_NUMBER = dr.GetString("REGN_NUMBER"),
+                    DATE_TIME = dr.GetDateTime("DATE_TIME"),
+                    LATITUDE = dr.GetDouble("LATITUDE"),
+                    LONGITUDE = dr.GetDouble("LONGITUDE"),
+                    ALTITUDE = dr.GetDouble("ALTITUDE"),
+                    SPEED = dr.GetDecimal("SPEED"),
+                    FUEL_LEVEL = dr.GetDecimal("FUEL_LEVEL"),                    
+                    DEF_LEVEL = dr.GetDecimal("DEF_LEVEL"),
+                    ENGINE_SPEED = dr.GetDecimal("ENGINE_SPEED"),
+                    FUEL_CONS = dr.GetDecimal("FUEL_CONS"),
+                    GEAR_NUM = (decimal)dr.GetInt32("GEAR_NUM"),
+                    VEHICLE_ODO = dr.GetDecimal("VEHICLE_ODO")
+                };
+            }
+        }
+
+        public int? UpdateTelemetry(List<TelemetryModel> models)
+        {
+                List<SqlParameter> parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@data", models.ToDataTable()), 
+                };
+               return Iservice.ExecuteNonQuery("[usp.Telemetry.Update]", parameters);  
         }
     }
 }

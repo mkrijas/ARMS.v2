@@ -10,48 +10,89 @@
 @using Core.IDataServices.User
 @using Microsoft.AspNetCore.Identity
 
-<div style="padding-top:16px;">
-    <div style="background-color:#1469c0; padding:1%; padding-top:1%; color:#fff; border-top-left-radius:4px; border-top-right-radius:4px">
-        <div style="float:left;padding-top:1%">
-            <h6>@SelectedDevice Device List</h6>
+@if (_isLoading)
+{
+@*     <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+ *@        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Devices" 
+                        SubText="Please wait..." />
+@*     </div>
+ *@}
+else
+{
+    <div @key="@("content")">
+
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8 mb-12">
+    <!-- Header Section -->
+    <div class="header-section mb-10">
+        <div class="d-flex justify-space-between align-end">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title mb-2"><b>Device Management</b></MudText>
+                <div class="title-accent mb-4"></div>
+                <MudText Typo="Typo.body1" Class="admin-subtitle" Style="color: #667085;">
+                    Monitor device authorization, approve active connections, and manage security.
+                </MudText>
+            </div>
+            <div class="admin-top-actions mb-1">
+                <MudSelect For="@(() => SelectedDeviceList)" Dense="true" T="int" Value="@SelectedDeviceList" ValueChanged="SelectedValueChanged" 
+                           Variant="Variant.Filled" Margin="Margin.Dense" Class="rounded-lg shadow-sm"
+                           Style="width: 200px; background: white;" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="1">Pending Approval</MudSelectItem>
+                    <MudSelectItem Value="2">Active Devices</MudSelectItem>
+                </MudSelect>
+            </div>
         </div>
-        <div style="float:right;">
-            <MudSelect Style="background:white; border-radius: 4px; width: 130px;" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" Variant="Variant.Outlined" Value="@SelectedDeviceList" T="int" ValueChanged="(Value) => SelectedValueChanged(Value)">
-                <MudSelectItem Value="1">Approval</MudSelectItem>
-                <MudSelectItem Value="2">Active</MudSelectItem>
-            </MudSelect>
-        </div>
-        <br />
-        <br />
     </div>
 
-    <MudTable Items="@collection" Dense="true" Filter="new Func<DeviceModel, bool>(search)" @bind-Truck="model">
-        <ToolBarContent>
-            <MudTextField @bind-Value="searchUser" Placeholder="Search User..." Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
-        </ToolBarContent>
-        <HeaderContent>
-            <MudTh><MudTableSortLabel SortBy="new Func<DeviceModel, object>(x=> x.UserID)" InitialDirection="SortDirection.Ascending">UserID</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<DeviceModel, object>(x=> x.DeviceID)" InitialDirection="SortDirection.Ascending">DeviceID</MudTableSortLabel></MudTh>
-            <MudTh>Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="UserID">@context.UserID</MudTd>
-            <MudTd DataLabel="DeviceID">@context.DeviceID</MudTd>
-            <MudTd DataLabel="">
-                @if (context.RecordStatus == 1)
-                {
-                    <MudButton OnClick="@(e => Approve(context))" Style="width: 106px; margin-right: 10px; " Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Approve</MudButton>
-                }
-                <MudButton OnClick="@(e => Deny(context))" Style="width: 106px;" Variant="Variant.Filled" Color="Color.Error" ButtonType="ButtonType.Button">@(context.RecordStatus == 3 ? "Remove" : "Deny")</MudButton>
-            </MudTd>
-        </RowTemplate>
-        <PagerContent>
-            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-        </PagerContent>
-    </MudTable>
+    <div class="admin-glass-card">
+        <MudTable Items="@collection" Elevation="0" Dense="true" Filter="new Func<DeviceModel, bool>(search)" @bind-Truck="model" Hover="true" Breakpoint="Breakpoint.Sm">
+            <ToolBarContent>
+                <div class="d-flex align-center gap-4 w-100">
+                    <MudText Typo="Typo.h6" Class="card-title" Style="color: #367588;"><b>@SelectedDevice Registry</b></MudText>
+                    <MudSpacer />
+                    <MudTextField @bind-Value="searchUser" Placeholder="Search by User ID..." Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="search-field" Style="max-width: 300px; background: white;"></MudTextField>
+                </div>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<DeviceModel, object>(x=> x.UserID)" InitialDirection="SortDirection.Ascending">User ID</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DeviceModel, object>(x=> x.DeviceID)">Device Unique ID</MudTableSortLabel></MudTh>
+                <MudTh Style="text-align: right;">Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="UserID"><b>@context.UserID</b></MudTd>
+                <MudTd DataLabel="DeviceID" Style="font-family: 'Inter', monospace; font-size: 0.8rem; color: #64748b;">@context.DeviceID</MudTd>
+                <MudTd DataLabel="" Style="text-align: right;">
+                    <div class="d-flex justify-end gap-2">
+                        @if (context.RecordStatus == 1)
+                        {
+                            <MudButton OnClick="@(e => Approve(context))" Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" Class="rounded-pill px-4">Approve</MudButton>
+                        }
+                        <MudButton OnClick="@(e => Deny(context))" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@(context.RecordStatus == 3 ? Icons.Material.Filled.RemoveCircle : Icons.Material.Filled.Block)" Class="rounded-pill px-4">
+                            @(context.RecordStatus == 3 ? "Remove" : "Deny")
+                        </MudButton>
+                    </div>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <div class="pa-4">
+                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                </div>
+            </PagerContent>
+        </MudTable>
+    </div>
+</MudContainer>
 </div>
+}
+
+
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private DeviceModel model = new DeviceModel();
     private List<DeviceModel> collection = new List<DeviceModel>();
@@ -63,7 +104,19 @@
 
     protected async override Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         await GetAll(SelectedDeviceList);
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch devices based on the selected type
@@ -116,7 +169,7 @@
         var user = authprov.User;
         model.UserID = user.Identity.Name;
 
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
         "Warning !",
         "Are you sure, you want to Remove/Deny - " + model.UserID + " (" + model.DeviceID + ") ?");
         if (result == true)

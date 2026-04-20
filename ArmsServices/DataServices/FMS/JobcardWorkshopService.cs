@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -79,7 +79,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@JwID", model.JwID),
                new SqlParameter("@EnteredOn", model.EnteredOn),
                new SqlParameter("@ExitOn", model.ExitOn),
-               new SqlParameter("@JobCardID", model.JobCardID),
+               new SqlParameter("@WorkOrderID", model.JobCardID),
                new SqlParameter("@WorkshopID", model.WorkshopID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@Odometer", model.Odometer)
@@ -100,7 +100,7 @@ namespace ArmsServices.DataServices
                 JwID = dr.GetInt32("JwID"),
                 EnteredOn = dr.GetDateTime("EnteredOn"),
                 ExitOn = dr.GetDateTime("ExitOn"),
-                JobCardID = dr.GetInt32("JobCardID"),
+                JobCardID = dr.GetInt32("WorkOrderID"),
                 WorkshopID = dr.GetInt32("WorkshopID"),
                 WorkshopName = dr.GetString("WorkshopName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

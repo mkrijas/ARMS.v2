@@ -1,29 +1,76 @@
-﻿@page "/Breakdowns"
+@page "/Breakdowns"
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IBreakdownService IBreakdown
 
-<MudPaper Style="padding-bottom: 1px;">
-    <MudToolBar>
-        <MudText Typo="Typo.h6">Reported Breakdowns/Accidents</MudText>
-    </MudToolBar>
-    <MudDivider />
-    @foreach (BreakdownModel item in BreakdownList)
-    {
-        <div style="margin: 24px;">
-            <BreakdownComponent MainModel="@item" HideControls=false ReadOnly=false OnBreakdownRejected="@OnBreakdownRejected"></BreakdownComponent>
+@if (_isLoading)
+{
+    <LoaderComponent IsFullScreen="true" 
+                    ShowLogo="false" 
+                    Size="medium" 
+                    LoadingText="Loading Work Orders" 
+                    SubText="Please wait..." />
+}
+else
+{
+    <div @key="@("content")" class="admin-page-container">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Reported Incidents</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Manage reported work orders, breakdowns, and accident insurance claims.</MudText>
+                </div>
+            </div>
         </div>
-    }
-</MudPaper>
+
+        <div class="admin-glass-card pa-6">
+            @if (BreakdownList.Count == 0)
+            {
+                <div class="d-flex flex-column align-center justify-center py-10 opa-60">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Large" Class="mb-2" />
+                    <MudText Typo="Typo.h6">No pending incidents found.</MudText>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-6">
+                    @foreach (BreakdownModel item in BreakdownList)
+                    {
+                        <div class="breakdown-item-wrapper rounded-lg pa-4 border-2 border-dashed">
+                            <BreakdownComponent MainModel="@item" HideControls="false" ReadOnly="false" OnBreakdownRejected="@OnBreakdownRejected"></BreakdownComponent>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<BreakdownModel> BreakdownList = new();
 
     // Lifecycle method that runs when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         await LoadBreakdowns();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to load pending breakdowns for the current user's branch

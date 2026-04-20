@@ -1,4 +1,4 @@
-﻿@page "/InterBranchPaymentMemoView"
+@page "/InterBranchPaymentMemoView"
 @page "/InterBranchPaymentMemoView/{id:int}"
 @inherits ViewComponentBase<PaymentMemoModel>
 @using Pages.Finance.Transactions.PurchaseAndPayment
@@ -6,93 +6,132 @@
 @inject IPaymentInitiatedService IinitiateService
 @inject IDialogService DialogService
 
-@*<style>
-        .selected {
-            background-color: #1E88E5 !important;
-        }
-
-            .selected > td {
-                color: white !important;
-            }
-
-                .selected > td .mud-input {
-                    color: white !important;
-                }
-    </style>*@
-
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" T="PaymentMemoModel">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">InterBranch Payment Memo</MudText>
-                <MudTooltip Text="New Payment Memo">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new PaymentMemoModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Payment Memo..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
-                </MudTextField>
-                <div class="tablefont">
-                    <span style="margin-right: 10px;">Maximum Records: </span>
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Disbursement Memos" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Inter-Branch Payment Memo</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Record and manage financial disbursements between branch locations. Track funds transfers, verify party settlements, and maintain inter-branch ledger accuracy.</MudText>
                 </div>
-                <MudItem xs="1">
-                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
-                </MudItem>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ToggleData(value))" Checked="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document No</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.OtherBranchName)">Branch</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.PartyInfo.TradeName)" >Party Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.TotalAmount)" >Total Amount</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="Branch">@context.DocumentNumber</MudTd>
-                <MudTd DataLabel="Branch">@context.OtherBranchName</MudTd>
-                <MudTd DataLabel="PartyName">@context.PartyInfo.TradeName</MudTd>
-                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
-                <MudTd DataLabel="">
-                    @if (@context.AuthLevelId == null)
-                    {
-                        <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
-                    }
-                    @if (@context.AuthLevelId < 99)
-                    {
-                        <MudTooltip Text="Verify">
-                            <MudFab @onclick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
-                    }
-                    <MudTooltip Text="view">
-                        <MudFab @onclick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
-                    @if (@context.AuthLevelId == 99)
-                    {
-                        @if (context.MID != null)
-                        {
-                            <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.PaymentMemoID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
-                        }
-                        else
-                        {
-                            <MudIconButton @onclick="@(()=> DeleteNoMID(context.PaymentMemoID))" Color="Color.Error" Title="Delete Entry" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Class="ml-2" Variant="Variant.Filled" />
-                        }
-                        <MudIconButton OnClick="@(()=> Print(context.PaymentMemoID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+                <MudButton StartIcon="@Icons.Material.Filled.PostAdd" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenForm(new PaymentMemoModel(),false))" Disabled="@_busy">NEW PAYMENT MEMO</MudButton>
+            </div>
+        </div>
+
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+                <div style="flex-grow: 1; min-width: 300px;">
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search by document number, branch or party..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
+                </div>
+                <div class="d-flex align-center gap-4">                   
+                    <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
+                        <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="fw-600" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTable ServerData="LoadServerData" T="PaymentMemoModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.DocumentNumber)"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
+                    <MudTh><span class="admin-header-text">SETTLEMENT DETAILS</span></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">DISBURSEMENT</span></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Date"><span class="fw-500">@context.DocumentDate?.ToString("dd MMM yyyy")</span></MudTd>
+                    <MudTd DataLabel="DocNo">
+                        <div class="d-flex align-center gap-2">
+                            <span class="admin-td-primary fw-700">@context.DocumentNumber</span>
+                            @if (context.AuthLevelId == 99)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Verified" Color="Color.Success" Size="Size.Small" />
+                            }
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Settlement">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex align-center gap-2 mb-1">
+                                <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Small" Class="opa-40" />
+                                <span class="small fw-700">@context.OtherBranchName</span>
+                            </div>
+                            <div class="d-flex align-center gap-2">
+                                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="opa-40" />
+                                <span class="tiny opa-60">@context.PartyInfo.TradeName</span>
+                            </div>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Amount" Style="text-align: right;">
+                        <span class="fw-800 text-vibrant" style="font-size: 1rem;">@context.TotalAmount?.ToString("N2")</span>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            @if (@context.AuthLevelId == 99)
+                            {
+                                @if (context.MID != null)
+                                {
+                                    <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.PaymentMemoID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                                }
+                                else
+                                {
+                                    <MudTooltip Text="Purge Memo">
+                                        <MudIconButton @onclick="@(()=> DeleteNoMID(context.PaymentMemoID))" Color="Color.Error" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                }
+                                <MudTooltip Text="Print Protocol">
+                                    <MudIconButton OnClick="@(()=> Print(context.PaymentMemoID))" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+                            else if (@context.AuthLevelId != 100)
+                            {
+                                @if (@context.AuthLevelId < 99)
+                                {
+                                    <MudTooltip Text="Verify Protocol">
+                                        <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                }
+                                @if (@context.AuthLevelId == null)
+                                {
+                                    <MudTooltip Text="Edit Parameters">
+                                        <MudIconButton OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                }
+                            }
+
+                            <MudTooltip Text="Inspect Details">
+                                <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
 
 @code {
 
-    protected override List<PaymentMemoModel> collection { get; set; } = new List<PaymentMemoModel>();
+    private bool _isLoading = true;  
+
+    protected override List<PaymentMemoModel> _collection { get; set; } = new List<PaymentMemoModel>();
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
     {
@@ -102,19 +141,19 @@
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
-    {
+    {        
         interbranch = true;
         await base.OnInitializedAsync();       
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var UserID = authprov.User.Identity.Name;
 
-        if (id != null && collection != null && collection.Any(g => g.PaymentMemoID == id))
+        if (id != null && _collection != null && _collection.Any(g => g.PaymentMemoID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.PaymentMemoID == id), true);
-        }
-
-    }
+            await OpenForm(_collection.FirstOrDefault(s => s.PaymentMemoID == id), true);
+        }       
+        _isLoading = false;
+    } 
 
     // Method to open the dialog for adding or editing a payment memo
     protected override async Task OpenForm(PaymentMemoModel ppm, bool ReadOnly, bool DisableAddition = false)
@@ -128,14 +167,13 @@
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ppm.Clone());
         parms.Add("ReadOnly", ReadOnly);
-        var dialog = dialogService.Show<InterBranchPaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var dialog = await dialogService.ShowAsync<InterBranchPaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
         if (!result.Canceled)
         {
             var ReturnData = (PaymentMemoModel)result.Data;
         }
-        LoadData(ShowApproved, NumberOfRecords);
-        await Task.Delay(200);
+        await _table.ReloadServerData();
         _busy = false;
     }
    
@@ -144,14 +182,14 @@
     {
         try
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 "There are no Financial entries against this entry. Are you sure, you want to delete ?");
             if (result == true)
             {
                 Iservice.Delete(PaymentMemoID, UserID); // Delete the payment memo
                 snackbar.Add("Deleted Successfully", Severity.Success);
-                LoadData(ShowApproved, NumberOfRecords);
+                await _table.ReloadServerData(); // Reload the table data
             }
         }
         catch (Exception ex)
@@ -171,6 +209,7 @@
         parameters.Add("ReportName", "PrintPaymentMemo");
 
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+        var result = await DialogService.ShowAsync<PrintDialog>("PRINT", parameters, maxWidth);
     }
 }
+

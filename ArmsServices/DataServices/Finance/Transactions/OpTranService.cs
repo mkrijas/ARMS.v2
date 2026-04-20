@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -32,7 +32,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
                new SqlParameter("@CreditCoaID", model.CreditCoaID),
                new SqlParameter("@Area", model.Area),
-               new SqlParameter("@JobCardID", model.JobCardID),
+               new SqlParameter("@WorkOrderID", model.JobCardID),
                new SqlParameter("@PaymentArdCode", model.PaymentArdCode),
                new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@TruckID", model.TruckID),
@@ -218,7 +218,7 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
                 Area = dr.GetString("Area"),
-                JobCardID = dr.GetInt32("JobCardID"),
+                JobCardID = dr.GetInt32("WorkOrderID"),
                 PaymentArdCode = dr.GetString("PaymentArdCode"),
                 PaymentMode = dr.GetString("PaymentMode"),
                 TruckID = dr.GetInt32("TruckID"),
@@ -287,6 +287,32 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
+        }
+
+        public PagedResult<OpTranModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved)
+        {
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Searchterm", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+            };
+            List<OpTranModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+            return new PagedResult<OpTranModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
         }
     }
 }

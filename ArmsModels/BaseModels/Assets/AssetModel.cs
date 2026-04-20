@@ -81,6 +81,7 @@ namespace ArmsModels.BaseModels
                 return BookValue - SalvageValue;
             }
         }
+        public virtual decimal? CumulatedDepreciation { get; set; }
         public bool Scrap { get; set; } = false;
         public string Status { get; set; } //Scrap,Dismantled,Sold,Revaluated        
         public UserInfoModel UserInfo { get; set; } = new();

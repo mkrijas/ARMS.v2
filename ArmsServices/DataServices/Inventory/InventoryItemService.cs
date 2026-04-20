@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -211,7 +211,7 @@ namespace ArmsServices.DataServices
             {
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 Odometer = dr.GetInt32("Odometer"),
-                JobCardID = dr.GetInt32("JobCardID"),
+                JobCardID = dr.GetInt32("WorkOrderID"),
                 JobcardNumber = dr.GetInt32("JobcardNumber"),
                 
             };

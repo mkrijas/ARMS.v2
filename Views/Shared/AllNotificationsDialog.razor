@@ -1,0 +1,217 @@
+@using ArmsModels.BaseModels.General
+@using ArmsServices.DataServices.General
+@inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
+@inject IPushNotificationService IpushNotificationService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider auth
+
+<MudDrawer @bind-Open="@IsDrawerOpen" 
+           Anchor="Anchor.Right" 
+           Elevation="25" 
+           Variant="@DrawerVariant.Temporary"
+           Width="600px"
+           CloseOnEscapeKey="true"
+           PreserveOpenState="false"
+           DisableOverlay="true"
+           Style="z-index: 999999999 !important; position: fixed !important;">
+    
+    <MudDrawerHeader Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <div class="d-flex justify-space-between align-center" style="width: 100%;">
+            <div class="d-flex align-center gap-2">
+                <MudIcon Icon="@Icons.Material.Filled.Notifications" Size="Size.Medium" />
+                <MudText Typo="Typo.h6">All Notifications</MudText>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                          Color="Color.Inherit" 
+                          OnClick="@CloseDrawer" />
+        </div>
+    </MudDrawerHeader>
+    
+    <MudContainer Style="max-height: calc(100vh - 180px); overflow-y: auto; padding: 16px;">
+        @if (AllNotifications.Any())
+        {
+            <MudList T="string" Clickable="false" DisablePadding="true">
+                @foreach (var notification in AllNotifications)
+                {
+                    <div class="px-4 py-3 mb-2 rounded" 
+                         style="background: white; border: 1px solid #f0f0f0; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div class="d-flex justify-space-between align-start mb-1">
+                            <div class="d-flex align-center gap-2">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Warning" />
+                                <MudText Typo="Typo.subtitle2" Style="font-weight: 600; color: #2c3e50;">@notification.MessageTitle</MudText>
+                            </div>
+                            <MudText Typo="Typo.caption" Style="color: #999; font-size: 0.7rem;">@notification.MessageTimeSpan</MudText>
+                        </div>
+
+                        <MudText Typo="Typo.body2" Class="mb-2" Style="color: #555; line-height: 1.4;">@notification.MessageBody</MudText>
+
+                        <div class="d-flex justify-space-between align-center mt-2">
+                            @if (!string.IsNullOrEmpty(notification.PageToRedirectLink))
+                            {
+                                <MudButton Variant="Variant.Text" 
+                                           Color="Color.Primary" 
+                                           Size="Size.Small" 
+                                           OnClick="@(() => RedirectToLink(notification.PageToRedirectLink, notification.DocumentID))" 
+                                           Style="padding-left: 0; text-transform: none; font-weight: 600;">
+                                    View Details
+                                </MudButton>
+                            }
+                            else
+                            {
+                                <div></div>
+                            }
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Success" 
+                                       Size="Size.Small" 
+                                       OnClick="@(() => MarkAsRead(notification.MessageID))"
+                                       StartIcon="@Icons.Material.Filled.CheckCircle"
+                                       Style="text-transform: none;">
+                                Mark as Read
+                            </MudButton>
+                        </div>
+                    </div>
+                }
+            </MudList>
+        }
+        else
+        {
+            <div class="d-flex flex-column align-center justify-center py-12">
+                <div style="background: #f5f5f5; border-radius: 50%; padding: 20px; margin-bottom: 16px;">
+                    <MudIcon Icon="@Icons.Material.Outlined.NotificationsNone" Size="Size.Large" Color="Color.Default" style="font-size: 3rem; opacity: 0.5;" />
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #888; font-weight: 500;">All caught up!</MudText>
+                <MudText Typo="Typo.body2" Style="color: #aaa;">No notifications to display.</MudText>
+            </div>
+        }
+    </MudContainer>
+    
+    <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; background: white; border-top: 1px solid #eee;">
+        @if (AllNotifications.Any())
+        {
+            <MudButton OnClick="AcknowledgeAll" 
+                       Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       FullWidth="true"
+                       StartIcon="@Icons.Material.Filled.DoneAll">
+                Acknowledge All
+            </MudButton>
+        }
+    </div>
+</MudDrawer>
+
+<script>
+    window.freezeBodyScroll = function(freeze) {
+        if (freeze) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    };
+</script>
+
+@code {
+    [Parameter]
+    public bool IsDrawerOpen { get; set; }
+    
+    [Parameter]
+    public EventCallback<bool> IsDrawerOpenChanged { get; set; }
+    
+    [Parameter]
+    public List<PushNotificationModel> AllNotifications { get; set; } = new();
+    
+    [Parameter]
+    public EventCallback OnNotificationsChanged { get; set; }
+    
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Ensure scroll state is updated when drawer state changes
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("freezeBodyScroll", IsDrawerOpen);
+        }
+        catch
+        {
+            // Ignore JS interop errors during prerendering
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("freezeBodyScroll", IsDrawerOpen);
+        }
+        catch
+        {
+            // Ignore JS interop errors
+        }
+    }
+
+    private async Task CloseDrawer()
+    {
+        IsDrawerOpen = false;
+        await IsDrawerOpenChanged.InvokeAsync(false);
+        await JSRuntime.InvokeVoidAsync("freezeBodyScroll", false);
+    }
+
+    private async Task MarkAsRead(int? messageID)
+    {
+        if (messageID == null) return;
+
+        var notification = AllNotifications.FirstOrDefault(n => n.MessageID == messageID);
+        if (notification != null && await Irole.HasClaim(notification.DocumentTypeID.ToString(), "View"))
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var userID = user.Identity.Name;
+
+            IpushNotificationService.AknowledgedCurrentItem(messageID, userID);
+            AllNotifications.Remove(notification);
+            
+            await OnNotificationsChanged.InvokeAsync();
+            StateHasChanged();
+        }
+        else
+        {
+            await DialogService.ShowMessageBoxAsync("Permission denied!", "You don't have permission to acknowledge.");
+        }
+    }
+
+    private async Task AcknowledgeAll()
+    {
+        if (!AllNotifications.Any()) return;
+
+        string messageIDs = string.Join(",", AllNotifications.Select(d => d.MessageID).ToList());
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var userID = user.Identity.Name;
+
+        IpushNotificationService.AknowledgedSelectedItems(messageIDs, userID);
+        AllNotifications.Clear();
+        
+        await OnNotificationsChanged.InvokeAsync();
+        IsDrawerOpen = false;
+        await IsDrawerOpenChanged.InvokeAsync(false);
+        await JSRuntime.InvokeVoidAsync("freezeBodyScroll", false);
+    }
+
+    private async Task RedirectToLink(string redirectToLink, int? documentID)
+    {
+        if (!string.IsNullOrEmpty(redirectToLink))
+        {
+            if (documentID != null && documentID != 0)
+            {
+                redirectToLink = redirectToLink + "/" + documentID?.ToString() ?? "";
+            }
+            NavigationManager.NavigateTo(redirectToLink);
+            IsDrawerOpen = false;
+            await IsDrawerOpenChanged.InvokeAsync(false);
+            await JSRuntime.InvokeVoidAsync("freezeBodyScroll", false);
+        }
+    }
+}
+

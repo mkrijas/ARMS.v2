@@ -1,71 +1,101 @@
-﻿@page "/Receipt"
+@page "/Receipt"
 @page "/Receipt/{id:int}"
 @inherits ViewComponentBase<ReceiptModel>
 @inject IReceiptService Iservice
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Receipt</MudText>
-                <MudTooltip Text="Add Receipt">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new ReceiptModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Receipt..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
-                </MudTextField>
-                <div class="tablefont">
-                    <span style="margin-right: 10px;">Maximum Records: </span>
-                </div>
-                <MudItem xs="1">
-                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
-                </MudItem>
-                <MudCheckBox Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.DocumentDate)" >Document Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.ReceiptID)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.PartyInfo.TradeName)">Party</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.TotalAmount)" >Total Amount</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
+
+<div class="fade-in">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">Receipts</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Record and manage incoming payments from parties and customers. Ensure accurate financial reconciliation and verification.</MudText>
+            </div>
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenForm(new ReceiptModel(),false))" Disabled="@_busy">NEW RECEIPT</MudButton>
+        </div>
+    </div>
+
+    <div class="admin-glass-card mb-6 pa-4">
+        <div class="d-flex align-center gap-4 flex-wrap">
+            <div style="flex-grow: 1; min-width: 300px;">
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search by receipt #, party, or amount..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
+            </div>
+            <div class="d-flex align-center gap-4">                
+                <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="fw-600" />
+            </div>
+        </div>
+    </div>
+    <div class="admin-glass-card pa-0 overflow-hidden">
+                <MudTable ServerData="LoadServerData" T="ReceiptModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
+                    <LoadingContent>
+                        <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                            <LoaderComponent IsFullScreen="false"
+                                             ShowLogo="false"
+                                             Size="large"
+                                             LoadingText="Loading...."
+                                             SubText="Fetching Data..." />
+                        </div>
+                    </LoadingContent>
+                    <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.ReceiptID)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">RECEIPT NUMBER</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.PartyInfo.TradeName)"><span class="admin-header-text">PARTY / CUSTOMER</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.TotalAmount)"><span class="admin-header-text">TOTAL AMOUNT</span></MudTableSortLabel></MudTh>
+                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
-                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber
-                    @if (context.AuthLevelId == 100)
-                    {
-                        <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
-                    }
+                <MudTd DataLabel="Date"><span class="fw-500">@context.DocumentDate?.ToString("dd MMM yyyy")</span></MudTd>
+                <MudTd DataLabel="DocumentNumber">
+                    <div class="d-flex flex-column">
+                        <span class="admin-td-primary fw-700">@context.DocumentNumber</span>
+                        @if (context.AuthLevelId == 100)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Error" Class="fw-700">REJECTED</MudText>
+                        }
+                    </div>
                 </MudTd>
-                <MudTd DataLabel="Party">@context.PartyInfo.TradeName </MudTd>
-                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
-                <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.ReceiptID))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
-
+                <MudTd DataLabel="Party"><span class="fw-600">@context.PartyInfo.TradeName</span></MudTd>
+                <MudTd DataLabel="TotalAmount">
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="fw-700">@context.TotalAmount?.ToString("N2")</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Actions" Style="text-align: right;">
                     @if (@context.AuthLevelId == 99)
                     {
-                        <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.ReceiptID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                        <EntryReversedComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="@context.ReceiptID" MID="@context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
                     }
                     else if (@context.AuthLevelId != 100)
                     {
-                        <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                        <MudTooltip Text="Verify Receipt">
+                            <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
                     }
+
+                    <MudTooltip Text="View Details">
+                        <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                    </MudTooltip>
+                    
+                    <MudTooltip Text="Edit Receipt">
+                        <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                    </MudTooltip>
+
+                    <MudTooltip Text="Remove Receipt">
+                        <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.ReceiptID))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                    </MudTooltip>
                 </MudTd>
             </RowTemplate>
             <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                <MudItem xs="12" md="9"> </MudItem><MudItem xs="12" md="3">
-                </MudItem>
+                <div class="pa-4">
+                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                </div>
             </PagerContent>
         </MudTable>
-    </MudItem>
-</MudGrid>
+    </div>
+</div>
 
-@code {
+
+@code {   
    
-    protected override List<ReceiptModel> collection { get; set; } = new List<ReceiptModel>();
+    protected override List<ReceiptModel> _collection { get; set; } = new List<ReceiptModel>();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 14,
@@ -74,14 +104,16 @@
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
-    {
+    {       
         await base.OnInitializedAsync();
 
-        if (id != null && collection != null && collection.Any(g => g.ReceiptID == id))
+        if (id != null && _collection != null && _collection.Any(g => g.ReceiptID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.ReceiptID == id), true);
-        }
+            await OpenForm(_collection.FirstOrDefault(s => s.ReceiptID == id), true);
+        }       
+        _isLoading = false;
     }
+    
 
     // Method to open the receipt form for adding or editing a receipt
     protected override async Task OpenForm(ReceiptModel rModel, bool ReadOnly, bool DisableAddition = false)
@@ -95,16 +127,15 @@
         DialogParameters parms = new DialogParameters();
         parms.Add("model", rModel.Clone());
         parms.Add("ReadOnly", ReadOnly);
-        parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
-        var dialog = dialogService.Show<ReceiptDialog>(rModel.ReceiptID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, async() => await _table.ReloadServerData() ));
+        var dialog = await dialogService.ShowAsync<ReceiptDialog>(rModel.ReceiptID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
         if (!result.Canceled)
         {
             var ReturnData = (ReceiptModel)result.Data;
-        }
-        LoadData(ShowApproved, NumberOfRecords);
-        await Task.Delay(200);
-        _busy = false;
+            await _table.ReloadServerData();
+        }    
 
+        _busy = false;
     }
 }

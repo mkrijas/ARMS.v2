@@ -1,4 +1,4 @@
-﻿@using System.Threading;
+@using System.Threading;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IPlaceService Iservice
@@ -7,25 +7,34 @@
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <DialogContent>
-        <EditForm id="placeForm" Model="@placemodel" OnValidSubmit="OnValidSubmit">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-            <MudTextField @bind-Value="@placemodel.PlaceName" Label="Place" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => placemodel.PlaceName)"></MudTextField>
-            <MudNumericField HideSpinButtons="true" MaxLength="6" @bind-Value="@placemodel.PinCode" Label="PinCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => placemodel.PinCode)"></MudNumericField>
-            <MudAutocomplete T="DistrictModel" Label="District" @bind-Value="@placemodel.District" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.DistrictName}")"
-                             Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Rounded.Add" OnAdornmentClick="OpenDistrictDialog" Immediate="true">
-                <NoItemsTemplate>
-                    Create new District
-                </NoItemsTemplate>
-            </MudAutocomplete>
-        </EditForm>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Disabled="@_busy" form="placeForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Place</MudButton>
-    </DialogActions>
-</MudDialog>
+<DialogForm @ref="@dialogForm" Title="Place" Subtitle="Register or update city/town information in the master list." Icon="@Icons.Material.Filled.Map" AdminStyle="true" formID="placeForm" model="@placemodel" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper pa-4">
+            <EditForm id="placeForm" Model="@placemodel" OnValidSubmit="OnValidSubmit">
+                <div class="admin-glass-card pa-6">
+                    <DataAnnotationsValidator />
+                    <MudValidationSummary />
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="@placemodel.PlaceName" Label="Place Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => placemodel.PlaceName)" Class="modern-input"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudNumericField HideSpinButtons="true" MaxLength="6" @bind-Value="@placemodel.PinCode" Label="Pin Code" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => placemodel.PinCode)" Class="modern-input"></MudNumericField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudAutocomplete T="DistrictModel" Label="District" @bind-Value="@placemodel.District" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.DistrictName}")"
+                                             Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Rounded.Add" OnAdornmentClick="OpenDistrictDialog" Immediate="true" Class="modern-input">
+                                <NoItemsTemplate>
+                                    Create new District
+                                </NoItemsTemplate>
+                            </MudAutocomplete>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+            </EditForm>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
 
@@ -33,7 +42,7 @@
     public PlaceModel placemodel { get; set; }
     public IEnumerable<PlaceModel> places { get; set; }
     private List<DistrictModel> districts = new List<DistrictModel>();
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
     private bool _busy;
 
     public bool HasPermissionPlaceServiceEdit { get; set; } = false;
@@ -47,7 +56,7 @@
         districts = Idistrict.Select(0).ToList();
     }
 
-    private async Task<IEnumerable<DistrictModel>> Search(string searchString)
+    private async Task<IEnumerable<DistrictModel>> Search(string searchString, CancellationToken token)
     {
         return await Task.FromResult(districts.Where(x => x.DistrictName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
@@ -79,7 +88,7 @@
                 {
                     string placeNames = string.Join(", ", places.Select(p => p.PlaceName));
 
-                    bool? result = await DialogService.ShowMessageBox(
+                    bool? result = await DialogService.ShowMessageBoxAsync(
                         "Warning !",
                         "These places have the same pin code: " + placeNames + " Are you sure you want to update it?");
                     if (result == true)
@@ -88,7 +97,7 @@
                         placemodel = await Iservice.Update(placemodel);
                         placemodel = new PlaceModel();
                         snackbar.Add("Saved Successfully", Severity.Success);
-                        MudDialog.Close(placemodel);
+                        dialogForm.Close(placemodel);
                     }
                 }
                 else
@@ -96,7 +105,7 @@
                     placemodel = await Iservice.Update(placemodel);
                     placemodel = new PlaceModel();
                     snackbar.Add("Saved Successfully", Severity.Success);
-                    MudDialog.Close(placemodel);
+                    dialogForm.Close(placemodel);
                 }
 
             }
@@ -109,7 +118,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit Place.");
         }
@@ -119,7 +128,7 @@
     {
         DialogParameters parms = new DialogParameters();
         parms.Add("model", new DistrictModel());
-        var dialog = DialogService.Show<DistrictDialogue>("Add District", parms);
+        var dialog = await DialogService.ShowAsync<DistrictDialogue>("Add District", parms);
         var result = await dialog.Result;
         if (!result.Canceled)
         {

@@ -1,0 +1,222 @@
+@page "/inventorydashboard"
+@using ArmsModels.BaseModels
+@using ArmsServices.DataServices
+@inject IInventoryGrnService GrnService
+@inject IStoreService StoreService
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider auth
+
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 500px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="large" 
+                        LoadingText="Loading Inventory Dashboard" 
+                        SubText="Fetching inventory data..." />
+    </div>
+}
+else
+{
+<div class="admin-page-container fade-in">
+    <div class="admin-header-tiered mb-6">
+        <MudText Typo="Typo.h4" Class="admin-title">Inventory Overview</MudText>
+        <div class="title-accent"></div>
+    </div>
+
+    <!-- 1. Summary Cards -->
+    <MudGrid Class="mb-4">
+        <!-- Pending GRNs -->
+        <MudItem xs="12" sm="6" md="3">
+             <MudPaper Class="premium-card pa-5 d-flex flex-column gap-3">
+                 <div class="d-flex justify-space-between align-center">
+                     <div class="icon-badge bg-warning-light" style="color: #FF9F43;">
+                        <MudIcon Icon="@Icons.Material.Filled.AssignmentReturn" />
+                     </div>
+                     <MudText Typo="Typo.caption" Class="label-caps">Pending GRNs</MudText>
+                 </div>
+                 <div>
+                    <MudText Typo="Typo.h4" Class="admin-title" Style="color: #FF9F43;">@PendingGrnCount</MudText>
+                    <MudText Typo="Typo.caption" Class="admin-subtitle">Awaiting Approval</MudText>
+                 </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Active Stores -->
+        <MudItem xs="12" sm="6" md="3">
+             <MudPaper Class="premium-card pa-5 d-flex flex-column gap-3">
+                 <div class="d-flex justify-space-between align-center">
+                     <div class="icon-badge primary-badge">
+                        <MudIcon Icon="@Icons.Material.Filled.Store" />
+                     </div>
+                     <MudText Typo="Typo.caption" Class="label-caps">Active Stores</MudText>
+                 </div>
+                 <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">@ActiveStoresCount</MudText>
+                    <MudText Typo="Typo.caption" Class="admin-subtitle">Warehouses</MudText>
+                 </div>
+            </MudPaper>
+        </MudItem>
+
+         <!-- Recent GRN Value -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="premium-card pa-5 d-flex flex-column gap-3">
+                 <div class="d-flex justify-space-between align-center">
+                     <div class="icon-badge bg-success-light" style="color: #28C76F;">
+                        <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
+                     </div>
+                     <MudText Typo="Typo.caption" Class="label-caps">Recent GRN Value</MudText>
+                 </div>
+                 <div>
+                    <MudText Typo="Typo.h4" Class="admin-title" Style="color: #28C76F;">@RecentGrnValue.ToString("C0")</MudText>
+                    <MudText Typo="Typo.caption" Class="admin-subtitle">Latest Inflow (Pending)</MudText>
+                 </div>
+            </MudPaper>
+        </MudItem>
+        
+        <!-- Placeholder for Low Stock -->
+        <!-- Invoices to Process -->
+         <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="premium-card pa-5 d-flex flex-column gap-3">
+                 <div class="d-flex justify-space-between align-center">
+                     <div class="icon-badge primary-badge" style="background: rgba(0, 207, 221, 0.1); color: #00CFDD;">
+                        <MudIcon Icon="@Icons.Material.Filled.Receipt" />
+                     </div>
+                     <MudText Typo="Typo.caption" Class="label-caps">Invoices to Process</MudText>
+                 </div>
+                 <div>
+                    <MudText Typo="Typo.h4" Class="admin-title" Style="color: #00CFDD;">@PendingInvoiceCount</MudText>
+                    <MudText Typo="Typo.caption" Class="admin-subtitle">GRNs Ready for Invoice</MudText>
+                 </div>
+            </MudPaper>
+        </MudItem>
+
+    </MudGrid>
+
+    <MudGrid>
+        <!-- Recent GRNs Table -->
+        <MudItem xs="12" md="8">
+            <MudPaper Class="premium-card pa-5" Style="height: 100%;">
+                <div class="d-flex justify-space-between align-center mb-6">
+                     <MudText Typo="Typo.h6" Class="admin-title">Recent GRNs</MudText>
+                     <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => NavManager.NavigateTo("/InventoryGrn"))" Class="action-btn-primary">View All</MudButton>
+                </div>
+                
+                <MudTable Items="@RecentGrns" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Elevation="0" Class="modern-admin-table">
+                    <HeaderContent>
+                        <MudTh>GRN #</MudTh>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Vendor</MudTh>
+                        <MudTh>Store</MudTh>
+                        <MudTh Style="text-align:right">Value</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="GRN" Class="admin-td-primary">@context.GrnNo</MudTd>
+                        <MudTd DataLabel="Date" Class="admin-td-secondary">@context.EntryDate?.ToString("dd MMM yyyy")</MudTd>
+                        <MudTd DataLabel="Vendor" Class="admin-td-secondary">@context.PartyName</MudTd>
+                        <MudTd DataLabel="Store" Class="admin-td-secondary">@context.Store?.StoreName</MudTd>
+                        <MudTd DataLabel="Value" Style="text-align:right" Class="admin-td-amount">@context.TotalValue?.ToString("N2")</MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip T="string" Size="Size.Small" Class="@(context.AuthStatus == "Approved" ? "admin-chip-approved" : "admin-chip-pending")">
+                                @(context.AuthStatus == "Approved" ? "Approved" : "Pending")
+                            </MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+
+        <!-- GRN by Store Chart -->
+        <MudItem xs="12" md="4">
+            <MudPaper Class="premium-card pa-5" Style="height: 100%;">
+                <MudText Typo="Typo.h6" Class="admin-title mb-6">Incoming by Store</MudText>
+                 @if (ChartData.Sum() > 0)
+                {
+                     <MudChart T="double" ChartType="ChartType.Donut" ChartSeries="@ChartSeries" ChartLabels="@ChartLabels" Width="100%" Height="300px" />
+                }
+                else
+                {
+                     <div class="d-flex justify-center align-center" style="height: 300px;">
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">No Data Available</MudText>
+                     </div>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</div>
+}
+
+@code {
+    private bool _isLoading = false;
+    private DateTime _loadStartTime;
+    private int BranchID;
+
+    // Metrics
+    private int PendingGrnCount = 0;
+    private int ActiveStoresCount = 0;
+    private decimal RecentGrnValue = 0;
+    private int PendingInvoiceCount = 0;
+
+    // Data
+    private List<InventoryGrnModel> RecentGrns = new();
+
+    // Chart
+    public double[] ChartData = { };
+    public string[] ChartLabels = { };
+    public List<ChartSeries<double>> ChartSeries = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        await Task.Yield();
+        _loadStartTime = DateTime.Now;
+        await LoadData();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
+    }
+
+    private async Task LoadData()
+    {      
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User; 
+        var claim = User.Claims.FirstOrDefault(x => x.Type == "BranchID");
+        if (claim == null) return;
+        string BranchIDString = claim.Value;
+        BranchID = int.Parse(BranchIDString);
+
+        // 1. Pending GRNs
+        var pendingGrns = GrnService.SelectPending(BranchID).ToList();
+        PendingGrnCount = pendingGrns.Count;
+        RecentGrnValue = pendingGrns.Sum(x => x.TotalValue ?? 0);
+        RecentGrns = pendingGrns.OrderByDescending(x => x.EntryDate).Take(5).ToList();
+
+        // 2. Active Stores
+        var stores = StoreService.SelectByBranch(BranchID).ToList();
+        ActiveStoresCount = stores.Count;
+
+        // 3. Pending Invoices
+        var pendingInvoices = GrnService.PendingToInvoice(BranchID).ToList();
+        PendingInvoiceCount = pendingInvoices.Count;
+
+        // 4. Chart Data (Pending GRNs by Store)
+        // Group by StoreName
+        var grouped = pendingGrns
+            .GroupBy(x => x.Store?.StoreName ?? "Unknown")
+            .Select(g => new { Store = g.Key, Count = g.Count() })
+            .ToList();
+        
+        ChartLabels = grouped.Select(x => x.Store).ToArray();
+        ChartData = grouped.Select(x => (double)x.Count).ToArray();
+        ChartSeries = new List<ChartSeries<double>> { new ChartSeries<double> { Name = "GRNs", Data = ChartData } };
+    }
+}

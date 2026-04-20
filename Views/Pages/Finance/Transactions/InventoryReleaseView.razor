@@ -1,4 +1,4 @@
-﻿@page "/InventoryReleaseView"
+@page "/InventoryReleaseView"
 @page "/InventoryReleaseView/{id:int}"
 @using ArmsModels.BaseModels.Finance.Transactions;
 @using ArmsServices.DataServices.Finance.Transactions;
@@ -14,72 +14,137 @@
 @inject IDialogService DialogService
 @inject IInventoryReleaseService Iservice
 
-<MudItem xs="12">
-    <MudPaper Style="margin-bottom: 20px; padding: 20px;">
-        <StoreSelector Value="SelectedStore" ValueChanged="StoreChanged" BranchID="@branchID.Value"></StoreSelector>
-    </MudPaper>
-</MudItem>
 
-@if (SelectedStore != null && SelectedStore.StoreID != null)
-{
-    <MudGrid Spacing="4">
-        <MudItem xs="12">
-            <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5" Filter="new Func<InventoryReleaseModel, bool>(search)">
-                <ToolBarContent>
-                    <MudText Typo="Typo.h6">Inventory Release </MudText>
-                    <MudTooltip Text="New Inventory Release">
-                        <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                    </MudTooltip>
-                    <MudSpacer></MudSpacer>
-                    <MudTextField @bind-Value="searchInventoryRelease" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                    <MudCheckBox Label="Approved Entries" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-                </ToolBarContent>
-                <HeaderContent>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.RID)" InitialDirection="SortDirection.Descending">Document Date</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Store.StoreName)">Store Name</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Jobcard.JobcardNumber)">Jobcard Number</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Truck.RegNo)">Truck Reg No</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Status)">Status</MudTableSortLabel></MudTh>
-                    <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                    <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
-                    <MudTd DataLabel="Store Name">@context.Store.StoreName</MudTd>
-                    <MudTd DataLabel="Jobcard Number">@context.Jobcard.JobcardNumber</MudTd>
-                    <MudTd DataLabel="Truck Reg No">@context.Truck.RegNo</MudTd>
-                    <MudTd DataLabel="Status">@context.Status</MudTd>
-                    <MudTd DataLabel="">
-                        <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                        <MudIconButton Disabled="@(context.AuthLevelId != null || context.Status != "Pending" || context.NatureOfTransaction == "Mounting")" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
+<div class="fade-in">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">Inventory Outflow | Stock Dispatch Terminal</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Administrative control center for inventory releases and stock fulfillment. Monitor dispatch logs, verify jobcard allocations, and manage operational outflow through specialized terminal nodes to ensure seamless supply chain execution.</MudText>
+            </div>
+        </div>
+    </div>
 
-                        @if (@context.AuthLevelId == 99)
-                        {
-                            @if (context.MID != null)
-                            {
-                                <EntryReversedComponent DocTypeID="InventoryReleaseDocTypeID" DocumentID="context.RID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
-                            }
-                            else
-                            {
-                                <MudIconButton @onclick="@(()=> ReverseInventoryRelease(context))" Color="Color.Error" Title="Reverse Entry" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Class="ml-2" Variant="Variant.Filled" />
-                            }
-                        }
-                        else if (@context.AuthLevelId != 100)
-                        {
-                            <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="View authentication Status" Size="Size.Small" Variant="Variant.Filled" />
-                        }
-                    </MudTd>
-                </RowTemplate>
-                <PagerContent>
-                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                </PagerContent>
-            </MudTable>
-        </MudItem>
-    </MudGrid>
-}
+    <div class="admin-glass-card mb-6 pa-6">
+        <div class="d-flex align-center gap-6 flex-wrap">
+            <div style="flex-grow: 1; min-width: 350px;">
 
+                <StoreSelector Value="SelectedStore" ValueChanged="StoreChanged" BranchID="@branchID.Value" Class="admin-input-group" />
+            </div>
+            @if (SelectedStore != null && SelectedStore.StoreID != null)
+            {
+                <div class="admin-icon-square-vibrant small accent-indigo clickable" @onclick="@(() => OpenDialog(null))">
+                    <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                </div>
+            }
+        </div>
+    </div>
+    @if (_isLoading)
+    {
+        <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+            <LoaderComponent IsFullScreen="false"
+                             ShowLogo="false"
+                             Size="medium"
+                             LoadingText="Aggregating Outflow Data"
+                             SubText="Loading dispatch records..." />
+        </div>
+    }
+    else
+    {
+        @if (SelectedStore != null && SelectedStore.StoreID != null)
+        {
+            <div class="admin-glass-card pa-0 overflow-hidden shadow-sm">
+                <div class="bg-indigo-lighten-5 px-6 py-3 border-b d-flex align-center justify-space-between">
+                    <div class="d-flex align-center gap-2">
+                        <div class="admin-icon-square-vibrant tiny accent-indigo">
+                            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
+                        </div>
+                        <MudText Typo="Typo.subtitle2" Class="fw-700 text-indigo uppercase">Release Ledger: @SelectedStore.StoreName</MudText>
+                    </div>
+                    <div class="d-flex align-center gap-4">
+                        <MudTextField @bind-Value="searchInventoryRelease" Placeholder="Search by doc or reg..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Text" Margin="Margin.Dense" Class="admin-input-group-search" Style="max-width: 250px;" Clearable="true" />
+                        <MudCheckBox Label="INCLUDE APPROVED" ValueChanged="((bool value) => ApprovedChanged(value))" Value="@IsApproved" Size="Size.Small" Color="Color.Primary" Class="fw-800 opa-70" />
+                    </div>
+                </div>
+
+                <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true" T="InventoryReleaseModel" Filter="new Func<InventoryReleaseModel, bool>(search)">
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x => x.DocumentDate)"><span class="admin-header-text">RELEASE DATE</span></MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x => x.DocumentNumber)"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x => x.Jobcard?.JobcardNumber)"><span class="admin-header-text">JOBCARD</span></MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x => x.Truck?.RegNo)"><span class="admin-header-text">ASSET REG</span></MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x => x.Status)"><span class="admin-header-text">STATUS</span></MudTableSortLabel></MudTh>
+                        <MudTh Style="text-align: right;"><span class="admin-header-text pr-4">ACTIONS</span></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Date">
+                            <div class="d-flex align-center gap-2">
+                                <span class="fw-700 admin-td-primary">@context.DocumentDate?.ToString("dd MMM yyyy")</span>
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="DocNo">
+                            <span class="fw-800 text-indigo small">@context.DocumentNumber</span>
+                        </MudTd>
+                        <MudTd DataLabel="Jobcard">
+                            <div class="d-flex align-center gap-1">
+                                <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small" Class="opa-40" />
+                                <span class="fw-600">@context.Jobcard?.JobcardNumber</span>
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Truck">
+                            <MudChip T="string" Color="Color.Default" Size="Size.Small" Variant="Variant.Text" Class="fw-800 opa-50">@context.Truck?.RegNo</MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Status">
+                            <div class="admin-status-chip @(context.Status == "Approved" || context.AuthLevelId == 99 ? "approved" : "pending")">
+                                @context.Status?.ToUpper()
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Actions" Style="text-align: right;">
+                            <div class="d-flex justify-end gap-1 mb-1">
+                                <MudTooltip Text="Inspect Manifest">
+                                    <MudIconButton OnClick="@(() => OpenDialog(context, true))" Color="Color.Primary" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+
+                                <MudTooltip Text="Purge Record">
+                                    <MudIconButton Disabled="@(context.AuthLevelId != null || context.Status != "Pending" || context.NatureOfTransaction == "Mounting")" OnClick="@(() => Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+
+                                @if (@context.AuthLevelId == 99)
+                                {
+                                    @if (context.MID != null)
+                                    {
+                                        <EntryReversedComponent DocTypeID="@InventoryReleaseDocTypeID" DocumentID="@context.RID" MID="@context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                                    }
+                                    else
+                                    {
+                                        <MudTooltip Text="Rollback Sequence">
+                                            <MudIconButton @onclick="@(() => ReverseInventoryRelease(context))" Color="Color.Error" Icon="@Icons.Material.Filled.SettingsBackupRestore" Size="Size.Small" Variant="Variant.Text" />
+                                        </MudTooltip>
+                                    }
+                                }
+                                else if (@context.AuthLevelId != 100 && @context.AuthLevelId != null)
+                                {
+                                    <MudTooltip Text="Verify Authentication">
+                                        <MudIconButton OnClick="@(() => OpenDialog(context, true))" Color="Color.Warning" Icon="@Icons.Material.Filled.GppGood" Size="Size.Small" Variant="Variant.Text" />
+                                    </MudTooltip>
+                                }
+                            </div>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <div class="pa-4">
+                            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                        </div>
+                    </PagerContent>
+                </MudTable>
+            </div>
+        }
+    }
+</div>
 @code {
+
+    private bool _isLoading = false;
+    private DateTime _loadStartTime;
 
     public bool IsApproved { get; set; } = false;
     private List<InventoryReleaseModel> collection = new List<InventoryReleaseModel>();
@@ -95,18 +160,44 @@
 
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionInventoryReleaseServiceDelete = await Irole.HasClaim(InventoryReleaseDocTypeID.ToString(), "Edit", ctc.Token);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-
-        if (id != null)
+        try
         {
-            await Task.Delay(200);
-            var item = Iservice.SelectByID(id); // Get the inventory release by ID
-            SelectedStore = item.Store;
-            await OpenDialog(item, true);
+            _loadStartTime = DateTime.Now;
+            CancellationTokenSource ctc = new CancellationTokenSource();
+            HasPermissionInventoryReleaseServiceDelete = await Irole.HasClaim(InventoryReleaseDocTypeID.ToString(), "Edit", ctc.Token);
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var branchClaim = authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value;
+            branchID = branchClaim != null ? int.Parse(branchClaim) : 0;
+
+            if (id != null)
+            {
+                await Task.Delay(200);
+                var item = Iservice.SelectByID(id);
+                if (item != null)
+                {
+                    SelectedStore = item.Store ?? new();
+                    await OpenDialog(item, true);
+                }
+            }
+            //await EnsureMinimumLoadTime();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Initialization Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+
+        }
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 
@@ -144,8 +235,11 @@
     // Method to handle changes in the selected store
     private void StoreChanged(StoreModel obj)
     {
+        _isLoading = true;
+        StateHasChanged();
         SelectedStore = obj;
         GetAll(IsApproved);
+        _isLoading = false;
     }
 
     // Method to delete an inventory release
@@ -155,7 +249,7 @@
         {
             try
             {
-                bool? result = await DialogService.ShowMessageBox(
+                bool? result = await DialogService.ShowMessageBoxAsync(
                     "Warning !",
                     "Are you sure, you want to delete - " + model.Store.StoreName + " (" + model.Jobcard.JobcardNumber + ") ?");
                 if (result == true)
@@ -174,7 +268,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Delete InventoryRelease.");
         }
@@ -211,7 +305,7 @@
         parms.Add("branchID", branchID);
         parms.Add("ReadOnly", ReadOnly);
         parms.Add("RequestIds", RequestIds);
-        var dialog = DialogService.Show<InventoryReleaseDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var dialog = await DialogService.ShowAsync<InventoryReleaseDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         GetAll(IsApproved);
         await Task.Delay(200);
@@ -222,7 +316,7 @@
     private bool search(InventoryReleaseModel Release)
     {
         if ((Release.DocumentNumber != null && Release.DocumentNumber.Contains(searchInventoryRelease, StringComparison.OrdinalIgnoreCase)) ||
-        (Release.Truck.RegNo != null && Release.Truck.RegNo.Contains(searchInventoryRelease, StringComparison.OrdinalIgnoreCase)))
+        (Release.Truck?.RegNo != null && Release.Truck.RegNo.Contains(searchInventoryRelease, StringComparison.OrdinalIgnoreCase)))
         {
             return true;
         }
@@ -230,7 +324,7 @@
     }
     private async Task ReverseInventoryRelease(InventoryReleaseModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
             "Warning !",
             "This Entry is being cancelled instead of reversed because there no financial entries against it- " + model.Store.StoreName + " (" + model.Jobcard.JobcardNumber + ") ?");
         if (result == true)

@@ -1,72 +1,250 @@
-﻿@inject NavigationManager uriHelper;
+@inject NavigationManager uriHelper;
 @inject IDialogService DialogService
 @inject AuthenticationStateProvider auth
 @inject IUserService _user
+@inject Blazored.SessionStorage.ISessionStorageService _storage
+@inject IJSRuntime JS
 
 <AuthorizeView>
     <Authorized>
-        <MudMenu ActivationEvent="@MouseEvent.MouseOver" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-            <ActivatorContent>
-                <MudChip Icon="@Icons.Material.Outlined.AccountCircle" Color="Color.Primary">
-                    <MudText Typo="Typo.subtitle2">@context.User.Identity.Name!</MudText>
-                </MudChip>
-            </ActivatorContent>
-            <ChildContent>
-                <MudMenuItem OnClick="@(async ()=> await changeBranch(@context.User.Identity.Name))">Change Branch</MudMenuItem>
+        <div class="d-flex align-center gap-3 relative">
+            <!-- Branch Name (Clickable) -->
+            <MudButton OnClick="@(async ()=> await ToggleBranchPopover(context.User.Identity.Name))" 
+                       Variant="Variant.Filled" 
+                       Class="branch-select-btn px-6" 
+                       Ripple="true">
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Class="mr-2"/>
+                 <span class="branch-text">@(context.User.Claims.FirstOrDefault(x => x.Type == "BranchName")?.Value ?? "Select Branch")</span>
+                 <MudIcon Icon="@(_isBranchPopoverOpen ? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)" Size="Size.Small" Class="ml-2"/>
+            </MudButton>
 
-                <MudMenuItem OnClick="@Adminlog">Admin</MudMenuItem>
-                <MudMenuItem>
-                    <form id="form1" method="post" name="Logout" action="/Identity/Account/Manage">
-                        <button type="submit">Manage</button>
-                    </form>
-                </MudMenuItem>
-                <MudDivider></MudDivider>
-                <MudMenuItem>
-                    <form id="form1" method="post" name="Logout" action="UserAccount/Logout">
-                        <button type="submit">SignOut</button>
-                    </form>
-                </MudMenuItem>
-            </ChildContent>
-        </MudMenu>
+            <!-- Modern Branch Selection Drawer/Popover -->
+            <MudPopover Open="@_isBranchPopoverOpen" 
+                        AnchorOrigin="Origin.BottomCenter" 
+                        TransformOrigin="Origin.TopCenter" 
+                        Relative="false"
+                        Duration="0"
+                        Class="@($"pa-4 mt-2 rounded-xl popup-shadow {(_isClosingBranch ? "anim-slide-out-branch" : "anim-slide-in-branch")}")" 
+                        Style="width: 350px; z-index: 100;">
+                
+                <MudText Typo="Typo.h6" Class="mb-3 d-flex align-center" Color="Color.Primary">
+                    <MudIcon Icon="@Icons.Material.Filled.Business" Class="mr-2" />
+                    Select Branch
+                </MudText>
+                
+                <MudTextField @bind-Value="_searchText"
+                              Placeholder="Search branch..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Class="mb-3"
+                              Immediate="true"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              OnKeyUp="FilterBranches" />
+
+                <MudList T="UserBranchRoleModel" Clickable="true" Class="branch-list custom-scrollbar">
+                    @if (_filteredBranches != null && _filteredBranches.Any())
+                    {
+                        @foreach (var item in _filteredBranches)
+                        {
+                            <MudListItem T="UserBranchRoleModel" Value="@item"
+                                         OnClick="@(async () => await SelectBranch(item))"
+                                         Class="@($"rounded-lg mb-1 pa-2 transition-ease {(item.Branch.BranchID == _currentBranchId ? "selected-branch" : "")}")">
+                                 <div class="d-flex align-center">
+                                     <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="mr-3 elevation-2">
+                                         @(!string.IsNullOrEmpty(item.Branch.BranchName) ? item.Branch.BranchName.Substring(0, 1) : "B")
+                                     </MudAvatar>
+                                     <MudText Typo="Typo.body1" Style="font-weight: 500;">@item.Branch.BranchName</MudText>
+                                 </div>
+                            </MudListItem>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Color="Color.Error" Class="mt-2 text-center">
+                            @(string.IsNullOrEmpty(_searchText) ? "Loading..." : "No matching branches found.")
+                        </MudText>
+                    }
+                </MudList>
+            </MudPopover>
+
+            <MudOverlay Visible="@_isBranchPopoverOpen" 
+                        OnClick="ClosePopoverAsync" 
+                        AutoClose="false" 
+                        DarkBackground="true" />
+
+            <!-- Admin Button (Only for Admins) -->
+            <AuthorizeView Policy="Admin" Context="adminContext">
+                <Authorized>
+                    <MudIconButton Icon="@Icons.Material.Filled.SettingsSuggest" 
+                                   Class="nav-action-btn"
+                                   OnClick="@Adminlog" 
+                                   Title="Admin Dashboard" />
+                </Authorized>
+            </AuthorizeView>
+
+             <!-- Logout Button -->
+            <MudIconButton Icon="@Icons.Material.Filled.PowerSettingsNew" 
+                           Class="nav-action-btn logout-btn"
+                           OnClick="@Logout" 
+                           Title="Sign Out" />
+        </div>
     </Authorized>
     <NotAuthorized>
-        <a href="UserAccount/Register" style="color:snow"><MudText Class="mr-3" Color="Color.Surface">Register</MudText></a>
-        <a href="UserAccount/Login" style="color:snow"><MudText Class="mr-3" Color="Color.Surface"> Log in</MudText></a>
+        <div class="d-flex gap-2">           
+            <MudButton Link="/" Variant="Variant.Filled" Color="Color.Secondary" Class="rounded-pill">Go to Sign in page</MudButton>
+        </div>
     </NotAuthorized>
 </AuthorizeView>
 
+<style>
+    .relative { position: relative; }
+    .popup-shadow {
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid rgba(0,0,0,0.05);
+        background-color: var(--mud-palette-surface);
+    }
+    .branch-list {
+        max-height: calc(100vh - 240px) !important;
+        overflow-y: auto !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 10px;
+    }
+    .transition-ease {
+        transition: all 0.2s ease-in-out;
+    }
+    .transition-ease:hover {
+        background-color: var(--mud-palette-action-default-hover);
+    }
+    
+    .selected-branch {
+        background-color: #FFD3AC !important;
+        font-weight: bold;
+        color: var(--mud-palette-primary-darken) !important;
+        border-left: 4px solid var(--mud-palette-primary);
+    }
+    
+    .anim-slide-out-branch {
+        animation: branch-slide-out 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        transform-origin: top center !important;
+        pointer-events: none;
+    }
+
+    .anim-slide-in-branch {
+        animation: branch-slide-in 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        transform-origin: top center !important;
+        pointer-events: auto;
+    }
+
+    @@keyframes branch-slide-in {
+        0% { transform: translateX(200px); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+    }
+
+    @@keyframes branch-slide-out {
+        0% { transform: translateX(0); opacity: 1; }
+        100% { transform: translateX(200px); opacity: 0; }
+    }
+</style>
+
 @code {
+    private bool _isBranchPopoverOpen = false;
+    private bool _canClosePopover = true;
+    private List<UserBranchRoleModel> _branches = new();
+    private List<UserBranchRoleModel> _filteredBranches = new();
+    private string _searchText = "";
+    private string _currentUserId = "";
+    private int _currentBranchId;
+
+    private bool _isClosingBranch = true;
+
+    private async Task ToggleBranchPopover(string userId)
+    {
+        if (_isBranchPopoverOpen)
+        {
+            if (_canClosePopover) _ = ClosePopoverAsync();
+            return;
+        }
+
+        _currentUserId = userId;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        _canClosePopover = user.Claims.Any(x => x.Type == "BranchID");
+        int.TryParse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value, out _currentBranchId);
+
+        _isBranchPopoverOpen = true;
+        _isClosingBranch = false;
+        
+        // Fetch branches synchronously as in ChooseBranch.razor
+        _branches = _user.GetBranchesNRoles(_currentUserId).ToList();
+        _filteredBranches = _branches;
+        _searchText = "";
+        
+        if (_branches.Count == 1)
+        {
+            await SelectBranch(_branches.First());
+        }
+
+        if (_currentBranchId > 0)
+        {
+            _ = JS.InvokeVoidAsync("scrollToClass", "selected-branch");
+        }
+    }
+
+    private async Task ClosePopoverAsync()
+    {
+        if (_canClosePopover && !_isClosingBranch)
+        {
+            _isClosingBranch = true;
+            StateHasChanged();
+            await Task.Delay(200);
+            _isBranchPopoverOpen = false;           
+            StateHasChanged();
+        }
+    }
+
+    private void FilterBranches(KeyboardEventArgs args)
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+        {
+            _filteredBranches = _branches;
+        }
+        else
+        {
+            _filteredBranches = _branches
+                .Where(x => x.Branch.BranchName.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private async Task SelectBranch(UserBranchRoleModel branchRole)
+    {
+        if (branchRole != null)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            int previousBranchId;
+            int.TryParse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value, out previousBranchId);
+
+            if (branchRole.Branch.BranchID != previousBranchId)
+            {
+                _user.SetCurrentBranchRole(branchRole);
+                uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+            }
+            
+            _ = ClosePopoverAsync();
+        }
+    }
 
     private void Adminlog()
     {
         uriHelper.NavigateTo("/admin");
-    }
-
-    async Task changeBranch(string UserID)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-
-        bool IsBranchSeleceted = User.Claims.Any(x => x.Type == "BranchID");
-
-        DialogOptions options = new DialogOptions() { CloseButton = IsBranchSeleceted };
-        DialogParameters parameters = new DialogParameters();
-        parameters.Add("UserID", UserID);
-        var dialog = DialogService.Show<ChooseBranch>("Select A Branch", parameters, options);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            UserBranchRoleModel BranchRole = (UserBranchRoleModel)result.Data;
-
-            int PreviousBranchID;
-            int.TryParse(User.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value, out PreviousBranchID);
-
-            if (BranchRole.Branch.BranchID != PreviousBranchID)
-            {
-                _user.SetCurrentBranchRole(BranchRole);
-                uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
-            }
-        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -78,9 +256,16 @@
             {
                 if (!authprov.User.HasClaim(x => x.Type == "BranchName"))
                 {
-                    await changeBranch(authprov.User.Identity.Name);
+                    await ToggleBranchPopover(authprov.User.Identity.Name);
+                    StateHasChanged(); // Refresh UI to show the popover
                 }
             }
         }
+    }
+
+    async Task Logout()
+    {
+        await _storage.RemoveItemAsync("userID");
+        uriHelper.NavigateTo("/UserAccount/Logout", forceLoad: true);
     }
 }

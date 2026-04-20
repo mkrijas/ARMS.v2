@@ -27,7 +27,7 @@
                                     <MudTextField ReadOnly="true" @bind-Value="model.SerialNumber" Label="Serial Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.SerialNumber)"></MudTextField>
                                 </MudItem>
                                 <MudItem xs="12" md="3">
-                                    <MudSelect ReadOnly="true" Label="Nature Of Asset" @bind-Value="model.NatureOfAsset" T="string" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
+                                    <MudSelect For="@(() => model.NatureOfAsset)" ReadOnly="true" Label="Nature Of Asset" @bind-Value="model.NatureOfAsset" T="string" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
                                         @foreach (var ditem in NatureOfAssetList)
                                         {
                                             <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
@@ -53,7 +53,7 @@
                                 {
                                     <MudItem xs="12" md="10">
                                         <MudAutocomplete T="AssetModel" Label="Select Parent Asset" @bind-Value="SelectedParentAsset" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary"
-                                                         SearchFunc="SearchAsset" ToStringFunc="@(e => e == null ? null : $"{e.Description}")"></MudAutocomplete>
+                                                         SearchFunc="@(async (string s, CancellationToken t) => await SearchAsset(s, t))" ToStringFunc="@(e => e == null ? null : $"{e.Description}")"></MudAutocomplete>
                                     </MudItem>
                                     <MudItem xs="12" md="2">
                                         <MudButton OnClick="GetDetails" Variant="Variant.Filled" Color="Color.Primary">Details</MudButton>
@@ -71,7 +71,7 @@
                                         <MudTextField ReadOnly="true" @bind-Value="assetModel.SerialNumber" Label="SerialNumber" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => assetModel.SerialNumber)"></MudTextField>
                                     </MudItem>
                                     <MudItem xs="12" md="3">
-                                        <MudSelect ReadOnly="true" Label="NatureOfAsset" @bind-Value="assetModel.NatureOfAsset" T="string" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
+                                        <MudSelect For="@(() => assetModel.NatureOfAsset)" ReadOnly="true" Label="NatureOfAsset" @bind-Value="assetModel.NatureOfAsset" T="string" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
                                             @foreach (var ditem in NatureOfAssetList)
                                             {
                                                 <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
@@ -104,7 +104,7 @@
     public bool fetch = false;
     string Buttontxt = "Move To Parent";
     AssetModel assetModel = new AssetModel();
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     private List<string> NatureOfAssetList = new List<string>() { "Tangible", "Intangible" };
     private AssetModel SelectedParentAsset = null;
     private bool _busy;
@@ -128,9 +128,9 @@
     }
 
     // Method to search for assets based on a search string
-    private async Task<IEnumerable<AssetModel>> SearchAsset(string searchString)
+    private async Task<IEnumerable<AssetModel>> SearchAsset(string searchString, CancellationToken token)
     {
-        await Task.Delay(5);
+        await Task.Delay(5, token);
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
@@ -198,7 +198,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Move Asset.");
         }

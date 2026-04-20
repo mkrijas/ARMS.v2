@@ -1,6 +1,6 @@
 ﻿using ArmsModels.BaseModels;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using ArmsModels.BaseModels.General;
 using Core.BaseModels.Finance.Transactions;

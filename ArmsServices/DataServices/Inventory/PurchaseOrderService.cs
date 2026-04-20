@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -114,17 +114,19 @@ namespace ArmsServices.DataServices
         }
 
         // Method to select pending purchase orders for a specific branch
-        public IEnumerable<PurchaseOrderModel> SelectPending(int BranchID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
+        IEnumerable<PurchaseOrderModel> IPurchaseOrderService.SelectPending(int BranchID)
+        {           
+            // PAGED DATA QUERY
+            List<SqlParameter> parameters = new()
             {
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@Operation", "All")
-            };
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "pending"),               
+            };        
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
             {
                 yield return GetModel(dr);
-            }
+            }        
         }
 
         // Method to select a purchase order by its ID
@@ -228,5 +230,35 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        public PagedResult<PurchaseOrderModel> SelectAll(int BranchID, int page, int pageSize, string search, bool _IsApproved)
+        {   
+            // PAGED DATA QUERY
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Search", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+            };
+
+            List<PurchaseOrderModel> list = new();
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if(countOf == 0)
+                    countOf =  dr.GetInt32("CountOf");
+            }           
+
+            return new PagedResult<PurchaseOrderModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
+        }        
+     
     }
 }

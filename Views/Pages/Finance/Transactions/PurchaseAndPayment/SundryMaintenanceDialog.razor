@@ -1,99 +1,143 @@
-﻿@inherits DialogFormComponentBase<SundryMaintenanceModel>
+@inherits DialogFormComponentBase<SundryMaintenanceModel>
 
 @inject ISundryMaintenanceService Iservice
 @inject IGstItemService gstitemIservice
 @inject ITdsRateService tdsIService
 
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sundry Maintenance" formID="formSundryMain" DocumentDetails="DocInfo" OnFileRemoved="RemoveFileChange" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sundry Maintenance" Subtitle="Record maintenance services, repair jobs, and associated GST/TDS allocations." Icon="@Icons.Material.Filled.Build" AdminStyle="true" formID="formSundryMain" DocumentDetails="DocInfo" OnFileRemoved="RemoveFileChange" model="@model" _busy="_busy">
     <FormContent>
-        <MudPaper Class="p-3">
+        <div class="dialog-content-wrapper">
             <EditForm autocomplete="off" id="formSundryMain" OnValidSubmit="OnValidSubmit" EditContext="editContext">
                 <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudGrid>
-                    <MudItem xs="12" md="6">
-                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <PartySelector Value="model.PartyInfo" For="@(()=> model.PartyInfo)" ValueChanged="PartyChanged" BranchID="BranchID" NatureOfBusiness="Supplier" IncludeRenter IncludeSisterConcern></PartySelector>
-                        <MudText Typo="Typo.caption"> @model.PartyInfo?.GstRegType  @model.PartyInfo?.GstNo</MudText>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12">
-                        <MudSelect Label="Service Type" @bind-Value="model.BreakDownType" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in BreakdownTypes)
+                
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Maintenance Context</span>
+                    </div>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="4">
+                            <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" Class="admin-input-group" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <PartySelector Value="model.PartyInfo" For="@(()=> model.PartyInfo)" ValueChanged="PartyChanged" BranchID="BranchID" NatureOfBusiness="Supplier" IncludeRenter IncludeSisterConcern Class="admin-input-group"></PartySelector>
+                            @if (model.PartyInfo != null)
                             {
-                                <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
+                                <MudText Typo="Typo.caption" Class="ml-2 mt-1" Style="color: #667085;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Style="vertical-align: middle; margin-right: 4px;" />
+                                    @model.PartyInfo?.GstRegType | @model.PartyInfo?.GstNo
+                                </MudText>
                             }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
-                        <h6><u>Particulars</u></h6>
-                        <div style="width: 1600px;" class="pb-3">
-                            <MudGrid Justify="Justify.Center">
-                                @if (model.Entries is not null && model.Entries.Any())
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudSelect For="@(() => model.BreakDownType)" Label="Service Type" @bind-Value="model.BreakDownType" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group">
+                                @foreach (var ditem in BreakdownTypes)
                                 {
-                                    <MudItem xs="2"><span class="HeadText">Usage Code</span></MudItem>
-                                    <MudItem xs="1"><span class="HeadText">Invoice Date</span></MudItem>
-                                    <MudItem xs="1"><span class="HeadText">InvoiceRef</span></MudItem>
-                                    <MudItem xs="2"><span class="HeadText">Job</span></MudItem>
-                                    <MudItem xs="1"><span class="HeadText">Truck</span></MudItem>
-                                    <MudItem xs="1"><span class="HeadText">Cost Center</span></MudItem>
-                                    <MudItem xs="1"><span class="HeadText">Dimension</span></MudItem>
-                                    <MudItem xs="1"><span class="HeadText">Amount</span></MudItem>
-                                    <MudItem xs="1"><span class="HeadText">Gst/TDS</span></MudItem>
-                                    <MudItem xs="1"><span class="HeadText">Actions</span></MudItem>
-                                    @foreach (var item in model.Entries)
-                                    {
-                                        <MudItem xs="2">@string.Format("{0} | {1}", item.UsageCode, item.UsageCodeDescription)</MudItem>
-                                        <MudItem xs="1">@item.InvoiceDate?.ToShortDateString()</MudItem>
-                                        <MudItem xs="1">@item.InvoiceNo</MudItem>
-                                        <MudItem xs="2">
-                                            @item.JobTitle
-                                        </MudItem>
-                                        <MudItem xs="1">
-                                            @item.TruckRegNo
-                                        </MudItem>
-                                        <MudItem xs="1">
-                                            @item.CostCenterVal
-                                        </MudItem>
-                                        <MudItem xs="1">
-                                            @item.DimensionVal
-                                        </MudItem>
-                                        <MudItem xs="1">@item.Amount</MudItem>
-                                        <MudItem xs="1">@(item.CGST + item.SGST + item.IGST)/@item.TDS</MudItem>
-                                        <MudItem xs="1">
-                                            @if (!ReadOnly)
-                                            {
-                                                <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                                            }
-                                            <MudIconButton Title="Show Taxes" Color="Color.Info" @onclick="@(()=> OpenDialogTaxRates(@item))" Icon="@Icons.Material.Filled.CurrencyExchange" Size="Size.Small" />
-                                        </MudItem>
-                                    }
+                                    <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
                                 }
-                                @if (!ReadOnly)
-                                {
-                                    <MudItem xs="12" Class="d-flex gap-4">
-                                        <UsageCodeSelector Value=gstusage ValueChanged="UsageCodeSelected"></UsageCodeSelector>                                   
-                                        <MudDatePicker ReadOnly="ReadOnly" Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="_entryModel.InvoiceDate" For="@(() => _entryModel.InvoiceDate)" />
-                                        <MudTextField ReadOnly="ReadOnly" @bind-Value="_entryModel.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _entryModel.InvoiceNo)"></MudTextField>
-                                        <ServiceJobSelector ReadOnly="ReadOnly" Value="@_selectedJob" ValueChanged="JobSelected"></ServiceJobSelector>
-                                        <TruckSelector IsDisabled="ReadOnly" Value="@_truck" ValueChanged="@truckChanged" Filter="All"></TruckSelector>
-                                        <CostCenterSelector @bind-Value="@(_entryModel.CostCenter)" @bind-ValueText="@_entryModel.CostCenterVal" ReadOnly="@ReadOnly"></CostCenterSelector>
-                                        <DimensionSelector @bind-Value="@(_entryModel.Dimension)" @bind-ValueText="@(_entryModel.DimensionVal)" ReadOnly="@ReadOnly"></DimensionSelector>
-                                        <MudNumericField HideSpinButtons Label="Amount" @bind-Value="@_entryModel.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
-                                        <MudIconButton Title="Add" OnClick="ADD" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="3" Label="Narration / General Notes" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)" Class="admin-input-group"></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+
+                <div class="admin-glass-card pa-0 overflow-hidden">
+                    <div class="px-6 py-4 border-bottom-subtle d-flex align-center" style="background: rgba(255, 159, 67, 0.03); border-bottom: 1px solid rgba(255, 159, 67, 0.3);">
+                        <MudIcon Icon="@Icons.Material.Filled.Engineering" Color="Color.Warning" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Service Breakdown</span>
+                    </div>
+                    <div class="modern-admin-table">
+                        <MudGrid Class="admin-table-header px-6 py-3">
+                            <MudItem xs="3"><span class="admin-header-text">JOB / USAGE</span></MudItem>
+                            <MudItem xs="2"><span class="admin-header-text">INVOICE DT & NO</span></MudItem>
+                            <MudItem xs="2"><span class="admin-header-text">TRUCK / LOCATION</span></MudItem>
+                            <MudItem xs="2"><span class="admin-header-text">COST & DIMENSION</span></MudItem>
+                            <MudItem xs="1"><span class="admin-header-text">AMOUNT</span></MudItem>
+                            <MudItem xs="1"><span class="admin-header-text">TAXES</span></MudItem>
+                            <MudItem xs="1"><span class="admin-header-text">ACTION</span></MudItem>
+                        </MudGrid>
+
+                        @if (model.Entries is not null && model.Entries.Any())
+                        {
+                            @foreach (var item in model.Entries)
+                            {
+                                <MudGrid Class="px-6 py-3 border-bottom-subtle align-center">
+                                    <MudItem xs="3">
+                                        <MudText Typo="Typo.body2" Style="font-weight: 700;">@item.JobTitle</MudText>
+                                        <MudText Typo="Typo.caption" Style="color: #667085;">@item.UsageCode | @item.UsageCodeDescription</MudText>
                                     </MudItem>
-                                }
-                            </MudGrid>
-                        </div>
-                    </MudItem>
-                </MudGrid>
+                                    <MudItem xs="2">
+                                        <MudText Typo="Typo.body2">@item.InvoiceDate?.ToString("dd/MM/yyyy")</MudText>
+                                        <MudText Typo="Typo.caption" Style="font-family: monospace; color: #FF9F43;">#@item.InvoiceNo</MudText>
+                                    </MudItem>
+                                    <MudItem xs="2">
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Dark" Variant="Variant.Text" Icon="@Icons.Material.Filled.LocalShipping">@item.TruckRegNo</MudChip>
+                                    </MudItem>
+                                    <MudItem xs="2">
+                                        <MudText Typo="Typo.caption" Style="display: block;">CC: @item.CostCenterVal</MudText>
+                                        <MudText Typo="Typo.caption" Style="display: block;">DIM: @item.DimensionVal</MudText>
+                                    </MudItem>
+                                    <MudItem xs="1">
+                                        <MudText Typo="Typo.body2" Style="font-weight: 700; color: #141A46;">₹ @item.Amount</MudText>
+                                    </MudItem>
+                                    <MudItem xs="1">
+                                        <MudTooltip Text="GST Sum / TDS">
+                                            <MudText Typo="Typo.caption" Style="color: #FF9F43; font-weight: 700;">₹ @(item.CGST + item.SGST + item.IGST)</MudText>
+                                            <MudText Typo="Typo.caption" Style="color: #667085;">/ ₹ @item.TDS</MudText>
+                                        </MudTooltip>
+                                    </MudItem>
+                                    <MudItem xs="1" Class="d-flex gap-1">
+                                        @if (!ReadOnly)
+                                        {
+                                            <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                        }
+                                        <MudIconButton Title="View Taxes" Color="Color.Info" @onclick="@(()=> OpenDialogTaxRates(@item))" Icon="@Icons.Material.Filled.ReceiptLong" Size="Size.Small" />
+                                    </MudItem>
+                                </MudGrid>
+                            }
+                        }
+
+                        @if (!ReadOnly)
+                        {
+                            <div class="pa-5" style="background: rgba(255, 159, 67, 0.03); border-top: 1px solid rgba(255, 159, 67, 0.3);">
+                                <MudGrid Spacing="2">
+                                    <MudItem xs="12" md="3">
+                                        <ServiceJobSelector For="@(() => _selectedJob)" ReadOnly="ReadOnly" Value="@_selectedJob" ValueChanged="JobSelected" Class="admin-input-group"></ServiceJobSelector>
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <UsageCodeSelector For="@(() => gstusage)" Value=gstusage ValueChanged="UsageCodeSelected" Class="admin-input-group"></UsageCodeSelector>
+                                    </MudItem>
+                                    <MudItem xs="6" md="2">
+                                        <MudDatePicker ReadOnly="ReadOnly" Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="_entryModel.InvoiceDate" For="@(() => _entryModel.InvoiceDate)" Class="admin-input-group" />
+                                    </MudItem>
+                                    <MudItem xs="6" md="2">
+                                        <MudTextField ReadOnly="ReadOnly" @bind-Value="_entryModel.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _entryModel.InvoiceNo)" Class="admin-input-group"></MudTextField>
+                                    </MudItem>
+                                    <MudItem xs="6" md="2">
+                                        <TruckSelector For="@(() => _truck)" IsDisabled="ReadOnly" Value="@_truck" ValueChanged="@truckChanged" Filter="All" Class="admin-input-group"></TruckSelector>
+                                    </MudItem>
+                                    <MudItem xs="6" md="2">
+                                        <CostCenterSelector For="@(() => _entryModel.CostCenter)" @bind-Value="@(_entryModel.CostCenter)" @bind-ValueText="@_entryModel.CostCenterVal" ReadOnly="@ReadOnly" Class="admin-input-group"></CostCenterSelector>
+                                    </MudItem>
+                                    <MudItem xs="6" md="2">
+                                        <DimensionSelector For="@(() => _entryModel.Dimension)" @bind-Value="@(_entryModel.Dimension)" @bind-ValueText="@(_entryModel.DimensionVal)" ReadOnly="@ReadOnly" Class="admin-input-group"></DimensionSelector>
+                                    </MudItem>
+                                    <MudItem xs="6" md="2">
+                                        <MudNumericField HideSpinButtons Label="Amount" @bind-Value="@_entryModel.Amount" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.CurrencyRupee" AdornmentColor="Color.Primary"></MudNumericField>
+                                    </MudItem>
+                                    <MudItem xs="12" md="1" Class="d-flex align-center">
+                                        <MudIconButton OnClick="ADD" Color="Color.Primary" Variant="Variant.Filled" Style="background: #FF9F43; border-radius: 10px; height: 45px; width: 50px; margin-top: 4px;" Icon="@Icons.Material.Filled.Add" Size="Size.Large" />
+                                    </MudItem>
+                                </MudGrid>
+                            </div>
+                        }
+                    </div>
+                </div>
             </EditForm>
-        </MudPaper>
+        </div>
     </FormContent>
     <VerificationStatus>
         <AutherizationStatusComponent CreatedBy="@_model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocumentID="@model.ID" OnApprove="Approve"></AutherizationStatusComponent>
@@ -120,7 +164,7 @@
     private TruckModel _truck { get; set; }
 
     private List<string> BreakdownTypes = new()
-    { "Accident Claim", "Accident Non Claim", "Breakdown", "General Service", "FC Work", "Periodic Service", "Special Work" , "Tyre Work", "Engine Work", "Body Work", "Gear Box Work", "Differential Work", "Clutch Work", "Battery"};
+    { "Accident Claim", "Accident Non Claim", "Work Order", "General Service", "FC Work", "Periodic Service", "Special Work" , "Tyre Work", "Engine Work", "Body Work", "Gear Box Work", "Differential Work", "Clutch Work", "Battery"};
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
@@ -259,7 +303,7 @@
         DialogParameters parms = new DialogParameters();
         parms.Add("tax", taxModel);
         parms.Add("ReadOnly", ReadOnly);
-        var dialog = dialogService.Show<TaxRatedialog>(i.ID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var dialog = await dialogService.ShowAsync<TaxRatedialog>(i.ID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (!result.Canceled)
         {

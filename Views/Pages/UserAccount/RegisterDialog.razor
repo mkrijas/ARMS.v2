@@ -1,0 +1,399 @@
+@using System.ComponentModel.DataAnnotations
+@using Views.Data
+@inject AuthenticationStateProvider auth
+@inject NavigationManager nav
+@inject ISessionStorageService sessionStorage
+@inject UserManager<UserModel> UserManager
+@inject SignInManager<UserModel> SignInManager
+@inject ISnackbar Snackbar
+
+<MudDialog DisableSidePadding="true" Class="login-dialog-transparent" Options="dialogOptions">
+    <DialogContent>
+        <!-- Rope Container - Clicks here trigger Cancel (Close Animation) -->
+        <div class="rope-container @(isClosing ? "exiting" : "")" @onclick="Cancel">
+            <!-- Constrained Wrapper for Alignment - Handles Horizontal Sway -->
+            <div class="rope-align-wrapper" @onclick:stopPropagation>
+                <!-- Ropes (Siblings for independent animation) -->
+                <div class="rope rope-left"></div>
+                <div class="rope rope-right"></div>
+                
+                <!-- Card Container with Animation -->
+                <div class="hanging-card">
+                    <!-- Hooks -->
+                    <div class="hook hook-left"></div>
+                    <div class="hook hook-right"></div>
+                    
+                    <!-- Main Register Card -->
+                    <MudPaper Elevation="0" Class="pa-10 auth-dialog-card">
+                        <!-- Close Button -->
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                       OnClick="Cancel" 
+                                       Size="Size.Small" 
+                                       Style="position: absolute; top: 20px; right: 10px; background: rgba(255, 255, 255, 0.9); color: #5E5873; z-index: 20; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.6));" />
+
+                        <div class="d-flex flex-column align-center">
+                            <div class="icon-badge mb-4" style="background: rgba(255, 159, 67, 0.3); color: #FF9F43;">
+                                <MudIcon Icon="@Icons.Material.Filled.PersonAddAlt1" Size="Size.Large" />
+                            </div>
+                            <MudText Typo="Typo.h5" Class="admin-title mb-1">Create Account</MudText>
+                            <MudText Typo="Typo.body2" Class="admin-subtitle mb-6">Join the ARMS network today 🚀</MudText>
+    
+                            <EditForm Model="registerModel" OnValidSubmit="OnValidSubmit" style="width: 100%;">
+                                <DataAnnotationsValidator />
+                                
+                                <MudTextField @bind-Value="registerModel.UserID" 
+                                              Label="User Identity" 
+                                              Variant="Variant.Outlined" 
+                                              Class="glass-input mb-4"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Fingerprint"
+                                              FullWidth="true" 
+                                              Margin="Margin.Normal"
+                                              For="@(() => registerModel.UserID)" />
+
+                                <MudTextField @bind-Value="registerModel.Phone" 
+                                              Label="Support Priority (Phone)" 
+                                              Variant="Variant.Outlined" 
+                                              Class="glass-input mb-4"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.PhoneAndroid"
+                                              FullWidth="true" 
+                                              Margin="Margin.Normal"
+                                              For="@(() => registerModel.Phone)" />
+
+                                <MudTextField @bind-Value="registerModel.Email" 
+                                              Label="Communication Email" 
+                                              Variant="Variant.Outlined" 
+                                              Class="glass-input mb-4"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.AlternateEmail"
+                                              FullWidth="true" 
+                                              Margin="Margin.Normal"
+                                              For="@(() => registerModel.Email)" />
+                                
+                                <MudTextField InputType="@(_showPassword ? InputType.Text : InputType.Password)" 
+                                              @bind-Value="registerModel.Password" 
+                                              Label="Secure Key" 
+                                              Variant="Variant.Outlined" 
+                                              Class="glass-input mb-4"
+                                              Adornment="Adornment.Start" 
+                                              AdornmentIcon="@Icons.Material.Filled.Password"
+                                              OnAdornmentClick="TogglePasswordVisibility"
+                                              FullWidth="true" 
+                                              Margin="Margin.Normal"
+                                              For="@(() => registerModel.Password)" />
+
+                                <MudTextField InputType="@(_showConfirmPassword ? InputType.Text : InputType.Password)" 
+                                              @bind-Value="registerModel.ConfirmPassword" 
+                                              Label="Validate Key" 
+                                              Variant="Variant.Outlined" 
+                                              Class="glass-input mb-6"
+                                              Adornment="Adornment.Start" 
+                                              AdornmentIcon="@Icons.Material.Filled.EnhancedEncryption"
+                                              OnAdornmentClick="ToggleConfirmPasswordVisibility"
+                                              FullWidth="true" 
+                                              Margin="Margin.Normal"
+                                              For="@(() => registerModel.ConfirmPassword)" />
+                                
+                                <MudButton ButtonType="ButtonType.Submit" 
+                                           Variant="Variant.Filled" 
+                                           Color="Color.Warning" 
+                                           Size="Size.Large" 
+                                           FullWidth="true" 
+                                           Disabled="@_loading"
+                                           Class="action-btn-primary py-3"
+                                           Style="background: #FF9F43 !important; color: white !important; box-shadow: 0 12px 24px -6px rgba(255, 159, 67, 0.4) !important;">
+                                    @if (_loading)
+                                    {
+                                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                        <MudText Class="ms-2">Processing...</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText>Register Account</MudText>
+                                    }
+                                </MudButton>
+                            </EditForm>
+                        </div>
+                    </MudPaper>
+                </div>
+            </div>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    /* Reuse exactly the same styles from LoginDialog for consistency */
+
+    /* 1. Overlay Fade In -> Now Transparent */
+    .login-overlay {
+        background-color: transparent !important; 
+    }
+
+    /* Transparent Dialog Wrapper */
+    .login-dialog-transparent {
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    /* Rope Container - Fixed to Viewport */
+    .rope-container {
+        position: fixed; 
+        top: 0; 
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        pointer-events: none; 
+        z-index: 2000; 
+        animation: dropDown 1.5s cubic-bezier(0.10, 0.88, 0.22, 1.55) forwards;
+    }
+
+    .rope-align-wrapper {
+        position: relative;
+        width: 420px;
+        pointer-events: auto; 
+        /* Sway the whole assembly left/right */
+        animation: sway 2.5s ease-in-out infinite alternate;
+        animation-delay: 1.4s;
+    }
+
+    /* The Hanging Card Wrapper */
+    .hanging-card {
+        position: relative;
+        width: 420px;
+        transform-origin: top center;
+        /* Start above screen */
+        top: -100vh;
+        animation: dropDown 1.5s cubic-bezier(0.10, 0.88, 0.22, 1.55) forwards;
+    }
+
+    /* Ropes */
+    .rope {
+        position: absolute;
+        width: 4px;
+        background: #8e6e54; 
+        background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px);
+        top: -200vh; 
+        height: calc(200vh + 35px); 
+        z-index: 5; 
+        border-radius: 0 0 2px 2px;
+        /* Sync stretch with card drop */
+        animation: ropeElastic 1.5s cubic-bezier(0.10, 0.88, 0.22, 1.55) forwards;
+    }
+    
+    .rope-left { left: 40px; }
+    .rope-right { right: 40px; }
+
+    /* Hooks */
+    .hook {
+        position: absolute;
+        top: -15px;
+        width: 30px;
+        height: 30px;
+        border: 4px solid #555; 
+        border-radius: 50%;
+        background: transparent;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .hook-left { left: 27px; }
+    .hook-right { right: 27px; }
+
+    /* Animations */
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    /* Elastic Drop + Tilt + Scale Animation */
+    @@keyframes dropDown {
+        0% {
+            top: -100vh;
+            transform: rotate(-6deg) scale(0.92);
+            opacity: 0;
+        }
+        38% {
+            top: 250px; 
+            transform: rotate(3deg) scale(1.03);
+            opacity: 1;
+        }
+        60% {
+            top: -20px; 
+            transform: rotate(-2deg) scale(0.99);
+        }
+        78% {
+            top: 80px; 
+            transform: rotate(1.4deg) scale(1.01);
+        }
+        90% {
+            top: 40px; 
+            transform: rotate(-0.8deg) scale(1.00);
+        }
+        95% {
+            top: 55px; 
+            transform: rotate(0.5deg) scale(1.0);
+        }
+        100% {
+            top: 50px; 
+            transform: rotate(0deg) scale(1.0);
+        }
+    }
+
+    /* Continuous Horizontal Sway */
+    @@keyframes sway {
+        0% { transform: translateX(-5px); }
+        100% { transform: translateX(5px); }
+    }
+
+    /* --- Closing Animations --- */
+    
+    .exiting .rope-left {
+        animation: ropeSnap 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+    }
+
+    .exiting .rope-right {
+        animation: ropeSnap 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) 0.3s forwards;
+    }
+
+    @@keyframes ropeSnap {
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(-200vh); opacity: 0; }
+    }
+
+    .exiting .hanging-card {
+        animation: cardFall 1.2s cubic-bezier(0.6, 0.04, 0.98, 0.335) forwards !important;
+        transform-origin: top right; 
+    }
+
+    @@keyframes cardFall {
+        0% {
+            top: 50px;
+            transform: rotate(0deg);
+            opacity: 1;
+        }
+        20% {
+            transform: rotate(15deg);
+            top: 60px;
+        }
+        100% {
+            top: 150vh;
+            transform: rotate(80deg);
+            opacity: 0;
+        }
+    }
+
+    /* Synchronized Rope Stretch during Drop */
+    @@keyframes ropeElastic {
+        0% { height: calc(100vh - 15px); }
+        38% { height: calc(200vh + 235px); }
+        60% { height: calc(200vh - 35px); }
+        78% { height: calc(200vh + 65px); }
+        90% { height: calc(200vh + 25px); }
+        95% { height: calc(200vh + 40px); }
+        100% { height: calc(200vh + 35px); }
+    }
+</style>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    private RegisterUser registerModel = new RegisterUser();
+    private DialogOptions dialogOptions = new DialogOptions() { NoHeader = true, BackgroundClass = "login-overlay", MaxWidth = MaxWidth.Small };
+    private bool _showPassword = false;
+    private void TogglePasswordVisibility() => _showPassword = !_showPassword;
+    private bool _showConfirmPassword = false;
+    private void ToggleConfirmPasswordVisibility() => _showConfirmPassword = !_showConfirmPassword;
+    private bool isClosing = false;
+
+    private bool _loading = false;
+
+    private async Task OnValidSubmit()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Check if user exists
+            var existingUser = await UserManager.FindByIdAsync(registerModel.UserID);
+            if (existingUser != null)
+            {
+                Snackbar.Add("User ID already exists", Severity.Error);
+                _loading = false;
+                return;
+            }
+
+            var existingEmail = await UserManager.FindByEmailAsync(registerModel.Email);
+            if (existingEmail != null)
+            {
+                Snackbar.Add("Email already exists", Severity.Error);
+                _loading = false;
+                return;
+            }
+
+            var user = new UserModel 
+            { 
+                UserName = registerModel.UserID, 
+                UserID = registerModel.UserID, 
+                PhoneNumber = registerModel.Phone, 
+                Email = registerModel.Email 
+            };
+
+            var result = await UserManager.CreateAsync(user, registerModel.Password);
+            if (result.Succeeded)
+            {
+                Snackbar.Add("Registration successful!", Severity.Success);
+                await Task.Delay(1000); // Give time for snackbar
+                await Cancel(); // Close dialog with animation on success
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    Snackbar.Add(error.Description, Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("An error occurred: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Cancel()
+    {
+        isClosing = true;
+        StateHasChanged(); 
+        await Task.Delay(1300); 
+        MudDialog.Cancel();
+    }
+
+    class RegisterUser
+    {
+        [Required(ErrorMessage = "Username is required")]
+        public string UserID { get; set; }
+        
+        [Required(ErrorMessage = "Phone Number is required")]
+        [Phone(ErrorMessage = "Invalid Phone Number")]
+        public string Phone { get; set; }
+        
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid Email Address")]
+        public string Email { get; set; }
+        
+        [Required(ErrorMessage = "Password is required")]
+        public string Password { get; set; }
+        
+        [Required(ErrorMessage = "Confirm Password is required")]
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match")]
+        public string ConfirmPassword { get; set; }
+    }
+}

@@ -1,4 +1,5 @@
-﻿@* @using System.Threading;
+@using System.Threading;
+@using ArmsServices.DataServices
 @inject AuthenticationStateProvider auth
 @inject ITruckTransferService Iservice
 @inject IBranchService Ibranchservice
@@ -6,58 +7,49 @@
 @inject ISnackbar Snackbar
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <TitleContent>
-        @if (model.TruckTransferInitiationID == null || model.TruckTransferInitiationID == 0)
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Truck Transfer Initiation.
-            </MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Truck Transfer Initiation.
-            </MudText>
-        }
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+<DialogForm @ref="@dialogForm" Title="@(model.TruckTransferInitiationID == null || model.TruckTransferInitiationID == 0 ? "Initiate Fleet Migration" : "Refine Migration Protocol")" Subtitle="Formal documentation and authorization for inter-branch vehicle transfer." Icon="@Icons.Material.Filled.LocalShipping" AdminStyle="true" formID="formTruckTransfer" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <EditForm id="formTruckTransfer" Model="@model" OnValidSubmit="Submit">
                 <DataAnnotationsValidator />
-                <ValidationSummary />
-                <MudItem xs="12" md="12">
-                    <TruckSelector Value="model.Truck" Filter="@filter" VariantParameter="Variant.Outlined" MarginParameter="Margin.Normal" BranchID="branchID" ValueChanged="TruckSelected" />
-                </MudItem>
-                <MudItem xs="12" md="12">
-                    <MudSelect Label="Destination Branch" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.DestinationBranch.BranchID" T="int?"   AdornmentColor="Color.Secondary" Required>
-                        @foreach (BranchModel ditem in DestinationBranchList)
-                        {
-                            <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="12" Class="mb-6">
-                    <MudTextField @bind-Value="model.TruckEvent.EventReading" Label="StartKM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TruckEvent.EventReading)" Required></MudTextField>
-                </MudItem>
-                <MudItem xs="12" md="12" Class="mb-6">
-                    <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
-                </MudItem>
+                
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Asset & Destination Parameters</span>
+                    </div>
+                    
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12">
+                            <TruckSelector For="@(() => model.Truck)" Value="model.Truck" Filter="@filter" VariantParameter="Variant.Outlined" MarginParameter="Margin.Normal" BranchID="branchID" ValueChanged="TruckSelected" Class="modern-selector" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect For="@(() => model.DestinationBranch.BranchID)" Label="Designated Destination Branch" Variant="Variant.Outlined" Margin="Margin.Normal" @bind-Value="model.DestinationBranch.BranchID" T="int?" AdornmentColor="Color.Secondary" Required Class="modern-input" AdornmentIcon="@Icons.Material.Filled.Business">
+                                @foreach (BranchModel ditem in DestinationBranchList)
+                                {
+                                    <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.TruckEvent.EventReading" Label="Departure Odometer Verification" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TruckEvent.EventReading)" Required Class="modern-input" Adornment="Adornment.End" AdornmentText="KM" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Remarks" Label="Operational Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Remarks)" Class="modern-input" Placeholder="Enter transfer justification..." />
+                        </MudItem>
+                    </MudGrid>
+                </div>
             </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
-    </DialogActions>
-</MudDialog>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
-
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
+    private bool _busy;
     [Parameter]
     public TruckTransferInitiationModel model { get; set; } = new();
     private List<BranchModel> DestinationBranchList = new();
-    private List<int?> UnAssignedTruckIds = new();
     private string filter { get; set; } = "UnAssigned";
     private int branchID { get; set; } = 0;
 
@@ -68,57 +60,48 @@
         DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != branchID).ToList();
     }
 
-    protected override void OnParametersSet()
-    {
-
-    }
-
     void Cancel()
     {
-        MudDialog.Cancel();
+        dialogForm.Cancel();
     }
 
     public async Task Submit()
     {
+        if (_busy) return;
+        
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         if (model.Truck == null || model.Truck.TruckID == 0)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning",
-                "Please, Select truck.", yesText: "OK");
+            await DialogService.ShowMessageBoxAsync("Warning", "Please select a vehicle for transfer.", yesText: "OK");
             return;
         }
-        if (model != null)
+        
+        _busy = true;
+        try
         {
-            if (model.DestinationBranch == null)
-            {
-                model.DestinationBranch = new();
-            }
-            if (model.TruckEvent == null)
-            {
-                model.TruckEvent = new();
-            }
-            if (model.TruckEvent.UserInfo == null)
-            {
-                model.TruckEvent.UserInfo = new();
-            }
+            if (model.DestinationBranch == null) model.DestinationBranch = new();
+            if (model.TruckEvent == null) model.TruckEvent = new();
+            if (model.TruckEvent.UserInfo == null) model.TruckEvent.UserInfo = new();
+            
             model.TruckEvent.UserInfo.UserID = user.Identity.Name;
-            try
-            {
-                Iservice.UpdateOutgoing(model);
-                Snackbar.Add("Transfered succesfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
+            Iservice.UpdateOutgoing(model);
+            Snackbar.Add("Transfer Initiated Successfully", Severity.Success);
+            dialogForm.Close(model);
         }
-        MudDialog.Close(model);
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            await Task.Delay(200);
+            _busy = false;
+        }
     }
 
     private void TruckSelected(TruckModel obj)
     {
         model.Truck = obj;
     }
-} *@
+}

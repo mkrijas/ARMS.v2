@@ -33,6 +33,7 @@ namespace ArmsModels.BaseModels
         [RequiredIfTrue("IsLimitedQuantity")]
         public decimal? OrderQuantity { get; set; }
         public ContentModel Content { get; set; } = new(); // Content information associated with the order
+        [Required]
         public PartyModel Party { get; set; } // Party information associated with the order (optional)
         public ConsigneeModel Consignor { get; set; } // Consignor information associated with the order (optional)
         public SharedModels.UserInfoModel UserInfo { get; set; }

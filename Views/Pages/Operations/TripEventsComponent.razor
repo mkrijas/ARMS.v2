@@ -1,5 +1,74 @@
-﻿@inject IEventService Ievent
+@inject IEventService Ievent
 @inject IDialogService DialogService
+
+<style>
+
+    /* Card Base - Explicitly setting colors here to prevent loss */
+    .mud-card.timelineCard {
+        background-color: #f3f3f3 !important; /* This brings back the orange box */
+        border: 1px solid rgb(150, 150, 150) !important; /* This ensures the black box border */
+        position: relative !important;
+        overflow: visible !important;
+    }
+
+        /* 1. BLACK Outer Triangle (The Border) */
+        .mud-card.timelineCard::before {
+            content: "" !important;
+            position: absolute !important;
+            top: 36px !important;
+            left: -13px !important;
+            width: 0 !important;
+            height: 0 !important;
+            border-top: 13px solid transparent !important;
+            border-bottom: 13px solid transparent !important;
+            border-right: 13px solid rgb(150, 150, 150) !important;
+            z-index: 10 !important;
+        }
+
+        /* 2. ORANGE Inner Triangle (The Fill) */
+        .mud-card.timelineCard::after {
+            content: "" !important;
+            position: absolute !important;
+            top: 36px !important;
+            left: -11.5px !important;
+            width: 0 !important;
+            height: 0 !important;
+            border-top: 13px solid transparent !important;
+            border-bottom: 13px solid transparent !important;
+            border-right: 13px solid #f3f3f3 !important; /* Matches background-color above */
+            z-index: 11 !important;
+        }
+
+    /* 3. Handling the Left Side */
+    .mud-timeline-item-start .mud-card.timelineCard::before {
+        right: -13px !important;
+        left: auto !important;
+        border-right: 0 !important;
+        border-left: 13px solid rgb(180, 180, 180) !important;
+    }
+
+    .mud-timeline-item-start .mud-card.timelineCard::after {
+        right: -11.5px !important;
+        left: auto !important;
+        border-right: 0 !important;
+        border-left: 13px solid #f3f3f3 !important;
+    }
+
+    /* 4. Ensure MudBlazor default background/arrows don't override */
+    .mud-timeline-item-content {
+        background-color: transparent !important;
+    }
+
+        .mud-timeline-item-content::before,
+        .mud-timeline-item-content::after {
+            display: none !important;
+            content: none !important;
+        }
+
+</style>
+
+
+
 
 @if (TripEvents.Count > 0)
 {
@@ -22,24 +91,26 @@
                 timetext = item.EventTime?.ToString("ddd dd-MMM-yyyy hh:mm tt");
             }
             EventTypeModel et = EventTypes.FirstOrDefault(x => x.EventTypeID == item.EventTypeID);
-            <MudTimelineItem Color="Color.Success" Elevation="10" TimelineAlign="TimelineAlign.End">
+            <MudTimelineItem Style="color:rgb(104 104 104);" Elevation="10" TimelineAlign="TimelineAlign.End">
                 <ItemOpposite>
                     <MudText Color="Color.Dark" Typo="Typo.h6">@timetext</MudText>
                 </ItemOpposite>
-                <ItemContent>
-                    <MudCard Elevation="25" Style="@($"background:{Colors.Brown.Lighten5};")">
-                        <MudCardContent>
-                            <MudText Typo="Typo.h6" Color="Color.Primary">@et?.EventStatusText </MudText>
-                            @if (et?.IsTripRelated == true)
-                            {
-                                <MudIconButton Size="Size.Small" Disabled="@IsLocked" Icon="@Icons.Material.Filled.Edit" OnClick="(() => UpdateEvent(item))"></MudIconButton>
-                            }
-                            <MudText Typo="Typo.button">
-                                @string.Format("{0} {1}",et.StationoryText,item.OriginName);
-                            </MudText>
-                            <MudText Typo="Typo.body2" Class="mud-text-secondary"> @item.BranchName </MudText>
-                        </MudCardContent>
-                    </MudCard>
+                <ItemContent>                   
+                        <MudCard Elevation="0" Class="pa-2 timelineCard">
+                            <MudCardContent>
+                                <div class="d-flex justify-space-between align-center">
+                                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary"><b>@et?.EventStatusText</b></MudText>
+                                    @if (et?.IsTripRelated == true)
+                                    {
+                                        <MudIconButton Size="Size.Small" Disabled="@IsLocked" Icon="@Icons.Material.Filled.Edit" OnClick="(() => UpdateEvent(item))" Color="Color.Secondary"></MudIconButton>
+                                    }
+                                </div>
+                                <MudText Typo="Typo.body2" Class="mt-1">
+                                    @string.Format("{0} {1}", et.StationoryText, item.OriginName)
+                                </MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@item.BranchName</MudText>
+                            </MudCardContent>
+                        </MudCard>                   
                 </ItemContent>
             </MudTimelineItem>
         }
@@ -56,13 +127,13 @@
     [Parameter]
     public bool IsLocked { get; set; } = false;
 
-    protected override void  OnInitialized()
+    protected override void OnInitialized()
     {
         EventTypes = Ievent.GetEventTypes().ToList();
     }
 
     protected override void OnParametersSet()
-    {      
+    {
         LoadEvents();
     }
 
@@ -90,9 +161,9 @@
         var parameters = new DialogParameters();
         parameters.Add("CurrentTrip", Trip);
         parameters.Add("model", ev.Clone());
-        var dialog = DialogService.Show<UpdateEventView>("Edit Event", parameters);
+        var dialog = await DialogService.ShowAsync<UpdateEventView>("Edit Event", parameters);
         var result = await dialog.Result;
-        if(!result.Cancelled)
+        if (!result.Canceled)
         {
             var data = (EventModel)result.Data;
             ev = data;

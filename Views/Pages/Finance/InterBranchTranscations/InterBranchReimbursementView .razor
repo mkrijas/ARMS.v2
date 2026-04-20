@@ -1,233 +1,130 @@
-﻿@page "/ReimbursementView"
+@page "/ReimbursementView"
 @page "/ReimbursementView/{id:int}"
-@using ArmsModels.BaseModels.Finance.Transactions
 @using System.Threading;
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
-@inject NavigationManager uriHelper;
-@inject SignalRService signalRService
 @inject IReimbursementService Iservice
-@inject ICostCenterService costIservice
-@inject IDimensionService dimensionIservice
-@inject MudBlazor.ISnackbar snackbar
-@inject IRoleService<RoleModel> Irole
-@inject IDialogService DialogService
-@inject IPushNotificationService IpushNotificationService
+@inherits ViewComponentBase<InterBranchReimbursementModel>
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Reimbursement / Cross Charge</MudText>
-                <MudTooltip Text="New Reimbursement">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new InterBranchReimbursementModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Contra..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
-                </MudTextField>
-                <div class="tablefont">
-                    <span style="margin-right: 10px;">Maximum Records: </span>
+
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Reimbursement & Cross-Charge</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Process and manage employee expense reimbursements and cross-branch charges. verify expense claims, assess financial impact, and authorize payouts.</MudText>
                 </div>
-                <MudItem xs="1">
-                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
-                </MudItem>
-                <MudCheckBox Label="Approved Entries" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel , object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel, object>(x=> x.NatureOfTransaction)" InitialDirection="SortDirection.Ascending">Nature</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel, object>(x=> x.OtherBranchName)" InitialDirection="SortDirection.Ascending">Target Branch</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
-                <MudTd DataLabel="NatureOfTransaction">@context.NatureOfTransaction</MudTd>
-                <MudTd DataLabel="OtherBranchName">@context.OtherBranchName</MudTd>
-                <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
-                <MudTd DataLabel="">
-                    <MudTooltip Text="View">
-                        <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
-                    @if (@context.AuthLevelId == null)
-                    {
-                        <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
-                        <MudTooltip Text="Verify">
-                            <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
-                        <MudTooltip Text="Delete">
-                            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
-                    }
-                    @if (@context.AuthLevelId == 99)
-                    {
-                        <MudTooltip Text="Print">
-                            <MudFab @onclick="@(()=> Print(context.ID, context.NatureOfTransaction))" Color="Color.Tertiary" title="Delete" Icon="@Icons.Material.Filled.Print" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
-                    }
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+                <MudButton StartIcon="@Icons.Material.Filled.ReceiptLong" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenForm(new InterBranchReimbursementModel(),false,false))" Disabled="@_busy">NEW REIMBURSEMENT</MudButton>
+            </div>
+        </div>
 
-@code {
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+                <div style="flex-grow: 1; min-width: 300px;">
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search by document number or nature..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
+                </div>
+                <div class="d-flex align-center gap-4">                 
+                    <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
+                        <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    private InterBranchReimbursementModel model = new InterBranchReimbursementModel();
-    public bool IsApproved { get; set; } = false;
-    private List<InterBranchReimbursementModel> collection = new List<InterBranchReimbursementModel>();
-    private int numberOfRecords = 100;
-    private string searchTerm = "";
-    [Parameter]
-    public int? id { get; set; } = null;
-    private bool _busy;
+        <div class="admin-glass-card pa-0 overflow-hidden">
+        <MudTable ServerData="LoadServerData" T="InterBranchReimbursementModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
+                <LoadingContent>
+                <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                    <LoaderComponent IsFullScreen="false"
+                                     ShowLogo="false"
+                                     Size="large"
+                                     LoadingText="Loading...."
+                                     SubText="Fetching Data..." />
+                </div>
+                  </LoadingContent>
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel , object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel, object>(x=> x.DocumentNumber)"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
+                    <MudTh><span class="admin-header-text">NATURE & TARGET</span></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">CLAIM AMOUNT</span></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Date"><span class="fw-500">@context.DocumentDate?.ToString("dd MMM yyyy")</span></MudTd>
+                    <MudTd DataLabel="DocNumber">
+                        <div class="d-flex align-center gap-2">
+                            <span class="admin-td-primary fw-700">@context.DocumentNumber</span>
+                            @if (context.AuthLevelId == 99)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Verified" Color="Color.Success" Size="Size.Small" />
+                            }
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Nature">
+                        <div class="d-flex flex-column">
+                            <span class="fw-700 small">@context.NatureOfTransaction</span>
+                            <div class="d-flex align-center gap-1 opa-60">
+                                <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Small" />
+                                <span class="tiny">@context.OtherBranchName</span>
+                            </div>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Amount" Style="text-align: right;">
+                        <span class="fw-800 text-vibrant" style="font-size: 1rem;">@context.TotalAmount?.ToString("N2")</span>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            @if (@context.AuthLevelId == 99)
+                            {
+                                <MudTooltip Text="Print Protocol">
+                                    <MudIconButton OnClick="@(()=> Print(context.ID, context.NatureOfTransaction))" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+                            else if (@context.AuthLevelId == null)
+                            {
+                                <MudTooltip Text="Verify Claim">
+                                    <MudIconButton OnClick="@(()=> OpenForm(context,true,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
 
-    public bool HasPermissionContraServiceDelete { get; set; } = false;
-    public bool HasPermissionContraServiceApprove { get; set; } = false;
-    public int ContraDocTypeID = 3;
+                                <MudTooltip Text="Edit Parameters">
+                                    <MudIconButton OnClick="@(()=> OpenForm(context,false,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
 
-    #region SignaIR Notification
+                                <MudTooltip Text="Purge Entry">
+                                    <MudIconButton OnClick="@(()=> Delete(context.ID))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
 
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
+                            <MudTooltip Text="Inspect Details">
+                                <MudIconButton OnClick="@(()=> OpenForm(context,true,true))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
 
-    private int NumberOfRecords
+@code {   
+    
+     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
     {
-        get => numberOfRecords;
-        set
-        {
-            if (numberOfRecords != value)
-            {
-                numberOfRecords = value;
-                _ = ReloadTable();
-            }
-        }
-    }
-
-    // Method to handle search key up event
-    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await ReloadTable();
-        }
-    }
-
-    // Method to reload the table with current filters
-    private async Task ReloadTable()
-    {
-        await GetAll(IsApproved, NumberOfRecords);
-    }
-
-    // Lifecycle method called when the component is initialized
+        DocumentTypeID = 3,
+        DocumentName = "Reimbersement"
+    };
+    
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionContraServiceDelete = await Irole.HasClaim(ContraDocTypeID.ToString(), "Delete", ctc.Token);
-        HasPermissionContraServiceApprove = await Irole.HasClaim(ContraDocTypeID.ToString(), "Approve", ctc.Token);
-
-        model = new();
-        await GetAll(IsApproved, NumberOfRecords);
-        await Task.Delay(200);
-        await signalRService.StartAsync();
-        if (id != null && collection != null && collection.Any(g => g.ID == id))
+        await base.OnInitializedAsync();
+        if (id != null && _collection != null && _collection.Any(g => g.ID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.ID == id), false, false);
+            await OpenForm(_collection.FirstOrDefault(s => s.ID == id), true);
         }
     }
-
-    // Method to handle changes in the approval status
-    async Task ApprovedChanged(bool value)
-    {
-        IsApproved = value;
-        await GetAll(IsApproved, NumberOfRecords);
-    }
-
-    // Method to fetch all inter-branch reimbursements based on approval status and number of records
-    private async Task GetAll(bool val, int numberOfRecords)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        int NumberOfRecords = numberOfRecords;
-        collection = new List<InterBranchReimbursementModel>();
-
-        // Fetch approved or unapproved reimbursements based on the value of 'val'
-        if (val)
-        {
-            collection = Iservice.SelectByApproved(brancID, NumberOfRecords, true, searchTerm).ToList(); // Fetch approved reimbursements
-        }
-        else
-        {
-            collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, true, searchTerm).ToList(); // Fetch unapproved reimbursements
-        }
-    }
-
-    // Method to delete a reimbursement 
-    private async Task Delete(InterBranchReimbursementModel model)
-    {
-        if (HasPermissionContraServiceDelete)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
-            if (result == true)
-            {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var User = authprov.User;
-                var UserID = User.Identity.Name;
-
-                // Call the service to delete the reimbursemen
-                Iservice.Delete(model.ID, UserID);
-                snackbar.Add("Deleted Successfully", Severity.Success);
-            }
-            await GetAll(IsApproved, NumberOfRecords);
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Delete Contra.");
-        }
-    }
-
-    // Method to approve a reimbursement
-    private async Task Approve(InterBranchReimbursementModel tds)
-    {
-        if (HasPermissionContraServiceApprove)
-        {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.UserInfo.UserID = user.Identity.Name;
-            try
-            {
-                // Call the service to approve the reimbursement
-                Iservice.Approve(tds.ID, model.UserInfo.UserID, "");
-                snackbar.Add("Approved Successfully", Severity.Success);
-                await GetAll(IsApproved, NumberOfRecords);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Approve Contra.");
-        }
-    }
-
-    // Method to open the dialog for adding or editing a reimbursement
-    private async Task OpenDialog(InterBranchReimbursementModel tds, bool ReadOnly, bool View)
+    protected override async Task OpenForm(InterBranchReimbursementModel _model, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -236,21 +133,18 @@
         }
         _busy = true;
 
-        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        DialogOptions largeWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds.Clone());
+        parms.Add("model", _model.Clone());        
         parms.Add("ReadOnly", ReadOnly);
-        var dialog = DialogService.Show<InterBranchReimbursementDialog>(tds.ID == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var dialog = await dialogService.ShowAsync<InterBranchReimbursementDialog>(_model.ID == null ? "ADD" : "EDIT", parms, largeWidth);
         var result = await dialog.Result;
-
         var isCancelled = result.Canceled;
         if (!isCancelled)
         {
-            var ReturnData = (InterBranchReimbursementModel)result.Data;
-
-        }
-        await GetAll(IsApproved, NumberOfRecords);
-
+            var ReturnData = (JournalModel)result.Data;
+            await _table.ReloadServerData();
+        }        
         await Task.Delay(200);
         _busy = false;
     }
@@ -274,6 +168,7 @@
             parameters.Add("ReportName", "PrintReimbursementOrStockTransferInvoice");
         }
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+        var result = await dialogService.ShowAsync<PrintDialog>("PRINT", parameters, maxWidth);
     }
 }
+

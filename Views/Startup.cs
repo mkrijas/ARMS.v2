@@ -1,4 +1,5 @@
 using ArmsModels.BaseModels;
+using ArmsModels.BaseModels.Finance.Transactions;
 using ArmsServices;
 using ArmsServices.DataServices;
 using ArmsServices.DataServices.Finance.Transactions;
@@ -7,59 +8,58 @@ using ArmsServices.DataServices.General;
 using ArmsServices.DataServices.Inventory;
 using ArmsServices.DataServices.Operations;
 using Blazored.SessionStorage;
-using Microsoft.AspNetCore.SignalR.Client;
+using Core.BaseModels.Finance.Transactions;
+using Core.BaseModels.User;
+using Core.IDataServices.Finance;
+using Core.IDataServices.Finance.DayOpen;
+using Core.IDataServices.Finance.LedgerViews;
+using Core.IDataServices.Finance.Transactions;
+using Core.IDataServices.Operations;
+using Core.IDataServices.Operations.ROI;
+using Core.IDataServices.User;
+using DAL.DataServices;
+using DAL.DataServices.Finance;
+using DAL.DataServices.Finance.DayOpen;
+using DAL.DataServices.Finance.LedgerViews;
+using DAL.DataServices.Finance.Transactions;
+using DAL.DataServices.General;
+using DAL.DataServices.Operations;
+using DAL.DataServices.Operations.ROI;
+using DAL.DataServices.User;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using MudBlazor;
 using MudBlazor.Services;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-
-using Views.Data;
-using Microsoft.AspNetCore.ResponseCompression;
-using Core.IDataServices.Finance.Transactions;
-using DAL.DataServices.Finance.Transactions;
-using System.Security.Cryptography;
-using DAL.DataServices.General;
-
-using Microsoft.AspNetCore.Identity.UI.Services;
-using static MudBlazor.Defaults;
-using Core.IDataServices.Finance.LedgerViews;
-using DAL.DataServices.Finance.LedgerViews;
-using Microsoft.AspNetCore.Http;
-using Core.IDataServices.Operations;
-using DAL.DataServices.Operations;
-using Core.IDataServices.Finance;
-using DAL.DataServices.Finance;
-using ArmsModels.BaseModels.Finance.Transactions;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Http.Features;
-using Core.IDataServices.Finance.DayOpen;
-using DAL.DataServices.Finance.DayOpen;
-using Core.BaseModels.Finance.Transactions;
-using Core.IDataServices.User;
-using Core.BaseModels.User;
-using DAL.DataServices.User;
-using DAL.DataServices.Operations.ROI;
-using Core.IDataServices.Operations.ROI;
-using System.Net.Http;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.HttpOverrides;
+using System.Threading.Tasks;
+using Views.Data;
+using static MudBlazor.Defaults;
 
 namespace Views
 {
@@ -76,8 +76,11 @@ namespace Views
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            AppContext.SetSwitch("Switch.Microsoft.Data.SqlClient.UseManagedNetworkingOnWindows", true);
+
             services.AddRazorPages();
-            services.AddServerSideBlazor();
+            services.AddServerSideBlazor()
+    .AddCircuitOptions(options => { options.DetailedErrors = true; });
             services.AddControllers();
 
             // Allow CORS
@@ -114,7 +117,7 @@ namespace Views
             //   });
 
             services.AddControllersWithViews();
-            //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
+            services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
 
            // services.AddHttpClient();
             // 3rd party 
@@ -128,17 +131,17 @@ namespace Views
 
             // ------ SIgnalR & Hub ---------- //
             services.AddScoped<SignalRService>();
-            services.AddSignalRCore();
-            services.AddResponseCompression(opts =>
-            {
-                opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
-                      new[] { "application/octet-stream" });
-            });
+            services.AddSignalR();
+            // services.AddResponseCompression(opts =>
+            // {
+            //     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+            //           new[] { "application/octet-stream" });
+            // });
 
             // -------- Authorization----------- //
             services.AddAuthorization(config =>
             {
-                config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));
+                config.AddPolicy("Admin", policy => policy.RequireRole("Admin", "SupUsr"));
                 config.AddPolicy("Limited_To_HO", policy => policy.RequireClaim("BranchID", "7"));
             });
 
@@ -225,6 +228,7 @@ namespace Views
             #region ------------Dashboard---------------
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IFinanceDashboardService, FinanceDashboardService>();
+            services.AddScoped<ITelemetryService, TelemetryService>();
             #endregion
 
             #region ------------FMS---------------
@@ -239,7 +243,7 @@ namespace Views
             services.AddScoped<IPeriodicMaintenanceService, PeriodicMaintenanceService>();
             services.AddScoped<IInsuranceClaimService, InsuranceClaimService>();
             services.AddScoped<IRoutineCheckListService, RoutineCheckListService>();
-            //services.AddScoped<ITruckTransferService, TruckTransferService>();
+            services.AddScoped<ITruckTransferService, TruckTransferService>();
             #endregion
 
             #region ------------INVENTORY-------------------
@@ -332,6 +336,10 @@ namespace Views
             services.AddScoped<IbaseInterface<GeneralLedgerTransferModel>, GeneralLedgerTransferService>();
             services.AddScoped<IbaseInterface<CreditDebitTransferModel>, CreditDebitTransferService>();
             services.AddScoped<IbaseInterface<DriverSalaryPayableModel>, DriverSalaryPayableService>();
+            services.AddScoped<IbaseInterface<ProformaInvoiceModel>, FreightBillingService>();
+            services.AddScoped<IbaseInterface<PaymentFinishModel>, PaymentFinalizeService>();
+            services.AddScoped<IbaseInterface<MileageShortageReceiptModel>, MileageShortageReceiptService>();
+            services.AddScoped<IbaseInterface<AutoSettleModel>, OutstandingBillsService>();
 
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();
@@ -365,16 +373,7 @@ namespace Views
 
 
             #endregion
-
-            //services.AddCors(options =>
-            //{
-            //    options.AddPolicy("CorsPolicy",
-            //        builder => builder
-            //            .WithOrigins("http://10.200.50.39:8484/") // Add the origin of your Blazor application
-            //            .AllowAnyMethod()
-            //            .AllowAnyHeader()
-            //            .AllowCredentials());
-            //});
+         
             #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
@@ -383,6 +382,7 @@ namespace Views
 
             //------------General-------------------
             services.AddScoped<IConfigTable, ConfigTable>();
+          
 
             #region--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
@@ -393,6 +393,11 @@ namespace Views
             services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddDefaultTokenProviders()
                 .AddDefaultUI();
+            
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.LoginPath = "/login";
+            });
             services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation>();
             #endregion
         }
@@ -416,7 +421,7 @@ namespace Views
             CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
             CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-            app.UseResponseCompression(); // SignalR Response compression
+            // app.UseResponseCompression(); // SignalR Response compression
 
             app.UseHttpsRedirection();
 

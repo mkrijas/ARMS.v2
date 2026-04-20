@@ -1,4 +1,4 @@
-﻿@page "/TDSSetting"
+@page "/TDSSetting"
 @inject ITdsRateService tdsRate
 @inject ITdsAccountMappingService Iservice
 @inject ITdsRateService ITdsRateservice
@@ -11,122 +11,207 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<MudGrid>
-    <MudItem xs="4" lg="4">
-        <MudPaper Width="100%" Class="p-2">
-            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
-                @if (listOfItems?.Any() == true)
-                {
-                    @foreach (var item in listOfItems)
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading TDS Configuration Hub" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">TDS Central Configuration Hub</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Consolidated orchestrator for Tax Deducted at Source. map ledger accounts, define tax matrices, and configure applicability thresholds for systematic compliance.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-grid-layout-split">
+            @* Sidebar Navigation *@
+            <div class="admin-glass-card pa-0 overflow-hidden sticky-top" style="top: 24px; height: fit-content;">
+                <div class="px-6 py-4 bg-glass border-bottom-subtle">
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Small" Class="opa-50" />
+                        <span class="admin-section-label mb-0">Payment Natures</span>
+                    </div>
+                </div>
+                <div class="pa-2 max-h-500 overflow-y-auto">
+                    @if (listOfItems?.Any() == true)
                     {
-                        <MudListItem Value="item">
-                            <MudText Typo=Typo.subtitle1> @(item?.NatureOfPayment?.ToString()) </MudText>
-                        </MudListItem>
+                        @foreach (var item in listOfItems)
+                        {
+                            <div class="admin-nav-item @(SelectedNP == item ? "active" : "") pa-3 rounded-lg mb-1 cursor-pointer transition-all" 
+                                 @onclick="@(()=> SelectItem(item))">
+                                <div class="d-flex align-center gap-3">
+                                    <div class="admin-nav-indicator"></div>
+                                    <MudText Typo="Typo.body2" Class="fw-600">@(item?.NatureOfPayment?.ToString())</MudText>
+                                </div>
+                            </div>
+                        }
                     }
-                }
-            </MudList>
-        </MudPaper>
-    </MudItem>
-    @if ((SelectedItem != null && SelectedItem.Value != null))
-    {
-        <MudItem xs="8" lg="8">
+                </div>
+            </div>
+
+            @* Main Content *@
             @if (SelectedNP != null)
             {
-                <MudItem xs="12" lg="12">
-                    <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
-                        <ToolBarContent>
-                            <MudText Typo="Typo.h6">@(SelectedNP.NatureOfPayment) Chart of Account Mapping</MudText>
-                            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> AddEditAccountMapping(new TdsAccountMappingModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                            <MudSpacer></MudSpacer>
-                        </ToolBarContent>
-                        <HeaderContent>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsAccountMappingModel, object>(x=> x.AccountName)" InitialDirection="SortDirection.Ascending">Account Name</MudTableSortLabel></MudTh>
-                            <MudTh>Actions</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="TdsAccountMapping">@context.AccountName</MudTd>
-                            <MudTd DataLabel="">
-                                <MudFab @onclick="@(()=> AddEditAccountMapping(context))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                                <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTd>
-                        </RowTemplate>
-                        <PagerContent>
-                            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                        </PagerContent>
-                    </MudTable>
-                </MudItem>
-                <br />
-                <MudItem xs="12" lg="12">
-                    <MudTable Items="@collectionTdsRate"  Dense="true" Hover="true" Striped="true" Elevation="10">
-                        <ToolBarContent>
-                            <MudText Typo="Typo.h6">@(SelectedNP.NatureOfPayment) Tds Rates</MudText>
-                            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogTdsRate(new TdsRateModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                            <MudSpacer></MudSpacer>
-                            <MudCheckBox Label="Show All" T="bool" CheckedChanged="TdsrateToggled" Checked="@TdsRateToggle" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-                        </ToolBarContent>
-                        <HeaderContent>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsRateModel, object>(x=> x.TdsNP.NatureOfPayment)" InitialDirection="SortDirection.Ascending">Nature of Payment</MudTableSortLabel></MudTh>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsRateModel, object>(x=> x.AssesseeType.AssesseeTypeName)" InitialDirection="SortDirection.Ascending">Assessee Type</MudTableSortLabel></MudTh>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsRateModel, object>(x=> x.PeriodFrom)" InitialDirection="SortDirection.Ascending">PeriodFrom</MudTableSortLabel></MudTh>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsRateModel, object>(x=> x.PeriodTo)" InitialDirection="SortDirection.Ascending">PeriodTo</MudTableSortLabel></MudTh>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsRateModel, object>(x=> x.TaxRate)" InitialDirection="SortDirection.Ascending">TaxRate</MudTableSortLabel></MudTh>
-                            <MudTh>Actions</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="NatureOfPayment">@context.TdsNP.NatureOfPayment</MudTd>
-                            <MudTd DataLabel="AssesseeTypeName">@context.AssesseeType.AssesseeTypeName</MudTd>
-                            <MudTd DataLabel="PeriodFrom">@context.PeriodFrom?.ToShortDateString()</MudTd>
-                            <MudTd DataLabel="PeriodTo">@context.PeriodTo?.ToShortDateString()</MudTd>
-                            <MudTd DataLabel="TaxRate">@context.TaxRate</MudTd>
-                            <MudTd DataLabel="">
-                                <MudFab @onclick="@(()=> OpenDialogTdsRate(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                                <MudFab @onclick="@(()=> DeleteTdsRate(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTd>
-                        </RowTemplate>
-                        <PagerContent>
-                            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                        </PagerContent>
-                    </MudTable>
-                </MudItem>
-                <br />
-                <MudItem xs="12" lg="12">
-                    <MudTable Items="@collectionThresholdLimit"  Dense="true" Hover="true" Striped="true" Elevation="10">
-                        <ToolBarContent>
-                            <MudText Typo="Typo.h6">@(SelectedNP.NatureOfPayment)  Tds Threshold Limits</MudText>
-                            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogThresholdLimit(new TdsThresholdLimitModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                            <MudSpacer></MudSpacer>
-                            <MudCheckBox Label="Show All" T="bool" CheckedChanged="ThresholdLimitToggled" Checked="@ThresholdLimitToggle" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-                        </ToolBarContent>
-                        <HeaderContent>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsThresholdLimitModel, object>(x=> x.NatureOfPayment.NatureOfPayment)" InitialDirection="SortDirection.Ascending">Nature of Payment</MudTableSortLabel></MudTh>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsThresholdLimitModel, object>(x=> x.PeriodFrom)" InitialDirection="SortDirection.Ascending">PeriodFrom</MudTableSortLabel></MudTh>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsThresholdLimitModel, object>(x=> x.PeriodTo)" InitialDirection="SortDirection.Ascending">PeriodTo</MudTableSortLabel></MudTh>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsThresholdLimitModel, object>(x=> x.ThresholdLimitSingle)" InitialDirection="SortDirection.Ascending">Single</MudTableSortLabel></MudTh>
-                            <MudTh><MudTableSortLabel SortBy="new Func<TdsThresholdLimitModel, object>(x=> x.ThresholdLimitPeriod)" InitialDirection="SortDirection.Ascending">Period</MudTableSortLabel></MudTh>
-                            <MudTh>Actions</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="NatureOfPayment">@context.NatureOfPayment.NatureOfPayment</MudTd>
-                            <MudTd DataLabel="PeriodFrom">@context.PeriodFrom?.ToShortDateString()</MudTd>
-                            <MudTd DataLabel="PeriodTo">@context.PeriodTo?.ToShortDateString()</MudTd>
-                            <MudTd DataLabel="ThresholdLimitSingle">@context.ThresholdLimitSingle</MudTd>
-                            <MudTd DataLabel="ThresholdLimitPeriod">@context.ThresholdLimitPeriod</MudTd>
-                            <MudTd DataLabel="">
-                                <MudFab @onclick="@(()=> OpenDialogThresholdLimit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                                <MudFab @onclick="@(()=> DeleteThresholdLimit(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTd>
-                        </RowTemplate>
-                        <PagerContent>
-                            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                        </PagerContent>
-                    </MudTable>
-                </MudItem>
+                <div class="d-flex flex-column gap-6">
+                    @* GL Account Mapping Section *@
+                    <div class="admin-glass-card pa-0 overflow-hidden shadow-sm">
+                        <div class="px-6 py-4 bg-glass border-bottom-subtle d-flex align-center justify-space-between">
+                            <div class="d-flex align-center gap-3">
+                                <div class="admin-icon-square-vibrant small accent-indigo">
+                                    <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" />
+                                </div>
+                                <span class="admin-section-label mb-0">GL Account Mappings</span>
+                            </div>
+                            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> AddEditAccountMapping(new TdsAccountMappingModel()))" Disabled="@_busy">ADD MAPPING</MudButton>
+                        </div>
+                        <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+                            <HeaderContent>
+                                <MudTh><span class="admin-header-text">CHART OF ACCOUNT / LEDGER</span></MudTh>
+                                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Account">
+                                    <div class="d-flex align-center gap-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" Class="opa-40" />
+                                        <span class="fw-700 admin-td-primary">@context.AccountName</span>
+                                    </div>
+                                </MudTd>
+                                <MudTd DataLabel="Actions" Style="text-align: right;">
+                                    <div class="d-flex justify-end gap-1">
+                                        <MudTooltip Text="Edit Mapping">
+                                            <MudIconButton OnClick="@(()=> AddEditAccountMapping(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                        </MudTooltip>
+                                        <MudTooltip Text="Purge Mapping">
+                                            <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                        </MudTooltip>
+                                    </div>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </div>
+
+                    @* TDS Rates Section *@
+                    <div class="admin-glass-card pa-0 overflow-hidden shadow-sm">
+                        <div class="px-6 py-4 bg-glass border-bottom-subtle d-flex align-center justify-space-between">
+                            <div class="d-flex align-center gap-4">
+                                <div class="d-flex align-center gap-3">
+                                    <div class="admin-icon-square-vibrant small accent-amber">
+                                        <MudIcon Icon="@Icons.Material.Filled.Percent" Size="Size.Small" />
+                                    </div>
+                                    <span class="admin-section-label mb-0">Deduction Matrix</span>
+                                </div>
+                                <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
+                                    <MudCheckBox Label="Audit Legacy (Show All)" T="bool" ValueChanged="TdsrateToggled" Value="@TdsRateToggle" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+                                </div>
+                            </div>
+                            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenDialogTdsRate(new TdsRateModel()))" Disabled="@_busy">ADD RATE</MudButton>
+                        </div>
+                        <MudTable Items="@collectionTdsRate" Elevation="0" Class="modern-admin-table" Hover="true">
+                            <HeaderContent>
+                                <MudTh><span class="admin-header-text">ASSESSEE TYPE</span></MudTh>
+                                <MudTh><span class="admin-header-text">VALIDITY</span></MudTh>
+                                <MudTh Style="text-align: right;"><span class="admin-header-text">TAX RATE</span></MudTh>
+                                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Assessee">
+                                    <MudChip T="string" Color="Color.Default" Variant="Variant.Text" Size="Size.Small" Class="fw-700 px-3 border-solid border-1">@context.AssesseeType?.AssesseeTypeName</MudChip>
+                                </MudTd>
+                                <MudTd DataLabel="Validity">
+                                    <div class="d-flex align-center gap-2">
+                                        <span class="fw-600">@context.PeriodFrom?.ToString("dd MMM yyyy")</span>
+                                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" Class="opa-20" />
+                                        <span class="fw-600">@context.PeriodTo?.ToString("dd MMM yyyy")</span>
+                                    </div>
+                                </MudTd>
+                                <MudTd DataLabel="Rate" Style="text-align: right;">
+                                    <span class="fw-800 text-vibrant" style="font-size: 1.1rem;">@context.TaxRate%</span>
+                                </MudTd>
+                                <MudTd DataLabel="Actions" Style="text-align: right;">
+                                    <div class="d-flex justify-end gap-1">
+                                        <MudIconButton OnClick="@(()=> OpenDialogTdsRate(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                        <MudIconButton OnClick="@(()=> DeleteTdsRate(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                    </div>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </div>
+
+                    @* Threshold Limits Section *@
+                    <div class="admin-glass-card pa-0 overflow-hidden shadow-sm mb-8">
+                        <div class="px-6 py-4 bg-glass border-bottom-subtle d-flex align-center justify-space-between">
+                            <div class="d-flex align-center gap-4">
+                                <div class="d-flex align-center gap-3">
+                                    <div class="admin-icon-square-vibrant small accent-success">
+                                        <MudIcon Icon="@Icons.Material.Filled.VerticalAlignTop" Size="Size.Small" />
+                                    </div>
+                                    <span class="admin-section-label mb-0">Applicability Thresholds</span>
+                                </div>
+                                <div class="d-flex align-center bg-glass rounded-pill px-4 py-1">
+                                    <MudCheckBox Label="Historical (Show All)" T="bool" ValueChanged="ThresholdLimitToggled" Value="@ThresholdLimitToggle" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+                                </div>
+                            </div>
+                            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenDialogThresholdLimit(new TdsThresholdLimitModel()))" Disabled="@_busy">ADD LIMIT</MudButton>
+                        </div>
+                        <MudTable Items="@collectionThresholdLimit" Elevation="0" Class="modern-admin-table" Hover="true">
+                            <HeaderContent>
+                                <MudTh><span class="admin-header-text">PERIOD</span></MudTh>
+                                <MudTh Style="text-align: right;"><span class="admin-header-text">SINGLE BILL CAP</span></MudTh>
+                                <MudTh Style="text-align: right;"><span class="admin-header-text">ANNUAL AGGREGATE</span></MudTh>
+                                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Period">
+                                    <div class="d-flex align-center gap-2">
+                                        <span class="fw-600">@context.PeriodFrom?.ToString("dd MMM yyyy")</span>
+                                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" Class="opa-20" />
+                                        <span class="fw-600">@context.PeriodTo?.ToString("dd MMM yyyy")</span>
+                                    </div>
+                                </MudTd>
+                                <MudTd DataLabel="Single" Style="text-align: right;">
+                                    <span class="fw-700 font-monospace">@string.Format("{0:N2}", context.ThresholdLimitSingle)</span>
+                                </MudTd>
+                                <MudTd DataLabel="Aggregate" Style="text-align: right;">
+                                    <span class="fw-700 text-vibrant font-monospace">@string.Format("{0:N2}", context.ThresholdLimitPeriod)</span>
+                                </MudTd>
+                                <MudTd DataLabel="Actions" Style="text-align: right;">
+                                    <div class="d-flex justify-end gap-1">
+                                        <MudIconButton OnClick="@(()=> OpenDialogThresholdLimit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                        <MudIconButton OnClick="@(()=> DeleteThresholdLimit(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                    </div>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </div>
+                </div>
             }
-        </MudItem>
-    }
-</MudGrid>
+            else
+            {
+                <div class="d-flex flex-column align-center justify-center pa-12 opa-30" style="min-height: 400px;">
+                    <MudIcon Icon="@Icons.Material.Filled.AdsClick" Size="Size.Large" Class="mb-4" Style="font-size: 4rem;" />
+                    <MudText Typo="Typo.h5" Class="fw-700">Select Payment Nature</MudText>
+                    <MudText Typo="Typo.body2">Choose a category from the sidebar to configure its TDS parameters.</MudText>
+                </div>
+            }
+        </div>
+    </div>
+}
+}
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<TdsAccountMappingModel> collection = new List<TdsAccountMappingModel>();
     private List<TdsRateModel> collectionTdsRate = new List<TdsRateModel>();
@@ -135,25 +220,26 @@
     public bool ThresholdLimitToggle { get; set; } = false;
     private List<NatureOfPaymentModel> listOfItems = new();
     NatureOfPaymentModel SelectedNP = new();
-    MudListItem SelectedItem = new();
+    
     private string searchTds = "";
     private bool _busy;
 
     public bool HasPermissionTdsThresholdLimitServiceEdit { get; set; } = false;
     public bool HasPermissionTdsThresholdLimitServiceDelete { get; set; } = false;
-    public int TdsThresholdLimitDocTypeID = 98;
+    public int TdsThresholdLimitDocTypeID = 76;
 
     public bool HasPermissionTdsRateServiceEdit { get; set; } = false;
     public bool HasPermissionTdsRateServiceDelete { get; set; } = false;
-    public int TdsRateDocTypeID = 127;
+    public int TdsRateDocTypeID = 75;
 
     public bool HasPermissionTdsAccountMappingServiceEdit { get; set; } = false;
     public bool HasPermissionTdsAccountMappingServiceDelete { get; set; } = false;
-    public int TdsAccountMappingDocTypeID = 128;
+    public int TdsAccountMappingDocTypeID = 45;
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTdsThresholdLimitServiceEdit = await Irole.HasClaim(TdsThresholdLimitDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionTdsThresholdLimitServiceDelete = await Irole.HasClaim(TdsThresholdLimitDocTypeID.ToString(), "Delete", ctc.Token);
@@ -163,15 +249,25 @@
         HasPermissionTdsAccountMappingServiceDelete = await Irole.HasClaim(TdsAccountMappingDocTypeID.ToString(), "Delete", ctc.Token);
 
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to handle changes in the selected item
-    protected void SelectedItemChanged(object obj)
+    protected void SelectItem(NatureOfPaymentModel item)
     {
-        if (obj != null)
+        if (item != null)
         {
-            SelectedItem = (MudListItem)obj;
-            SelectedNP = (NatureOfPaymentModel)SelectedItem.Value;
+            SelectedNP = item;
             ShowMappedAccounts(SelectedNP);
             TdsrateToggled(false);
             ThresholdLimitToggled(false);
@@ -211,7 +307,7 @@
     {
         if (HasPermissionTdsAccountMappingServiceDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 "Are you sure, you want to delete - " + model.AccountName + " ?");
             if (result == true)
@@ -230,7 +326,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Delete TdsAccountMapping.");
         }
@@ -241,7 +337,7 @@
     {
         if (HasPermissionTdsRateServiceDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 "Are you sure, you want to delete - " + model.AssesseeType.AssesseeTypeName + " (" + model.PeriodFrom + " - " + model.PeriodTo + ") ?");
             if (result == true)
@@ -258,7 +354,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Delete TdsRate.");
         }
@@ -269,7 +365,7 @@
     {
         if (HasPermissionTdsThresholdLimitServiceDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 "Are you sure, you want to delete - " + model.NatureOfPayment.NatureOfPayment + " (" + model.PeriodFrom + " - " + model.PeriodTo + ") ?");
             if (result == true)
@@ -286,7 +382,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Delete TdsThresholdLimit.");
         }
@@ -321,7 +417,7 @@
             model.TdsNPID = SelectedNP.TdsNPID;
             DialogParameters parms = new DialogParameters();
             parms.Add("model", model.Clone());
-            var dialog = DialogService.Show<TdsAccountMappingDialig>(model.TdsAccountMappedID == null ? "ADD" : "EDIT", parms);
+            var dialog = await DialogService.ShowAsync<TdsAccountMappingDialig>(model.TdsAccountMappedID == null ? "ADD" : "EDIT", parms);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -333,7 +429,7 @@
                     TdsAccountMappingModel checkexist = Iservice.CheckExist(UpatedModel.CoaID);
                     @if (checkexist.NatureOfPayment != null)
                     {
-                        bool? exist = await DialogService.ShowMessageBox(
+                        bool? exist = await DialogService.ShowMessageBoxAsync(
                             "Warning !",
                             "Account Name : " + checkexist.AccountName + " already exist under NatureOfPayment : " + checkexist.NatureOfPayment + " ?");
                     }
@@ -354,7 +450,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit TdsAccountMapping.");
         }
@@ -379,7 +475,7 @@
             tds.TdsNP = SelectedNP;
             DialogParameters parms = new DialogParameters();
             parms.Add("model", tds.Clone());
-            var dialog = DialogService.Show<TdsRateDialog>(tds.TdsRateID == null ? "ADD" : "EDIT", parms);
+            var dialog = await DialogService.ShowAsync<TdsRateDialog>(tds.TdsRateID == null ? "ADD" : "EDIT", parms);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -401,7 +497,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit TdsRate.");
         }
@@ -426,7 +522,7 @@
             tds.NatureOfPayment = SelectedNP;
             DialogParameters parms = new DialogParameters();
             parms.Add("model", tds.Clone());
-            var dialog = DialogService.Show<TdsThresholdLimitDialog>(tds.TdsTLID == null ? "ADD" : "EDIT", parms);
+            var dialog = await DialogService.ShowAsync<TdsThresholdLimitDialog>(tds.TdsTLID == null ? "ADD" : "EDIT", parms);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -448,7 +544,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit TdsThresholdLimit.");
         }
@@ -461,3 +557,4 @@
 
     }
 }
+

@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualBasic;
+using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -47,6 +47,7 @@ namespace ArmsModels.BaseModels
         public bool IsLocked { get; set; }
         public bool IsMileageOverride { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+        public int? TotalSearchCount { get; set; }
         [ValidateComplexType]
         public EventModel StartEvent { get; set; }
     }
@@ -56,11 +57,15 @@ namespace ArmsModels.BaseModels
     {
         public long? TripID { get; set; }
         public string TripNumber { get; set; }
+        public DateTime? TripDate { get; set; }
         public string Truck { get; set; }
         public string Driver { get; set; }
         public decimal? Mileage { get; set; }
+        public string Origin { get; set; }
+        public string Destination { get; set; }
+        public int? Distance { get; set; }
         public int? RunKM { get; set; }
-        public string RunDuration { get; set; }
+        public decimal? RunDuration { get; set; }
         public decimal? Fuel { get; set; }
         public decimal? Freight { get; set; }
         public decimal? Expenses { get; set; }
@@ -145,6 +150,7 @@ namespace ArmsModels.BaseModels
 
         public DateTime? Docdate = DateTime.Today;
         public string PaymentMode { get; set; }
+        [Required]
         public string PaymentArdCode { get; set; }
         public int? PaymentCoaID { get; set; }
         public string PaymentTool { get; set; }

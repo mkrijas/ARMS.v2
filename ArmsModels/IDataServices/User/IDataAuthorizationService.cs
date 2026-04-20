@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
         IEnumerable<DataAuthorizationModel> SelectByDocument(int? DocTypeID, int? DocumentID);
         IEnumerable<DataAuthorizationModel> SelectByDocument(string DocType, int? DocumentID);
         int Delete(int? ID, string UserID);
+        IEnumerable<DataAuthorizationModel> GetAll();
         IEnumerable<DataAuthorizationModel> GetAuthStatus(int? DocTypeID, int? DocumentID);
     }
 }

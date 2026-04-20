@@ -1,4 +1,4 @@
-﻿@page "/BankAccountOwnView"
+@page "/BankAccountOwnView"
 @inject IBankAccountOwnService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -11,86 +11,108 @@
 @inject Microsoft.AspNetCore.Components.NavigationManager navigationManager
 
 
-<style>
-    .selected {
-        background-color: #1E88E5 !important;
-    }
-
-        .selected > td {
-            color: white !important;
-        }
-
-            .selected > td .mud-input {
-                color: white !important;
-            }
-
-    .disabled-row {
-        background-color: #bec2bf !important;
-        color: #828894 !important;
-    }
-</style>
-
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model" @ref="mudTable" RowClassFunc="@RowClassFunc" T="OwnBankModel">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Own Bank Accounts</MudText>
-                <MudTooltip Text="New Sundry Paymnet">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-                <MudSpacer></MudSpacer>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankAccountInfo.BankTitle)" InitialDirection="SortDirection.Ascending">Title</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankAccountInfo.BeneficiaryName)" InitialDirection="SortDirection.Ascending">Beneficiary Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankAccountInfo.AccountNumber)" InitialDirection="SortDirection.Ascending">Account Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankAccountInfo.BankBranch)" InitialDirection="SortDirection.Ascending">Branch</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankCode)" InitialDirection="SortDirection.Ascending">BankCode</MudTableSortLabel></MudTh>
-                <MudTh>Is Disable</MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Title">@context.BankAccountInfo.BankTitle</MudTd>
-                <MudTd DataLabel="BeneficiaryName">@context.BankAccountInfo.BeneficiaryName</MudTd>
-                <MudTd DataLabel="AccountNumber">@context.BankAccountInfo.AccountNumber</MudTd>
-                <MudTd DataLabel="Branch">@context.BankAccountInfo.BankBranch</MudTd>
-                <MudTd DataLabel="BankCode">@context.BankCode</MudTd>
-                <MudTd DataLabel="">
-                    <MudTooltip Text="Disable">
-                        <MudSwitch Checked="@context.IsDisabled" Color="Color.Primary" T="bool?" CheckedChanged="@((e) => DisableAccount(e,context.ID))"></MudSwitch>
-                    </MudTooltip>
-                </MudTd>
-                <MudTd DataLabel="">
-                    <MudTooltip Text="Edit">
-                        <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
-                    <MudTooltip Text="UnRecounciled Bank Entry">
-                        <MudFab @onclick="@(()=> RedirectToUnRecounciledBankEntry(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Grid3x3" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
-                    <MudTooltip Text="Cheque Books">
-                        <MudFab OnClick="@(() => nav.NavigateTo("chequebook/" + context.ID.ToString()))" Color="Color.Primary" Icon="@Icons.Material.Filled.Newspaper" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
-                    @* <MudTooltip Text="Bank Ledger Views">
-                        <MudFab @onclick="@(()=> OpenBankLedgerViews(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.TableView" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip> *@
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
-@if (ShowUnReconciledBankEntry)
+@if (_isLoading)
 {
-    <UnReconciledBankEntryView bankModel="unRecounciledBankEntry" @ref="child" />
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Financial Portals" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Bank Account Portfolio</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Maintain institution-level bank accounts across all regional branches. oversee liquidity access points, beneficiary configurations, and audit bank-specific financial tools.</MudText>
+                </div>
+                <MudButton StartIcon="@Icons.Material.Filled.AccountBalance" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenDialog(model))" Disabled="@_busy">REGISTER NEW ACCOUNT</MudButton>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true" RowClassFunc="@RowClassFunc" T="OwnBankModel">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankAccountInfo.BankTitle)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">BANK / TITLE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankAccountInfo.BeneficiaryName)"><span class="admin-header-text">BENEFICIARY</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<OwnBankModel, object>(x=> x.BankAccountInfo.AccountNumber)"><span class="admin-header-text">ACCOUNT NUMBER</span></MudTableSortLabel></MudTh>
+                    <MudTh><span class="admin-header-text">BRANCH / CODE</span></MudTh>
+                    <MudTh Style="width: 120px;"><span class="admin-header-text">STATUS</span></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Title">
+                        <div class="d-flex align-center gap-3">
+                            <div class="admin-icon-square-vibrant small accent-indigo">
+                                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" />
+                            </div>
+                            <div class="d-flex flex-column">
+                                <span class="fw-700 admin-td-primary">@context.BankAccountInfo.BankTitle</span>
+                                <span class="small opa-50 fw-600">GL: @(context.PostingGroup?.BankAccount?.AccountName ?? "N/A")</span>
+                            </div>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Beneficiary"><span class="fw-600">@context.BankAccountInfo.BeneficiaryName</span></MudTd>
+                    <MudTd DataLabel="Account"><span class="fw-700 text-vibrant font-monospace" style="font-size: 1rem; color: #141A46;">@context.BankAccountInfo.AccountNumber</span></MudTd>
+                    <MudTd DataLabel="Branch">
+                        <div class="d-flex flex-column">
+                            <span class="fw-700 small">@context.BankAccountInfo.BankBranch</span>
+                            <span class="small opa-40 fw-800">CODE: @context.BankCode</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Status">
+                        <div class="d-flex align-center gap-2">
+                            <MudSwitch T="bool?" Value="@context.IsDisabled" Color="Color.Error" UnCheckedColor="Color.Success" ValueChanged="@(async (bool? e) => await DisableAccount(e,context.ID))" Size="Size.Small" />
+                            <MudTooltip Text="@(context.IsDisabled == true ? "Inactive Account" : "Active & Operational")">
+                                <MudChip T="string" Color="@(context.IsDisabled == true ? Color.Error : Color.Success)" Variant="Variant.Text" Size="Size.Small" Class="fw-800 px-0">@(context.IsDisabled == true ? "INACTIVE" : "ACTIVE")</MudChip>
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            <MudTooltip Text="Edit Parameters">
+                                <MudIconButton OnClick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            
+                            <MudTooltip Text="Opening Reconciliation">
+                                <MudIconButton OnClick="@(()=> RedirectToUnRecounciledBankEntry(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.AccountBalanceWallet" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+
+                            <MudTooltip Text="Cheque Book Suite">
+                                <MudIconButton OnClick="@(() => nav.NavigateTo("chequebook/" + context.ID.ToString()))" Color="Color.Secondary" Icon="@Icons.Material.Filled.FactCheck" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+
+        @if (ShowUnReconciledBankEntry)
+        {
+            <div class="mt-8 slide-up">
+                <UnReconciledBankEntryView bankModel="unRecounciledBankEntry" @ref="child" />
+            </div>
+        }
+    </div>
 }
 
 @code {
 
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
+
     private OwnBankModel model = new OwnBankModel();
     private List<OwnBankModel> collection = new List<OwnBankModel>();
-    DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
     private bool _busy;
 
     public bool HasPermissionBankAccountOwnServiceEdit { get; set; } = false;
@@ -99,11 +121,23 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionBankAccountOwnServiceEdit = await Irole.HasClaim(BankAccountOwnDocTypeID.ToString(), "Edit", ctc.Token);
 
         model = new();
         await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch all bank accounts
@@ -136,7 +170,7 @@
         {
             DialogParameters parms = new DialogParameters();
             parms.Add("model", ownBank.Clone());
-            var dialog = DialogService.Show<BankAccountOwnDialog>(ownBank.ID == null ? "ADD" : "EDIT", parms, mediumWidth);
+            var dialog = await DialogService.ShowAsync<BankAccountOwnDialog>(ownBank.ID == null ? "ADD" : "EDIT", parms, mediumWidth);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -155,7 +189,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit BankAccountOwn.");
         }
@@ -273,9 +307,10 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit BankAccountOwn.");
         }
     }
 }
+

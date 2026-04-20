@@ -1,0 +1,246 @@
+@page "/TruckMap"
+@using ArmsModels.BaseModels
+@using Microsoft.JSInterop
+@using MudBlazor
+@implements IDisposable
+@inject IJSRuntime JSRuntime
+@inject ITelemetryService TelemetryService
+
+<style>
+    .truck-marker-label {
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 4px 10px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 12.5px !important;
+        font-weight: 800 !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+        white-space: nowrap;
+    }
+    .truck-marker-moving {
+        border: 1.5px solid #43A047 !important;
+        color: #2E7D32 !important;
+    }
+    .truck-marker-stopped {
+        border: 1.5px solid #E53935 !important;
+        color: #D32F2F !important;
+    }
+    /* Custom Marker Labels */
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-top: 4px solid #1976D2;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    .cycle-btn {
+        background-color: #1976D2;
+        color: white;
+        transition: all 0.2s ease;
+    }
+    .cycle-btn:hover {
+        background-color: #1565C0;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        color: white;
+    }
+    .cycle-btn:active {
+        transform: scale(0.97);
+    }
+</style>
+
+<style>
+    /* Removes native MudBlazor dialog padding for edge-to-edge layout */
+    .mud-dialog-content { padding: 0 !important; overflow: hidden !important; }
+</style>
+
+<div class="truck-map-wrapper position-relative" style="width: 100%; height: @Height; overflow: hidden; border-radius: @(MudDialog != null ? "0" : "12px"); box-shadow: 0 12px 30px rgba(0,0,0,0.2) !important; outline: 1px solid rgba(0,0,0,0.05); margin-bottom: 0;">
+    
+    <!-- Floating Control Panel -->
+    <div class="glass-panel" style="position: absolute; top: 20px; left: 20px; z-index: 10; padding: 15px 20px; border-radius: 10px; width: 280px; font-family: 'Roboto', sans-serif;">
+        <h5 style="margin-top: 0; font-weight: 600; color: #333; display: flex; align-items: center; gap: 8px;">
+            <i class="oi oi-map-marker" style="color: #D32F2F; font-size: 18px;"></i> Fleet Tracking
+        </h5>
+        <div style="margin-bottom: 12px; font-size: 14px; color: #666;">
+            Viewing <b>@(Trucks?.Count ?? 0)</b> trucks in this branch.
+        </div>
+        
+        <div class="position-relative" style="margin-bottom: 12px;">
+            <div style="display: flex; gap: 8px;">
+                <input type="text" placeholder="Search Reg. No." class="form-control" @bind="SearchQuery" @bind:event="oninput" @onkeyup="PerformLocalSearch" style="flex: 1; border-radius: 6px; font-size: 13px; padding: 8px 10px; border: 1px solid #ced4da;" />
+                <button class="btn btn-secondary d-flex justify-content-center align-items-center" style="border-radius: 6px; padding: 8px 12px;" @onclick="PerformLocalSearchButton">
+                    <i class="oi oi-magnifying-glass"></i>
+                </button>
+            </div>
+            
+            @if (SearchResults != null && SearchResults.Any())
+            {
+                <div style="position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: white; border-radius: 6px; box-shadow: 0 6px 16px rgba(0,0,0,0.15); z-index: 20; max-height: 250px; overflow-y: auto; border: 1px solid #ddd;">
+                    @foreach (var truck in SearchResults)
+                    {
+                        <div style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s;" @onclick="() => FocusSpecificTruck(truck.REGN_NUMBER)" onmouseover="this.style.backgroundColor='#f5f5f5'" onmouseout="this.style.backgroundColor='white'">
+                            <div style="font-weight: 700; color: #1976D2; font-size: 14px;">@truck.REGN_NUMBER</div>
+                            <div style="font-size: 12px; color: #777; margin-top: 2px;">
+                                Speed: @truck.SPEED km/h | Ign: @(truck.GEAR_NUM > 0 ? "On" : "Off")
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <div style="flex: 1; height: 1px; background-color: #eee;"></div>
+            <span style="font-size: 11px; color: #999; padding: 0 10px; font-weight: bold;">OR</span>
+            <div style="flex: 1; height: 1px; background-color: #eee;"></div>
+        </div>
+        
+        <button class="btn cycle-btn d-flex align-items-center justify-content-center" style="width: 100%; border-radius: 6px; font-weight: 500; border: none; padding: 10px 16px;" @onclick="FocusNextTruck">
+             Cycle Focus <i class="oi oi-chevron-right" style="font-size: 12px; margin-left:8px;"></i>
+        </button>
+
+        @if (!string.IsNullOrEmpty(FocusedTruckReg))
+        {
+            <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1); font-size: 13px;">
+                <span style="color: #666;">Tracking:</span> <span style="font-weight: bold; color: #D32F2F; font-size: 15px; margin-left: 5px;">@FocusedTruckReg</span>
+            </div>
+        }
+    </div>
+
+    <!-- Map Container -->
+    <div id="@MapElementId" style="width: 100%; height: 100%;">
+        <!-- Map renders here -->
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<TelemetryModel> Trucks { get; set; } = new();
+
+    [Parameter]
+    public string RegNo { get; set; } = null;      
+
+    [CascadingParameter]
+    public IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string Height { get; set; } = "calc(100vh - 130px)";
+
+    [Parameter]
+    public string MapElementId { get; set; } = "googleMapContainer";
+
+    public string FocusedTruckReg { get; set; } = "";
+    public string SearchQuery { get; set; } = "";
+    public List<TelemetryModel> SearchResults { get; set; } = new();
+
+    private async Task FocusNextTruck()
+    {
+        SearchResults.Clear();
+        FocusedTruckReg = await JSRuntime.InvokeAsync<string>("truckMapInterop.focusNext", MapElementId);
+        StateHasChanged();
+    }
+
+    private void PerformLocalSearch(KeyboardEventArgs e)
+    {
+        DoSearch();
+        if (e.Key == "Enter" && SearchResults.Count == 1)
+        {
+            _ = FocusSpecificTruck(SearchResults.First().REGN_NUMBER);
+        }
+    }
+
+    private void PerformLocalSearchButton()
+    {
+        DoSearch();
+        if (SearchResults.Count == 1)
+        {
+            _ = FocusSpecificTruck(SearchResults.First().REGN_NUMBER);
+        }
+    }
+
+    private void DoSearch()
+    {
+        if (string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            SearchResults.Clear();
+            StateHasChanged();
+            return;
+        }
+        
+        SearchResults = Trucks
+            .Where(t => !string.IsNullOrEmpty(t.REGN_NUMBER) && t.REGN_NUMBER.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
+            
+        if (SearchResults.Count == 0)
+        {
+            FocusedTruckReg = "Not Found";
+        }
+        StateHasChanged();
+    }
+
+    private async Task FocusSpecificTruck(string regNumber)
+    {
+        SearchQuery = regNumber; // Update input beautifully
+        SearchResults.Clear(); // Close dropdown
+        FocusedTruckReg = regNumber;
+        await JSRuntime.InvokeVoidAsync("truckMapInterop.focusTruckByReg", MapElementId, regNumber);
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Trucks != null && Trucks.Any())
+        {
+            await JSRuntime.InvokeVoidAsync("truckMapInterop.initializeMap", MapElementId, Trucks);
+            
+            if (!string.IsNullOrWhiteSpace(RegNo))
+            {
+                await FocusSpecificTruck(RegNo);
+            }
+        }
+    }
+    
+    public List<TelemetryModel> TestTrucks { get; set; } = new List<TelemetryModel>();
+    private System.Threading.Timer _refreshTimer;
+
+    protected override void OnInitialized()
+    {        
+       if(!Trucks.Any())
+        {
+            var currentDatTime = DateTime.Now;
+             Trucks = TelemetryService.GetTelemetry(currentDatTime).ToList();
+        };  
+        SearchQuery = RegNo ?? "";
+        DoSearch();
+
+        // Initialize Background Refresh Polling Loop (Every 30 seconds)
+        _refreshTimer = new System.Threading.Timer(OnTimerFired, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private void OnTimerFired(object state)
+    {
+       var currentDatTime = DateTime.Now;
+             Trucks = TelemetryService.GetTelemetry(currentDatTime).ToList();
+        InvokeAsync(async () =>
+        {
+            try
+            {
+                // Pushes only coordinate deltas to Google Maps without triggering Blazor HTML tear-down
+                await JSRuntime.InvokeVoidAsync("truckMapInterop.updateMarkers", MapElementId, TestTrucks);
+            }
+            catch (TaskCanceledException)
+            {
+                // Component disposed or circuit disconnected
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit disconnected 
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
+}

@@ -1,4 +1,4 @@
-﻿@page "/trucks"
+@page "/trucks"
 @using System.Threading;
 @using System.Globalization
 @using OfficeOpenXml
@@ -19,95 +19,125 @@
 @inject IRoleService<RoleModel> Irole
 @inject IJSRuntime JSRuntime
 
-<style>
 
-    .InactiveTrucks > td > p::after {
-        color: red;
-        content: " (Unavailable)";
-    }
 
-</style>
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Trucks" 
+                        SubText="Please wait..." />
+    </div>
+}
 
-<MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="8" Filter="new Func<TruckModel, bool>(search)" @bind-Truck="model">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6">Trucks</MudText>
-        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-        <MudSpacer></MudSpacer>
-        <MudTextField @bind-Value="searchTruck" Placeholder="Search Trucks... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
-        <MudButton OnClick="ExcelDownload" Style="margin: 14px; margin-left: 60px;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
-    </ToolBarContent>
+
+else
+{
+<div @key="@("content")" class="admin-page-container">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">Fleet Management</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Monitor vehicle status, compliance, and operational assignments across all branches.</MudText>
+            </div>
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> Edit(null))" Disabled="@_busy">REGISTER VEHICLE</MudButton>
+        </div>
+    </div>
+
+    <div class="admin-glass-card pa-0 overflow-hidden">
+        <MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="0" Filter="new Func<TruckModel, bool>(search)" @bind-Truck="model" Class="modern-admin-table">
+            <ToolBarContent>
+                <div class="d-flex align-center gap-4 w-100 px-4 py-2">
+                    <MudTextField @bind-Value="searchTruck" Placeholder="Search Trucks... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group flex-grow-1" />
+                    <MudButton OnClick="ExcelDownload" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" Class="action-btn-primary" Style="background: #367588; border-radius: 12px; height: 40px; color: white;">Export to Excel</MudButton>
+                </div>
+            </ToolBarContent>
     <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.TruckType)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.HomeBranchName)" InitialDirection="SortDirection.Ascending">HomeBranch</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.RegNo)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">VEHICLE NO</span></MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.TruckType)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">TYPE</span></MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.HomeBranchName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">HOME BRANCH</span></MudTableSortLabel></MudTh>
         @if(BranchID == 7)
         {
-            <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.OperatingBranchName)" InitialDirection="SortDirection.Ascending">OperatingBranch</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.OperatingBranchName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">OPERATING</span></MudTableSortLabel></MudTh>
         }
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.FuelType)" InitialDirection="SortDirection.Ascending">Fuel Type</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.FuelTankCapacity)" InitialDirection="SortDirection.Ascending">Fuel Capacity</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.wheels)" InitialDirection="SortDirection.Ascending">Wheels</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.BodyType)" InitialDirection="SortDirection.Ascending">Body Type</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.ManufacturedYear)" InitialDirection="SortDirection.Ascending">Year</MudTableSortLabel></MudTh>
-        <MudTh>Actions</MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.FuelType)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">FUEL</span></MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.FuelTankCapacity)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">CAPACITY</span></MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.wheels)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">WHEELS</span></MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.BodyType)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">BODY</span></MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.ManufacturedYear)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">YEAR</span></MudTableSortLabel></MudTh>
+        <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Truck" Class="truckNumber">
-            <p>
-                @context.RegNo  
+        <MudTd DataLabel="Truck">
+            <div class="d-flex flex-column">
+                <MudText Typo="Typo.body2" Class="admin-td-primary">@context.RegNo</MudText>
                 @if (!context.CurrentRegistration.IsValid)
                 {
-                    <MudText Typo="Typo.caption">(Expired)</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Error" Style="font-weight: 600;">(EXPIRED)</MudText>
                 }
-            </p>
+            </div>
         </MudTd>
-        <MudTd DataLabel="TruckType">@context.TruckType</MudTd>
-        <MudTd DataLabel="HomeBranchName">@context.HomeBranchName</MudTd>
+        <MudTd DataLabel="TruckType"><MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" Class="fw-700">@context.TruckType</MudChip></MudTd>
+        <MudTd DataLabel="HomeBranchName"><MudText Typo="Typo.body2" Class="admin-td-secondary">@context.HomeBranchName</MudText></MudTd>
         @if (BranchID == 7)
         {
             <MudTd DataLabel="OperatingBranchName">@context.OperatingBranchName</MudTd>
         }
         <MudTd DataLabel="FuelType">@context.FuelType</MudTd>
-        <MudTd DataLabel="FuelTankCapacity">@context.FuelTankCapacity</MudTd>
+        <MudTd DataLabel="FuelTankCapacity"><MudText Typo="Typo.body2" Class="admin-td-amount">@context.FuelTankCapacity.ToString() L</MudText></MudTd>
         <MudTd DataLabel="Wheels">@context.wheels</MudTd>
         <MudTd DataLabel="BodyType">@context.BodyType</MudTd>
         <MudTd DataLabel="ManufacturedYear">@context.ManufacturedYear</MudTd>
-        <MudTd DataLabel="">
-            <MudTooltip Text="Edit">
-                <MudFab style="font-size:5px" @onclick="@(()=> Edit(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-            </MudTooltip>
-            <MudTooltip Text="Delete">
-                <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-            </MudTooltip>
-            <MudTooltip Text="Tyre Info">
-                <MudFab @onclick="@(()=> TruckMountDetails(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.TableView" Size="Size.Small" IconSize="Size.Small" />
-            </MudTooltip>
-            <MudTooltip Text="Registration Info">
-                <MudFab @onclick="@(()=> RegisterNumberList(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.List" Size="Size.Small" IconSize="Size.Small" />
-            </MudTooltip>
-            <MudTooltip Text="Driver">
-                <MudFab @onclick="@(()=> AssignDriver(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Size="Size.Small" IconSize="Size.Small" />
-            </MudTooltip>
-            @if(context.CurrentEvent.EventTypeID == 6)
-            {
-                <MudTooltip Text="Move to Non-Operating">
-                    <MudFab @onclick="@(()=> Move(13, context))" Color="Color.Primary" Icon="@Icons.Material.Filled.MoveUp" Size="Size.Small" IconSize="Size.Small" />
-                </MudTooltip> 
-            }
-            @if (context.CurrentEvent.EventTypeID == 13)
-            {
-                <MudTooltip Text="Move to UnAssigned">
-                    <MudFab @onclick="@(()=> Move(6, context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Undo" Size="Size.Small" IconSize="Size.Small" />
+        <MudTd DataLabel="Actions" Style="text-align: right;">
+            <div class="d-flex justify-end gap-1">
+                <MudTooltip Text="Edit">
+                    <MudIconButton OnClick="@(()=> Edit(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
                 </MudTooltip>
-            }
+                <MudTooltip Text="Delete">
+                    <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Variant="Variant.Text" />
+                </MudTooltip>
+                <MudTooltip Text="Tyre Info">
+                    <MudIconButton OnClick="@(()=> TruckMountDetails(context.TruckID))" Color="Color.Info" Icon="@Icons.Material.Filled.TableView" Size="Size.Small" Variant="Variant.Text" />
+                </MudTooltip>
+                <MudTooltip Text="Registration">
+                    <MudIconButton OnClick="@(()=> RegisterNumberList(context))" Color="Color.Secondary" Icon="@Icons.Material.Filled.List" Size="Size.Small" Variant="Variant.Text" />
+                </MudTooltip>
+                <MudTooltip Text="Driver">
+                    <MudIconButton OnClick="@(()=> AssignDriver(context))" Color="Color.Success" Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Size="Size.Small" Variant="Variant.Text" />
+                </MudTooltip>
+                @if(context.CurrentEvent.EventTypeID == 6)
+                {
+                    <MudTooltip Text="Non-Operating">
+                        <MudIconButton OnClick="@(()=> Move(13, context))" Color="Color.Warning" Icon="@Icons.Material.Filled.MoveUp" Size="Size.Small" Variant="Variant.Text" />
+                    </MudTooltip> 
+                }
+                @if (context.CurrentEvent.EventTypeID == 13)
+                {
+                    <MudTooltip Text="Undo">
+                        <MudIconButton OnClick="@(()=> Move(6, context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Undo" Size="Size.Small" Variant="Variant.Text" />
+                    </MudTooltip>
+                }
+            </div>
         </MudTd>
     </RowTemplate>
     <PagerContent>
         <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
     </PagerContent>
-</MudTable>
+        </MudTable>
+    </div>
+</div>
+
+
+
+
+}
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private TruckModel model = new TruckModel();
     private string searchTruck = "";
@@ -128,6 +158,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionITruckServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionITruckServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
@@ -139,6 +170,17 @@
         TruckTypes = Itrucktype.Select(0).ToList();
         Branches = Ibranch.Select().ToList();
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     private void GetAll()
@@ -272,7 +314,7 @@
         }
         DialogParameters parms = new();
         parms.Add("SelectedTruck", model.Clone());
-        DialogService.Show<MountTruckDetailsDialog>("ADD/EDIT", parms, options);
+        await DialogService.ShowAsync<MountTruckDetailsDialog>("ADD/EDIT", parms, options);
         await Task.Delay(200);
         _busy = false;
     }
@@ -291,6 +333,7 @@
             return;
         }
         _busy = true;
+        StateHasChanged();
         if (HasPermissionITruckServiceEdit)
         {
             model = new();
@@ -300,12 +343,15 @@
                 };
             if (id != null)
             {
-                model = Iservice.SelectByID(id);
-                model.CurrentRegistration = Iservice.GetRegistration(id);
+                await Task.Run(() =>
+                {
+                    model = Iservice.SelectByID(id);
+                    model.CurrentRegistration = Iservice.GetRegistration(id);
+                });
             }
             DialogParameters parms = new();
             parms.Add("EditModel", model.Clone());
-            var dialog = DialogService.Show<Truckdilog>("Truck", parms, options);
+            var dialog = await DialogService.ShowAsync<Truckdilog>("Truck", parms, options);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -330,7 +376,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit Truck.");
         }
@@ -348,7 +394,7 @@
 
         if (HasPermissionITruckServiceDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 "Are you sure, you want to delete Truck : " + model.RegNo + " ?");
             if (result == true)
@@ -362,7 +408,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Delete Truck.");
         }
@@ -393,7 +439,7 @@
         var parameters = new DialogParameters();
         parameters.Add("Truck", truck);
         parameters.Add("AssignedDriver", AssignedDriver);
-        var result = DialogService.Show<AssignDriverView>(AssignDriverLabel, parameters);
+        var result = await DialogService.ShowAsync<AssignDriverView>(AssignDriverLabel, parameters);
         var Data = await result.Result;
         var ev = Data.Data;
         if (!Data.Canceled)
@@ -411,7 +457,7 @@
         {
             string eventName = eventTypeId == 6 ? "UnAssigned" : "Non-Operating";
 
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning!",
                 $"Are you sure, you want to move {model.RegNo} Truck to {eventName} event?");
             if (result == true)
@@ -425,9 +471,10 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Move Truck.");
         }
     }
 }
+

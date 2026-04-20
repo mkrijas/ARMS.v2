@@ -2,7 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using System.Data.Common;
+using Microsoft.Data.SqlClient;
 using System.Reflection.Metadata;
 
 namespace ArmsServices.DataServices.General
@@ -168,19 +169,34 @@ namespace ArmsServices.DataServices.General
         }
 
         // Method to select active notifications for a specific branch
-        public IEnumerable<PushNotificationModel> SelectActiveNotifications(int? BranchID, string UserID = null)
+        public NotificationWrapper SelectActiveNotifications(int? BranchID, string UserID = null, int Limit = 5)
         {
+
+            NotificationWrapper noti = new() {notifications = new List<PushNotificationModel>() };
+
+            var pTotal = new SqlParameter("@TotalNotifications", SqlDbType.Int)
+            {
+                Direction = ParameterDirection.Output
+            };
+           
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", BranchID),
-               new SqlParameter("@UserID", UserID),               
-               new SqlParameter("@Operation", "SelectActive"),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Operation", "SelectActive"),    
+               new SqlParameter("@Limit", Limit)
             };
+            parameters.Add(pTotal);
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Select]", parameters))
             {
-                yield return GetModel(dr);
+                noti.notifications.Add(GetModel(dr));
             }
+            noti.NotificationsCount = (int)pTotal.Value;
+            return noti;
         }
+
+
 
         // Method to create authorization notifications
         public int CreateAuthNotifications(int BranchID, int DocumentTypeID, int DocumentID)

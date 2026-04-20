@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using ArmsModels.BaseModels;
 using OfficeOpenXml;
@@ -14,7 +14,7 @@ namespace Views.Data
         {          
             var stream = new MemoryStream();
             
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
             using (var package = new ExcelPackage(stream))
             {
                 var workSheet = package.Workbook.Worksheets.Add("MemoDetails");

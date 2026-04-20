@@ -1,0 +1,480 @@
+@page "/newfinancedashboard"
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IConfigTable config
+@inject IFinanceDashboardService Iservice
+@inject ISaleService SaleService
+@inject IBankAccountOwnService Ibankservice
+@inject IJSRuntime JSRuntime
+@using System
+@using Pages.General.Dashboard
+@using MudBlazor
+@using MudBlazor.Components
+@using ArmsModels.BaseModels.Finance.Transactions
+
+
+
+<div class="admin-page-container fade-in">
+    <!-- Header -->
+    @if (!Loading)
+    {
+        <div @key="@("content")" class="admin-header-tiered mb-6">
+            <div class="d-flex justify-space-between align-end">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Finance Overview</MudText>
+                    <div class="title-accent"></div>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle mt-2">Track your financial health, identifying trends and opportunities.</MudText>
+                </div>
+                <div class="d-flex gap-2">
+                    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Class="rounded-pill px-6 fw-900" OnClick="RefreshData">Refresh</MudButton>
+                    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Download" Color="Color.Secondary" Class="rounded-pill px-6 fw-900">Export Report</MudButton>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. Pro Metrics Row (Revenue & Profit) -->
+        <MudGrid Class="mb-6" @key="@("metrics")">
+            <!-- Revenue Card -->
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4 premium-card" Elevation="2">
+                    <div class="d-flex flex-column gap-1">
+                        <div class="d-flex justify-space-between align-start">
+                            <MudText Typo="Typo.caption" Class="label-caps opa-60">Revenue (L30)</MudText>
+                            <div class="icon-badge bg-success-light color-success">
+                                <MudIcon Icon="@Icons.Material.Filled.ShowChart" Size="Size.Small" />
+                            </div>
+                        </div>
+                        <MudText Typo="Typo.h4" Class="admin-title">@RevenueL30.ToString("C0")</MudText>
+                        <div class="d-flex align-center gap-2 mt-2">
+                            <MudChip T="string" Size="Size.Small" Class="admin-chip-approved">Yesterday: @RevenueYesterday.ToString("C0")</MudChip>
+                        </div>
+                        <MudText Typo="Typo.caption" Class="admin-subtitle">MTD: @RevenueMTD.ToString("C0")</MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Net Profit Card -->
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4 premium-card" Elevation="2" Height="100%">
+                    <div class="d-flex flex-column gap-1">
+                        <div class="d-flex justify-space-between align-start">
+                            <MudText Typo="Typo.caption" Class="label-caps opa-60">Net Profit (L30)</MudText>
+                            <div class="icon-badge primary-badge">
+                                <MudIcon Icon="@Icons.Material.Filled.PieChart" Size="Size.Small" />
+                            </div>
+                        </div>
+                        <MudText Typo="Typo.h4" Class="admin-title">@NetProfitL30.ToString("C0")</MudText>
+                        <div class="d-flex align-center mt-2">
+                            @if (ProfitMargin >= 0)
+                            {
+                                <span class="trend-indicator-up fw-700">@ProfitMargin.ToString("F1")% Margin</span>
+                            }
+                            else
+                            {
+                                <span class="trend-indicator-down fw-700">@ProfitMargin.ToString("F1")% Margin</span>
+                            }
+                            <MudText Typo="Typo.caption" Class="ml-2 opa-50">vs Exp</MudText>
+                        </div>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Total Expenses Card -->
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4 premium-card" Elevation="2" Height="100%">
+                    <div class="d-flex flex-column gap-1">
+                        <div class="d-flex justify-space-between align-start">
+                            <MudText Typo="Typo.caption" Class="label-caps opa-60">Total Expenses (L30)</MudText>
+                            <div class="icon-badge bg-error-light color-error">
+                                <MudIcon Icon="@Icons.Material.Filled.MoneyOff" Size="Size.Small" />
+                            </div>
+                        </div>
+                        <MudText Typo="Typo.h4" Class="admin-title">@ExpenseL30.ToString("C0")</MudText>
+                        <div class="mt-2">
+                             <span class="trend-indicator-down fw-700">Outflow</span>
+                        </div>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Cash Position -->
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4 premium-card" Elevation="2" Height="100%">
+                    <div class="d-flex flex-column gap-1">
+                        <div class="d-flex justify-space-between align-start">
+                            <MudText Typo="Typo.caption" Class="label-caps opa-60">Liquid Cash Position</MudText>
+                            <div class="icon-badge bg-warning-light color-warning">
+                                <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Size="Size.Small" />
+                            </div>
+                        </div>
+                        <MudText Typo="Typo.h4" Class="admin-title">@((TotalCashBalance + TotalBankBalance).ToString("C0"))</MudText>
+                        <div class="d-flex align-center mt-2 gap-2">
+                            <MudChip T="string" Size="Size.Small" Class="admin-chip-pending" Style="background:var(--mud-palette-info-light); color:var(--mud-palette-info);">Bank: @TotalBankBalance.ToString("C0")</MudChip>
+                            <MudChip T="string" Size="Size.Small" Class="admin-chip-pending">Cash: @TotalCashBalance.ToString("C0")</MudChip>
+                        </div>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <!-- 2. Charts Row (Pro Visuals) -->
+        <MudGrid Class="mb-6" @key="@("charts")">
+            <!-- Revenue vs Expense Trend -->
+            <MudItem xs="12" md="9">
+                <MudPaper Class="pa-4 premium-card wide_chart" Elevation="2" Height="100%">
+                    <div class="d-flex justify-space-between align-center mb-4 border-b border-solid border-white-10 pb-4">
+                        <div>
+                            <MudText Typo="Typo.h6" Class="admin-title mb-0" Style="font-size:1.1rem;">Revenue vs Expense Trend</MudText>
+                            <MudText Typo="Typo.caption" Class="admin-subtitle">Daily financial performance for last 30 days</MudText>
+                        </div>
+                        <div class="d-flex gap-4">
+                            <div class="d-flex align-center gap-2"><div class="rounded-circle bg-primary" style="width:10px; height:10px;"></div> <MudText Typo="Typo.caption" Class="fw-700">Revenue</MudText></div>
+                            <div class="d-flex align-center gap-2"><div class="rounded-circle bg-error" style="width:10px; height:10px;"></div> <MudText Typo="Typo.caption" Class="fw-700">Expense</MudText></div>
+                        </div>
+                    </div>
+
+                    <!-- Combined Line Chart -->
+                    <MudChart T="double" MatchBoundsToSize=@(false) Style="padding-left: 12px;" ChartOptions="@_ChartOptions" LegendPosition="Position.Start" ChartType="ChartType.Line" ChartSeries="@RevExpSeries" ChartLabels="@TrendLabels" Width="100%" Height="350px"></MudChart>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Liquidity / Profit Breakdown -->
+            <MudItem xs="12" md="3">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudPaper Class="pa-4 premium-card">
+                            <MudText Typo="Typo.caption" Class="label-caps mb-4 d-block opa-60">Liquidity Mix</MudText>
+                            <div class="d-flex justify-center align-center" style="height: 200px;">
+                                @if (LiquidityData.Sum() > 0)
+                                {
+                                    <MudChart T="double" ChartType="ChartType.Donut" ChartSeries="@LiquiditySeries" ChartLabels="@LiquidityLabels" Width="70%" Height="70%" />
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Class="opa-30">No Liquidity Data</MudText>
+                                }
+                            </div>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudPaper Class="pa-4 premium-card">
+                            <MudText Typo="Typo.caption" Class="label-caps mb-4 d-block opa-60">Profit Margin Health</MudText>
+                            <MudText Typo="Typo.h3" Align="Align.Center" Class="@(ProfitMargin > 20 ? "admin-td-primary" : (ProfitMargin > 0 ? "text-warning" : "admin-td-error"))" Style="font-weight: 900;">@ProfitMargin.ToString("F1")%</MudText>
+                            <MudProgressLinear Color="@(ProfitMargin > 20 ? Color.Success : (ProfitMargin > 0 ? Color.Warning : Color.Error))" Value="@((double)ProfitMargin)" Max="100" Class="my-4 rounded-pill" Size="Size.Large" Striped="true" />
+                            <MudText Typo="Typo.caption" Align="Align.Center" Class="admin-subtitle d-block">Target: >20% Margin</MudText>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+
+        <!-- 3. Tables Row (Outstanding) -->
+        <MudGrid @key="@("tables")">
+            <!-- Payables List -->
+            <MudItem xs="12" md="6">
+                <MudPaper Class="premium-card pa-0 overflow-hidden" Elevation="2">
+                    <div class="px-6 pt-4 pb-2 border-b border-solid border-white-10">
+                        <div class="d-flex justify-space-between align-center">
+                            <div>
+                                <MudText Typo="Typo.caption" Class="label-caps opa-60">Outstanding Payables</MudText>
+                                <MudText Typo="Typo.h6" Class="admin-td-primary">Total: @PayableAmount?.ToString("C0")</MudText>
+                            </div>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="fw-700">View All</MudButton>
+                        </div>
+                    </div>
+                    <MudTable Items="@PayablesortedList.Take(5)" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Elevation="0" Class="modern-admin-table px-0">
+                        <HeaderContent>
+                            <MudTh Class="label-caps py-4">Party Name</MudTh>
+                            <MudTh Class="label-caps py-4" Style="text-align: right;">Amount</MudTh>
+                        </HeaderContent>
+                        <RowTemplate Context="party">
+                            <MudTd>
+                                <div class="d-flex align-center">
+                                    <MudAvatar Size="Size.Small" Class="admin-chip-rejected mr-2">@party.TradeName.Substring(0, 1)</MudAvatar>
+                                    <MudText Typo="Typo.body2" Class="admin-td-primary">@party.TradeName</MudText>
+                                </div>
+                            </MudTd>
+                            <MudTd Style="text-align: right;">
+                                <MudText Typo="Typo.body2" Class="admin-td-amount text-error">@party.TotalAmount?.ToString("C0")</MudText>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Receivables List -->
+            <MudItem xs="12" md="6">
+                <MudPaper Class="premium-card pa-0 overflow-hidden" Elevation="2">
+                    <div class="px-6 pt-4 pb-2 border-b border-solid border-white-10">
+                        <div class="d-flex justify-space-between align-center">
+                            <div>
+                                <MudText Typo="Typo.caption" Class="label-caps opa-60">Outstanding Receivables</MudText>
+                                <MudText Typo="Typo.h6" Class="admin-td-primary">Total: @ReceivableAmount?.ToString("C0")</MudText>
+                            </div>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="fw-700">View All</MudButton>
+                        </div>
+                    </div>
+                    <MudTable Items="@ReceivablesortedList.Take(5)" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Elevation="0" Class="modern-admin-table px-0">
+                        <HeaderContent>
+                            <MudTh Class="label-caps py-4">Party Name</MudTh>
+                            <MudTh Class="label-caps py-4" Style="text-align: right;">Amount</MudTh>
+                        </HeaderContent>
+                        <RowTemplate Context="party">
+                            <MudTd>
+                                <div class="d-flex align-center">
+                                    <MudAvatar Size="Size.Small" Class="admin-chip-approved mr-2">@party.TradeName.Substring(0, 1)</MudAvatar>
+                                    <MudText Typo="Typo.body2" Class="admin-td-primary">@party.TradeName</MudText>
+                                </div>
+                            </MudTd>
+                            <MudTd Style="text-align: right;">
+                                <MudText Typo="Typo.body2" Class="admin-td-amount text-success">@party.TotalAmount?.ToString("C0")</MudText>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+    else
+    {
+        @*         <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+ *@
+        <LoaderComponent IsFullScreen="true"
+                         ShowLogo="false"
+                         Size="medium"
+                         LoadingText="Loading Dashboard"
+                         SubText="Fetching financial data..." />
+        @* </div> *@
+    }
+
+</div>
+
+@code {
+
+    private int BranchID;
+    string ExpenseMonth = "";
+    string ExpenseYear = "";
+
+    bool Loading = false;
+
+    // Pro Metrics
+    private decimal RevenueYesterday = 0;
+    private decimal RevenueL30 = 0;
+    private decimal RevenueMTD = 0;
+    private decimal ExpenseL30 = 0;
+    private decimal NetProfitL30 = 0;
+    private decimal ProfitMargin = 0;
+
+    // Charts
+    public List<ChartSeries<double>> RevExpSeries = new List<ChartSeries<double>>();
+    public string[] TrendLabels = { };
+    public double[] LiquidityData = { 0, 0 };
+    public string[] LiquidityLabels = { "Bank", "Cash" };
+    public List<ChartSeries<double>> LiquiditySeries = new() { new ChartSeries<double> { Name = "Liquidity", Data = new double[] { 0, 0 } } };
+
+    // Outstanding totals
+    private Decimal? PayableAmount;
+    private Decimal? ReceivableAmount;
+
+    // Cash Positions
+    private Decimal TotalBankBalance = 0;
+    private Decimal TotalCashBalance = 0;
+
+    public AccountBalanceModel PayableModel { get; set; } = new();
+    public AccountBalanceModel RecievableModel { get; set; } = new();
+
+    List<DueBalanceModel> PayableDuesList = new List<DueBalanceModel>();
+    List<DueBalanceModel> PayablesortedList = new List<DueBalanceModel>();
+    List<DueBalanceModel> ReceivableDuesList = new List<DueBalanceModel>();
+    List<DueBalanceModel> ReceivablesortedList = new List<DueBalanceModel>();
+
+    List<BankAccountBalanceModel> BankAccountBalanceList = new List<BankAccountBalanceModel>();
+    List<CashAccountBalanceModel> CashAccountBalanceList = new List<CashAccountBalanceModel>();
+
+    List<DashboardModel> ExpensesData = new List<DashboardModel>();
+
+
+    //chartOptions
+    LineChartOptions _ChartOptions = new LineChartOptions() { ShowLegend = false, ChartPalette = new string[] { "#0000FF", "#FF0000" } };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task LoadData()
+    {
+        Loading = true;        
+        await Task.Yield();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        var claim = User.Claims.FirstOrDefault(x => x.Type == "BranchID");
+        if (claim == null) return;
+        string BranchIDString = claim.Value;
+        BranchID = int.Parse(BranchIDString);
+
+        // Parallel Loading
+        //var t1 = GetAccountBalance();
+        var t2 = GetPayableDueBalance();
+        var t3 = GetReceivableDueBalance();
+        var t4 = GetBankCashBalance();
+        var t5 = GetExpensesAndRevenue();
+
+        await Task.WhenAll(t2, t3, t4, t5);
+        Loading = false;
+    }
+
+    // public async Task GetAccountBalance()
+    // {
+    //     ConfigModel cpModel = config.GetFinancePayableGroupID();
+    //     PayableModel.CoaID = int.Parse(cpModel.ValueString);
+    //     ConfigModel crModel = config.GetFinanceReceivableGroupID();
+    //     RecievableModel.CoaID = int.Parse(crModel.ValueString);
+
+    //     PayableModel = Iservice.GetAccountBalance(PayableModel.CoaID, BranchID, PayableModel.Date);
+    //     PayableAmount = PayableModel.TotalAmount > 0 ? PayableModel.TotalAmount : 0;
+
+    //     RecievableModel = Iservice.GetAccountBalance(RecievableModel.CoaID, BranchID, RecievableModel.Date);
+    //     ReceivableAmount = RecievableModel.TotalAmount > 0 ? RecievableModel.TotalAmount : 0;
+    // }
+
+    public async Task GetPayableDueBalance()
+    {
+        PayableDuesList = Iservice.GetPayableDueBalance(BranchID).ToList();
+        PayablesortedList = PayableDuesList
+            .GroupBy(item => new { item.PartyID, item.TradeName })
+            .Select(group => new DueBalanceModel
+            {
+                PartyID = group.Key.PartyID.GetValueOrDefault(),
+                TradeName = group.Key.TradeName,
+                TotalAmount = group.Sum(item => item.Amount)
+            })
+            .OrderByDescending(item => item.TotalAmount).ToList();
+        PayableAmount = PayablesortedList.Sum(x => x.TotalAmount);
+    }
+
+    public async Task GetReceivableDueBalance()
+    {
+        ReceivableDuesList = Iservice.GetReceivableDueBalance(BranchID).ToList();
+        ReceivablesortedList = ReceivableDuesList
+            .GroupBy(item => new { item.PartyID, item.TradeName })
+            .Select(group => new DueBalanceModel
+            {
+                PartyID = group.Key.PartyID.GetValueOrDefault(),
+                TradeName = group.Key.TradeName,
+                TotalAmount = group.Sum(item => item.Amount)
+            })
+            .OrderByDescending(item => item.TotalAmount).ToList();
+        ReceivableAmount = ReceivablesortedList.Sum(x => x.TotalAmount);
+    }
+
+    public async Task GetBankCashBalance()
+    {
+        BankAccountBalanceList = Iservice.GetBankAccountBalance(BranchID).ToList();
+        TotalBankBalance = BankAccountBalanceList.Sum(x => x.Amount ?? 0);
+        CashAccountBalanceList = Iservice.GetCashAccountBalance(BranchID).ToList();
+        TotalCashBalance = CashAccountBalanceList.Sum(x => x.Amount ?? 0);
+        LiquidityData = new double[] { (double)TotalBankBalance, (double)TotalCashBalance };
+        LiquiditySeries = new List<ChartSeries<double>> { new ChartSeries<double> { Name = "Liquidity", Data = LiquidityData } };
+    }
+
+    public async Task GetExpensesAndRevenue()
+    {
+        DateTime today = DateTime.Today;
+        DateTime yesterday = today.AddDays(-1);
+        ExpenseMonth = yesterday.ToString("MMMM");
+        ExpenseYear = yesterday.ToString("yyyy");
+        DateTime firstDayOfMonth = new DateTime(yesterday.Year, yesterday.Month, 1);
+        //DateTime firstDayOfYear = new DateTime(yesterday.Year, 1, 1);
+
+        // 1. Fetch Expenses and Revenue (L30)
+        var ExpRev = Iservice.SelectExpenses(BranchID);
+
+        ExpensesData = ExpRev.Where(exp => exp.Label == "EXPENSES").ToList();
+        ExpenseL30 = ExpensesData.Sum(x => x.Total ?? 0);
+
+        var RevenueData = ExpRev.Where(exp => exp.Label == "REVENUE").ToList();
+        RevenueL30 = RevenueData.Sum(x => x.Total ?? 0);
+        RevenueMTD = RevenueData.Where(x => x.DateList >= firstDayOfMonth).Sum(x => x.Total ?? 0);
+        RevenueYesterday = RevenueData.Where(x => x.DateList?.Date == yesterday).Sum(x => x.Total ?? 0);
+
+        // 4. Calculate Profit
+        NetProfitL30 = RevenueL30 - ExpenseL30;
+        ProfitMargin = RevenueL30 > 0 ? (NetProfitL30 / RevenueL30) * 100 : 0;
+
+        // 5. Prepare Chart Data (Daily Trend for Current Month)
+        //var salesMTD = RevenueData.Where(x => x.DateList >= firstDayOfMonth).ToList();
+
+        var dailyRevenue = RevenueData.ToDictionary(x => x.DateList?.Date, x => x.Total/100000 ?? 0);
+        var dailyExpenses = ExpensesData.ToDictionary(x => x.DateList?.Date, x => x.Total/100000 ?? 0);
+
+        // Merge Days (1 to Today/End of Month)
+        //int daysInMonth = DateTime.DaysInMonth(yesterday.Year, yesterday.Month);
+        List<string> labels = new List<string>();
+        List<double> revSeries = new List<double>();
+        List<double> expSeries = new List<double>();
+
+        // We chart up to today or end of month? Usually up to today avoids empty trailing zeros looking like "drop"
+        var InitialDay = yesterday.AddDays(-29);
+
+        // Find the last day that actually has data to avoid excessive trailing whitespace
+        DateTime lastDataDay = InitialDay;
+        foreach (var date in dailyRevenue.Keys.Concat(dailyExpenses.Keys))
+        {
+            if (date.HasValue && date >= InitialDay && date <= yesterday)
+            {
+                if (dailyRevenue.GetValueOrDefault(date) > 0 || dailyExpenses.GetValueOrDefault(date) > 0)
+                {
+                    if (date.Value > lastDataDay) lastDataDay = date.Value;
+                }
+            }
+        }
+
+        // Add 1 day of padding if possible
+        var endDay = lastDataDay < yesterday ? lastDataDay.AddDays(1) : yesterday;
+
+        for (DateTime i = InitialDay; i <= endDay; i = i.AddDays(1))
+        {
+            labels.Add(i.Day.ToString());
+            revSeries.Add(dailyRevenue.ContainsKey(i.Date) ? (double)dailyRevenue[i.Date] : 0);
+            expSeries.Add(dailyExpenses.ContainsKey(i.Date) ? (double)dailyExpenses[i.Date] : 0);
+        }
+
+        TrendLabels = labels.ToArray();
+        RevExpSeries.Clear();
+        RevExpSeries.Add(new ChartSeries<double>() { Name = "Revenue", Data = revSeries.ToArray(), });
+        RevExpSeries.Add(new ChartSeries<double>() { Name = "Expenses", Data = expSeries.ToArray() });
+
+        var maxVal = (int)Math.Max(revSeries.Max(), expSeries.Max());
+        // var highestTick = (int)Math.Floor(Math.Log10(Math.Abs((double)maxVal)) + 1);
+
+        // var tick = Math.Pow(10,highestTick-1);
+        _ChartOptions.YAxisTicks = GetSeriesValue(maxVal) / 10;
+        _ChartOptions.YAxisTitle = "Expenses and Revenue (in Lakhs)";
+        _ChartOptions.XAxisTitle = "Day of Month";
+
+    }
+
+
+    static int GetSeriesValue(int number)
+    {
+        if (number <= 5)
+            return 5;
+
+        int magnitude = (int)Math.Pow(10, Math.Floor(Math.Log10(number)));
+
+        if (number <= magnitude)
+            return magnitude;
+
+        if (number <= magnitude * 5)
+            return magnitude * 5;
+
+        return magnitude * 10;
+    }
+}

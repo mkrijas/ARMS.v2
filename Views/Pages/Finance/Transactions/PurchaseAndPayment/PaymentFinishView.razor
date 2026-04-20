@@ -1,148 +1,108 @@
-﻿@page "/PaymentsListView"
+@page "/PaymentsListView"
 @page "/PaymentsListView/{id:int}"
 @using System.Threading;
 @inject IPaymentFinalizeService Iservice
 @inject IPaymentService ImemoService
-@inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
-@inject IDialogService DialogService
-@inject SignalRService signalRService
-@inject IPushNotificationService IpushNotificationService
+@inherits ViewComponentBase<PaymentFinishModel>
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Completed Payments</MudText>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Payments..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
-                </MudTextField>
-                <div class="tablefont">
-                    <span style="margin-right: 10px;">Maximum Records: </span>
+
+<div @key="@("content")">
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Completed Payments</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">View and audit finalized payment transactions. Access historical records and reversal history for completed financial batches.</MudText>
                 </div>
-                <MudItem xs="1">
-                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
-                </MudItem>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x=> x.PaymentMode)" InitialDirection="SortDirection.Ascending">Mode</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Total Amount</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="DocDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="DocNumber">@context.DocumentNumber</MudTd>
-                <MudTd DataLabel="PaymentMode">@context.PaymentMode   @context.PaymentTool</MudTd>
-                <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
-                <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> View(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton OnClick="@(()=> Print(context.PaymentInitiatedID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
-                    @if (@context.AuthLevelId == 99)
-                    {
-                        <EntryReversedComponent DocTypeID="DocTypeID" DocumentID="context.PaymentFinalizeID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
-                    }
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+            </div>
+        </div>
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+                <div style="flex-grow: 1; min-width: 300px;">
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search by document number or mode..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
+                </div>              
+            </div>
+        </div>
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTable ServerData="LoadServerData" T="PaymentFinishModel" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
+                <LoadingContent>
+                    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                        <LoaderComponent IsFullScreen="false"
+                                         ShowLogo="false"
+                                         Size="large"
+                                         LoadingText="Loading...."
+                                         SubText="Fetching Data..." />
+                    </div>
+                </LoadingContent>
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x => x.DocumentDate)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x => x.DocumentNumber)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x => x.PaymentMode)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">PAYMENT MODE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x => x.TotalAmount)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">TOTAL AMOUNT</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Date">@context.DocumentDate?.ToString("dd MMM yyyy")</MudTd>
+                    <MudTd DataLabel="DocNumber"><span class="admin-td-primary fw-700">@context.DocumentNumber</span></MudTd>
+                    <MudTd DataLabel="PaymentMode">
+                        <div class="d-flex align-center gap-2">
+                            <span class="fw-600">@context.PaymentMode</span>
+                            <MudText Typo="Typo.caption" Alpha="0.6">(@context.PaymentTool)</MudText>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Amount">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="fw-700">@context.TotalAmount?.ToString("N2")</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        @if (@context.AuthLevelId == 99)
+                        {
+                            <EntryReversedComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="context.PaymentFinalizeID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                        }
+
+                        <MudTooltip Text="View Details">
+                            <MudIconButton OnClick="@(() => OpenForm(context))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+
+                        <MudTooltip Text="Print Payment Proof">
+                            <MudIconButton OnClick="@(() => Print(context.PaymentInitiatedID))" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+</div>
 
 @code {
 
-    private List<PaymentFinishModel> collection = new List<PaymentFinishModel>();
-    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
-    private int numberOfRecords = 100;
-    private string searchTerm = "";
-    int BranchID; string UserID;
+    protected override List<PaymentFinishModel> _collection { get; set; } = new List<PaymentFinishModel>();
 
-    [Parameter]
-    public int? id { get; set; } = null;
-    private bool _busy;
-    public bool HasAuthoriseDelete { get; set; } = false;
-    public int DocTypeID { get; set; } = 8;
-
-    #region SignaIR Notification
-
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
-
-    private int NumberOfRecords
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
     {
-        get => numberOfRecords;
-        set
-        {
-            if (numberOfRecords != value)
-            {
-                numberOfRecords = value;
-                ReloadTable();
-            }
-        }
-    }
+        DocumentTypeID = 8,
+        DocumentName = "Payments"
+    };
 
-    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            ReloadTable();
-        }
-    }
-
-    // Method to reload the payment finish table
-    private void ReloadTable()
-    {
-        GetAll(NumberOfRecords);
-    }
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        UserID = authprov.User.Identity.Name;
-        GetAll(NumberOfRecords);
-        await Task.Delay(200);
-        await signalRService.StartAsync();
-        //if (id != null && collection != null && collection.Any(g => g.PaymentFinalizeID == id))
-        //{
-        //    await OpenDialog(collection.FirstOrDefault(s => s.PaymentFinalizeID == id), true);
-        //}
-    }
-
-    // Method to retrieve all payment finishes based on the number of records
-    private void GetAll(int numberOfRecords)
-    {
-        int NumberOfRecords = numberOfRecords;
-        collection = Iservice.Select(BranchID, null, NumberOfRecords, searchTerm).ToList(); // Fetch payment finishes from the service
-    }
-
-    // Method to delete a payment finish
-    public async Task Delete(PaymentFinishModel pi)
-    {
-        if (HasAuthoriseDelete)
+        ShowApproved = true;
+        await base.OnInitializedAsync();
+        if (id != null && _collection != null && _collection.Any(g => g.PaymentFinalizeID == id))
         {
-            //Iservice.Delete(pi.PaymentInitiatedID, UserID);
-            GetAll(NumberOfRecords);
+            await OpenForm(_collection.FirstOrDefault(s => s.PaymentFinalizeID == id), true);
         }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to delete.");
-        }
+        
     }
 
-    // Method to open a payment memo dialog
-    public async void View(PaymentFinishModel model)
+
+    protected override async Task OpenForm(PaymentFinishModel _model, bool ReadOnly = true, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -150,52 +110,19 @@
             return;
         }
         _busy = true;
-        model.SelectedMemos =  ImemoService.SelectInitiated(model.PaymentInitiatedID).ToList();
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", model.Clone());
-        parms.Add("ReadOnly", true);
-        parms.Add("PageToRedirectLink", "/PaymentsListView");
-        var dialog = DialogService.Show<PaymentFinishDilaog>("Payment", parms, maxWidth);
+        parms.Add("model", _model);        
+        parms.Add("ReadOnly", ReadOnly);       
+        var dialog = await dialogService.ShowAsync<PaymentFinishDilaog>("View", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            var ReturnData = (TaxPurchaseModel)result.Data;
+            await _table.ReloadServerData();
+        }
         await Task.Delay(200);
         _busy = false;
-    }
-
-    //private async Task OpenDialog(PaymentFinishModel tds, bool ReadOnly)
-    //{
-    //    var authprov = await auth.GetAuthenticationStateAsync();
-    //    var user = authprov.User;
-
-    //    PaymentFinishModel pfm = new PaymentFinishModel(ImemoService.SelectByID(tds.PaymentMemoID));
-    //    pfm.PaymentInitiatedID = tds.PaymentInitiatedID;
-    //    pfm.InitiatedDocumentDate = tds.InitiatedDocumentDate;
-    //    pfm.DueOn = tds.DueOn;
-    //    pfm.UserInfo = tds.UserInfo;
-
-    //    DialogParameters parms = new DialogParameters();
-    //    parms.Add("model", pfm);
-    //    parms.Add("PageToRedirectLink", "/PaymentsListView");
-    //    parms.Add("ReadOnly", ReadOnly);
-    //    var dialog = DialogService.Show<PaymentFinishDilaog>("Payment", parms, maxWidth);
-    //    var result = await dialog.Result;
-    //    if (!result.Canceled)
-    //    {
-    //        var ReturnData = (PaymentFinishModel)result.Data;
-    //        notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-    //        notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-    //        notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-    //        notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-    //        notificationMessage.RedirectedTo = 0;
-    //        notificationMessage.ExpiredBy = 7;
-    //        notificationMessage.DocumentID = ReturnData.PaymentFinalizeID;
-    //        notificationMessage.MessageGroupID = "PendingVerification";
-    //        notificationMessage.PageToRedirectLink = "/PaymentsListView";
-    //        notificationMessage.ClaimValue = "Verify 1";
-    //        notificationMessage.DocumentTypeID = DocTypeID;
-    //        notificationMessage.MsgDate = DateTime.Now;
-    //        await signalRService.Send(notificationMessage);
-    //        GetAll(NumberOfRecords);
-    //    }
-    //}
+    }   
 
     // Method to print the payment memo
     private async Task Print(int? ID)
@@ -208,6 +135,6 @@
         parameters.Add("ReportName", "PrintPaymentMemo");
 
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+        var result = await dialogService.ShowAsync<PrintDialog>("PRINT", parameters, maxWidth);
     }
 }

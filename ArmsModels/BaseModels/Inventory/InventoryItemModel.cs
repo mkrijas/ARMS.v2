@@ -1,4 +1,4 @@
-﻿using ArmsModels.SharedModels;
+using ArmsModels.SharedModels;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -57,6 +57,7 @@ namespace ArmsModels.BaseModels
         public int? MappedPurchaseHead { get; set; } // Mapped purchase head ID
         public int? MappedConsumptionHead { get; set; } // Mapped consumption head ID
         public int? MappedNonInventoryPurchaseHead { get; set; } // Mapped non-inventory purchase head ID
+        public int? InventoryGroupStatus { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 

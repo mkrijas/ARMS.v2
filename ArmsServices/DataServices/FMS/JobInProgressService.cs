@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -79,7 +79,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@JipID", model.JipID),
                new SqlParameter("@DriverFaultID",model.DriverFaultID),
                new SqlParameter("@RepairJobID", model.RepairJobID),
-               new SqlParameter("@JobCardID", model.JobCardID),
+               new SqlParameter("@WorkOrderID", model.JobCardID),
                new SqlParameter("@WorkshopID", model.WorkshopID),
                new SqlParameter("@CreatedOn", model.CreatedOn),
                new SqlParameter("@FinishedOn", model.FinishedOn),
@@ -108,7 +108,7 @@ namespace ArmsServices.DataServices
                 DriverFaultID = dr.GetInt32("DriverFaultID"),
                 RepairJobID = dr.GetInt32("RepairJobID"),
                 RepairJobTitle = dr.GetString("RepairJobTitle"),
-                JobCardID = dr.GetInt32("JobCardID"),
+                JobCardID = dr.GetInt32("WorkOrderID"),
                 WorkshopID = dr.GetInt32("WorkshopID"),
                 CreatedOn = dr.GetDateTime("CreatedOn"),
                 FinishedOn = dr.GetDateTime("FinishedOn"),

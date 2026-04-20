@@ -1,4 +1,4 @@
-﻿@attribute [Authorize]
+@attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @using System.Threading;
 @inject ITariffService Iservice
@@ -7,48 +7,56 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<MudDialog>
-    <DialogContent>
-        <EditForm id="TarrifForm" Model="@model" OnValidSubmit="OnValidSubmit">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-            <MudGrid Spacing="4">
-                <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="@model.TariffTypeName" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TariffTypeName)"></MudTextField>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudSelect Label="Nature" T="string" @bind-Value="@model.TariffGroup" Variant="Variant.Outlined" Margin="Margin.Dense"  AdornmentColor="Color.Secondary">
-                        @foreach (var item in Iservice.TariffGroups)
-                        {
-                            <MudSelectItem Value="@item">@item</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="@model.Unit" Label="Unit (eg: Litre , Metric Ton)" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Unit)"></MudTextField>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudAutocomplete Variant="Variant.Outlined" Margin="Margin.Dense" T="GstUsageCodeModel" Label="Usage ID" Value="@SelectedGstCode" ValueChanged="SetUsageId" Text="@SelectedGstCode?.Description" SearchFunc="@SearchUsageIDs"
-                                     ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Description)) ? null : string.Format("{0} | {1}",e.UsageCode,e.Description))" ResetValueOnEmptyText=true CoerceText=true CoerceValue=true Required=true RequiredError="Usage ID is required!" />
-                    <ValidationMessage For="@(()=>model.UsageCode)" />
-                </MudItem>
-                <MudItem>
-                    <MudCheckBox T="bool" Class="mr-2" Checked="model.GCCreation" CheckedChanged="checkChanged" Label="Do you wish to create tariff during GC Creation?" Color="Color.Primary"></MudCheckBox>
-                </MudItem>
-            </MudGrid>
-        </EditForm>
-    </DialogContent>
-    <DialogActions>
-        <div Style="margin-right:18px; margin-bottom:18px;">
-            <MudButton Disabled="@_busy" Style="margin-right:18px;" form="TarrifForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-            <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Default" ButtonType="ButtonType.Button">Cancel</MudButton>
+<DialogForm @ref="@dialogForm" Title="Tariff Grouping & Taxonomy" Subtitle="Configure tariff classifications, nature of service, and unit metrics." Icon="@Icons.Material.Filled.Category" AdminStyle="true" formID="TarrifForm" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <EditForm id="TarrifForm" Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                
+                <div class="admin-glass-card pa-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.DisplaySettings" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Structural Definition</span>
+                    </div>
+                    
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@model.TariffTypeName" Label="Classification Title" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TariffTypeName)" Class="modern-input" Placeholder="Enter tariff type name..."></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudSelect For="@(() => model.TariffGroup)" Label="Nature of Service" T="string" @bind-Value="@model.TariffGroup" Variant="Variant.Outlined" Margin="Margin.Normal" AdornmentColor="Color.Secondary" Class="modern-input">
+                                @foreach (var item in Iservice.TariffGroups)
+                                {
+                                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@model.Unit" Label="Measurement Unit" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Unit)" Class="modern-input" Placeholder="e.g., Litre, Metric Ton" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Scale"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudAutocomplete Variant="Variant.Outlined" Margin="Margin.Normal" T="GstUsageCodeModel" Label="Regulatory Usage ID" Value="@SelectedGstCode" ValueChanged="SetUsageId" Text="@SelectedGstCode?.Description" SearchFunc="@SearchUsageIDs" Class="modern-input"
+                                             ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Description)) ? null : string.Format("{0} | {1}",e.UsageCode,e.Description))" ResetValueOnEmptyText=true CoerceText=true Required=true RequiredError="Usage ID is required!" />
+                            <ValidationMessage For="@(()=>model.UsageCode)" />
+                        </MudItem>
+                        
+                        <MudItem xs="12">
+                            <div class="d-flex align-center py-3 px-4 rounded-lg mt-2" style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px dashed rgba(var(--mud-palette-primary-rgb), 0.2);">
+                                <MudCheckBox T="bool" Value="model.GCCreation" ValueChanged="checkChanged" Label="Enable spontaneous creation during GC generation?" Color="Color.Primary" Dense="true"></MudCheckBox>
+                                <MudTooltip Text="If enabled, this tariff type can be instantiated directly while creating a Consignment.">
+                                    <MudIcon Icon="@Icons.Material.Filled.AutoFixHigh" Size="Size.Small" Color="Color.Info" Class="ml-2" />
+                                </MudTooltip>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+            </EditForm>
         </div>
-    </DialogActions>
-</MudDialog>
+    </FormContent>
+</DialogForm>
 
 @code {
-
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
     [Parameter]
     public TariffTypeModel model { get; set; }
     private GstUsageCodeModel SelectedGstCode { get; set; }
@@ -93,10 +101,10 @@
         model.UsageCode = SelectedGstCode?.UsageCode ?? null;
     }
 
-    private async Task<IEnumerable<GstUsageCodeModel>> SearchUsageIDs(string value)
+    private async Task<IEnumerable<GstUsageCodeModel>> SearchUsageIDs(string value, CancellationToken token)
     {
         // In real life use an asynchronous function for fetching data from an api.
-        await Task.Delay(5);
+        await Task.Delay(5, token);
 
         // if text is null or empty, show complete list
         if (string.IsNullOrEmpty(value))
@@ -124,7 +132,7 @@
             {
                 model = Iservice.UpdateTariffType(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
-                MudDialog.Close(model);
+                dialogForm.Close(model);
                 model = new();
             }
             catch (Exception ex)
@@ -134,7 +142,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit Tariff.");
         }
@@ -142,5 +150,5 @@
         _busy = false;
     }
 
-    private void Cancel() => MudDialog.Cancel();
+    private void Cancel() => dialogForm.Cancel();
 }

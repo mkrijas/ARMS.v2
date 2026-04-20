@@ -1,4 +1,4 @@
-﻿using ArmsModels.BaseModels;
+using ArmsModels.BaseModels;
 using ArmsServices.DataServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor;
 using System.Collections.Generic;
 using System.Security.Permissions;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.AspNetCore.Components.Web;
 
@@ -29,29 +29,35 @@ namespace Views.Data
         public bool interbranch { get; set; } = false;
 
         protected abstract DocumentInfoModel DocInfo { get; set; }
-        public bool ShowApproved { get; set; } = false;
+        public bool ShowApproved { get; set; } = false;        
+        protected MudTable<T> _table;
+        protected virtual List<T> _collection { get; set; }
+
         private int numberOfRecords = 100;
         protected string searchTerm = "";
         protected bool _busy;
+        protected bool _isLoading { get; set; } = true;
         protected bool ViewPermission { get; set; }
         protected bool EditPermission { get; set; }
         protected bool DeletePermission { get; set; }
         protected bool ApprovePermission { get; set; }
         protected int? BranchID = null;
-        protected string UserID = null;
+        protected string UserID = null;     
 
-        protected void HandleSearchKeyUp(KeyboardEventArgs e)
+        protected async Task HandleSearchKeyUp(KeyboardEventArgs e)
         {
             if (e.Key == "Enter")
             {
-                LoadData(ShowApproved, NumberOfRecords);
+                //LoadData(ShowApproved, NumberOfRecords);
+                await _table.ReloadServerData();
             }
         }
 
-        protected void ToggleData(bool value)
+        protected async Task ToggleData(bool value)
         {
-            ShowApproved = value;
-            LoadData(ShowApproved, NumberOfRecords);
+            ShowApproved = value;            
+            //await InvokeAsync(StateHasChanged);
+            await  _table.ReloadServerData();           
         }
 
         protected int NumberOfRecords
@@ -62,21 +68,20 @@ namespace Views.Data
                 if (numberOfRecords != value)
                 {
                     numberOfRecords = value;
-                    LoadData(ShowApproved, numberOfRecords);
+                    //LoadData(ShowApproved, numberOfRecords);
                 }
             }
         }
-
-        protected abstract List<T> collection { get; set; }
+        
         // protected abstract void LoadData(bool val, int numberOfRecords);
 
-        protected abstract Task OpenForm(T editModel, bool ReadOnly, bool DisableAddition = false);
+        protected abstract Task OpenForm(T editModel, bool ReadOnly = true, bool DisableAddition = false);
 
         protected virtual async Task Delete(int? ID)
         {
             if (DeletePermission)
             {
-                bool? result = await dialogService.ShowMessageBox(
+                bool? result = await dialogService.ShowMessageBoxAsync(
                     "Warning !",
                     "Are you sure you want to delete this Document ?");
                 if (result == true)
@@ -84,11 +89,12 @@ namespace Views.Data
                     Ibase.Delete(ID, UserID);
                     snackbar.Add("Deleted Successfully", Severity.Success);
                 }
-                LoadData(ShowApproved, NumberOfRecords);
+                
+                await _table.ReloadServerData();
             }
             else
             {
-                bool? result = await dialogService.ShowMessageBox(
+                bool? result = await dialogService.ShowMessageBoxAsync(
                     "Permission denied!",
                     "You don't have any permission to Delete Payment.");
             }
@@ -101,9 +107,7 @@ namespace Views.Data
             var authprov = await auth.GetAuthenticationStateAsync();
             BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
             var user = authprov.User;
-            UserID = user.Identity.Name;
-            LoadData(ShowApproved, NumberOfRecords);
-            await Task.Delay(100);
+            UserID = user.Identity.Name;            
         }
 
         private async Task setPermissions()
@@ -113,18 +117,18 @@ namespace Views.Data
             EditPermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Edit", ctc.Token);
             DeletePermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
             ApprovePermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Approve", ctc.Token);
-        }
+        }      
 
-        protected virtual void LoadData(bool val, int numberOfRecords)
+        protected virtual async Task<TableData<T>> LoadServerData(TableState state, CancellationToken token)
         {
-            if (val)
+            await Task.Yield();
+            var list = Ibase.SelectAll(BranchID,  state.Page, state.PageSize, searchTerm, ShowApproved);
+            _collection = list.Items; 
+            return new TableData<T>
             {
-                collection = Ibase.SelectByApproved(BranchID, numberOfRecords, interbranch, searchTerm).ToList();
-            }
-            else
-            {
-                collection = Ibase.SelectByUnapproved(BranchID, numberOfRecords, interbranch, searchTerm).ToList();
-            }
+                Items = _collection,
+                TotalItems = list.TotalRecords ?? 0
+            };
         }
     }
 }

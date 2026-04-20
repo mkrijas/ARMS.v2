@@ -1,0 +1,136 @@
+@page "/ActivityLogView"
+@layout AdminMainLayout
+@attribute [Authorize(Policy = "Admin")]
+@inject IDataAuthorizationService DataAuthService
+@inject NavigationManager NavManager
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8 mb-12">
+    <!-- Header Section -->
+    <div class="header-section mb-10">
+        <div class="d-flex justify-space-between align-end">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title mb-2"><b>Activity Log History</b></MudText>
+                <div class="title-accent mb-4"></div>
+                <MudText Typo="Typo.body1" Class="admin-subtitle" Style="color: #667085;">
+                    Comprehensive audit trail of all administrative actions and system modifications.
+                </MudText>
+            </div>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => NavManager.NavigateTo("/Admin"))">
+                Back to Dashboard
+            </MudButton>
+        </div>
+    </div>
+
+    <div class="admin-glass-card">
+        <MudTable Items="@_activityLogs" Elevation="0" Dense="true" Hover="true" FixedHeader="true" Height="600px" 
+                  Filter="new Func<DataAuthorizationModel,bool>(FilterFunc)" SortLabel="Sort By" Breakpoint="Breakpoint.Sm">
+            <ToolBarContent>
+                <div class="d-flex align-center gap-4 w-100">
+                    <MudText Typo="Typo.h6" Class="card-title" Style="color: #367588;"><b>System Logs</b></MudText>
+                    <MudSpacer />
+                    <MudTextField @bind-Value="_searchString" Placeholder="Search by User, Type or Action..." Adornment="Adornment.Start" 
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentIcon="@Icons.Material.Filled.Search" 
+                                  IconSize="Size.Medium" Class="search-field" Style="max-width: 400px; background: white;"></MudTextField>
+                </div>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationModel, object>(x => x.UserInfo.TimeStampField)">Time</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationModel, object>(x => x.UserInfo.UserID)">User</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationModel, object>(x => x.DocType)">Document Type</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationModel, object>(x => x.AuthType)">Action performed</MudTableSortLabel></MudTh>
+                <MudTh>Remarks</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Time">
+                    <MudText Typo="Typo.body2" Style="color: #64748b;">@context.UserInfo.TimeStampField?.ToString("dd MMM yyyy HH:mm")</MudText>
+                </MudTd>
+                <MudTd DataLabel="User">
+                    <div class="d-flex align-center">
+                        <MudAvatar Size="Size.Small" Color="Color.Primary" Class="mr-2">@context.UserInfo.UserID?[0].ToString().ToUpper()</MudAvatar>
+                        <MudText Typo="Typo.body2" Style="font-weight: 600;">@context.UserInfo.UserID</MudText>
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Document Type">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" Class="px-2">@context.DocType</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Action">
+                    <MudText Typo="Typo.body2">Performed <b>@context.AuthType</b></MudText>
+                </MudTd>
+                <MudTd DataLabel="Remarks">
+                    <MudText Typo="Typo.body2" Class="opacity-70">@context.Remarks</MudText>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <div class="pa-4">
+                    <MudTablePager />
+                </div>
+            </PagerContent>
+        </MudTable>
+    </div>
+</MudContainer>
+
+<style>
+    /* Glass Cards & Header Styles inherited from Layout or localized here */
+    .admin-title {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        color: #141A46;
+        letter-spacing: -0.5px;
+    }
+
+    .title-accent {
+        width: 60px;
+        height: 4px;
+        background: linear-gradient(90deg, #367588 0%, #FF9F43 100%);
+        border-radius: 2px;
+    }
+
+    .admin-glass-card {
+        background: rgba(255, 255, 255, 0.7) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05) !important;
+    }
+
+    .search-field .mud-input-control {
+        margin-top: 0;
+    }
+
+    .opacity-70 {
+        opacity: 0.7;
+    }
+</style>
+
+@code {
+    private List<DataAuthorizationModel> _activityLogs = new();
+    private string _searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLogs();
+    }
+
+    private async Task LoadLogs()
+    {
+        _activityLogs = DataAuthService.GetAll().OrderByDescending(x => x.UserInfo.TimeStampField).ToList();
+    }
+
+    private bool FilterFunc(DataAuthorizationModel element) => FilterFunc(element, _searchString);
+
+    private bool FilterFunc(DataAuthorizationModel element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.UserInfo.UserID.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.DocType.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.AuthType.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Remarks != null && element.Remarks.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+}

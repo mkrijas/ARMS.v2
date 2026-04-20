@@ -1,193 +1,128 @@
-﻿@page "/JournalView"
+@page "/JournalView"
 @page "/JournalView/{id:int}"
 @using System.Threading;
-@using System.Security.Claims;
-@using ArmsModels.Shared;
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
 @inherits ViewComponentBase<JournalModel>
-@inject SignalRService signalRService
-@inject IRoleService<RoleModel> Irole
 @inject IJournalService Iservice
-@inject IDialogService DialogService
-@inject IPushNotificationService IpushNotificationService
-@inject IJSRuntime JsRuntime
-@inject MudBlazor.ISnackbar snackbar
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Journal</MudText>
-                <MudTooltip Text="New Journal">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new JournalModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Journal..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
-                </MudTextField>
-                <div class="tablefont">
-                    <span style="margin-right: 10px;">Maximum Records: </span>
+<div class="admin-page-container">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">General Ledger Journals</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Comprehensive double-entry registry, financial audit trails, and fiscal adjustment console.</MudText>
+            </div>
+            <MudButton StartIcon="@Icons.Material.Filled.PostAdd" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenForm(new JournalModel(),false))" Disabled="@_busy">CREATE JOURNAL ENTRY</MudButton>
+        </div>
+    </div>
+
+    <div class="admin-glass-card mb-6 pa-4">
+        <div class="d-flex align-center gap-4 flex-wrap">
+            <div style="flex-grow: 1; min-width: 300px;">
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search by document #, narration, or amount..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.HistoryEdu" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" @onkeyup="HandleSearchKeyUp" Clearable="true" />
+            </div>
+            <div class="d-flex align-center gap-4">              
+                <div class="d-flex align-center gap-2 bg-glass rounded-pill px-4 py-1">
+                    <MudCheckBox T="bool" Label="Approved Log" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
                 </div>
-                <MudItem xs="1">
-                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
-                </MudItem>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedToggled(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-            </ToolBarContent>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-glass-card pa-0 overflow-hidden">
+        <MudTable ServerData="LoadServerData" T="JournalModel" @ref="_table" Dense="true" Hover="true" Elevation="0" Class="modern-admin-table">
+            <LoadingContent>
+                <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                    <LoaderComponent IsFullScreen="false"
+                                     ShowLogo="false"
+                                     Size="large"
+                                     LoadingText="Loading...."
+                                     SubText="Fetching Data..." />
+                </div>
+            </LoadingContent>            
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">FISCAL DATE</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.DocumentNumber)"><span class="admin-header-text">LEDGER IDENTITY</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.TotalAmount)"><span class="admin-header-text">TOTAL QUANTUM</span></MudTableSortLabel></MudTh>
+                <MudTh Style="text-align: right;"><span class="admin-header-text">VERIFICATION</span></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber
-                    @if (context.AuthLevelId == 100)
-                    {
-                        <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
-                    }
+                <MudTd DataLabel="DocumentDate">
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="opa-30" />
+                        <span class="fw-700 admin-td-primary">@context.DocumentDate?.ToString("dd MMM yyyy")</span>
+                    </div>
                 </MudTd>
-                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
-                <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
+                <MudTd DataLabel="DocumentNumber">
+                    <div class="d-flex flex-column">
+                        <div class="d-flex align-center gap-2">
+                            <span class="fw-800" style="color: var(--mud-palette-primary-darken);">@context.DocumentNumber</span>
+                            @if (context.AuthLevelId == 100)
+                            {
+                                <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="fw-900 border-solid border-1 uppercase px-2">VOIDED</MudChip>
+                            }
+                        </div>
+                        <span class="opa-50 small fw-600">@(context.Narration?.Length > 40 ? context.Narration.Substring(0, 40) + "..." : context.Narration)</span>
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="TotalAmount">
+                    <span class="admin-td-amount fw-900">@context.TotalAmount?.ToString("N2")</span>
+                </MudTd>
+                <MudTd DataLabel="Actions" Style="text-align: right;">
+                    <div class="d-flex justify-end gap-1">
+                        <MudTooltip Text="Inspect Details">
+                            <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.ZoomIn" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                        
+                        <MudTooltip Text="Modify Entry">
+                            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.AutoFixHigh" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                        
+                        <MudTooltip Text="Purge Entry">
+                            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.JournalID))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteSweep" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
 
-                    @if (@context.AuthLevelId == 99)
-                    {
-                        <EntryReversedComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="context.JournalID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
-                    }
-                    else if (@context.AuthLevelId != 100)
-                    {
-                        <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-                    }
+                        @if (context.AuthLevelId == 99)
+                        {
+                            <EntryReversedComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="context.JournalID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                        }
+                        else if (context.AuthLevelId != 100)
+                        {
+                            <MudTooltip Text="Authorize">
+                                <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.FactCheck" Size="Size.Small" Variant="Variant.Filled" Class="rounded-pill shadow ml-2" />
+                            </MudTooltip>
+                        }
+                    </div>
                 </MudTd>
             </RowTemplate>
             <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                <div class="pa-4 border-t border-solid border-white-10">
+                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                </div>
             </PagerContent>
         </MudTable>
-    </MudItem>
-</MudGrid>
+    </div>
+</div>
 
 @code {
 
-    public bool IsApproved { get; set; } = false;
-    protected override List<JournalModel> collection { get; set; } = new List<JournalModel>();
-    private int numberOfRecords = 100;
-    private string searchTerm = "";
-    private bool _busy;
 
-    public bool HasPermissionJournalServiceDelete { get; set; } = false;
+    protected override List<JournalModel> _collection { get; set; } = new List<JournalModel>();  
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
     {
         DocumentTypeID = 18,
         DocumentName = "Journal"
-    };
-
-    #region SignaIR Notification
-
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
-
-    private List<Claim> clamelist = new List<Claim>();
-    private List<RoleClaimsList> Claims = new();
-    IDictionary<int?, string> doctypes = null;
-
-    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await ReloadTable();
-        }
-    }
+    };  
 
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionJournalServiceDelete = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
-
-        await GetAll(IsApproved, NumberOfRecords);
-
-        await Task.Delay(200);
-        await signalRService.StartAsync();
-        if (id != null && collection != null && collection.Any(g => g.JournalID == id))
+        await base.OnInitializedAsync();
+        if (id != null && _collection != null && _collection.Any(g => g.JournalID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.JournalID == id), true);
+            await OpenForm(_collection.FirstOrDefault(s => s.JournalID == id), true);
         }
     }
-
-    // Method to retrieve journal entries based on approval status and number of records
-    private async Task GetAll(bool val, int numberOfRecords)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int? brancID = int.Parse(brancIDString);
-        int NumberOfRecords = numberOfRecords;
-        collection = new List<JournalModel>();
-
-        // Retrieve approved or unapproved journal entries based on the value of 'val'
-        if (val)
-        {
-            collection = Iservice.SelectByApproved(brancID, NumberOfRecords, searchTerm).ToList();
-        }
-        else
-        {
-            collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, searchTerm).ToList();
-        }
-    }
-
-    // Method to toggle the approval status and reload the table
-    async Task ApprovedToggled(bool value)
-    {
-        IsApproved = value;
-        await GetAll(IsApproved, NumberOfRecords);
-    }
-
-    // Method to reload the journal entries table
-    private async Task ReloadTable()
-    {
-        await GetAll(IsApproved, NumberOfRecords);
-    }
-
-    private int NumberOfRecords
-    {
-        get => numberOfRecords;
-        set
-        {
-            if (numberOfRecords != value)
-            {
-                numberOfRecords = value;
-                _ = ReloadTable();
-            }
-        }
-    }
-
-    // Method to delete a journal entry
-    private async Task Delete(JournalModel model)
-    {
-        if (HasPermissionJournalServiceDelete)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ")" + "?");
-            if (result == true)
-            {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                Iservice.Delete(model.JournalID, user.Identity.Name); // Call service to delete the journal entryS
-                snackbar.Add("Deleted Successfully", Severity.Success);
-            }
-            await GetAll(IsApproved, NumberOfRecords);
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Delete Journal.");
-        }
-    }
+  
 
     // Method to open a dialog for adding or editing a journal entry
     protected override async Task OpenForm(JournalModel JournalModel, bool ReadOnly, bool DisableAddition = false)
@@ -203,27 +138,15 @@
         parms.Add("model", JournalModel.Clone());
         parms.Add("PageToRedirectLink", "/JournalView");
         parms.Add("ReadOnly", ReadOnly);
-        var dialog = DialogService.Show<JournalDialog>(JournalModel == null ? "ADD" : "EDIT", parms, largeWidth);
+        var dialog = await dialogService.ShowAsync<JournalDialog>(JournalModel == null ? "ADD" : "EDIT", parms, largeWidth);
         var result = await dialog.Result;
-        var isCancelled = result.Cancelled;
+        var isCancelled = result.Canceled;
         if (!isCancelled)
         {
             var ReturnData = (JournalModel)result.Data;
-            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-            notificationMessage.RedirectedTo = 0;
-            notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.JournalID;
-            notificationMessage.MessageGroupID = "PendingVerification";
-            notificationMessage.PageToRedirectLink = "/JournalView";
-            notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = DocInfo.DocumentTypeID;
-            notificationMessage.MsgDate = DateTime.Now;
-            await signalRService.Send(notificationMessage);
+            await _table.ReloadServerData();
         }
-        await GetAll(IsApproved, NumberOfRecords);
+        
         await Task.Delay(200);
         _busy = false;
     }

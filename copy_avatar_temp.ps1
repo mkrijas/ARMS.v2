@@ -1,0 +1,1 @@
+Copy-Item -Path 'C:\Users\SWATI\.gemini\antigravity\brain\65526e3b-d6f4-4537-a020-c48bda3fbfc4\user_avatar_simple_monochrome_1769749336994.png' -Destination 'c:\Swati\Projects\Updated ARMS\ARMS.v2\Views\wwwroot\images\user_avatar.png' -Force

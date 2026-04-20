@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Core.BaseModels.Finance.Transactions
+namespace ArmsModels.BaseModels
 {
     // Model representing a mileage shortage receipt
     public class MileageShortageReceiptModel : TransactionBaseModel, ICloneable

@@ -1,4 +1,4 @@
-﻿@page "/ROITime"
+@page "/ROITime"
 @using System.Threading;
 @using Core.BaseModels.Operations.ROI
 @using Core.IDataServices.Operations.ROI
@@ -13,61 +13,93 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IJSRuntime JSRuntime
 
-<MudPaper Style="margin-bottom: 26px;">
-    <MudToolBar>
-        <MudText Typo="Typo.h6">ROI @(!ViewChange ? "Wheels & Speed" : "Loading and Unloading Duration")</MudText>
+<div class="fade-in">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">ROI Time Parameters</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Optimize logistical cycles by configuring standard loading durations and vehicle speed benchmarks.</MudText>
+            </div>
+            <div class="d-flex align-center gap-4">
+                <MudToggleGroup T="bool" Value="@ViewChange" ValueChanged="@((bool x) => TableViewChange(x))" SelectionMode="SelectionMode.SingleSelection" Color="Color.Primary" CheckMark="false" FixedContent="true" Class="admin-toggle-group">
+                    <MudToggleItem Value="false" Text="SPEED NORMS" />
+                    <MudToggleItem Value="true" Text="DURATION NORMS" />
+                </MudToggleGroup>
+                @if (!ViewChange)
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> EditWheelSpeed(new ROIWheelSpeedModel()))">ADD SPEED</MudButton>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-glass-card mb-6 pa-4">
+        <div class="d-flex align-center gap-4">
+            <div style="flex-grow: 1;">
+                <MudTextField @bind-Value="SearchItem" Placeholder="Search by wheels, speed or order entity..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" />
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-glass-card pa-0 overflow-hidden">
         @if (!ViewChange)
         {
-            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add WheelSpeed" @onclick="@(()=> EditWheelSpeed(new ROIWheelSpeedModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+            <MudTable Items="@WheelSpeedcollection" Elevation="0" Class="modern-admin-table" Hover="true" Filter="new Func<ROIWheelSpeedModel, bool>(SearchWheelSpeed)">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ROIWheelSpeedModel, object>(x=> x.Wheels)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">WHEEL CONFIGURATION</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ROIWheelSpeedModel, object>(x=> x.Speed)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">ESTIMATED SPEED (KM/H)</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Wheels"><span class="fw-600">@context.Wheels Wheels</span></MudTd>
+                    <MudTd DataLabel="Speed">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Text" Class="fw-700">@context.Speed KM/H</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <MudTooltip Text="Adjust Speed">
+                            <MudIconButton OnClick="@(() => EditWheelSpeed(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
         }
-        <MudSpacer />
-        <MudTextField @bind-Value="SearchItem" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-        <MudSpacer />
-        <MudSwitch Color="Color.Primary" Value=@(ViewChange) ValueChanged=@((bool x) => TableViewChange(x)) Label="Change" />
-    </MudToolBar>
-    @if (!ViewChange)
-    {
-        <MudTable Items="@WheelSpeedcollection" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<ROIWheelSpeedModel, bool>(SearchWheelSpeed)">
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROIWheelSpeedModel, object>(x=> x.Wheels)" InitialDirection="SortDirection.Ascending">Wheels</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROIWheelSpeedModel, object>(x=> x.Speed)" InitialDirection="SortDirection.Ascending">Speed in KM</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROIWheelSpeedModel, object>(x=> x.ID)" InitialDirection="SortDirection.Ascending">Action</MudTableSortLabel></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Wheels">@context.Wheels</MudTd>
-                <MudTd DataLabel="Speed">@context.Speed</MudTd>
-                <MudTd>
-                    <MudFab @onclick="@(() => EditWheelSpeed(context))" Title="Edit" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    }
-    else
-    {
-        <MudTable Items="@LoadUnloadcollection" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<ROILoadAndUnloadModel, bool>(SearchLoadUnloadDuration)">
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x.Order?.OrderName)" InitialDirection="SortDirection.Ascending">OrderName</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x?.LoadingDuration)" InitialDirection="SortDirection.Ascending">Loading Duration in Hours</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x?.UnLoadingDuration)" InitialDirection="SortDirection.Ascending">UnLoading Duration in Hours</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x?.ID)" InitialDirection="SortDirection.Ascending">Action</MudTableSortLabel></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="OrderName">@context.Order?.OrderName</MudTd>
-                <MudTd DataLabel="LoadingDuration">@context?.LoadingDuration</MudTd>
-                <MudTd DataLabel="UnLoadingDuration">@context?.UnLoadingDuration</MudTd>
-                <MudTd>
-                    <MudFab @onclick="@(() => EditLoadUnloadDuration(context))" Title="Edit" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    }
-</MudPaper>
+        else
+        {
+            <MudTable Items="@LoadUnloadcollection" Elevation="0" Class="modern-admin-table" Hover="true" Filter="new Func<ROILoadAndUnloadModel, bool>(SearchLoadUnloadDuration)">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x.Order?.OrderName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">ORDER ENTITY</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x?.LoadingDuration)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">LOADING (HRS)</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x?.UnLoadingDuration)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">UNLOADING (HRS)</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="OrderName"><span class="admin-td-primary fw-600">@context.Order?.OrderName</span></MudTd>
+                    <MudTd DataLabel="LoadingDuration">
+                        <span class="fw-500">@context?.LoadingDuration hrs</span>
+                    </MudTd>
+                    <MudTd DataLabel="UnLoadingDuration">
+                        <span class="fw-500 text-info">@context?.UnLoadingDuration hrs</span>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <MudTooltip Text="Adjust Durations">
+                            <MudIconButton OnClick="@(() => EditLoadUnloadDuration(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        }
+    </div>
+</div>
 
 @code {
 
@@ -113,7 +145,7 @@
             var parameters = new DialogParameters();
             parameters.Add("model", model.Clone());
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var dialog = DialogService.Show<ROITimeWheelSpeedDialog>("Add/Edit", parameters, maxWidth);
+            var dialog = await DialogService.ShowAsync<ROITimeWheelSpeedDialog>("Add/Edit", parameters, maxWidth);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -134,7 +166,7 @@
             var parameters = new DialogParameters();
             parameters.Add("model", model.Clone());
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var dialog = DialogService.Show<ROITimeLoadUnloadDurationDialog>("Add/Edit", parameters, maxWidth);
+            var dialog = await DialogService.ShowAsync<ROITimeLoadUnloadDurationDialog>("Add/Edit", parameters, maxWidth);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -167,3 +199,4 @@
         return false;
     }
 }
+

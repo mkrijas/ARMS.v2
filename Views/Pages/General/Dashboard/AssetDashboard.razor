@@ -1,0 +1,305 @@
+@page "/assetdashboard"
+@using ArmsModels.BaseModels
+@using ArmsServices.DataServices
+@inject IAssetService AssetService
+@inject IAssetClassService AssetClassService
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider auth
+
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 500px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="large" 
+                        LoadingText="Loading Asset Dashboard" 
+                        SubText="Fetching asset data..." />
+    </div>
+}
+else
+{
+<div class="admin-page-container fade-in">
+    <div class="admin-header-tiered mb-6">
+        <MudText Typo="Typo.h4" Class="admin-title">Asset Overview</MudText>
+        <div class="title-accent"></div>
+    </div>
+
+    <!-- 1. Summary Cards -->
+    <MudGrid Class="mb-4">
+        <!-- Total Assets -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="premium-card pa-5 d-flex flex-column gap-3">
+                 <div class="d-flex justify-space-between align-center">
+                     <div class="icon-badge primary-badge">
+                        <MudIcon Icon="@Icons.Material.Filled.Inventory2" />
+                     </div>
+                     <MudText Typo="Typo.caption" Class="label-caps">Total Assets</MudText>
+                 </div>
+                 <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">@TotalAssets.ToString("N0")</MudText>
+                    <MudText Typo="Typo.caption" Class="admin-subtitle">Registered in system</MudText>
+                 </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Total Value -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="premium-card pa-5 d-flex flex-column gap-3">
+                 <div class="d-flex justify-space-between align-center">
+                     <div class="icon-badge bg-success-light" style="color: #28C76F;">
+                        <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
+                     </div>
+                     <MudText Typo="Typo.caption" Class="label-caps">Total Asset Value</MudText>
+                 </div>
+                 <div>
+                    <MudText Typo="Typo.h4" Class="admin-title" Style="color: #28C76F;">@TotalValue.ToString("C0")</MudText>
+                    <MudText Typo="Typo.caption" Class="admin-subtitle">Current Book Value</MudText>
+                 </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Active Assets -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="premium-card pa-5 d-flex flex-column gap-3">
+                 <div class="d-flex justify-space-between align-center">
+                     <div class="icon-badge primary-badge" style="background: rgba(0, 207, 232, 0.1); color: #00CFE8;">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                     </div>
+                     <MudText Typo="Typo.caption" Class="label-caps">Active Assets</MudText>
+                 </div>
+                 <div>
+                    <MudText Typo="Typo.h4" Class="admin-title" Style="color: #00CFE8;">@ActiveAssets.ToString("N0")</MudText>
+                    <MudText Typo="Typo.caption" Class="admin-subtitle">In Use / Operational</MudText>
+                 </div>
+            </MudPaper>
+        </MudItem>
+
+         <!-- Scrapped/Disposed -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="premium-card pa-5 d-flex flex-column gap-3">
+                 <div class="d-flex justify-space-between align-center">
+                     <div class="icon-badge bg-error-light" style="color: #EA5455;">
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" />
+                     </div>
+                     <MudText Typo="Typo.caption" Class="label-caps">Scrapped / Disposed</MudText>
+                 </div>
+                 <div>
+                    <MudText Typo="Typo.h4" Class="admin-title" Style="color: #EA5455;">@ScrappedAssets.ToString("N0")</MudText>
+                    <MudText Typo="Typo.caption" Class="admin-subtitle">Total Disposed</MudText>
+                 </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- 2. Charts and Tables -->
+    <MudGrid>
+        <!-- Asset Composition Chart -->
+        <MudItem xs="12" md="5">
+            <MudPaper Class="premium-card pa-5" Style="height: 100%;">
+                <MudText Typo="Typo.h6" Class="admin-title mb-6">Asset Sub-Classes</MudText>
+                @if (CategoryData.Sum() > 0)
+                {
+                     <MudChart T="double" LegendPosition="Position.Right" ChartType="ChartType.Donut" ChartSeries="@CategorySeries" ChartLabels="@CategoryLabels" Width="100%" Height="300px" />
+                }
+                else
+                {
+                     <div class="d-flex justify-center align-center" style="height: 300px;">
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">No Asset Data Available</MudText>
+                     </div>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <!-- Top High Value Assets Table -->
+        <MudItem xs="12" md="7">
+            <MudPaper Class="premium-card pa-5" Style="height: 100%;">
+                <div class="d-flex justify-space-between align-center mb-6">
+                     <MudText Typo="Typo.h6" Class="admin-title">High Value Assets</MudText>
+                     <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => NavManager.NavigateTo("/AssetSimpleView"))" Class="action-btn-primary">View All</MudButton>
+                </div>
+                
+                <MudTable Items="@HighValueAssets" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Elevation="0" Class="modern-admin-table">
+                    <HeaderContent>
+                        <MudTh>Asset Name</MudTh>
+                        <MudTh>Code</MudTh>
+                        <MudTh>Sub-Class</MudTh>
+                        <MudTh Style="text-align:right;">Book Value</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Asset Name">
+                             <div class="d-flex align-center gap-3">
+                                <MudAvatar Class="avatar-halo" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">@context.Description.Substring(0,1).ToUpper()</MudAvatar>
+                                <MudText Typo="Typo.body2" Class="admin-td-primary">@context.Description</MudText>
+                             </div>
+                        </MudTd>
+                        <MudTd DataLabel="Code" Class="admin-td-secondary">@context.AssetCode</MudTd>
+                        <MudTd DataLabel="Category" Class="admin-td-secondary">@context.SubClass?.AssetSubclass</MudTd>
+                        <MudTd DataLabel="Value" Style="text-align:right;" Class="admin-td-amount">@context.CurrentValue?.ToString("C0")</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Recent Assets Table -->
+         <MudItem xs="12">
+            <MudPaper Class="premium-card pa-5">
+                 <MudText Typo="Typo.h6" Class="admin-title mb-6">Recently Registered Assets</MudText>
+                 <MudTable Items="@RecentAssets" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Elevation="0" Class="modern-admin-table">
+                    <HeaderContent>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Asset Name</MudTh>
+                        <MudTh>Serial No.</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Date" Class="admin-td-secondary">@context.UserInfo?.TimeStampField?.ToString("dd MMM yyyy")</MudTd>
+                        <MudTd DataLabel="Asset Name" Class="admin-td-primary">@context.Description</MudTd>
+                        <MudTd DataLabel="Serial No" Class="admin-td-secondary">@context.SerialNumber</MudTd>
+                        <MudTd DataLabel="Status">
+                            @{
+                                var status = !string.IsNullOrEmpty(context.Status) ? context.Status : "Active";
+                                var chipClass = status == "Active" ? "admin-chip-approved" : (status == "Scrap" ? "admin-chip-rejected" : "admin-chip-pending");
+                            }
+                            <MudChip T="string" Size="Size.Small" Class="@chipClass">@status</MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+         </MudItem>
+
+    </MudGrid>
+</div>
+}
+
+@code {
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
+    private int BranchID;
+    private List<AssetModel> AllAssets = new();
+    private List<AssetModel> HighValueAssets = new();
+    private List<AssetModel> RecentAssets = new();
+
+    private int TotalAssets = 0;
+    private decimal TotalValue = 0;
+    private int ActiveAssets = 0;
+    private int ScrappedAssets = 0;
+
+    public double[] CategoryData = { };
+    public string[] CategoryLabels = { };
+    public List<ChartSeries<double>> CategorySeries = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loadStartTime = DateTime.Now;
+        await LoadData();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
+    }
+
+    private async Task LoadData()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        var claim = User.Claims.FirstOrDefault(x => x.Type == "BranchID");
+        if (claim == null) return;
+        string BranchIDString = claim.Value;
+        BranchID = int.Parse(BranchIDString);
+
+        // Fetch Assets (Active and Scrapped)
+
+        var activeAssets = AssetService.SelectByBranch(BranchID, false, 5000, "").ToList();
+        var scrappedAssets = AssetService.SelectByBranch(BranchID, true, 5000, "").ToList();
+
+        AllAssets = new List<AssetModel>();
+        AllAssets.AddRange(activeAssets);
+        AllAssets.AddRange(scrappedAssets);
+
+        activeAssets = activeAssets.Where(z => z.IsSold == false).ToList();
+
+        // --- FIX: Populate missing SubClass Names ---
+        try
+        {
+            // 1. Fetch all Asset Classes
+            var assetClasses = AssetClassService.SelectClasses().ToList();
+            var allSubClasses = new List<AssetSubClassModel>();
+
+            // 2. Fetch SubClasses for each Class (since SelectSubClassesAll might not exist)
+            foreach (var cls in assetClasses)
+            {
+                var subClasses = AssetClassService.SelectSubClassesByClass(cls.AssetClassID).ToList();
+                allSubClasses.AddRange(subClasses);
+            }
+
+            // 3. Patch AllAssets
+            // Note: AssetModel.SubClass.AssetSubClassID seems to map to AssetSubClassModel.AssetSubClassID or ID?
+            // AssetService.GetModel maps: SubClass.AssetSubClassID = dr.GetInt32("SubAssetClassID")
+            // AssetClassService.GetAssetSubClass maps: AssetSubClassID = dr.GetInt32("AssetSubClassID")
+            // Assuming these are the matching keys.
+            
+            foreach (var asset in AllAssets)
+            {
+                if (asset.SubClass != null) // SubClass is always new() in GetModel, but let's check props
+                {
+                    if (string.IsNullOrEmpty(asset.SubClass.AssetSubclass))
+                    {
+                        var matchingSub = allSubClasses.FirstOrDefault(x => x.AssetSubClassID == asset.SubClass.AssetSubClassID);
+                        // If not found by AssetSubClassID, try by ID if available
+                         if (matchingSub == null && asset.SubClass.ID > 0)
+                        {
+                             matchingSub = allSubClasses.FirstOrDefault(x => x.AssetSubClassID == asset.SubClass.ID); // Trying match specific to probable ID mismatch
+                        }
+                        
+                        // Last ditch: If the Asset service returns "ID" as the SubClassID
+                        if (matchingSub == null && asset.SubClass.ID != null)
+                        {
+                            matchingSub = allSubClasses.FirstOrDefault(x => x.ID == asset.SubClass.ID);
+                        }
+
+                        if (matchingSub != null)
+                        {
+                            asset.SubClass.AssetSubclass = matchingSub.AssetSubclass;
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error patching asset subclasses: " + ex.Message);
+        }
+        // --------------------------------------------
+
+        // Calculate Summaries
+        TotalAssets = AllAssets.Count;
+        TotalValue = AllAssets.Sum(x => x.CurrentValue ?? 0);
+        ActiveAssets = activeAssets.Count;
+        ScrappedAssets = scrappedAssets.Count;
+
+        // Top High Value (from active only? or all? usually active)
+        HighValueAssets = activeAssets.OrderByDescending(x => x.CurrentValue).Take(5).ToList();
+
+        // Recent Assets (from all)
+        RecentAssets = AllAssets.OrderByDescending(x => x.UserInfo?.TimeStampField).Take(5).ToList();
+
+        // Chart Data (Active only usually relevant for value/composition)
+        var grouped = activeAssets
+            .GroupBy(x => x.SubClass?.AssetSubclass ?? "Uncategorized")
+            .Select(g => new { Category = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .Take(6) // Limit to top categories for readability
+            .ToList();
+
+        CategoryLabels = grouped.Select(x => x.Category).ToArray();
+        CategoryData = grouped.Select(x => (double)x.Count).ToArray();
+        CategorySeries = new List<ChartSeries<double>> { new ChartSeries<double> { Name = "Assets", Data = CategoryData } };
+    }
+}

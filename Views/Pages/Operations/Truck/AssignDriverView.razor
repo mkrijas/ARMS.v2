@@ -1,4 +1,4 @@
-﻿@using System.Threading;
+@using System.Threading;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject ITruckService Iservice
@@ -7,41 +7,73 @@
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <DialogContent>
-        <MudGrid Spacing="4">
-            <MudItem xs="12" md="12">
-                <MudText Typo="Typo.h4"><MudIcon Icon="@Icons.Material.Filled.LocalShipping" /> @Truck.RegNo</MudText>
-            </MudItem>
-            <MudItem xs="12" md="12">
-                @if (AssignedDriver == null)
-                {
-                    <MudText Typo="Typo.h4" Color="Color.Warning"><MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Title="Driver" /> NONE</MudText>
-                }
-                else
-                {
-                    <MudText class="subbutn"><MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Title="Driver" /> @AssignedDriver.DriverName</MudText>
-                }
-                <MudText></MudText>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudAutocomplete T="DriverModel" Label="Select Driver" @bind-Value="SelectedDriver" ResetValueOnEmptyText="true" SearchFunc="SearchDrivers" ToStringFunc="@(e => e == null ? null : $"{e.DriverCode} | {e.DriverName}")" Variant="Variant.Outlined" Margin="Margin.Dense"></MudAutocomplete>
-            </MudItem>
-        </MudGrid>
-    </DialogContent>
-    <DialogActions>
+<DialogForm @ref="@dialogForm" Title="Crew Assignment" Subtitle="Link a certified driver to the vehicle registry for active duty deployment." Icon="@Icons.Material.Filled.AssignmentInd" AdminStyle="true" formID="formAssign" model="@Truck" SubmitText="Authorize Assignment">
+    <FormContent>
+        <div class="dialog-content-wrapper pa-2">
+            <EditForm id="formAssign" Model="@Truck" OnValidSubmit="AssignDriver">
+            <div class="admin-glass-card pa-6 mb-6">
+                <MudGrid Spacing="4">
+                    <MudItem xs="12" md="6">
+                        <div class="pa-4 rounded-lg d-flex align-center" style="background: rgba(54, 117, 136, 0.05); border: 1px solid rgba(54, 117, 136, 0.1);">
+                            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Primary" Size="Size.Large" Class="mr-4" />
+                            <div>
+                                <MudText Typo="Typo.caption" Class="admin-subtitle">Vehicle Registry</MudText>
+                                <MudText Typo="Typo.h5"><b>@Truck.RegNo</b></MudText>
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <div class="pa-4 rounded-lg d-flex align-center" style="background: @(AssignedDriver == null ? "rgba(255, 152, 0, 0.05)" : "rgba(76, 175, 80, 0.05)"); border: 1px solid @(AssignedDriver == null ? "rgba(255, 152, 0, 0.2)" : "rgba(76, 175, 80, 0.2)");">
+                            <MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Color="@(AssignedDriver == null ? Color.Warning : Color.Success)" Size="Size.Large" Class="mr-4" />
+                            <div>
+                                <MudText Typo="Typo.caption" Class="admin-subtitle">Currently Assigned</MudText>
+                                <MudText Typo="Typo.h5" Color="@(AssignedDriver == null ? Color.Warning : Color.Success)">
+                                    <b>@(AssignedDriver?.DriverName ?? "UNASSIGNED")</b>
+                                </MudText>
+                            </div>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+            </div>
+
+            <div class="admin-glass-card pa-6">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <div class="d-flex align-center mb-4">
+                            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Color="Color.Primary" Class="mr-2" />
+                            <MudText Typo="Typo.subtitle1"><b>Deployment Dispatch</b></MudText>
+                        </div>
+                        <MudAutocomplete T="DriverModel" 
+                                         Label="Subject Driver" 
+                                         @bind-Value="SelectedDriver" 
+                                         ResetValueOnEmptyText="true" 
+                                         SearchFunc="SearchDrivers" 
+                                         ToStringFunc="@(e => e == null ? null : $"{e.DriverCode} | {e.DriverName}")" 
+                                         Variant="Variant.Outlined" 
+                                         Margin="Margin.Normal"
+                                         Class="modern-input"
+                                         Adornment="Adornment.Start"
+                                         AdornmentIcon="@Icons.Material.Filled.Search" />
+                    </MudItem>
+                </MudGrid>
+            </div>
+            </EditForm>
+        </div>
+    </FormContent>
+    <Actions>
         @if (AssignedDriver != null)
         {
-            <MudButton OnClick="RemoveDriver">Remove Driver</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RemoveDriver" Class="rounded-xl px-6" Style="background: rgba(244, 67, 54, 0.05) !important;">
+                Decommission Driver
+            </MudButton>
         }
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton form="form" Variant="Variant.Filled" Class="scsbtn" ButtonType="ButtonType.Submit" OnClick="AssignDriver">Assign Driver</MudButton>
-    </DialogActions>
-</MudDialog>
+    </Actions>
+</DialogForm>
   
 @code {
 
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private DialogForm dialogForm;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public DriverModel AssignedDriver { get; set; }
     private DriverModel SelectedDriver = null;
@@ -67,7 +99,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Assign or Remove Driver in Truck.");
         }
@@ -87,13 +119,13 @@
         drivers = Idriver.SelectByBranch(BranchID).Where(x => x.HasValidLicense && x.TruckID == null && x.UserInfo.RecordStatus == 3).ToList();
     }
 
-    private async Task<IEnumerable<DriverModel>> SearchDrivers(string searchString)
+    private async Task<IEnumerable<DriverModel>> SearchDrivers(string searchString, CancellationToken token)
     {
         return await Task.FromResult(drivers.Where(x => x.DriverName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)
                                                     || (x.DriverCode.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase))));
     }
 
-    private async Task AssignDriver()
+    private async Task AssignDriver(EditContext context = null)
     {
         if (HasPermissionITruckServiceAssignDriver)
         {
@@ -127,7 +159,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Assign or Remove Driver in Truck.");
         }

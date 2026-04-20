@@ -1,4 +1,4 @@
-﻿@using System.Threading;
+@using System.Threading;
 @inject AuthenticationStateProvider auth
 @inject IGcService Iservice
 @inject IRouteService Iroute
@@ -7,56 +7,85 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            Load <MudIcon Icon="@Icons.Material.Filled.DirectionsBus" /> @Truck.RegNo
-            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@Add" Color="Color.Dark" Size="Size.Medium"></MudIconButton>
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Class="dc">
-            <MudGrid Spacing="4">
-                @foreach (var row in collection)
-                {
-                    var bgClass = row.Selected ? "bgSelected" : "bgUnselected";
-                    var item = row.model;
+<DialogForm @ref="@dialogForm" Title="Consignment Selection Manifest" Subtitle="Select and authorize pending Goods Consignments for immediate vehicle deployment." Icon="@Icons.Material.Filled.Inventory" AdminStyle="true" formID="formGcSelect" model="@collection" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper">
+            <div class="d-flex align-center justify-space-between mb-4">
+                <div class="d-flex align-center gap-4">
+                    <div class="admin-badge primary px-4 py-2 rounded-pill">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" Class="mr-2" />
+                        <span class="fw-600">@Truck.RegNo</span>
+                    </div>
+                </div>
+                <MudTooltip Text="Generate New Consignment">
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Variant="Variant.Filled" OnClick="@Add" Size="Size.Medium" Class="shadow-sm" />
+                </MudTooltip>
+            </div>
+            <div class="admin-glass-card pa-6 dc">
+                <div class="d-flex align-center justify-space-between mb-6">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.FilterList" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Unassigned Consignments (@collection.Count)</span>
+                    </div>
+                    <div class="selection-status px-4 py-1 rounded-pill" style="background: rgba(var(--mud-palette-success-rgb), 0.1); border: 1px solid var(--mud-palette-success);">
+                        <MudText Typo="Typo.caption" Color="Color.Success" Class="fw-600">Selected: @collection.Count(x => x.Selected)</MudText>
+                    </div>
+                </div>
+                
+                <MudGrid Spacing="3">
+                    @foreach (var row in collection)
+                    {
+                        var bgClass = row.Selected ? "gc-card-selected" : "gc-card-standard";
+                        var item = row.model;
 
-                    <MudItem xs="12" md="4" @onclick="@(()=> row.Selected = !row.Selected)" @ondblclick="@(()=> dblClickHandler(item))">
-                        <GcItemCard item="row.model" Class="@bgClass" OnGcDeleted="Deleted"></GcItemCard>
-                    </MudItem>
-                }
-            </MudGrid>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
+                        <MudItem xs="12" md="12" lg="6" xl="4">
+                            <div @onclick="@(()=> row.Selected = !row.Selected)" @ondblclick="@(()=> dblClickHandler(item))" class="gc-card-wrapper cursor-pointer transition-all">
+                                <GcItemCard item="row.model" Class="@bgClass" OnGcDeleted="Deleted"></GcItemCard>
+                            </div>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        </div>
+    </FormContent>
+    <Actions>
         @{
             SelectedCount = collection.Count(x => x.Selected == true); var disabled = SelectedCount == 0;
         }
-        <MudButton OnClick="Load" IconColor="Color.Default" Color="Color.Success" Disabled="@disabled">Load</MudButton>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-    </DialogActions>
-</MudDialog>
+        <div class="d-flex gap-4">
+            <MudButton OnClick="Load" Variant="Variant.Filled" Color="Color.Success" Disabled="@disabled" StartIcon="@Icons.Material.Filled.FileDownload" Class="px-12 rounded-pill py-3 shadow-none">Commit Selection</MudButton>
+        </div>
+    </Actions>
+</DialogForm>
 
 <style>
-    .bgSelected {
-        background-color: #FFFFCC;
+    .gc-card-selected {
+        border: 2px solid var(--mud-palette-primary) !important;
+        background: rgba(var(--mud-palette-primary-rgb), 0.05) !important;
+        transform: translateY(-2px);
+        box-shadow: var(--mud-elevation-4);
     }
 
-    .bgUnselected {
-        background-color: white
+    .gc-card-standard {
+        border: 1px solid var(--mud-palette-divider) !important;
+        transition: all 0.2s ease;
+    }
+
+    .gc-card-standard:hover {
+        border-color: var(--mud-palette-primary-lighten) !important;
+        background: var(--mud-palette-background-grey) !important;
     }
 
     .dc {
         min-height: 50vh;
-        max-height: calc(80vh - 64px);
-        overflow-y: scroll;
+        max-height: 65vh;
+        overflow-y: auto;
     }
 </style>
 
 @code {
-
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
+    private bool _busy;
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public long TripID { get; set; }
     private int BranchID { get; set; }
@@ -69,7 +98,7 @@
 
     private void Cancel()
     {
-        MudDialog.Cancel();
+        dialogForm.Cancel();
     }
 
     // Method called when the component is initialized
@@ -107,18 +136,18 @@
             var userID = user.Identity.Name;
             if (item.Gcs.Any(y => DateTime.Compare(DateTime.Now, (y.EwayBill?.ExpireOn) ?? DateTime.MinValue) > 0))
             {
-                await DialogService.ShowMessageBox("EWAY BILL MISSING!","No Valid Ewaybill found!.");
+                await DialogService.ShowMessageBoxAsync("EWAY BILL MISSING!","No Valid Ewaybill found!.");
                 return;
             }           
                 // Append the GcSetModel to the trip
                 Iservice.AppendToTrip(TripID, item.GcSetID, userID);
-                MudDialog.Close(DialogResult.Ok("Appended"));
+                dialogForm.Close(DialogResult.Ok("Appended"));
                 snackbar.Add("Loaded", Severity.Success, null);
             
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to AppendToTrip GC.");
         }
@@ -145,25 +174,25 @@
                 {
                     if (item.model.Gcs.Any(y => DateTime.Compare(DateTime.Now, (y.EwayBill?.ExpireOn) ?? DateTime.MinValue) > 0))
                     {
-                        await DialogService.ShowMessageBox("EWAY BILL MISSING!", "No Valid Ewaybill found!.");
+                        await DialogService.ShowMessageBoxAsync("EWAY BILL MISSING!", "No Valid Ewaybill found!.");
                         return;
                     }
 
                     int result = Iservice.AppendToTrip(TripID, item.model.GcSetID, userID);
                 }
 
-                MudDialog.Close(DialogResult.Ok("Appended"));
+                dialogForm.Close(DialogResult.Ok("Appended"));
             }
             else
             {
-                bool? ResultModel = await DialogService.ShowMessageBox(
+                bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "None Selected!",
                 "Please select a consignment to load!.");
             }
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to AppendToTrip GC.");
         }
@@ -183,7 +212,7 @@
             var parameters = new DialogParameters();
             parameters.Add("model", new GcSetModel() { BranchID = BranchID });
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var dialog = DialogService.Show<GcDialog>("Create New GC", parameters, maxWidth);
+            var dialog = await DialogService.ShowAsync<GcDialog>("Create New GC", parameters, maxWidth);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -192,7 +221,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit GC.");
         }

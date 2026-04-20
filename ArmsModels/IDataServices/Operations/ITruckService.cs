@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using Core.BaseModels.Operations.ROI;
+using Core.BaseModels.Operations;
 
 
 namespace ArmsServices.DataServices
@@ -35,6 +36,13 @@ namespace ArmsServices.DataServices
         IEnumerable<TruckModel> SelectAllByBranch(bool IsChecked, int? BranchID = null, string Filer = "All", string HomeOrOperation = "AllOperation");
         IEnumerable<TruckStatusModel> GetTruckStatusByEvent(int? BranchID, string SelectedValue);
         IEnumerable<NoDriverTruckModel> GetNoDriverTruck(int? BranchID);
+        TruckModel GetInfo(int? TruckID, string HomeOrOperation = "Operation");       
 
+    }
+
+    public interface ITelemetryService
+    {
+        IEnumerable<TelemetryModel> GetTelemetry(DateTime? dateTime, string Reg_Number = "");
+        int? UpdateTelemetry(List<TelemetryModel> model);
     }
 }

@@ -17,96 +17,138 @@
 @using OfficeOpenXml.Style;
 @inject IJSRuntime JSRuntime
 
-<MudPaper Class="p-4">
-    <MudGrid>
-        <MudItem xs="12" md="4">
-            <PartySelector BranchID="@BranchID" NatureOfBusiness="Customer" @bind-Value="@SelectedClient" IncludeSisterConcern></PartySelector>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudAutocomplete Label="Select Contract" @bind-Value="@SelectedOrder" T="OrderModel" SearchFunc="SearchOrders" ToStringFunc="@((p) => p?.OrderName)" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
-            </MudAutocomplete>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudSelect Label="Select Tariff" @bind-Value="SelectedTariffType" T="TariffTypeModel" ToStringFunc="@((p) => p?.TariffTypeName)" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
-                @foreach (var item in TariffTypes)
-                {
-                    <MudSelectItem Value="@item">@item.TariffTypeName</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" md="3">
-            <MudSelect Label="Select GC Type" @bind-Value="GcType" T="GcTypeModel" ToStringFunc="@((p) => p?.GcTypeName)" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
-                @foreach (var item in GcTypes)
-                {
-                    <MudSelectItem Value="@item">@item.GcTypeName</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" md="3">
-            <TruckSelector Class="bg-white" Value="SelectedTruck" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" />
-        </MudItem>
-        <MudItem xs="12" md="3">
-            <MudDateRangePicker Label="Select Period" @bind-DateRange="@dateRange" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Required></MudDateRangePicker>
-        </MudItem>
-        <MudItem xs="12" md="3" Class="d-flex align-left">
-            <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Fetch</MudButton>
-            <MudButton OnClick="Generate" Style="margin-left: 20px;" Variant="Variant.Filled" Color="Color.Secondary" ButtonType="ButtonType.Button">Generate</MudButton>
-        </MudItem>
-        @if (collection.Any())
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Syncing Freight Logistics" 
+                        SubText="Optimizing haulage routes..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Freight Booking & Allocation</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Strategize haulage operations and orchestrate client consignments. define contracts, allocate resources, and consolidate pending logistics into systematic draft billing protocols.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-6 mb-6">
+            <MudGrid Spacing="3">
+                <MudItem xs="12" md="4">
+                    <PartySelector BranchID="@BranchID" NatureOfBusiness="Customer" @bind-Value="@SelectedClient" IncludeSisterConcern Label="Client Entity"></PartySelector>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudAutocomplete Label="Service Contract" @bind-Value="@SelectedOrder" T="OrderModel" SearchFunc="@(async (string s, CancellationToken t) => await SearchOrders(s, t))" ToStringFunc="@((p) => p?.OrderName)" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" AdornmentColor="Color.Secondary" Class="admin-input-group" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect For="@(() => SelectedTariffType)" Label="Logistics Tariff" @bind-Value="SelectedTariffType" T="TariffTypeModel" ToStringFunc="@((p) => p?.TariffTypeName)" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" AdornmentColor="Color.Secondary" Class="admin-input-group">
+                        @foreach (var item in TariffTypes)
+                        {
+                            <MudSelectItem Value="@item">@item.TariffTypeName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudSelect For="@(() => GcType)" Label="Consignment Type" @bind-Value="GcType" T="GcTypeModel" ToStringFunc="@((p) => p?.GcTypeName)" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" AdornmentColor="Color.Secondary" Class="admin-input-group">
+                        @foreach (var item in GcTypes)
+                        {
+                            <MudSelectItem Value="@item">@item.GcTypeName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <TruckSelector Class="bg-white admin-input-group" Value="SelectedTruck" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" Label="Assigned Asset" />
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudDateRangePicker Label="Operational Window" @bind-DateRange="@dateRange" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Required Class="admin-input-group" />
+                </MudItem>
+                <MudItem xs="12" md="3" Class="d-flex align-center gap-2" Style="align-self: flex-end;">
+                    <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn flex-grow-1" StartIcon="@Icons.Material.Filled.Refresh">FETCH</MudButton>
+                    <MudButton OnClick="Generate" Variant="Variant.Outlined" Color="Color.Secondary" Class="admin-register-btn flex-grow-1" StartIcon="@Icons.Material.Filled.Autorenew">PROCESS</MudButton>
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        @if (collection?.Any() == true)
         {
-            <MudSpacer></MudSpacer>
-            <MudItem Class="">
-                <MudButton OnClick="ExcelDownload" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
-                <MudButton Style="margin-left: 14px;" OnClick="Create" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Create Consolidate Draft Bill</MudButton>
-            </MudItem>
+            <div class="d-flex align-center justify-space-between mb-4">
+                <div class="d-flex align-center gap-3">
+                    <div class="admin-icon-square-vibrant small accent-indigo">
+                        <MudIcon Icon="@Icons.Material.Filled.FormatListBulleted" Size="Size.Small" />
+                    </div>
+                    <span class="admin-section-label mb-0">Analyzed Consignments</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <MudButton OnClick="ExcelDownload" StartIcon="@Icons.Material.Filled.FileDownload" Variant="Variant.Outlined" Color="Color.Info" Class="admin-register-btn">EXPORT EXCEL</MudButton>
+                    <MudButton OnClick="Create" Variant="Variant.Filled" Color="Color.Success" Class="admin-register-btn" StartIcon="@Icons.Material.Filled.FactCheck">GENERATE DRAFT BILL</MudButton>
+                </div>
+            </div>
         }
-    </MudGrid>
-</MudPaper>
-<br />
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<GcTariffModel, bool>(search)">
-            <ToolBarContent>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchBookFreight" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudCheckBox ValueChanged="(bool isChecked) => SelectAll(isChecked)"></MudCheckBox></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillNumber)" InitialDirection="SortDirection.Ascending">Bill Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillDate)" InitialDirection="SortDirection.Ascending">Bill Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.TruckRegNo)" InitialDirection="SortDirection.Ascending">Truck No</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.PassNumber)" InitialDirection="SortDirection.Ascending">Pass Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.ConsigneeName)" InitialDirection="SortDirection.Ascending">Consignee Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.Destination)" InitialDirection="SortDirection.Ascending">Destination</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.DistrictName)" InitialDirection="SortDirection.Ascending">District</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.StateName)" InitialDirection="SortDirection.Ascending">State</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillQuantity)" InitialDirection="SortDirection.Ascending">Bill Quantity</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Freight</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.PaymentMode)" InitialDirection="SortDirection.Ascending">Payment Mode</MudTableSortLabel></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd><MudCheckBox @bind-Value="@context.IsChecked"></MudCheckBox></MudTd>
-                <MudTd DataLabel="BillNumber">@context.BillNumber</MudTd>
-                <MudTd DataLabel="BillDate">@context.BillDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="TruckRegNo">@context.TruckRegNo</MudTd>
-                <MudTd DataLabel="PassNumber">@context.PassNumber</MudTd>
-                <MudTd DataLabel="ConsigneeName">@context.ConsigneeName</MudTd>
-                <MudTd DataLabel="Destination">@context.Destination</MudTd>
-                <MudTd DataLabel="DistrictName">@context.DistrictName</MudTd>
-                <MudTd DataLabel="StateName">@context.StateName</MudTd>
-                <MudTd DataLabel="BillQuantity">@context.BillQuantity?.ToString("0.00")</MudTd>
-                <MudTd DataLabel="Amount">@context.Amount?.ToString("0.00")</MudTd>
-                <MudTd DataLabel="PaymentMode">@context.PaymentMode</MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
-<br />
+
+        <div class="admin-glass-card pa-0 overflow-hidden shadow-sm">
+            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true">
+                <HeaderContent>
+                    <MudTh Style="width: 50px;"><MudCheckBox T="bool" ValueChanged="(bool isChecked) => SelectAll(isChecked)" Color="Color.Primary"></MudCheckBox></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><span class="admin-header-text">LOGISTICS INFO</span></MudTh>
+                    <MudTh><span class="admin-header-text">DESTINATION & ENTITY</span></MudTh>
+                    <MudTh Style="text-align: right;"><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.Amount)"><span class="admin-header-text">FREIGHT</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">STATUS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd><MudCheckBox T="bool" @bind-Value="@context.IsChecked" Color="Color.Primary"></MudCheckBox></MudTd>
+                    <MudTd DataLabel="Date">
+                        <div class="d-flex flex-column">
+                            <span class="fw-700 admin-td-primary">@context.BillDate?.ToString("dd MMM yyyy")</span>
+                            <span class="tiny opa-50">@context.PaymentMode</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Logistics">
+                        <div class="d-flex flex-column">
+                            <span class="fw-700">Bill: @context.BillNumber</span>
+                            <div class="d-flex align-center gap-2">
+                                <span class="tiny fw-800 text-indigo uppercase">Pass: @context.PassNumber</span>
+                                <span class="tiny fw-700 text-vibrant">Truck: @context.TruckRegNo</span>
+                            </div>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Entity">
+                        <div class="d-flex flex-column">
+                            <span class="small fw-700">@context.ConsigneeName</span>
+                            <span class="tiny opa-50 uppercase">@context.Destination, @context.DistrictName, @context.StateName</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Freight" Style="text-align: right;">
+                        <div class="d-flex flex-column align-end">
+                            <span class="fw-800 text-vibrant" style="font-size: 1rem;">@context.Amount?.ToString("N2")</span>
+                            <span class="tiny opa-40 fw-700">QTY: @context.BillQuantity?.ToString("N2")</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                         <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text" Class="fw-700 px-3 border-solid border-1">PENDING</MudChip>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<GcTariffModel> collection = new List<GcTariffModel>();
     private List<OrderModel> Orders = new();
@@ -156,6 +198,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionFreightBillingServiceEditConsolidatedDraftBill = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "EditConsolidatedDraftBill", ctc.Token);
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -173,6 +216,17 @@
                 GcTypeName = "All"
             };
         GcTypes.Add(GcTypeAll);
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to fetch data based on the action type
@@ -188,7 +242,7 @@
     }
 
     // Method to search for orders based on a search string
-    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString, CancellationToken token)
     {
         if (string.IsNullOrEmpty(searchString))
             return Orders.Where(x => x.ClientID == SelectedClient?.PartyID);
@@ -237,7 +291,7 @@
         }
         if (collection.Count == 0)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Oops !",
                 "No collection found!!");
         }
@@ -346,7 +400,7 @@
                 DialogParameters parms = new DialogParameters();
                 parms.Add("model", cdm);
                 parms.Add("ReadOnly", false);
-                var dialog = DialogService.Show<ConsolidateDraftBillDialog>("ConsolidateDraftBill", parms, maxWidth);
+                var dialog = await DialogService.ShowAsync<ConsolidateDraftBillDialog>("ConsolidateDraftBill", parms, maxWidth);
                 var result = await dialog.Result;
 
                 if (!result.Canceled)
@@ -364,7 +418,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to EditConsolidatedDraftBill FreightBilling.");
         }

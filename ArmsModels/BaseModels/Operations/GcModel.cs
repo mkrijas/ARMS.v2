@@ -116,7 +116,13 @@ namespace ArmsModels.BaseModels
         public string EwayBillRef { get; set; }
         [Required]
         public DateTime? EwayBillDate { get; set; } = DateTime.Today;
-        public DateTime? ExpireOn { get; set; } = DateTime.Today.AddDays(1);
+        private DateTime? _expire; 
+        public DateTime? ExpireOn { 
+            get 
+            { return _expire; } 
+            set {
+                _expire = value;
+            } }// = DateTime.Today.AddDays(1);
 
         public SharedModels.UserInfoModel UserInfo { get; set; }
 

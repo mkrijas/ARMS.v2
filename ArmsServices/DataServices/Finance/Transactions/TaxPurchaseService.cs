@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -343,37 +343,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
-        //public TaxPurchaseModel UpdateAssetPO(TaxPurchaseModel model)
-        //{
-        //    List<SqlParameter> parameters = new List<SqlParameter>
-        //    {
-        //       new SqlParameter("@PID", model.PID),
-        //       new SqlParameter("@AdditionalTDS", model.AdditionalTDS),
-        //       new SqlParameter("@BranchID", model.BranchID),
-        //       new SqlParameter("@DocumentDate", model.DocumentDate),
-        //       new SqlParameter("@DocumentNumber", model.DocumentNumber),
-        //       new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
-        //       new SqlParameter("@Expenses", model.Expenses.ToDataTable()),
-        //       new SqlParameter("@GRNID", model.GRNID),
-        //       new SqlParameter("@InvoiceDate", model.InvoiceDate),
-        //       new SqlParameter("@InvoiceNo", model.InvoiceNo),
-        //       new SqlParameter("@FilePath", model.FileName),
-        //       new SqlParameter("@IsCredit", model.IsCredit),
-        //       new SqlParameter("@Items", model.Items.ToDataTable()),
-        //       new SqlParameter("@NonStoreInventory", model.NonStoreInventory),
-        //       new SqlParameter("@PartyID", model.PartyInfo.PartyID),
-        //       new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
-        //       new SqlParameter("@TotalAmount", model.TotalAmount),
-        //       new SqlParameter("@Narration", model.Narration),
-        //       new SqlParameter("@UserID", model.UserInfo.UserID),
-        //       new SqlParameter("@Assets", model.Assets.ToDataTable())
-        //    };
-        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Update]", parameters))
-        //    {
-        //        model = GetModel(dr);
-        //    }
-        //    return model;
-        //}
+    
 
         // Method to get assets associated with a specific tax purchase
         public IEnumerable<AssetPOModel> GetAssets(int? PID)
@@ -433,6 +403,41 @@ namespace ArmsServices.DataServices
         }
 
         public TaxPurchaseModel TDSReverseUpdate(TaxPurchaseModel model)
+        {
+            throw new NotImplementedException();
+        }
+
+        public PagedResult<TaxPurchaseModel> SelectAll(int? BranchID, string searchTerm, string Type, string TaxPurchaseType, int page, int pageSize, bool? IsApproved = false)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@searchTerm", searchTerm ?? ""),
+                new SqlParameter("@IsApproved", IsApproved),
+                new SqlParameter("@Type", Type),
+                new SqlParameter("@TaxPurchaseType", TaxPurchaseType)
+            };
+
+            List<TaxPurchaseModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+
+            return new PagedResult<TaxPurchaseModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
+        }
+
+        public PagedResult<TaxPurchaseModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved)
         {
             throw new NotImplementedException();
         }

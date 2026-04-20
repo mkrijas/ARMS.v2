@@ -1,4 +1,4 @@
-﻿@using ArmsServices.DataServices.General
+@using ArmsServices.DataServices.General
 @using System.Threading;
 @inject IConfigTable IConfig
 @inject IPaymentFinalizeService Iservice
@@ -16,9 +16,11 @@
 @using OfficeOpenXml;
 @using System.IO;
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Payment" formID="PaymentForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Payment" Subtitle="Finalize outbound payments and reconcile ledger accounts." Icon="@Icons.Material.Filled.Payment" AdminStyle="true" formID="PaymentForm" DocumentDetails="@DocumentDetails" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
+            @if (editContext != null)
+            {
             <EditForm id="PaymentForm" OnValidSubmit="OnValidSubmit" EditContext="@editContext">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
@@ -62,7 +64,7 @@
                                     <MudTextField Disabled="@ReadOnly" @bind-Value="@memos.BankCharges" Label="Bank Charges (if any)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                                 </MudTd>
                                 <MudTd>
-                                    <MudFab @onclick="@(()=> OpenMemo(memos))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                                    <MudFab @onclick="@(()=> OpenMemo(memos))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView" Size="Size.Small" />
                                 </MudTd>
                             </RowTemplate>
                             <FooterContent>
@@ -82,6 +84,7 @@
                     </MudItem>
                 </MudGrid>
             </EditForm>
+            }
         </MudPaper>
     </FormContent>
     <VerificationStatus>
@@ -124,7 +127,16 @@
     private MemoryStream memoryStream = new MemoryStream();
     private List<PaymentMemoPrintDetailModel> XLSXcollection = new List<PaymentMemoPrintDetailModel>();
 
-    // Lifecycle method called when the component is initialized
+    // Lifecycle method called when the component is initialized (sync, runs before async gap)
+    protected override void OnInitialized()
+    {
+        // Initialize editContext here to ensure it's not null during async re-renders
+        editContext = new EditContext(model);
+        DocumentDetails.DocumentTypeID = PaymentFinalizeDocTypeID;
+        DocumentDetails.DocumentID = model.PaymentFinalizeID;
+    }
+
+    // Lifecycle method called when the component is initialized (async)
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -238,7 +250,7 @@
         parms.Add("model", ppm.Clone());
         //parms.Add("PageToRedirectLink", "/PaymentMemoView");
         parms.Add("ReadOnly", true);
-        var dialog = DialogService.Show<PaymentMemoDialog>("MEMO", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var dialog = await DialogService.ShowAsync<PaymentMemoDialog>("MEMO", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
     }
 
@@ -282,7 +294,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit PaymentFinalize.");
         }
@@ -315,9 +327,10 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Approve PaymentFinalize.");
         }
     }
 }
+

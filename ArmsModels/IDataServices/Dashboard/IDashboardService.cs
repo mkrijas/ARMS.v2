@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,5 +15,7 @@ namespace ArmsServices.DataServices
         List<DashboardModel> SelectDriverDonutData(int? BranchID);
         List<DashboardModel> SelectLineChart(int? BranchID, DateTime? To);
         IEnumerable<DriverModel> GetDriverStatusByEvent(int? BranchID, string SelectedValue);
+        Dictionary<string,decimal> Collection(int? BranchID);
+        Dictionary<string, decimal> MaintenanceCollection(int? BranchID);
     }
 }

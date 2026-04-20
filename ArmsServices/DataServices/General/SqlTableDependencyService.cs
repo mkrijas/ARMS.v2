@@ -13,17 +13,19 @@ using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TableDependency.SqlClient;
-using TableDependency.SqlClient.Base;
-using TableDependency.SqlClient.Base.Abstracts;
-using TableDependency.SqlClient.Base.EventArgs;
+using TableDependencyCore;
+using TableDependencyCore.SqlClient;
+using TableDependencyCore.SqlClient.Base;
+using TableDependencyCore.SqlClient.Base.Abstracts;
+using TableDependencyCore.SqlClient.Base.EventArgs;
 
 namespace ArmsServices.DataServices
 {
     public class SqlTableDependencyService 
     {
         private const string TableName = "General.Notification";
-        private SqlTableDependency<PushNotificationModel> _notifier; 
+        private SqlTableDependencyCore<PushNotificationModel> _notifier; 
+
         private IHubContext<ServerSignalHub> _hubContext;
         
         string ConnectionString { get; set; }
@@ -48,7 +50,7 @@ namespace ArmsServices.DataServices
             {
                 try
                 {
-                    _notifier = new SqlTableDependency<PushNotificationModel>(ConnectionString, TableName);
+                    _notifier = new SqlTableDependencyCore<PushNotificationModel>(ConnectionString, TableName);
                     _notifier.OnChanged += TabledependencyChange;
                     _notifier.OnError += TabledependencyError;
                     _notifier.Start();
@@ -65,7 +67,7 @@ namespace ArmsServices.DataServices
         // Event handler for when a change is detected in the monitored table
         private async void TabledependencyChange(object obj, RecordChangedEventArgs<PushNotificationModel> e)
         {            
-            if (e.ChangeType != TableDependency.SqlClient.Base.Enums.ChangeType.None)
+            if (e.ChangeType != TableDependencyCore.SqlClient.Base.Enums.ChangeType.None)
             {
                 var changeEntity = e.Entity;
                 //if (changeEntity != null && changeEntity.MessageGroupID != null && (changeEntity.MessageGroupID.ToLower().Trim() == ("PeriodicMaintainence").ToLower().Trim() || changeEntity.MessageGroupID.ToLower().Trim() == ("EWayBill").ToLower().Trim()))
@@ -77,7 +79,7 @@ namespace ArmsServices.DataServices
         }
 
         // Event handler for handling errors in the table dependency    
-        private void TabledependencyError(object obj, TableDependency.SqlClient.Base.EventArgs.ErrorEventArgs e)
+        private void TabledependencyError(object obj, TableDependencyCore.SqlClient.Base.EventArgs.ErrorEventArgs e)
         {
             try
             {

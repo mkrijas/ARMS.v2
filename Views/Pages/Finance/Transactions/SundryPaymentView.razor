@@ -1,4 +1,4 @@
-﻿@page "/SundryPaymentView/"
+@page "/SundryPaymentView/"
 @page "/SundryPaymentView/{interbranch:bool}/{id:int}"
 @page "/SundryPaymentView/{interbranch:bool}"
 
@@ -8,68 +8,112 @@
 @inject IGstUsageIDService Iusage
 @inject IConfigTable Iconfig
 
-<MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6">Sundry Payment </MudText>
-        @if (interbranch)
-        {
-            <MudText Typo="Typo.h6" Class="pl-2"> Interbranch </MudText>
-        }
-        <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="New" @onclick="@(()=> OpenForm(new SundryPaymentModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-        <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Title="Driver Salary Payable" OnClick="DriverPendingSalary" Color="Color.Secondary" Size="Size.Small"></MudIconButton>
-        <MudSpacer></MudSpacer>
-        <MudTextField @bind-Value="searchTerm" Placeholder="Search Sundry..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
-        </MudTextField>
-        <div class="tablefont">
-            <span style="margin-right: 10px;">Maximum Records: </span>
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Sundry Payments" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+<div class="admin-page-container">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">
+                    @(interbranch ? "Interbranch Sundry Payments" : "Sundry Payments")
+                </MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Process miscellaneous payments, inter-branch transfers, and driver salary settlements.</MudText>
+            </div>
+            <div class="d-flex gap-2">
+                <MudButton StartIcon="@Icons.Material.Filled.AirlineSeatReclineNormal" Variant="Variant.Outlined" Color="Color.Secondary" Class="admin-register-btn" OnClick="DriverPendingSalary" Disabled="@_busy">DRIVER SALARY</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenForm(new SundryPaymentModel()))" Disabled="@_busy">ADD PAYMENT</MudButton>
+            </div>
         </div>
-        <MudItem xs="1">
-            <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
-        </MudItem>
-        <MudCheckBox Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-    </ToolBarContent>
-    <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.SundryPaymentID)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.PaymentMode)">Payment Mode</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.TotalAmount)">Amount</MudTableSortLabel></MudTh>
-        <MudTh>Actions</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-        <MudTd DataLabel="DocumentNumber">
-            @context.DocumentNumber
-            @if (context.AuthLevelId == 100)
-            {
-                <MudText Color="Color.Error"
-                         GutterBottom> Rejected </MudText>
-            }
-        </MudTd>
-        <MudTd DataLabel="PaymentMode">@context.PaymentMode</MudTd>
-        <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
-        <MudTd DataLabel="">
-            <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.SundryPaymentID))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
-            @if (@context.AuthLevelId == 99)
-            {
-                <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.SundryPaymentID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
-                <MudIconButton OnClick="@(()=> Print(context.SundryPaymentID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
-            }
-            else if (@context.AuthLevelId != 100)
-            {
-                <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-            }
-        </MudTd>
-    </RowTemplate>
-    <PagerContent>
-        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-    </PagerContent>
-</MudTable>
+    </div>
+
+    <div class="admin-glass-card mb-6 pa-4">
+        <div class="d-flex align-center gap-4">
+            <div style="flex-grow: 1;">
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Sundry Payments..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" @onkeyup="HandleSearchKeyUp" Clearable="true" />
+            </div>          
+            <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+        </div>
+    </div>
+
+    <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTable ServerData="LoadServerData" T="SundryPaymentModel" @ref="_table" Dense="true" Hover="true" Elevation="0" Class="modern-admin-table">
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.SundryPaymentID)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">DOC NUMBER</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.PaymentMode)"><span class="admin-header-text">MODE</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.TotalAmount)"><span class="admin-header-text">AMOUNT</span></MudTableSortLabel></MudTh>
+                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="DocumentNumber">
+                    <div class="d-flex align-center gap-2">
+                        <MudText Typo="Typo.body2" Class="admin-td-primary fw-600">@context.DocumentNumber</MudText>
+                        @if (context.AuthLevelId == 100)
+                        {
+                            <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="pa-0">Rejected</MudChip>
+                        }
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="PaymentMode"><MudText Typo="Typo.body2" Class="admin-td-secondary">@context.PaymentMode</MudText></MudTd>
+                <MudTd DataLabel="TotalAmount"><MudText Typo="Typo.body2" Class="admin-td-amount">@context.TotalAmount?.ToString("N2")</MudText></MudTd>
+                <MudTd DataLabel="Actions" Style="text-align: right;">
+                    <div class="d-flex justify-end gap-1">
+                        <MudTooltip Text="View Details">
+                            <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                        
+                        <MudTooltip Text="Edit">
+                            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                        
+                        <MudTooltip Text="Delete">
+                            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.SundryPaymentID))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+
+                        @if (@context.AuthLevelId == 99)
+                        {
+                            <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.SundryPaymentID" MID="context.MID" DocumentNumber="@context.DocumentNumber"></EntryReversedComponent>
+                            <MudTooltip Text="Print">
+                                <MudIconButton OnClick="@(()=> Print(context.SundryPaymentID))" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        }
+                        else if (@context.AuthLevelId != 100)
+                        {
+                            <MudTooltip Text="Verify">
+                                <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        }
+                    </div>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <div class="pa-4">
+                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                </div>
+            </PagerContent>
+        </MudTable>
+    </div>
+</div>
+
+}
 
 @code {
 
-    protected override List<SundryPaymentModel> collection { get; set; } = new();
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
+
+    protected override List<SundryPaymentModel> _collection { get; set; } = new();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 11,
@@ -81,14 +125,26 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         await base.OnInitializedAsync();
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
 
-        if (id != null && collection != null && collection.Any(g => g.SundryPaymentID == id))
+        if (id != null && _collection != null && _collection.Any(g => g.SundryPaymentID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
+            await OpenForm(_collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
+        }
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
         }
     }
 
@@ -106,15 +162,15 @@
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model.Clone());
         parms.Add("ReadOnly", ReadOnly);
-        parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
-        var dialog = dialogService.Show<SundryPaymentDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, async() => await _table.ReloadServerData()));
+        var dialog = await dialogService.ShowAsync<SundryPaymentDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         var isCancelled = result.Canceled;
         if (!isCancelled)
         {
             var ReturnData = (SundryPaymentModel)result.Data;
-        }
-        LoadData(ShowApproved, NumberOfRecords);
+            await _table.ReloadServerData();
+        }        
         await Task.Delay(200);
         _busy = false;
     }
@@ -130,7 +186,7 @@
         parameters.Add("ReportName", "PrintSundryPayment");
 
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+        var result = await DialogService.ShowAsync<PrintDialog>("PRINT", parameters, maxWidth);
     }
 
     // Asynchronous method to handle driver pending salary
@@ -139,7 +195,7 @@
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("BranchID", BranchID);
-        var dialog = dialogService.Show<DriverPendingSalary>("Stockists Freight", parms, mediumWidth);
+        var dialog = await dialogService.ShowAsync<DriverPendingSalary>("Stockists Freight", parms, mediumWidth);
 
         var result = await dialog.Result;
         if (!result.Canceled)

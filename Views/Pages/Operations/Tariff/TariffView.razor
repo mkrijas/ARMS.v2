@@ -1,4 +1,4 @@
-﻿@page "/tariff/{OrderID:int}"
+@page "/tariff/{OrderID:int}"
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @using System.Threading;
@@ -9,42 +9,78 @@
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
 
-<MudGrid>
-    <MudItem xs="12" md="12">
-        <MudTable Items="@collection" Elevation="10" Filter="new Func<TariffModel, bool>(search)">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">@Order.OrderName Tariffs</MudText>
-                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" OnClick="@(() => Edit(new TariffModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchString" Placeholder="Search Tariffs..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffType.TariffTypeName)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Formula.Formula)" InitialDirection="SortDirection.Ascending">Formula</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Route.RouteName)" InitialDirection="SortDirection.Ascending">Route</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Wheels)" InitialDirection="SortDirection.Ascending">Axles</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffRate)" InitialDirection="SortDirection.Ascending">Rate</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Type">@context.TariffType.TariffTypeName</MudTd>
-                <MudTd DataLabel="Formula">@context.Formula.Formula</MudTd>
-                <MudTd DataLabel="Route">@context.Route.RouteName</MudTd>
-                <MudTd DataLabel="Axles">@context.Wheels</MudTd>
-                <MudTd DataLabel="Rate">@context.TariffRate</MudTd>
-                <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Tariffs" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="admin-page-container">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">@(Order?.OrderName ?? "Service") Tariffs</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Configure rate formulas and logistics pricing for specific transportation routes.</MudText>
+                </div>
+                <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(() => Edit(new TariffModel()))" Disabled="@_busy">CREATE TARIFF</MudButton>
+            </div>
+        </div>
+
+        <div class="admin-glass-card mb-6 pa-4">
+            <div style="max-width: 400px;">
+                <MudTextField @bind-Value="searchString" Placeholder="Search by type or route..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" />
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTable Items="@collection" Dense="true" Hover="true" Elevation="0" Filter="new Func<TariffModel, bool>(search)" Class="modern-admin-table">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffType.TariffTypeName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">TYPE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Formula.Formula)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">FORMULA</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Route.RouteName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">ROUTE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Wheels)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">AXLES</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffRate)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">RATE</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Type"><MudText Typo="Typo.body2" Class="admin-td-primary">@context.TariffType.TariffTypeName</MudText></MudTd>
+                    <MudTd DataLabel="Formula"><MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Info" Class="pa-0">@context.Formula.Formula</MudChip></MudTd>
+                    <MudTd DataLabel="Route"><MudText Typo="Typo.body2" Class="admin-td-primary">@context.Route.RouteName</MudText></MudTd>
+                    <MudTd DataLabel="Axles"><MudText Typo="Typo.body2" Class="admin-td-secondary">@context.Wheels Axles</MudText></MudTd>
+                    <MudTd DataLabel="Rate"><MudText Typo="Typo.body2" Class="admin-td-amount">@context.TariffRate</MudText></MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            <MudTooltip Text="Edit">
+                                <MudIconButton OnClick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            <MudTooltip Text="Delete">
+                                <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
+
+
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     [Parameter]
     public int OrderID { get; set; }
@@ -62,6 +98,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTariffServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionTariffServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
@@ -71,6 +108,17 @@
             Order = await Iorder.SelectByID(OrderID);
         }
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     private void GetAll()
@@ -91,7 +139,7 @@
             DialogParameters parms = new DialogParameters();
             parms.Add("model", editModel.Clone());
             parms.Add("Order", Order);
-            var dialog = DialogService.Show<TarrifDilog>("Add/Edit Tariffs", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+            var dialog = await DialogService.ShowAsync<TarrifDilog>("Add/Edit Tariffs", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -112,7 +160,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit Tariff.");
         }
@@ -124,7 +172,7 @@
     {
         if (HasPermissionTariffServiceDelete)
         {
-            bool? resultmsg = await DialogService.ShowMessageBox(
+            bool? resultmsg = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 new MarkupString("Are you sure, you want to delete - <b>" + model.TariffType.TariffTypeName + " (" + model.Formula.Formula + ")" + "</b> ?"));
             if (resultmsg == true)
@@ -147,7 +195,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to delete Tariff.");
         }
@@ -162,3 +210,4 @@
         return false;
     }
 }
+

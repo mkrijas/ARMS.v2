@@ -1,4 +1,4 @@
-﻿@page "/consignee"
+@page "/consignee"
 @page "/consignee/{OrderID:int}"
 @using System.Threading;
 @attribute [Authorize]
@@ -9,41 +9,78 @@
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
 
-@if (loading)
+@if (_isLoading)
 {
-    <MudProgressCircular Color="Color.Primary" Style="height:200px;width:200px;" Indeterminate="true" />
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Consignees" 
+                        SubText="Please wait..." />
+    </div>
 }
 else
 {
-    <MudTable Items="@collection" Elevation="10" Filter="new Func<ConsigneeModel, bool>(search)">
-        <ToolBarContent>
-            <MudText Typo="Typo.h6">@Order?.OrderName Consignees</MudText>
-            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(() => Edit(new ConsigneeModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-            <MudSpacer></MudSpacer>
-            <MudTextField @bind-Value="searchConsignee" Placeholder="Search Consignees... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-        </ToolBarContent>
-        <HeaderContent>
-            <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.ConsigneeName)" InitialDirection="SortDirection.Ascending">Name</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Address.Place)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Consignor)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
-            <MudTh>Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Name"><MudHighlighter Style="background-color:cornflowerblue;font-weight:bold" Text="@context.ConsigneeName" HighlightedText="@searchConsignee" /></MudTd>
-            <MudTd DataLabel="Place">@context.Address.Place</MudTd>
-            <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
-            <MudTd DataLabel="Type">@(context.Consignor == true ? "Consignor" : "Consignee") </MudTd>
-            <MudTd DataLabel="">
-                <MudFab @onclick="@(() => Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                <MudFab @onclick="@(() => Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-            </MudTd>
-        </RowTemplate>
-        <PagerContent>
-            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-        </PagerContent>
-    </MudTable>
+<div class="admin-page-container" @key="@("content")">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">@Order?.OrderName Partners</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Manage consignors and consignees linked to this order.</MudText>
+            </div>
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(() => Edit(new ConsigneeModel()))" Disabled="@_busy">ADD PARTNER</MudButton>
+        </div>
+    </div>
+
+    <div class="admin-glass-card mb-6 pa-4">
+        <div class="d-flex align-center gap-4">
+            <div style="flex-grow: 1;">
+                <MudTextField @bind-Value="searchConsignee" Placeholder="Search Partners..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" />
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-glass-card pa-0 overflow-hidden">
+        <MudTable Items="@collection" Dense="true" Hover="true" Elevation="0" Class="modern-admin-table" Filter="new Func<ConsigneeModel, bool>(search)">
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.ConsigneeName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">NAME</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Address.Place)"><span class="admin-header-text">PLACE</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Mobile)"><span class="admin-header-text">MOBILE</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Consignor)"><span class="admin-header-text">TYPE</span></MudTableSortLabel></MudTh>
+                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">
+                    <MudText Typo="Typo.body2" Class="admin-td-primary fw-600">@context.ConsigneeName</MudText>
+                </MudTd>
+                <MudTd DataLabel="Place">@context.Address.Place</MudTd>
+                <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
+                <MudTd DataLabel="Type">
+                    <MudChip T="string" Color="@(context.Consignor == true ? Color.Primary : Color.Secondary)" Size="Size.Small" Variant="Variant.Text" Class="pa-0">
+                        @(context.Consignor == true ? "Consignor" : "Consignee")
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Actions" Style="text-align: right;">
+                    <div class="d-flex justify-end gap-1">
+                        <MudTooltip Text="Edit">
+                            <MudIconButton OnClick="@(() => Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                        <MudTooltip Text="Delete">
+                            <MudIconButton OnClick="@(() => Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                    </div>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <div class="pa-4">
+                    <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                </div>
+            </PagerContent>
+        </MudTable>
+    </div>
+</div>
 }
+
 
 @code {
 
@@ -53,6 +90,7 @@ else
     private List<ConsigneeModel> collection = new List<ConsigneeModel>();
     private int BranchID { get; set; } = 0;
     bool loading = false;
+    private bool _isLoading = true;
     private bool _busy;
     public bool HasPermissionConsigneeServiceEdit { get; set; } = false;
     public bool HasPermissionConsigneeServiceDelete { get; set; } = false;
@@ -71,6 +109,7 @@ else
         Order = await Iorder.SelectByID(OrderID);
         await GetAll();
         loading = false;
+        _isLoading = false;
     }
 
     // Method to fetch all consignee models
@@ -94,7 +133,7 @@ else
             DialogParameters parms = new DialogParameters();
             parms.Add("model", model.Clone());
             parms.Add("Order", Order);
-            var dialog = DialogService.Show<Consineedilog>("Add/Edit", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+            var dialog = await DialogService.ShowAsync<Consineedilog>("Add/Edit", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -103,7 +142,7 @@ else
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit Consignee.");
         }
@@ -116,7 +155,7 @@ else
     {
         if (HasPermissionConsigneeServiceDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 "Are you sure, you want to delete - " + model.ConsigneeName + " ?");
             if (result == true)
@@ -131,7 +170,7 @@ else
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Delete Consignee.");
         }
@@ -148,3 +187,4 @@ else
         return false;
     }
 }
+

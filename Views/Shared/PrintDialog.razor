@@ -1,64 +1,37 @@
-﻿@using System.Net;
+@using System.Net;
 @inject IJSRuntime JSRuntime
 
 <style>
-    .rptStyle {
-        height: 800px;
-        margin-bottom: 10px;
-        background-color: white;
-        border: 1px solid #D5D5D5;
-        border-radius: 6px;
-    }
-
-    /* .mud-dialog .mud-dialog-content{
-        padding: 10px 23px;
-    } */
-
     .mud-dialog-width-md {
-        max-width: 961px;
+        max-width: 1000px;
+    }
+    .mud-dialog .mud-dialog-content {
+        padding: 0;
     }
 </style>
 
 <MudDialog>
     <DialogContent>
-        <iframe id="PreviewClaim" class="rptStyle" src="@URL" scrolling="no" credentialless></iframe>
+        <div style="height: 800px;">
+            <ReportViewer @ref="_reportViewer" ReportName="@ReportName" Parameters="@Parameters" />
+        </div>
     </DialogContent>
 </MudDialog>
 
 @code {
-
     [Parameter]
     public string ReportName { get; set; }
+    
     [Parameter]
     public Dictionary<string, string> Parameters { get; set; }
-    private string URL { get; set; } = string.Empty;
-    bool progress = false;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await RenderReport();
-    }
+    private ReportViewer _reportViewer;
 
-    public async Task RenderReport()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (ReportName == null)
+        if (firstRender && _reportViewer != null)
         {
-            await Task.Delay(500);
-        }
-        if (ReportName != null)
-        {
-            progress = true;
-            string encodedUsername = Uri.EscapeDataString("arms");
-            string encodedPassword = Uri.EscapeDataString("arms@123");
-            URL = $"http://10.200.90.30/ReportServer/Pages/ReportViewer.aspx?%2fARMS_V2%2fARMS_Reports%2f{ReportName}";
-            URL += $"&rc:showbackbutton=true";
-            URL += $"&rc:Parameters=false&rs:Command=Render&rc:Zoom=Page Width&rc:PrintLayout=true&rc:Format=EXCEL&rs:embed=true";
-            foreach (var item in Parameters)
-            {
-                URL = URL + "&" + item.Key + "=" + item.Value;
-            }
-            bool success = await JSRuntime.InvokeAsync<bool>("runReport", URL);
-            progress = false;
+            await _reportViewer.RenderReport();
         }
     }
 }

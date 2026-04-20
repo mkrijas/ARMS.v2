@@ -1,60 +1,96 @@
-﻿@page "/ReverseEntryView"
+@page "/ReverseEntryView"
 @page "/ReverseEntryView/{id:int}"
 @inherits ViewComponentBase<CancellationReasonCodesByDocumentType>
 @inject IReverseEntryService Iservice
 
-<MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6">Reverse Entries </MudText>
-        <MudSpacer></MudSpacer>
-        <MudTextField @bind-Value="searchTerm" Placeholder="Search Reverse..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
-        </MudTextField>
-        <div class="tablefont">
-            <span style="margin-right: 10px;">Maximum Records: </span>
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Reverse Entries" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Reverse Entries</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Audit and manage reversed financial transactions. Track original references and verify entry cancellations with full transparency.</MudText>
+                </div>
+            </div>
         </div>
-        <MudItem xs="1">
-            <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
-        </MudItem>
-        <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ToggleData(value))" Checked="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-    </ToolBarContent>
-    <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.ReverseEntryID)" InitialDirection="SortDirection.Descending">Reverse Document Number</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.OrginalDocumentNumber )">Orginal Document Reference</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.DocumentTypeName)">Document Type Name</MudTableSortLabel></MudTh>
-        <MudTh>Actions</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-        <MudTd DataLabel="DocumentNumber">
-            @context.DocumentNumber
-            @if (context.AuthLevelId == 100)
-            {
-                <MudText Typo="Typo.caption" Color="Color.Error">&nbsp;&nbsp;&nbsp;&nbsp;Rejected</MudText>
-            }
-        </MudTd>
-        <MudTd DataLabel="OrginalDocumentNumber">
-            @context.OrginalDocumentNumber
-        </MudTd>
-        <MudTd DataLabel="DocumentTypeName">@context.DocumentTypeName</MudTd>
-        <MudTd DataLabel="">
-            <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-            @* <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.DocumentID))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" /> *@
-            @if ((@context.AuthLevelId != 99) && (@context.AuthLevelId != 100))
-            {
-                <MudIconButton OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-            }
-        </MudTd>
-    </RowTemplate>
-    <PagerContent>
-        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-    </PagerContent>
-</MudTable>
+
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+                <div style="flex-grow: 1; min-width: 300px;">
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search by document number or type..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" OnKeyUp="HandleSearchKeyUp" />
+                </div>
+                <div class="d-flex align-center gap-4">                   
+                    <MudCheckBox T="bool" Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600" />
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTable ServerData="LoadServerData" T="CancellationReasonCodesByDocumentType" @ref="_table" Elevation="0" Class="modern-admin-table" Hover="true">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.DocumentDate)"><span class="admin-header-text">DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.ReverseEntryID)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">REVERSE DOC</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.OrginalDocumentNumber)"><span class="admin-header-text">ORIGINAL REF</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.DocumentTypeName)"><span class="admin-header-text">DOC TYPE</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Date"><span class="fw-500">@context.DocumentDate?.ToString("dd MMM yyyy")</span></MudTd>
+                    <MudTd DataLabel="ReverseDoc">
+                        <div class="d-flex flex-column">
+                            <span class="admin-td-primary fw-700">@context.DocumentNumber</span>
+                            @if (context.AuthLevelId == 100)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Error" Class="fw-700">REJECTED</MudText>
+                            }
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="OriginalRef"><span class="fw-600">@context.OrginalDocumentNumber</span></MudTd>
+                    <MudTd DataLabel="DocType"><span class="fw-600">@context.DocumentTypeName</span></MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            @if ((@context.AuthLevelId != 99) && (@context.AuthLevelId != 100))
+                            {
+                                <MudTooltip Text="Verify Entry">
+                                    <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                                <MudTooltip Text="Edit Entry">
+                                    <MudIconButton OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+
+                            <MudTooltip Text="View Details">
+                                <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
 
 @code {
 
-    protected override List<CancellationReasonCodesByDocumentType> collection { get; set; } = new();
+    private bool _isLoading = true;   
+
+    protected override List<CancellationReasonCodesByDocumentType> _collection { get; set; } = new();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 126,
@@ -62,14 +98,17 @@
         };
 
     protected override async Task OnInitializedAsync()
-    {
+    {        
         await base.OnInitializedAsync();
         interbranch = false;
-        if (id != null && collection != null && collection.Any(g => g.DocumentID == id))
+        if (id != null && _collection != null && _collection.Any(g => g.DocumentID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.DocumentID == id), true);
-        }
+            await OpenForm(_collection.FirstOrDefault(s => s.DocumentID == id), true);
+        }       
+        _isLoading = false;
     }
+
+  
 
     // Asynchronous method to open a form for editing or adding a cancellation reason code
     protected override async Task OpenForm(CancellationReasonCodesByDocumentType model, bool ReadOnly = false, bool DisableAddition = false)
@@ -86,9 +125,9 @@
             DialogParameters parms = new DialogParameters();
             parms.Add("model", model.Clone());
             parms.Add("ReadOnly", ReadOnly);
-            var dialog = dialogService.Show<ReverseTransactionDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
+            var dialog = await dialogService.ShowAsync<ReverseTransactionDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
             var result = await dialog.Result;
-            LoadData(ShowApproved, NumberOfRecords);
+            
             var isCancelled = result.Canceled;
             if (!isCancelled)
             {
@@ -97,7 +136,7 @@
                 {
                     Iservice.Update(ReturnData); // Update the entry in the service
                 }
-                LoadData(ShowApproved, NumberOfRecords);
+                await _table.ReloadServerData(); // Refresh the table data
             }
         }
         catch (Exception ex)

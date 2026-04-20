@@ -1,4 +1,4 @@
-﻿@page "/Driver"
+@page "/Driver"
 @inject IDriverService Iservice
 @inject IDriverFaultService Ifaultservice
 @inject IBranchService Ibranchservice
@@ -18,89 +18,133 @@
 @inject IRoleService<RoleModel> Irole
 @inject IJSRuntime JSRuntime
 
-<style>
-    .RedRow {
-        background-color: #ff8080;
-    }
-</style>
 
-<MudGrid Spacing="4">
-    <MudItem xs="12" md="12">
-        <MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="10" Filter="new Func<DriverModel, bool>(search)">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Drivers</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(()=>Edit(0))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                <MudIconButton Icon="@Icons.Material.Filled.TrackChanges" Title="Track" @onclick="OpenTracking" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                <MudIconButton Icon="@Icons.Material.Filled.Autorenew" Title="Rejoin" @onclick="OpenRejoin" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchDriver" Placeholder="Search Drivers... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                <MudButton OnClick="ExcelDownload" Style="margin: 14px; margin-left: 60px;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverCode)" InitialDirection="SortDirection.Ascending">Driver Code</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverName)" InitialDirection="SortDirection.Ascending">Driver Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>
-                @if (BranchID == 7)
-                {
-                    <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x=> x.HomeBranchName)" InitialDirection="SortDirection.Ascending">HomeBranchName</MudTableSortLabel></MudTh>
-                }
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.JoiningDate)" InitialDirection="SortDirection.Ascending">JoiningDate</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverAgent.TradeName)" InitialDirection="SortDirection.Ascending">Contractor</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DateOfBirth)" InitialDirection="SortDirection.Ascending">AGE</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x=> x.Status)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Driver">
-                    <MudText>@context.DriverCode </MudText>
-                </MudTd>
-                <MudTd DataLabel="Driver">
-                    <MudText>@context.DriverName </MudText>
-                    @if (!context.HasValidLicense)
+@if (_isLoading)
+{
+    <LoaderComponent IsFullScreen="true" 
+                    ShowLogo="false" 
+                    Size="medium" 
+                    LoadingText="Loading Drivers" 
+                    SubText="Please wait..." />
+}
+else
+{
+    <div class="admin-page-container">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Driver Registry</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Maintain driver profiles, license compliance, status tracking, and performance metrics.</MudText>
+                </div>
+                <div class="d-flex gap-2">
+                    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=>Edit(0))">REGISTER DRIVER</MudButton>
+                    <MudMenu StartIcon="@Icons.Material.Filled.MoreVert" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Variant="Variant.Outlined" Color="Color.Secondary">
+                        <MudMenuItem OnClick="OpenTracking" Icon="@Icons.Material.Filled.TrackChanges">Track Driver</MudMenuItem>
+                        <MudMenuItem OnClick="OpenRejoin" Icon="@Icons.Material.Filled.Autorenew">Rejoin Driver</MudMenuItem>
+                        <MudMenuItem OnClick="ExcelDownload" Icon="@Icons.Material.Outlined.Article">Export CSV</MudMenuItem>
+                    </MudMenu>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-4">
+                <div style="flex-grow: 1;">
+                    <MudTextField @bind-Value="searchDriver" Placeholder="Search by name, code or mobile..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" />
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="0" Filter="new Func<DriverModel, bool>(search)" Class="modern-admin-table">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverCode)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">CODE/NAME</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">CONTACT INFO</span></MudTableSortLabel></MudTh>
+                    @if (BranchID == 7)
                     {
-                        <MudText Typo="Typo.caption">(Invalid License)</MudText>
+                        <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x=> x.HomeBranchName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">HOME BRANCH</span></MudTableSortLabel></MudTh>
                     }
-                </MudTd>
-                <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
-                @if (BranchID == 7)
-                {
-                    <MudTd DataLabel="HomeBranchName">@context.HomeBranchName</MudTd>
-                }
-                <MudTd DataLabel="PartyName">@context.JoiningDate?.ToString("dd/MM/yyyy")</MudTd>
-                <MudTd DataLabel="PartyName">@context.DriverAgent.TradeName</MudTd>
-                <MudTd DataLabel="DOB">@(DateTime.Today.Year - context.DateOfBirth.Value.Year + (DateTime.Today.DayOfYear < context.DateOfBirth.Value.DayOfYear ? -1 : 0))</MudTd>
-                <MudTd DataLabel="Status">@context.Status</MudTd>
-                <MudTd DataLabel="">
-                    @if (context.UserInfo.RecordStatus != 4)
+                    <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.JoiningDate)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">JOINED</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverAgent.TradeName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">CONTRACTOR</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DateOfBirth)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">STATUS/AGE</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Code/Name">
+                        <div class="d-flex flex-column">
+                            <MudText Typo="Typo.body2" Class="admin-td-primary">@context.DriverName</MudText>
+                            <MudText Typo="Typo.caption" Class="admin-td-secondary">@context.DriverCode</MudText>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Contact">
+                        <div class="d-flex flex-column">
+                            <MudText Typo="Typo.body2" Class="admin-td-primary">@context.Mobile</MudText>
+                            @if (!context.HasValidLicense)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Error">INVALID LICENSE</MudText>
+                            }
+                        </div>
+                    </MudTd>
+                    @if (BranchID == 7)
                     {
-                        <MudIconButton OnClick="@(() => BeginLeave(context.DriverID))" Color="Color.Warning" Title="Put the Driver on leave" Icon="@Icons.Material.Filled.KeyboardArrowDown" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                        <MudTd DataLabel="Home Branch">@context.HomeBranchName</MudTd>
                     }
-                    else if (context.UserInfo.RecordStatus == 4)
-                    {
-                        <MudIconButton OnClick="@(() => EndLeave(context.DriverID))" Color="Color.Success" Title="End the leave" Icon="@Icons.Material.Filled.KeyboardArrowUp" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                    <MudIconButton OnClick="@(() => nav.NavigateTo("dl/" + context.DriverID.ToString()))" Color="Color.Primary" Title="Driving licence" Icon="@Icons.Material.Filled.FileCopy" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton OnClick="@(() => Edit(context.DriverID))" Color="Color.Primary" Title="Edit" Icon="@Icons.Material.Filled.Edit" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton OnClick="@(() => Transfer(context.DriverID))" Color="Color.Primary" Title="Transfer" Icon="@Icons.Material.Filled.SwapHoriz" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    @if (context.UserInfo.RecordStatus != 9)
-                    {
-                        <MudIconButton OnClick="@(() => Fault(context.DriverID))" Color="Color.Warning" Title="Driver Fault" Icon="@Icons.Material.Filled.Warning" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                    else if (context.UserInfo.RecordStatus == 9)
-                    {
-                        <MudIconButton OnClick="@(() => RemoveBlacklist(context.DriverID))" Color="Color.Default" Title="Remove From Blacklist" Icon="@Icons.Material.Filled.Cancel" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                    <MudIconButton OnClick="@(() => Resign(context.DriverID))" Color="Color.Warning" Title="Resign" Icon="@Icons.Material.Filled.PersonRemove" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+                    <MudTd DataLabel="Joined">@context.JoiningDate?.ToString("dd MMM yyyy")</MudTd>
+                    <MudTd DataLabel="Contractor">@context.DriverAgent.TradeName</MudTd>
+                    <MudTd DataLabel="Status/Age">
+                        <div class="d-flex align-center gap-2">
+                            <MudChip T="string" Size="Size.Small" Color="@(context.Status == "Active" ? Color.Success : Color.Default)" Variant="Variant.Text">@context.Status</MudChip>
+                            <MudText Typo="Typo.body2" Class="admin-td-secondary">@(DateTime.Today.Year - context.DateOfBirth.Value.Year + (DateTime.Today.DayOfYear < context.DateOfBirth.Value.DayOfYear ? -1 : 0)) yrs</MudText>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            <MudTooltip Text="DL Documents">
+                                <MudIconButton OnClick="@(() => nav.NavigateTo("dl/" + context.DriverID.ToString()))" Color="Color.Primary" Icon="@Icons.Material.Filled.FileCopy" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            <MudTooltip Text="Edit">
+                                <MudIconButton OnClick="@(() => Edit(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            <MudMenu Icon="@Icons.Material.Filled.MoreHoriz" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Size="Size.Small">
+                                <MudMenuItem OnClick="@(() => Transfer(context.DriverID))" Icon="@Icons.Material.Filled.SwapHoriz">Transfer</MudMenuItem>
+                                @if (context.UserInfo.RecordStatus != 4)
+                                {
+                                    <MudMenuItem OnClick="@(() => BeginLeave(context.DriverID))" Icon="@Icons.Material.Filled.Timer">Allot Leave</MudMenuItem>
+                                }
+                                else
+                                {
+                                    <MudMenuItem OnClick="@(() => EndLeave(context.DriverID))" Icon="@Icons.Material.Filled.PlayArrow">End Leave</MudMenuItem>
+                                }
+                                @if (context.UserInfo.RecordStatus != 9)
+                                {
+                                    <MudMenuItem OnClick="@(() => Fault(context.DriverID))" Icon="@Icons.Material.Filled.ReportProblem" Color="Color.Warning">Report Fault</MudMenuItem>
+                                }
+                                else
+                                {
+                                    <MudMenuItem OnClick="@(() => RemoveBlacklist(context.DriverID))" Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success">Clear Blacklist</MudMenuItem>
+                                }
+                                <MudDivider />
+                                <MudMenuItem OnClick="@(() => Resign(context.DriverID))" Icon="@Icons.Material.Filled.PersonRemove" Color="Color.Error">Resign</MudMenuItem>
+                            </MudMenu>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
+
+
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     IBrowserFile driverImage;
     IBrowserFile adhaarImage;
@@ -138,6 +182,7 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionDriverTransferEdit = await Irole.HasClaim(DocTypeIDDriverTransfer.ToString(), "Edit", ctc.Token);
         HasPermissionDriverServiceEdit = await Irole.HasClaim(DocTypeIDDriver.ToString(), "Edit", ctc.Token);
@@ -153,6 +198,17 @@
         await signalRService.StartAsync();
 
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to retrieve all drivers for the current branch
@@ -178,7 +234,7 @@
             var parameters = new DialogParameters();
             parameters.Add("model", DriverID != 0 ? DriverLeave : new());
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var dialog = DialogService.Show<DriverLeaveDialog>("Driver On Leave", parameters, maxWidth);
+            var dialog = await DialogService.ShowAsync<DriverLeaveDialog>("Driver On Leave", parameters, maxWidth);
             var result = await dialog.Result;
             collection.Find(x => x.DriverID == DriverID).UserInfo.RecordStatus = 4;
             StateHasChanged();
@@ -187,7 +243,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to AllotLeave to Driver.");
         }
@@ -200,11 +256,11 @@
     {
         if (driver.UserInfo.RecordStatus == 9)
         {
-            return "RedRow";
+            return "bg-error-light";
         }
         if (!driver.HasValidLicense)
         {
-            return "InvalidRow";
+            return "bg-warning-light";
         }
         return string.Empty;
     }
@@ -227,7 +283,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to AllotLeave to Driver.");
         }
@@ -247,7 +303,7 @@
             var parameters = new DialogParameters();
             parameters.Add("model", id != 0 ? collection.FirstOrDefault(x => x.DriverID == id) : new DriverModel());
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var dialog = DialogService.Show<DriverDialog>("Driver", parameters, maxWidth);
+            var dialog = await DialogService.ShowAsync<DriverDialog>("Driver", parameters, maxWidth);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -264,7 +320,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit Driver.");
         }
@@ -291,11 +347,11 @@
             parameters.Add("model", model);
             parameters.Add("driverId", driverId);
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var dialog = DialogService.Show<DriverResignDialog>("Resign Driver", parameters, maxWidth);
+            var dialog = await DialogService.ShowAsync<DriverResignDialog>("Resign Driver", parameters, maxWidth);
             var result = await dialog.Result;
 
             // Check if the driver resigned successfully
-            if (result.Cancelled == false)
+            if (result.Canceled == false)
             {
                 // Call the Delete service method
                 try
@@ -313,7 +369,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Resign Driver.");
         }
@@ -338,9 +394,9 @@
             var parameters = new DialogParameters();
             parameters.Add("model", DriverID != 0 ? DriverTransfer : new());
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var dialog = DialogService.Show<DriverTransferInitiationDialog>("Transfer Driver", parameters, maxWidth);
+            var dialog = await DialogService.ShowAsync<DriverTransferInitiationDialog>("Transfer Driver", parameters, maxWidth);
             var result = await dialog.Result;
-            var isCancelled = result.Cancelled;
+            var isCancelled = result.Canceled;
             if (!isCancelled)
             {
                 var ReturnData = (DriverTransferInitiationModel)result.Data;
@@ -362,7 +418,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit DriverTransfer.");
         }
@@ -387,13 +443,13 @@
             var parameters = new DialogParameters();
             parameters.Add("model", DriverID != 0 ? DriverFault : new());
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var dialog = DialogService.Show<DriverFaultDialog>("Driver Fault", parameters, maxWidth);
+            var dialog = await DialogService.ShowAsync<DriverFaultDialog>("Driver Fault", parameters, maxWidth);
             var result = await dialog.Result;
             GetAll();
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit Driver.");
         }
@@ -406,7 +462,7 @@
     {
         if (HasPermissionDriverFaultServiceRemoveDriver)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning",
                 "Are you sure you want to remove from blacklist?",
                 yesText: "Delete!", cancelText: "Cancel");
@@ -425,7 +481,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit DriverFault.");
         }
@@ -445,14 +501,14 @@
     private async Task OpenTracking()
     {
         DialogOptions para = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        DialogService.Show<DriverTrackingDialog>("Driver Tracking", para);
+        await DialogService.ShowAsync<DriverTrackingDialog>("Driver Tracking", para);
     }
 
     // Method to open the driver rejoin dialog
     private async Task OpenRejoin()
     {
         DialogOptions para = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        DialogService.Show<DriverRejoinViewDialog>("Driver Rejoin", para);
+        await DialogService.ShowAsync<DriverRejoinViewDialog>("Driver Rejoin", para);
     }
 
     // Method to download the driver list as an Excel file
@@ -468,7 +524,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Oops !",
                 "No Data Found.");
         }
@@ -476,7 +532,7 @@
 
     // Method to generate Excel bytes for the driver list
     public byte[] GenerateExcelBytes(string sheetName)
-    {
+    {       
         using (var package = new ExcelPackage())
         {
             var worksheet = package.Workbook.Worksheets.Add(sheetName);

@@ -1,4 +1,4 @@
-﻿@page "/jobs"
+@page "/jobs"
 @inject IRepairWorkService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -7,34 +7,88 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<MudTable Items="@collection" Elevation="10" Filter="new Func<RepairJobModel, bool>(search)" @bind-model="model">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6">Jobs</MudText>
-        <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(()=>Edit(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-        <MudSpacer></MudSpacer>
-        <MudTextField @bind-Value="searchString" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-    </ToolBarContent>
-    <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.Title)" InitialDirection="SortDirection.Ascending">Job Name</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.MechanicalHours)" InitialDirection="SortDirection.Ascending">Hours</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.JobCode)" InitialDirection="SortDirection.Ascending">Code</MudTableSortLabel></MudTh>
-        <MudTh>Actions</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="RepairJob">@context.Title</MudTd>
-        <MudTd DataLabel="Hours">@context.MechanicalHours</MudTd>
-        <MudTd DataLabel="Description">@context.JobCode</MudTd>
-        <MudTd DataLabel="">
-            <MudFab @onclick="@(()=> Edit(context.RepairJobID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-        </MudTd>
-    </RowTemplate>
-    <PagerContent>
-        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-    </PagerContent>
-</MudTable>
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Repair Jobs" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="admin-page-container fade-in" @key="@("content")">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Technical Repair Jobs</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Maintain the master catalog of standardized repair operations and technical labor standards.</MudText>
+                </div>
+                <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>Edit(null))" Class="admin-register-btn" StartIcon="@Icons.Material.Filled.Add">NEW REPAIR JOB</MudButton>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-6 mb-6">
+            <MudGrid Spacing="3" Class="align-center">
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="searchString" Placeholder="Search by Job Title or Technical Code..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Class="modern-input"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="6" Class="d-flex justify-end">
+                    <div class="d-flex align-center gap-2">
+                        <MudText Typo="Typo.caption" Class="admin-subtitle">CATALOG ITEMS: @(collection?.Count ?? 0)</MudText>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        <div class="admin-glass-card overflow-hidden">
+            <MudTable Items="@collection" Elevation="0" Filter="new Func<RepairJobModel, bool>(search)" @bind-model="model" Hover="true" Breakpoint="Breakpoint.Sm" Class="modern-admin-table">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.Title)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">JOB SPECIFICATION</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.MechanicalHours)"><span class="admin-header-text">LABOR HOURS</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.JobCode)"><span class="admin-header-text">TECHNICAL CODE</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="RepairJob">
+                        <div class="d-flex align-center">
+                            <div class="icon-badge primary-badge-soft mr-3">
+                                <MudIcon Icon="@Icons.Material.Filled.Engineering" Size="Size.Small" />
+                            </div>
+                            <span class="admin-td-primary fw-600">@context.Title</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Hours">
+                        <MudChip T="string" Color="Color.Info" Variant="Variant.Text" Size="Size.Small" Class="fw-600">@(context.MechanicalHours) HRS</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Code"><span class="fw-500 opacity-70">@context.JobCode</span></MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <MudTooltip Text="Modify Specification">
+                            <MudIconButton OnClick="@(()=> Edit(context.RepairJobID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                        <MudTooltip Text="Delete from Catalog">
+                            <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
+
+
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private RepairJobModel model;
     private List<RepairJobModel> collection = new();
@@ -48,11 +102,23 @@
     // Initialization logic for the component
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionRepairWorkServiceEdit = await Irole.HasClaim(RepairWorkDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionRepairWorkServiceDelete = await Irole.HasClaim(RepairWorkDocTypeID.ToString(), "Delete", ctc.Token);
 
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     // Method to retrieve all repair jobs from the service
@@ -77,7 +143,7 @@
             }
             else
             {
-                bool? result = await DialogService.ShowMessageBox(
+                bool? result = await DialogService.ShowMessageBoxAsync(
                     "Permission denied!",
                     "You don't have any permission to Edit RepairWork.");
             }
@@ -109,7 +175,7 @@
             }
             _busy = true;
             parms.Add("model", model.Clone());
-            var dialog = DialogService.Show<JobMasterDilogue>("Add Jobcard", parms);
+            var dialog = await DialogService.ShowAsync<JobMasterDilogue>("Add Jobcard", parms);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -126,7 +192,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit RepairWork.");
         }
@@ -139,7 +205,7 @@
     {
         if (HasPermissionRepairWorkServiceDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 "Are you sure, you want to delete - " + model.Title + " ?");
             if (result == true)
@@ -152,7 +218,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Delete RepairWork.");
         }
@@ -170,3 +236,4 @@
         return false;
     }
 }
+

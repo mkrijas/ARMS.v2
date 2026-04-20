@@ -1,4 +1,5 @@
-﻿@inject IChartOfAccountService accountService
+@inject IChartOfAccountService accountService
+@using System.Threading
 @inject AuthenticationStateProvider auth
 @inject TruckDataArrayModel data
 @using System.Linq.Expressions
@@ -14,7 +15,7 @@
                 <MudSelectItem @key="@("Wallet")" Value="@("Wallet")" />
             </MudSelect>
         }
-        <MudAutocomplete Disabled="@ReadOnly" Class="flex-auto" T="PaymentCodeModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="@LabelName" Value="@PaymentCode" ValueChanged="_ardCodeChanged" ResetValueOnEmptyText="true"
+        <MudAutocomplete For="@For" Disabled="@ReadOnly" Class="flex-auto" T="PaymentCodeModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="@LabelName" Value="@PaymentCode" ValueChanged="_ardCodeChanged" ResetValueOnEmptyText="true"
                          Clearable="true" SearchFunc="SearchAccounts" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.ArdCode)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
         <ValidationMessage For="@(()=> ArdCode)"></ValidationMessage>
         @if (PaymentMode == "Bank")
@@ -75,13 +76,17 @@ else
     public string BankTool { get; set; }
     [Parameter]
     public EventCallback<string> BankToolChanged { get; set; }
+
+    [Parameter]
+    public Expression<Func<PaymentCodeModel>> For { get; set; }
+
     List<PaymentCodeModel> paymentCodes = new();
     PaymentCodeModel PaymentCode = new();
     bool IsLoaded = false;
 
-    private async Task<IEnumerable<PaymentCodeModel>> SearchAccounts(string searchString)
+    private async Task<IEnumerable<PaymentCodeModel>> SearchAccounts(string searchString, CancellationToken token)
     {
-        await Task.Delay(5);
+        await Task.Delay(5, token);
         return paymentCodes.Where(x =>
             (x.ArdCode).Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)
           || (x.Title).Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)
@@ -121,23 +126,54 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (BranchID == 0)
+        try
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            BranchID = int.Parse(brancIDString);
+            if (BranchID == 0)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var branchClaim = authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID");
+                if (branchClaim != null)
+                {
+                    BranchID = int.Parse(branchClaim.Value);
+                }
+            }
+            if (BranchID != 0)
+            {
+                await GetCodesNsetDefault(BranchID, PaymentMode);
+                PaymentCode = paymentCodes.FirstOrDefault(s => s.CoaID == CoaID && (string.IsNullOrEmpty(ArdCode) || s.ArdCode == ArdCode));
+            }
         }
-        await GetCodesNsetDefault(BranchID, PaymentMode);
-        PaymentCode = paymentCodes.FirstOrDefault(s => s.CoaID == CoaID && s.ArdCode == ArdCode);
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in PaymentAccountSelector: {ex.Message}");
+        }
     }
 
     public async Task GetCodesNsetDefault(int? _BranchID, string _PaymentMode)
     {
-        paymentCodes = accountService.GetPaymentCodes(_BranchID, _PaymentMode).ToList();
-        if (CoaID is null && paymentCodes.Count == 1)
+        try
         {
-            await _ardCodeChanged(paymentCodes.First());
+            if (_BranchID != null && _BranchID != 0 && !string.IsNullOrEmpty(_PaymentMode))
+            {
+                paymentCodes = accountService.GetPaymentCodes(_BranchID, _PaymentMode).ToList();
+                if (CoaID is null && paymentCodes.Count == 1)
+                {
+                    await _ardCodeChanged(paymentCodes.First());
+                }
+            }
+            else
+            {
+                paymentCodes = new List<PaymentCodeModel>();
+            }
         }
-        IsLoaded = true;
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching payment codes: {ex.Message}");
+            paymentCodes = new List<PaymentCodeModel>();
+        }
+        finally
+        {
+            IsLoaded = true;
+        }
     }
 }

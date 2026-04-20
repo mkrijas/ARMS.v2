@@ -11,6 +11,7 @@ using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 using Views.Pages.Operations.Place;
+using Views.Shared;
 using static NuGet.Packaging.PackagingConstants;
 
 
@@ -27,7 +28,7 @@ namespace Views.Pages.Operations.Gc
         [Inject] MudBlazor.ISnackbar snackbar { get; set; }
         [Inject] AuthenticationStateProvider auth { get; set; }
         [Inject] IDialogService DialogService { get; set; }
-        [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+        [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
         [Parameter] public GcSetModel model { get; set; } = new GcSetModel();
         [Parameter] public OrderModel Order { get; set; }
 
@@ -44,6 +45,7 @@ namespace Views.Pages.Operations.Gc
         private int _tabIndex = 0;
         private bool _tabAdded = false;
         private bool _busy;
+        private DialogForm dialogForm;
         string UserID;
         int BranchID;
         public bool HasPermissionGcServiceEdit { get; set; } = false;
@@ -97,25 +99,25 @@ namespace Views.Pages.Operations.Gc
         }
 
         // Method to search for consignees based on a search string
-        private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
+        private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString, CancellationToken token)
         {
             return await Task.FromResult(Consignees.Where(x => x.Consignor == false).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
         // Method to search for consignors based on a search string
-        private async Task<IEnumerable<ConsigneeModel>> SearchConsignor(string searchString)
+        private async Task<IEnumerable<ConsigneeModel>> SearchConsignor(string searchString, CancellationToken token)
         {
             return await Task.FromResult(Consignees.Where(x => x.Consignor == true).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
         // Method to search for orders based on a search string
-        private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+        private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString, CancellationToken token)
         {
             return await Task.FromResult(Orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
         // Method to search for routes based on a search string
-        private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
+        private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString, CancellationToken token)
         {
             return await Task.FromResult(Routes.Where(x => x.RouteName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
@@ -131,10 +133,10 @@ namespace Views.Pages.Operations.Gc
             if (HasPermissionGcServiceEdit)
             {
                 _busy = true;
-                model.OrderID = Order.OrderID;
-                model.RouteID = Route.RouteID;
-                model.ConsignorID = Consignor.ConsigneeID;
-                model.ConsigneeID = Consignee.ConsigneeID;                
+                model.OrderID = Order?.OrderID ?? model.OrderID;
+                model.RouteID = Route?.RouteID ?? model.RouteID;
+                model.ConsignorID = Consignor?.ConsigneeID ?? model.ConsignorID;
+                model.ConsigneeID = Consignee?.ConsigneeID ?? model.ConsigneeID;                
                 model.UserInfo.UserID = UserID; 
                 model.BranchID = BranchID;
                 model.Gcs.ForEach(x => x.UserInfo = model.UserInfo);
@@ -158,7 +160,7 @@ namespace Views.Pages.Operations.Gc
             }
             else
             {
-                bool? ResultModel = await DialogService.ShowMessageBox(
+                bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                     "Permission denied!",
                     "You don't have any permission to Add or Edit GC.");
             }   
@@ -223,7 +225,7 @@ namespace Views.Pages.Operations.Gc
             ConsigneeModel consigneeModel = new();
             parms.Add("model", consigneeModel.Clone());
             parms.Add("Order", Order);
-            var dialog = DialogService.Show<Consineedilog>("Add/Edit Consignee", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+            var dialog = await DialogService.ShowAsync<Consineedilog>("Add/Edit Consignee", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -298,7 +300,7 @@ namespace Views.Pages.Operations.Gc
         // Method to delete the GcSet
         private async Task Delete()
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
            "Warning",
            "Deleting can not be undone!",
            yesText: "Delete!", cancelText: "Cancel");

@@ -1,41 +1,61 @@
-﻿@page "/district"
+@page "/district"
 @inject IDistrictService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
 @using System.Threading;
-@using System.Data.SqlClient;
+@using Microsoft.Data.SqlClient;
 @inject IRoleService<RoleModel> Irole
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Elevation="10" Filter="new Func<DistrictModel, bool>(search)" @bind-district="model">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">District</MudText>
-                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new DistrictModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchDistrict" Placeholder="Search District... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            </ToolBarContent>
+<div class="admin-page-container">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">District Management</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Manage administrative districts and states for geographical organization and logistics planning.</MudText>
+            </div>
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenDialog(new DistrictModel()))" Disabled="@_busy">ADD DISTRICT</MudButton>
+        </div>
+    </div>
+
+    <div class="admin-glass-card mb-6 pa-4">
+        <div class="d-flex align-center gap-4">
+            <div style="flex-grow: 1;">
+                <MudTextField @bind-Value="searchDistrict" Placeholder="Search by district name..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" />
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-glass-card pa-0 overflow-hidden">
+        <MudTable Items="@collection" Elevation="0" Filter="new Func<DistrictModel, bool>(search)" Class="modern-admin-table">
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<DistrictModel, object>(x=> x.DistrictName)" InitialDirection="SortDirection.Ascending">District</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<DistrictModel, object>(x=> x.State.StateName)" InitialDirection="SortDirection.Ascending">State</MudTableSortLabel></MudTh>
-                <MudTh>Action</MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DistrictModel, object>(x=> x.DistrictName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">DISTRICT NAME</span></MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DistrictModel, object>(x=> x.State.StateName)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">STATE</span></MudTableSortLabel></MudTh>
+                <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="District">@context.DistrictName</MudTd>
-                    <MudTd DataLabel="State">@context.State.StateName</MudTd>
-                    <MudTd DataLabel="">
-                        <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTd>
-                </RowTemplate>
-                <PagerContent>
+                <MudTd DataLabel="District Name"><MudText Typo="Typo.body2" Class="admin-td-primary">@context.DistrictName</MudText></MudTd>
+                <MudTd DataLabel="State">@context.State.StateName</MudTd>
+                <MudTd DataLabel="Actions" Style="text-align: right;">
+                    <div class="d-flex justify-end gap-1">
+                        <MudTooltip Text="Edit">
+                            <MudIconButton OnClick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                        <MudTooltip Text="Delete">
+                            <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Variant="Variant.Text" />
+                        </MudTooltip>
+                    </div>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <div class="pa-4">
                     <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                </PagerContent>
-            </MudTable>
-        </MudItem>
-    </MudGrid>
+                </div>
+            </PagerContent>
+        </MudTable>
+    </div>
+</div>
 
     @code {
 
@@ -67,7 +87,7 @@
     {
         if (HasPermissionPlaceServiceDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 "Are you sure, you want to delete - " + model.DistrictName + " ?");
             if (result == true)
@@ -84,7 +104,7 @@
                 {
                     if (ex.Number == 547)
                     {
-                        bool? value = await DialogService.ShowMessageBox(
+                        bool? value = await DialogService.ShowMessageBoxAsync(
                             "Warning !",
                             model.DistrictName + " is already in use !");
                     }
@@ -98,7 +118,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Delete District.");
         }
@@ -126,12 +146,12 @@
         {
             DialogParameters parms = new DialogParameters();
             parms.Add("model", model.Clone());
-            var dialog = DialogService.Show<DistrictDialogue>("District", parms);
+            var dialog = await DialogService.ShowAsync<DistrictDialogue>("District", parms);
             var result = await dialog.Result;
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit District.");
         }
@@ -140,3 +160,4 @@
         _busy = false;
     }
 }
+

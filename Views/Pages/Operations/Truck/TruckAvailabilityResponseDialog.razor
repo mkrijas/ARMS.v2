@@ -1,4 +1,4 @@
-﻿@using System.IO
+@using System.IO
 @using System.Threading;
 @using Core.BaseModels.Operations;
 @using Core.IDataServices.Operations;
@@ -11,135 +11,134 @@
 @inject ISnackbar Snackbar
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
+<DialogForm @ref="@dialogForm" Title="@(model.RequestStatus == 1 ? "Complete Transfer" : "Transfer Approval")" Subtitle="@(model.RequestStatus == 1 ? "Verify checklist and finalize vehicle reception." : "Review transfer details and authorize vehicle availability.")" Icon="@(model.RequestStatus == 1 ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.VerifiedUser)" AdminStyle="true" formID="formDriver" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper pa-4">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="@(() => Approve())">
+                <div class="admin-glass-card pa-6 mb-6">
+                    <div class="d-flex align-center mb-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" Class="mr-2" />
+                        <span class="admin-section-label mb-0">Core Information</span>
+                    </div>
+                    <ObjectGraphDataAnnotationsValidator />
+                    <MudValidationSummary />
+                    <MudGrid Spacing="3">
+                        <MudItem xs="6">
+                            <MudTextField @bind-Value="model.DocNumber" Label="Transfer ID" Variant="Variant.Outlined" Margin="Margin.Normal" ReadOnly Class="modern-input"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTextField @bind-Value="model.Truck.RegNo" Label="Vehicle Number" Variant="Variant.Outlined" Margin="Margin.Normal" ReadOnly Class="modern-input"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTextField @bind-Value="model.RequestedBranch.BranchName" Label="Source Branch" Variant="Variant.Outlined" Margin="Margin.Normal" ReadOnly Class="modern-input"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudNumericField HideSpinButtons="true" @bind-Value="Odometer" Label="Current Odometer (KM)" Variant="Variant.Outlined" Margin="Margin.Normal" Class="modern-input"></MudNumericField>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="model.Remarks" Label="Operational Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Remarks)" Class="modern-input" Lines="2"></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+
+                @if (model.CheckList != null && model.CheckList.Any())
+                {
+                    <div class="admin-glass-card pa-0 overflow-hidden mb-6">
+                        <div class="px-6 py-4 border-bottom-subtle d-flex align-center" style="background: rgba(54, 117, 136, 0.03); border-bottom: 1px solid rgba(54, 117, 136, 0.2);">
+                            <MudIcon Icon="@Icons.Material.Filled.PlaylistAddCheck" Color="Color.Primary" Class="mr-2" />
+                            <span class="admin-section-label mb-0">Verification Checklist</span>
+                        </div>
+                        <div class="pa-6">
+                            <MudGrid Spacing="2">
+                                @foreach (var item in model.CheckList)
+                                {
+                                    <MudItem xs="12" md="6">
+                                        <div class="glass-inner-panel pa-3 d-flex align-center justify-space-between rounded-lg">
+                                            <div>
+                                                <MudText Typo="Typo.body2"><b>@item.SettingsName</b></MudText>
+                                                <MudText Typo="Typo.caption" Class="color-muted">Value: @item.Value | @item.Condition</MudText>
+                                            </div>
+                                            @if (model.RequestStatus == 1)
+                                            {
+                                                <MudCheckBox T="bool" Color="Color.Success" @bind-Checked="@item.IsRecieved" Dense="true"></MudCheckBox>
+                                            }
+                                        </div>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </div>
+                    </div>
+                }
+
+                @if (model?.Uploads != null && model.Uploads.Any())
+                {
+                    <div class="admin-glass-card pa-0 overflow-hidden">
+                        <div class="px-6 py-4 border-bottom-subtle d-flex align-center" style="background: rgba(255, 159, 67, 0.03); border-bottom: 1px solid rgba(255, 159, 67, 0.2);">
+                            <MudIcon Icon="@Icons.Material.Filled.PhotoLibrary" Color="Color.Warning" Class="mr-2" />
+                            <span class="admin-section-label mb-0">Evidence Repository</span>
+                        </div>
+                        <div class="pa-6">
+                            <MudGrid Spacing="3">
+                                @foreach (var imagePath in model.Uploads.Where(x => !string.IsNullOrWhiteSpace(x)))
+                                {
+                                    <MudItem xs="12" sm="6" md="4">
+                                        <div class="glass-inner-panel p-2 position-relative rounded-lg overflow-hidden">
+                                            @{
+                                                var extension = Path.HasExtension(imagePath) ? Path.GetExtension(imagePath).ToLower() : string.Empty;
+                                                var isVideo = extension is ".mp4" or ".mov" or ".avi";
+                                            }
+                                            @if (isVideo)
+                                            {
+                                                <video src="@imagePath" controls style="width: 100%; border-radius: 8px;" />
+                                            }
+                                            else
+                                            {
+                                                <MudImage Src="@imagePath" Alt="Evidence" Fluid="true" Class="rounded-lg mb-2" Style="width: 100%; height: 180px; object-fit: cover;" />
+                                            }
+                                            <div class="d-flex justify-center mt-2">
+                                                <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Download" Color="Color.Primary" Href="@imagePath" download>Download</MudButton>
+                                            </div>
+                                        </div>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </div>
+                    </div>
+                }
+            </EditForm>
+        </div>
+    </FormContent>
+    <Actions>
+        <div class="d-flex pa-4 gap-3 w-100 justify-end align-center">
+            <MudButton Variant="Variant.Text" OnClick="Cancel" Class="px-6 rounded-lg">Exit</MudButton>
             @if (model.RequestStatus == 1)
             {
-                <MudText Typo="Typo.h6">
-                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Complete Transfer.
-                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Complete(model.CheckList))" Class="px-10 rounded-pill" Style="background: var(--mud-palette-success) !important; color: white !important;">
+                    Complete Reception
+                </MudButton>
             }
             else
             {
-                <MudText Typo="Typo.h6">
-                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Approve Or Reject Truck.
-                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Approve())" Class="px-8 rounded-pill" Style="background: var(--mud-palette-success) !important; color: white !important;">
+                    Authorize Transfer
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Reject" Class="px-8 rounded-pill" Style="background: var(--mud-palette-error) !important; color: white !important;">
+                    Decline
+                </MudButton>
             }
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <EditForm id="formDriver" Model="@model" OnValidSubmit="@(() => Approve())">
-            <ObjectGraphDataAnnotationsValidator />
-            <ValidationSummary />
-            <MudGrid>
-                <MudItem xs="6" md="6">
-                    <MudTextField @bind-Value="model.DocNumber" Label="Transfer No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Truck.RegNo)" ReadOnly></MudTextField>
-                </MudItem>
-                <MudItem xs="6" md="6">
-                    <MudTextField @bind-Value="model.Truck.RegNo" Label="Truck" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Truck.RegNo)" ReadOnly></MudTextField>
-                </MudItem>
-                <MudItem xs="6" md="6">
-                    <MudTextField @bind-Value="model.RequestedBranch.BranchName" Label="Requested Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RequestedBranch.BranchName)" ReadOnly></MudTextField>
-                </MudItem>
-                <MudItem xs="6" md="6">
-                    <MudNumericField HideSpinButtons="true" @bind-Value="Odometer" Label="OdometerReading" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="12">
-                    <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
-                </MudItem>
-                <MudItem xs="12" md="12">
-                    @if (model.CheckList != null && model.CheckList.Any())
-                    {
-                        <MudText Typo="Typo.h6">Checklist</MudText>
-                        <br />
-                        <MudContainer>
-                            <MudGrid class="border">
-                                @foreach (var item in model.CheckList)
-                                {
-                                    @if(model.RequestStatus == 1)
-                                    {
-                                        <MudItem xs="6">
-                                            <MudText>@item.SettingsName - @item.Value - @item.Condition : </MudText>
-                                        </MudItem>
-                                        <MudItem xs="6">
-                                            <MudCheckBox Color="Color.Primary" @bind-Checked="@item.IsRecieved"></MudCheckBox>
-                                        </MudItem>
-                                    }
-                                    else
-                                    {
-                                        <MudItem xs="6">
-                                            <MudText>@item.SettingsName - @item.Value - @item.Condition </MudText>
-                                        </MudItem>
-                                    }
-                                }
-                            </MudGrid>
-                        </MudContainer>
-                    }
-                </MudItem>
-                <MudItem xs="12" md="12">
-                    <MudToolBar>
-                        <MudText Typo="Typo.h6">Truck photos/video</MudText>                        
-                    </MudToolBar>
-                    <MudGrid Style="padding: 24px;" Spacing="2" Justify="Justify.Center">
-                        @if (model?.Uploads != null && model.Uploads.Any())
-                        {
-                            foreach (var imagePath in model.Uploads.Where(x => !string.IsNullOrWhiteSpace(x)))
-                            {
-                                <MudItem xs="12" md="6" Class="d-flex">
-                                    <MudPaper Class="p-2 position-relative" Elevation="3">
-                                        @{
-                                            var extension = Path.HasExtension(imagePath) ? Path.GetExtension(imagePath).ToLower() : string.Empty;
-                                            var isVideo = extension is ".mp4" or ".mov" or ".avi";
-                                        }
-                                        @if (isVideo)
-                                        {
-                                            <video src="@imagePath" controls class="w-100" />
-                                        }
-                                        else
-                                        {
-                                            <img src="@imagePath" alt="@imagePath" class="w-100" />
-                                        }
-
-                                        <MudIconButton Variant="Variant.Filled"
-                                                       Color="Color.Primary"
-                                                       Href="@imagePath"
-                                                       Style="margin-top: 10px;"
-                                                       download>
-                                            <MudIcon Icon="@Icons.Material.Filled.Download" Title="Download" />
-                                        </MudIconButton>
-                                    </MudPaper>
-                                </MudItem>
-                            }
-                        }
-                    </MudGrid>
-                </MudItem>
-            </MudGrid>
-        </EditForm>
-    </DialogContent>
-    <DialogActions>
-        @if (model.RequestStatus == 1)
-        {
-            <MudButton Style="margin: 0px 15px 12px 0px;" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Complete(model.CheckList))" Class="px-12">Complete</MudButton>
-        }
-        else
-        {
-            <div style="margin: 0px 15px 12px 0px;">
-                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Approve())" Class="px-12">Approve</MudButton>
-                <MudButton Style="margin-left: 12px;" Variant="Variant.Filled" Color="Color.Warning" OnClick="Reject" Class="px-12">Reject</MudButton>
-            </div>
-        }
-
-    </DialogActions>
-</MudDialog>
+        </div>
+    </Actions>
+</DialogForm>
 
 @code {
 
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private DialogForm dialogForm;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     [Parameter]
     public RequestApprovalHistoryModel model { get; set; } = new();
     private int branchID { get; set; } = 0;
     private int? BranchID { get; set; } = 0;
+    private bool _busy;
     MyFileUpload Mfu;
     private int? Odometer;
     public AssetModel Asset { get; set; } = new();
@@ -170,7 +169,7 @@
 
     void Cancel()
     {
-        MudDialog.Cancel();
+        dialogForm.Cancel();
     }
 
     // Method to handle file uploads
@@ -202,7 +201,7 @@
             
             if (model.Truck == null || model.Truck.TruckID == 0)
             {
-                bool? result = await DialogService.ShowMessageBox(
+                bool? result = await DialogService.ShowMessageBoxAsync(
                     "Warning",
                     "Please, select truck.", yesText: "OK");
                 return;
@@ -229,7 +228,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Approve Truck Request.");
         }
@@ -251,7 +250,7 @@
         }
         if (model.Truck == null || model.Truck.TruckID == 0)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning",
                 "Please, Select truck.", yesText: "OK");
             return;
@@ -284,7 +283,7 @@
             var user = authprov.User;
             if (model.Truck == null || model.Truck.TruckID == 0)
             {
-                bool? result = await DialogService.ShowMessageBox(
+                bool? result = await DialogService.ShowMessageBoxAsync(
                     "Warning",
                     "Please, Select truck.", yesText: "OK");
                 return;
@@ -308,7 +307,7 @@
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Reject Truck Request.");
         }

@@ -1,49 +1,50 @@
-﻿@page "/TruckWiseTyreReport"
+@page "/TruckWiseTyreReport"
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inherits ReportComponentBase
 @inject ISnackbar Snackbar
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudPaper Class="mb-5 p-4">
-            <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
-                <MudText Typo="Typo.h5" Style="font-weight:500;">Truck Wise Tyre Report</MudText>
-            </MudToolBar>
-            <MudDivider />
-            <MudGrid Style="padding-top: 22px;">
-                <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
-                    <MudRadioGroup T="string" @bind-Value="Time">
-                        <MudRadio Value="@("Period")" Color="Color.Primary" Size="Size.Medium">Period</MudRadio>
-                        <MudRadio Value="@("Live")" Color="Color.Secondary" Size="Size.Medium">Live</MudRadio>
-                    </MudRadioGroup>
-                </MudToolBar>
-                <MudDivider />
-                <MudItem xs="3">
-                    <TruckSelector Value="SelectedTruck" BranchID="BranchID" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" />
+<div class="fade-in">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">Truck Wise Tyre Report</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Analytical overview of tyre utilization per vehicle. Track mounting history, wear patterns, and live inventory status across the fleet.</MudText>
+            </div>
+            <MudRadioGroup T="string" @bind-Value="Time" Class="admin-glass-card pa-2 d-flex gap-4">
+                <MudRadio Value="@("Period")" Color="Color.Primary" UnCheckedColor="Color.Default" Size="Size.Small">Historical Period</MudRadio>
+                <MudRadio Value="@("Live")" Color="Color.Secondary" UnCheckedColor="Color.Default" Size="Size.Small">Live Status</MudRadio>
+            </MudRadioGroup>
+        </div>
+    </div>
+
+    <div class="admin-glass-card mb-6 pa-6">
+        <MudGrid Spacing="4" Class="align-center">
+            <MudItem xs="12" sm="@(Time == "Period" ? 3 : 6)">
+                <TruckSelector Value="SelectedTruck" BranchID="BranchID" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" Class="admin-input-group" />
+            </MudItem>
+            @if (Time == "Period")
+            {
+                <MudItem xs="12" sm="3">
+                    <MudDatePicker Label="From Date" @bind-Date="@FromDate" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" />
                 </MudItem>
-                @if (Time == "Period")
-                {
-                    <MudItem xs="3">
-                        <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="3">
-                        <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    </MudItem>
-                }
-                <MudItem xs="3" Style="display: flex; align-items: center;">
-                    <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
-                    <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                <MudItem xs="12" sm="3">
+                    <MudDatePicker Label="To Date" @bind-Date="@ToDate" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" />
                 </MudItem>
-            </MudGrid>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
-<MudGrid Style="@(ShowReport?"":"Display:none")">
-    <MudItem xs="12">
-        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
-    </MudItem>
-</MudGrid>
+            }
+            <MudItem xs="12" sm="@(Time == "Period" ? 3 : 6)" Class="d-flex align-center gap-2">
+                <MudTooltip Text="Select Branches">
+                    <MudIconButton Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches" Class="rounded-lg" />
+                </MudTooltip>
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary" OnClick="RenderReportViewer" Class="admin-register-btn">VIEW REPORT</MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    <div class="admin-glass-card pa-0 overflow-hidden shadow-sm @(ShowReport ? "" : "d-none")">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters SpName="@(_reportSpName)" @ref="@report"></ReportViewer>
+    </div>
+</div>
 
 @code {
 
@@ -57,6 +58,7 @@
 
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
+    private string _reportSpName => ReportName == "TyreLiveStatusReport" ? "rptTyreLiveStatus" : "rptTruckWiseTyre";
 
     protected override async Task OnInitializedAsync()
     {
@@ -99,8 +101,8 @@
             }
 
             ReportName = "TruckWiseTyreReport";
-            ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
-            ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
+            ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy-MM-dd"));
+            ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy-MM-dd"));
         }
         else if (Time == "Live")
         {
@@ -108,6 +110,6 @@
         }
 
         ShowReport = true;
-        await report.RenderReport();
+        await report.RenderReport(ReportName);
     }
 }

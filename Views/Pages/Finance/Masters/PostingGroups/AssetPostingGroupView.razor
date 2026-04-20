@@ -1,4 +1,4 @@
-﻿@page "/AssetPostingGroup"
+@page "/AssetPostingGroup"
 @inject IAssetPostingGroupService Iservice
 @inject IChartOfAccountService accountService
 @inject MudBlazor.ISnackbar snackbar
@@ -11,85 +11,157 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<MudGrid>
-    <MudItem xs="4" lg="4">
-        <MudPaper Width="100%" Class="p-2">
-            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
-                <MudText Typo="Typo.h6" style="padding: 4px; margin-top: -8px; margin-bottom: -22px; margin-left: 8px;">
-                    Asset Posting Group
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudText>
-                <br />
-                @if (listOfItems?.Any() == true)
-                {
-                    @foreach (var item in listOfItems)
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Asset Protocols" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">CAPEX Asset Ledger Protocols</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Assign and manage general ledger linkages for fixed assets and capital investments. define systematic posting rules for capitalization, depreciation, and revaluation reserves.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-6 align-start">
+            <!-- Sidebar for Posting Groups -->
+            <div class="admin-glass-card pa-0 overflow-hidden" style="width: 320px; flex-shrink: 0; position: sticky; top: 24px;">
+                <div class="pa-4 b-bottom d-flex align-center justify-space-between bg-glass-brighter">
+                    <MudText Typo="Typo.subtitle1" Class="fw-700 opa-80 uppercase">Asset Groups</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Small" OnClick="@(()=> OpenDialogGroup(model))" Disabled="@_busy" Class="bg-glass rounded-pill" />
+                </div>
+                
+                <MudList T="AssetPostingGroupModel" Clickable="true" SelectedValue="SelectedModel" SelectedValueChanged="HandleGroupChanged" Class="pa-2">
+                    @if (listOfItems?.Any() == true)
                     {
-                        <ContextMenuTrigger MenuId="myMenu" Data="@item">
-                            <MudListItem OnClick="((e) => ViewDetails(e,item))" Class="border-solid border-2 pa-4 mb-2 mt-2" Style="border-color:#ccc; border-radius:3%" Value="item">
-                                <MudText Typo=Typo.subtitle1> @item.Title.ToString() </MudText>
-                            </MudListItem>
-                        </ContextMenuTrigger>
+                        @foreach (var item in listOfItems)
+                        {
+                            <ContextMenuTrigger MenuId="myMenu" Data="@item">
+                                <MudListItem T="AssetPostingGroupModel" Value="item" Class="rounded-lg mb-1 admin-list-item">
+                                    <div class="d-flex align-center gap-3">
+                                        <div class="admin-icon-square-vibrant small accent-emerald">
+                                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" />
+                                        </div>
+                                        <MudText Typo="Typo.body2" Class="fw-600">@item.Title</MudText>
+                                    </div>
+                                </MudListItem>
+                            </ContextMenuTrigger>
+                        }
                     }
+                </MudList>
+            </div>
+
+            <!-- Main Content Area: Form -->
+            <div style="flex-grow: 1;">
+                @if (value == true)
+                {
+                    <div class="admin-glass-card pa-6">
+                        <div class="d-flex align-center justify-space-between mb-6">
+                            <div>
+                                <div class="d-flex align-center gap-2 mb-1">
+                                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Primary" />
+                                    <MudText Typo="Typo.h5" Class="fw-800">@titleValue</MudText>
+                                </div>
+                                <MudText Typo="Typo.body2" Class="opa-60">Define CAPEX linkages for this asset posting profile</MudText>
+                            </div>
+                            @if (IsOnlyView)
+                            {
+                                <MudChip T="string" Color="Color.Info" Variant="Variant.Text" Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="fw-700">READ-ONLY PROTOCOL</MudChip>
+                            }
+                        </div>
+
+                        <EditForm Model="model" OnValidSubmit="CreateAssetPostingGroup">
+                            <ObjectGraphDataAnnotationsValidator />
+                            <div class="d-flex flex-column gap-6">
+                                <MudTextField @bind-Value="model.Title" Label="Asset Profile Identifier" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)" Disabled="IsOnlyView" Class="admin-input-group" />
+                                
+                                <div class="admin-form-section">
+                                    <div class="d-flex align-center gap-2 mb-3">
+                                        <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Small" Class="opa-40" />
+                                        <MudText Typo="Typo.subtitle2" Class="fw-800 opa-50 uppercase">Balance Sheet Mappings</MudText>
+                                    </div>
+                                    <div class="d-flex flex-column gap-4">
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <CoaSelector @bind-Value="model.Capitalization" LabelName="Asset Account (Capitalization)" IsDisable="IsOnlyView" />
+                                        </div>
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <CoaSelector @bind-Value="model.CWIP" LabelName="WIP Account (Capital Work In Progress)" IsDisable="IsOnlyView" />
+                                        </div>
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <CoaSelector @bind-Value="model.AccummulatedDepreciation" LabelName="Contra-Asset (Accumulated Depreciation)" IsDisable="IsOnlyView" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="admin-form-section">
+                                    <div class="d-flex align-center gap-2 mb-3">
+                                        <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Class="opa-40" />
+                                        <MudText Typo="Typo.subtitle2" Class="fw-800 opa-50 uppercase">Income Statement & Valuation</MudText>
+                                    </div>
+                                    <div class="d-flex flex-column gap-4">
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <CoaSelector @bind-Value="model.Depreciation" LabelName="Expense Account (Depreciation)" IsDisable="IsOnlyView" />
+                                        </div>
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <CoaSelector @bind-Value="model.Revaluation" LabelName="Profit/Loss Account (Asset Revaluation)" IsDisable="IsOnlyView" />
+                                        </div>
+                                        <div class="pa-4 bg-glass rounded-lg border-2 border-dashed border-opa-10">
+                                            <CoaSelector @bind-Value="model.RevaluationReserve" LabelName="Equity Account (Revaluation Reserve)" IsDisable="IsOnlyView" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-center justify-end gap-3 mt-4">
+                                    <MudButton OnClick="CancelAssetPostingGroup" Variant="Variant.Text" Color="Color.Default" Class="rounded-pill px-6 fw-600">DISMISS</MudButton>
+                                    @if (!IsOnlyView)
+                                    {
+                                        <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn px-8 shadow-lg">COMMIT CONFIGURATION</MudButton>
+                                    }
+                                    else if (HasPermissionAssetPostingGroupServiceEdit)
+                                    {
+                                         <MudButton OnClick="@(() => { IsOnlyView = false; titleValue = "Edit Asset Posting Group"; })" Variant="Variant.Filled" Color="Color.Warning" Class="admin-register-btn px-8 shadow-lg">UNLOCK TO EDIT</MudButton>
+                                    }
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
                 }
-            </MudList>
-        </MudPaper>
-    </MudItem>
-    @if (@value == true)
-    {
-        <MudItem xs="8" lg="8">
-            <MudPaper>
-                <MudContainer>
-                    <h4 style="padding-top:18px;">@titleValue</h4>
-                    <br />
-                    <EditForm Model="model" OnValidSubmit="CreateAssetPostingGroup">
-                        <ObjectGraphDataAnnotationsValidator />
-                        <MudGrid Spacing="4">
-                            <MudItem xs="12" lg="12">
-                                <MudTextField @bind-Value="model.Title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)" Disabled="IsOnlyView"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Capitalization" LabelName="Capitalization" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.CWIP" LabelName="CWIP" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.AccummulatedDepreciation" LabelName="Accummulated Depreciation" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Depreciation" LabelName="Depreciation" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Revaluation" LabelName="Revaluation" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.RevaluationReserve" LabelName="Revaluation Reserve" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <ValidationSummary />
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudButton @onclick="CancelAssetPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
-                                @if (!IsOnlyView)
-                                {
-                                    <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
-                                }
-                            </MudItem>
-                        </MudGrid>
-                    </EditForm>
-                </MudContainer>
-            </MudPaper>
-        </MudItem>
-    }
-</MudGrid>
-<ContextMenu Id="myMenu" OnAppearing="OnAppearing">
-    <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Group</Item>
-</ContextMenu>
+                else
+                {
+                    <div class="admin-glass-card d-flex flex-column align-center justify-center py-16" style="min-height: 480px;">
+                        <div class="admin-icon-square-vibrant mb-6 accent-emerald shadow-glow" style="width: 80px; height: 80px;">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Style="font-size: 3rem;" />
+                        </div>
+                        <MudText Typo="Typo.h5" Class="fw-800 opa-80 mb-2">Select Asset Group</MudText>
+                        <MudText Typo="Typo.body2" Class="opa-50 text-center" Style="max-width: 300px;">Choose an asset category from the sidebar to configure its audit linkages and depreciation protocols.</MudText>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
+        <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Group Configuration</Item>
+    </ContextMenu>
+}
 
 @code {
 
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
+
     AssetPostingGroupModel model = new AssetPostingGroupModel();
-    private MudListItem SelectedItem;
+    private MudListItem<AssetPostingGroupModel> SelectedItem;
     private List<AssetPostingGroupModel> listOfItems = new();
     AssetPostingGroupModel SelectedModel = new();
     public bool value = false;
@@ -104,17 +176,32 @@
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionAssetPostingGroupServiceEdit = await Irole.HasClaim(AssetPostingGroupDocTypeID.ToString(), "Edit", ctc.Token);
 
         GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
     }
 
-    // Method to handle changes in the selected itemc
-    protected async Task SelectedItemChanged(object obj)
+    private async Task EnsureMinimumLoadTime()
     {
-        SelectedItem = (MudListItem)obj;
-        SelectedModel = (AssetPostingGroupModel)SelectedItem.Value;
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
+    }
+
+    // Method to handle selection changes in the list   
+    protected async Task HandleGroupChanged(AssetPostingGroupModel model)
+    {
+        SelectedModel = model;
+        if (SelectedModel != null)
+        {
+            ViewDetails(null, SelectedModel);
+        }
     }
 
     // Method to fetch all asset posting groups
@@ -160,7 +247,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Edit AssetPostingGroup.");
         }

@@ -1,4 +1,4 @@
-﻿@page "/TyreMasterView"
+@page "/TyreMasterView"
 @using ArmsModels.BaseModels.General
 @using ArmsServices.DataServices.Operations
 @using System.Threading;
@@ -15,85 +15,138 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<TyreModel,bool>(search)">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Tyre/Accessories</MudText>
-                <MudTooltip Text="New Tyre">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEdit(new TyreModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-                <MudSpacer></MudSpacer>
-                <MudRadioGroup @bind-Value="@selectedOption" T="string" Style="padding-top: 8px;" SelectedOptionChanged="OnSelectedOptionChanged">
-                    <MudRadio Value="@("All")" Color="Color.Primary">All</MudRadio>
-                    <MudRadio Value="@("Mounted")" Color="Color.Primary">Mounted</MudRadio>
-                    <MudRadio Value="@("UnMounted")" Color="Color.Primary">Un Mounted</MudRadio>
-                </MudRadioGroup>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search tyre..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreSerialNumber)" InitialDirection="SortDirection.Ascending">Serial Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Make)" InitialDirection="SortDirection.Ascending">Make</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Make)" InitialDirection="SortDirection.Ascending">Item Type</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreType)" InitialDirection="SortDirection.Ascending">Tyre Type</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreSize)" InitialDirection="SortDirection.Ascending">Tyre Size</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Status)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TotalExpectedLife)" InitialDirection="SortDirection.Ascending">Expected Life</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyrePosition)" InitialDirection="SortDirection.Ascending">Mounted Truck</MudTableSortLabel></MudTh>
-                @* <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Tubeless)" > Tubeless </MudTableSortLabel></MudTh> *@
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Tyre">@context.TyreSerialNumber</MudTd>
-                <MudTd DataLabel="Make">@context.Make</MudTd>
-                <MudTd DataLabel="ItemType">@context.ItemType - @context.ItemCode</MudTd>
-                <MudTd DataLabel="TyreType">@context.TyreType</MudTd>
-                <MudTd DataLabel="TyreSize">@context.TyreSize</MudTd>
-                <MudTd DataLabel="Status">@context.Status</MudTd>
-                <MudTd DataLabel="TotalExpectedLife">@context.TotalExpectedLife</MudTd>
-                <MudTd DataLabel="TyreSize">@context.TyrePosition</MudTd>
-                @* <MudTd DataLabel="Tubeless">@context.Tubeless</MudTd> *@
-                <MudTd DataLabel="Actions">
-                    @if (string.IsNullOrEmpty(context.LockText))
-                    {                         
+@if (_isLoading)
+{
+    <div @key="@("loader")" class="d-flex justify-center align-center" style="min-height: 400px;">
+        <LoaderComponent IsFullScreen="false" ShowLogo="false" Size="medium" LoadingText="Synchronizing Tyre Inventory" SubText="Retrieving latest tyre and accessory records..." />
+    </div>
+}
+else
+{
+    <div class="admin-page-container fade-in" @key="@("content")">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Tyre & Accessories</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Manage vehicle tyre inventory, tracking, and mounting status across the fleet.</MudText>
+                </div>
+                <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=> OpenDialogEdit(new TyreModel()))" Class="admin-register-btn" StartIcon="@Icons.Material.Filled.Add">REGISTER TYRE</MudButton>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-6 mb-6">
+            <MudGrid Spacing="3" Class="align-center">
+                <MudItem xs="12" lg="4">
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search by Serial Number or Item Type..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Class="modern-input"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" lg="8" Class="d-flex justify-end">
+                    <div class="d-flex align-center gap-4 bg-light-surface pa-2 rounded-lg border-subtle">
+                        <MudText Typo="Typo.caption" Class="fw-700 opacity-60 ml-2">VIEW FILTER:</MudText>
+                        <MudRadioGroup Value="@selectedOption" T="string" ValueChanged="OnSelectedOptionChanged">
+                            <MudRadio Value="@("All")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">All</MudRadio>
+                            <MudRadio Value="@("Mounted")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Mounted</MudRadio>
+                            <MudRadio Value="@("UnMounted")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Un-Mounted</MudRadio>
+                        </MudRadioGroup>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        <div class="admin-glass-card overflow-hidden">
+            <MudTable Items="@collection" Elevation="0" Filter="new Func<TyreModel,bool>(search)" Hover="true" Breakpoint="Breakpoint.Sm" Class="modern-admin-table">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreSerialNumber)" InitialDirection="SortDirection.Ascending"><span class="admin-header-text">SERIAL NUMBER</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Make)"><span class="admin-header-text">MAKE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.ItemType)"><span class="admin-header-text">ITEM TYPE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreType)"><span class="admin-header-text">TYRE TYPE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreSize)"><span class="admin-header-text">SIZE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Status)"><span class="admin-header-text">STATUS</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TotalExpectedLife)"><span class="admin-header-text">EXPECTED LIFE</span></MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyrePosition)"><span class="admin-header-text">MOUNTED TRUCK</span></MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Serial">
+                        <span class="admin-td-primary fw-600">@context.TyreSerialNumber</span>
+                    </MudTd>
+                    <MudTd DataLabel="Make"><span class="fw-500">@context.Make</span></MudTd>
+                    <MudTd DataLabel="ItemType">
+                        <div class="d-flex flex-column">
+                            <MudText Typo="Typo.body2" Class="fw-600">@context.ItemType</MudText>
+                            <MudText Typo="Typo.caption" Class="opacity-60">@context.ItemCode</MudText>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="TyreType">@context.TyreType</MudTd>
+                    <MudTd DataLabel="Size">@context.TyreSize</MudTd>
+                    <MudTd DataLabel="Status">
+                        <MudChip T="string" Size="Size.Small" Color="@(context.Status == "Active" ? Color.Success : Color.Warning)" Variant="Variant.Text" Class="fw-600">@context.Status</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Life">
+                        <div class="d-flex align-center">
+                            <MudText Typo="Typo.body2">@context.TotalExpectedLife</MudText>
+                            <MudText Typo="Typo.caption" Class="ml-1 opacity-50">km</MudText>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Position">
+                        @if (!string.IsNullOrEmpty(context.TyrePosition))
+                        {
+                            <div class="d-flex align-center bg-light-secondary pa-1 px-2 rounded-lg border-subtle">
+                                <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" Color="Color.Secondary" Class="mr-2" />
+                                <MudText Typo="Typo.caption" Class="fw-700 text-secondary">@context.TyrePosition</MudText>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="opacity-40">-</span>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        @if (string.IsNullOrEmpty(context.LockText))
+                        {
                             string txt = context.IsMounted ? "UnMount" : "Mount";
                             string icon = context.IsMounted ? Icons.Material.Filled.Download : Icons.Material.Filled.Upload;
                             Color iconColor = context.IsMounted ? Color.Warning : Color.Success;
-                        
-                        <MudTooltip Text="Edit">
-                            <MudIconButton @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
-                        </MudTooltip>
-                        
-                        <MudTooltip Text="Remove">
-                            <MudIconButton Disabled="@(context.IsMounted)" @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" />
-                        </MudTooltip>
-                        @* <MudTooltip Text="Km Reading">
-                            <MudIconButton Disabled="@(context.ItemType != "Tyre")" @onclick="@(()=> OpenKmReading(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.AvTimer" Size="Size.Small" />
-                        </MudTooltip> *@
-                       
-                        <MudTooltip Text="@txt">
-                            <MudIconButton @onclick="@(()=> TyreMountOrUnmount(context))" Color="@iconColor" Icon="@icon" Size="Size.Small" />
-                        </MudTooltip>
 
-                        <MudTooltip Text="View History">
-                            <MudIconButton @onclick="@(()=> ViewHistory(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.History" Size="Size.Small" />
-                        </MudTooltip>
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.h6" >@context.LockText</MudText>
-                    }
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+                            <MudTooltip Text="Edit">
+                                <MudIconButton OnClick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            
+                            <MudTooltip Text="@txt">
+                                <MudIconButton OnClick="@(()=> TyreMountOrUnmount(context))" Color="@iconColor" Icon="@icon" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+
+                            <MudTooltip Text="View History">
+                                <MudIconButton OnClick="@(()=> ViewHistory(context))" Color="Color.Info" Icon="@Icons.Material.Filled.History" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+
+                            <MudTooltip Text="Delete">
+                                <MudIconButton Disabled="@(context.IsMounted)" OnClick="@(()=> OpenDialogDelete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                        }
+                        else
+                        {
+                            <MudBadge Content="@context.LockText" Color="Color.Error" Overlap="true" Class="mr-2">
+                                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Color="Color.Default" />
+                            </MudBadge>
+                        }
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
+
+
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     private List<TyreModel> collection = new();
     string UserID;
@@ -107,10 +160,22 @@
 
     protected async override Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTyreServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         await GetAll();
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     private async Task GetAll()
@@ -125,6 +190,7 @@
 
     public void OnSelectedOptionChanged(string value)
     {
+        selectedOption = value;
         switch (value)
         {
             case "Mounted":
@@ -165,7 +231,7 @@
         }
         var param = new DialogParameters { ["model"] = TyreMaster };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<TyreDialog>("ADD/EDIT", param, options);
+        var dialog = await DialogService.ShowAsync<TyreDialog>("ADD/EDIT", param, options);
         var result = await dialog.Result;
 
         // you can check if the modal was cancelled
@@ -194,7 +260,7 @@
     {
         if (HasPermissionTyreServiceDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning",
                 "Are you sure you want to delete this entry?",
                 yesText: "Delete!", cancelText: "Cancel");
@@ -227,7 +293,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Delete Tyre.");
         }
@@ -251,7 +317,7 @@
         {
             DialogParameters parms = new();
             parms.Add("SelectedTyre", model);
-            var dialog = DialogService.Show<TyreUnMountDialog>("UnMount", parms, options);
+            var dialog = await DialogService.ShowAsync<TyreUnMountDialog>("UnMount", parms, options);
             var result = await dialog.Result;
 
             // you can check if the modal was cancelled
@@ -265,7 +331,7 @@
         {
             DialogParameters parms = new();
             parms.Add("SelectedTyre", model);
-            var dialog = DialogService.Show<TyreMountDialog>("Mount", parms, options);
+            var dialog = await DialogService.ShowAsync<TyreMountDialog>("Mount", parms, options);
             var result = await dialog.Result;
 
             // you can check if the modal was cancelled
@@ -279,12 +345,12 @@
         _busy = false;
     }
 
-    private void OpenDialog()
+    private async Task OpenDialog()
     {
         TyreModel TyreMaster = new();
         var model = new DialogParameters { ["model"] = TyreMaster };
         var options = new DialogOptions { CloseOnEscapeKey = true };
-        DialogService.Show<TyreDialog>("Simple Dialog", model, options);
+        await DialogService.ShowAsync<TyreDialog>("Simple Dialog", model, options);
     }
 
     private async Task OpenKmReading(TyreModel model)
@@ -302,7 +368,7 @@
         model.UserInfo.UserID = UserID;
         DialogParameters parms = new();
         parms.Add("SelectedTyre", model);
-        var dialog = DialogService.Show<TyreKmReadingDialog>("Km Readings", parms, options);
+        var dialog = await DialogService.ShowAsync<TyreKmReadingDialog>("Km Readings", parms, options);
         var result = await dialog.Result;       
         await Task.Delay(200);
         _busy = false;
@@ -318,7 +384,7 @@
             DialogParameters parms = new();
             parms.Add("TyreID", model.TyreID);
             parms.Add("TyreSerial", model.TyreSerialNumber);
-            var dialog = DialogService.Show<TyreHistoryDialog>("Tyre History", parms, options); 
+            var dialog = await DialogService.ShowAsync<TyreHistoryDialog>("Tyre History", parms, options); 
             await dialog.Result;            
     }
        

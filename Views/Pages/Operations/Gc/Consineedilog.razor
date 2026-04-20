@@ -1,4 +1,4 @@
-﻿@using System.Threading;
+@using System.Threading;
 @using Operations.Place;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -9,52 +9,58 @@
 @inject IOrderService Iorder
 @inject IRoleService<RoleModel> Irole
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            Add/Edit
-            <MudRadioGroup SelectedOption="model.Consignor" T="bool" SelectedOptionChanged="OnSelectedOptionChanged">
-                <MudRadio Option="true" Color="Color.Primary" Dense="true">Consignor</MudRadio>
-                <MudRadio Option="false" Color="Color.Secondary" Dense="false">Consignee</MudRadio>
-            </MudRadioGroup>
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <EditForm id="ConsigneeForm" Model="@model" OnValidSubmit="OnValidSubmit">
-            <ObjectGraphDataAnnotationsValidator />
-            <ValidationSummary />
-            <MudTabs>
-                <MudTabPanel Text="Info" Class="p-3">
-                    <MudGrid>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="model.ConsigneeName" Label="@label" Variant="Variant.Outlined" For="@(() => model.ConsigneeName)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudNumericField HideSpinButtons MaxLength="10" @bind-Value="model.Mobile" Label="Mobile" Variant="Variant.Outlined" For="@(() => model.Mobile)"></MudNumericField>
-                         </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudAutocomplete T="PlaceModel" Label="Place" Value="Place" ValueChanged="PlaceSelected" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"
-                                             Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Rounded.Add" OnAdornmentClick="OpenPlaceDialog" Immediate="true" MaxItems="50">
-                                 <NoItemsTemplate>
-                                     Create new Place
-                                 </NoItemsTemplate>
-                            </MudAutocomplete>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudAutocomplete ReadOnly Disabled T="OrderModel" Label="Order" Value="Order" ValueChanged="OrderSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined" SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
-                        </MudItem>
-                    </MudGrid>
-                </MudTabPanel>
-                <MudTabPanel Text="Address" Class="p-3">
-                    <AddressView Address="model.Address" HideLabel HidePlace="true"></AddressView>
-                </MudTabPanel>
-            </MudTabs>
-        </EditForm>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Disabled="@_busy" form="ConsigneeForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save @label</MudButton>
-    </DialogActions>
-</MudDialog>
+<DialogForm @ref="@dialogForm" Title="Consignee / Consignor" Subtitle="Manage shipping partners and contact information." Icon="@Icons.Material.Filled.PersonAdd" AdminStyle="true" formID="ConsigneeForm" model="@model" _busy="_busy">
+    <FormContent>
+        <div class="dialog-content-wrapper pa-4">
+            <EditForm id="ConsigneeForm" Model="@model" OnValidSubmit="OnValidSubmit">
+                <div class="admin-glass-card pa-0 overflow-hidden">
+                    <div class="px-6 py-4 d-flex align-center justify-space-between border-bottom-subtle">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Primary" Class="mr-2" />
+                            <span class="admin-section-label mb-0">Partner Type</span>
+                        </div>
+                        <MudRadioGroup Value="model.Consignor" T="bool" ValueChanged="OnSelectedOptionChanged" Class="admin-radio-group">
+                            <MudRadio Value="true" Color="Color.Primary" Dense="true">Consignor</MudRadio>
+                            <MudRadio Value="false" Color="Color.Secondary" Dense="true">Consignee</MudRadio>
+                        </MudRadioGroup>
+                    </div>
+
+                    <ObjectGraphDataAnnotationsValidator />
+                    <MudValidationSummary />
+
+                    <MudTabs Elevation="0" Rounded="true" ApplyEffectsToInnerViews="true" Class="premium-tabs" PanelClass="pa-6">
+                        <MudTabPanel Text="Basic Information" Icon="@Icons.Material.Filled.Info">
+                            <MudGrid Spacing="5" Class="pa-4 mt-2 mb-4">
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="model.ConsigneeName" Label="@label" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ConsigneeName)" Class="modern-input"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudNumericField HideSpinButtons MaxLength="10" @bind-Value="model.Mobile" Label="Mobile Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Mobile)" Class="modern-input"></MudNumericField>
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudAutocomplete T="PlaceModel" Label="Place" Value="Place" ValueChanged="PlaceSelected" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await Search(s, t))" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"
+                                                     Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Rounded.Add" OnAdornmentClick="OpenPlaceDialog" Immediate="true" MaxItems="50" Class="modern-input">
+                                         <NoItemsTemplate>
+                                             Create new Place
+                                         </NoItemsTemplate>
+                                    </MudAutocomplete>
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudAutocomplete ReadOnly Disabled T="OrderModel" Label="Parent Order" Value="Order" ValueChanged="OrderSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" SearchFunc="@(async (string s, CancellationToken t) => await SearchOrders(s, t))" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")" Class="modern-input"></MudAutocomplete>
+                                </MudItem>
+                            </MudGrid>
+                        </MudTabPanel>
+                        <MudTabPanel Text="Address Details" Icon="@Icons.Material.Filled.LocationOn">
+                            <div class="glass-inner-panel pa-4">
+                                <AddressView Address="model.Address" HideLabel HidePlace="true"></AddressView>
+                            </div>
+                        </MudTabPanel>
+                    </MudTabs>
+                </div>
+            </EditForm>
+        </div>
+    </FormContent>
+</DialogForm>
 
 @code {
 
@@ -62,7 +68,7 @@
     public ConsigneeModel model { get; set; }
     [Parameter]
     public OrderModel Order { get; set; }
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    DialogForm dialogForm;
     private PlaceModel Place = new PlaceModel();
     private List<PlaceModel> places = new List<PlaceModel>();
     private List<OrderModel> orders = new List<OrderModel>();
@@ -120,14 +126,14 @@
     }
 
     // Method to search for places based on a search string
-    private async Task<IEnumerable<PlaceModel>> Search(string searchString)
+    private async Task<IEnumerable<PlaceModel>> Search(string searchString, CancellationToken token)
     {
         return await Task.FromResult(
             places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
     // Method to search for orders based on a search string
-    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString, CancellationToken token)
     {
         var o = orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
         return await Task.FromResult(o);
@@ -155,11 +161,11 @@
                 model.Consignor = false;
             }
             await Iservice.Update(model);
-            MudDialog.Close(model);
+            dialogForm.Close(model);
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to Add or Edit Consignee.");
         }
@@ -172,7 +178,7 @@
     {
         DialogParameters parms = new DialogParameters();
         parms.Add("placemodel", new PlaceModel());
-        var dialog = DialogService.Show<PlaceDilogue>("Add Place", parms);
+        var dialog = await DialogService.ShowAsync<PlaceDilogue>("Add Place", parms);
         var result = await dialog.Result;
         if (!result.Canceled)
         {

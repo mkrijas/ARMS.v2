@@ -20,11 +20,16 @@ window.downloadfile = function (url, filename) {
     anchor.href = url;
     anchor.download = filename;
 
-    // Programmatically click the anchor to initiate download
+     // Programmatically click the anchor to initiate download
+    document.body.appendChild(anchor);
     anchor.click();
 
     // Release the object URL
-    anchor.remove();
+    setTimeout(function() {
+        if (anchor.parentNode) {
+            anchor.parentNode.removeChild(anchor);
+        }
+    }, 100);
 }
 
 //function DownloadFile() {

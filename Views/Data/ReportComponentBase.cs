@@ -45,7 +45,7 @@ namespace Views.Data
                 { "SelectedBranches", SelectedBranches },
                 { "EnableSelector" , HoID == BranchID }
             };
-            var dialog = dialogService.Show<MultiBranchSelector>("Select Branches", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+            var dialog = await dialogService.ShowAsync<MultiBranchSelector>("Select Branches", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
             var result = await dialog.Result;
 
             if (!result.Canceled)

@@ -1,4 +1,4 @@
-﻿@page "/ManageTrip"
+@page "/ManageTrip"
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
@@ -6,117 +6,241 @@
 @inject ITruckService Itruck
 @inject IDriverService Idriver
 @inject IEventService Ievent
+@inject ISnackbar snackbar
+@using System.Threading
 
-<MudPaper Class="pl-5" Elevation="4">
-    <MudGrid Spacing="3">
-        <MudItem xs="12" md="5">
-            <TruckSelector @bind-Value="SelectedTruck" Filter="All" />
-        </MudItem>
-        <MudItem xs="12" md="5">
-            <MudTextField @bind-Value="tripnumber" Label="Trip Number" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-        </MudItem>
-        <MudItem xs="12" md="2">
-            <MudToggleIconButton @bind-Toggled="@ListView"
-                                 Icon="@Icons.Material.Filled.FilterListOff" Color="@Color.Error" Title="Off"
-                                 ToggledIcon="@Icons.Material.Filled.FilterList" ToggledColor="@Color.Success" ToggledTitle="On" />
-        </MudItem>
-        <MudItem xs="12" md="5">
-            <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
-        </MudItem>
-        <MudItem xs="12" md="5">
-            <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
-        </MudItem>
-        <MudItem xs="12" md="2">
-            <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Fetch</MudButton>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
-@if(!ListView && collection.Any())
-{
-    <MudGrid Class="mt-5">
-        @foreach (var item in collection)
-        {
-            <MudItem sm="12" xl="6" lg="6">
-                <TripDetailsCard Trip="item" IsLocked="item.IsLocked" IsMileageOverride="item.IsMileageOverride"></TripDetailsCard>
+<div class="admin-page-container">
+    <div class="admin-header-tiered mb-6">
+        <div class="d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.h4" Class="admin-title">Logistic Intelligence Hub</MudText>
+                <MudText Typo="Typo.body2" Class="admin-subtitle">Advanced mission auditing, historical trip analysis, and performance validation registry.</MudText>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-glass-card pa-6 mb-6">
+        <div class="d-flex align-center gap-4 mb-6">
+            <MudIcon Icon="@Icons.Material.Filled.FilterList" Color="Color.Primary" />
+            <MudText Typo="Typo.subtitle1" Class="fw-700 opa-70 uppercase">Search Parameters</MudText>
+        </div>
+        <MudGrid Spacing="3" Class="align-end">
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.caption" Class="fw-700 mb-2 opa-50 uppercase ml-1">VEHICLE FOCUS</MudText>
+                <TruckSelector @bind-Value="SelectedTruck" Filter="All" />
             </MudItem>
-        }
-    </MudGrid>
-}
-else if (ListView && collection.Any())
-{
-    <MudGrid Class="mt-5">
-        <MudItem xs="12">
-            <MudSimpleTable>
-                <thead>
-                    <tr>
-                        <th>Trip Number</th>
-                        <th>Trip Date</th>
-                        <th>Truck</th>
-                        <th>Driver</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in collection)
-                    {
-                        <tr>                            
-                            <td>@item.TripNumberDisplay</td>
-                            <td>@item.TripDate?.ToString("dd/MM/yyyy")</td>
-                            <td>@tripInfoDictionary[item.TripID].Truck</td>
-                            <td>@tripInfoDictionary[item.TripID].Driver</td>
-                            <td>
-                                <MudTooltip Text="View">
-                                    <MudFab style="font-size:5px" @onclick="@(()=> OpenTripCard(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-                                </MudTooltip>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </MudSimpleTable>
-        </MudItem>
-    </MudGrid>
-}
+            <MudItem xs="12" md="3">
+                <MudText Typo="Typo.caption" Class="fw-700 mb-2 opa-50 uppercase ml-1">MISSION IDENTIFIER</MudText>
+                <MudTextField @bind-Value="tripnumber" Placeholder="Trip #" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" Clearable="true"></MudTextField>
+            </MudItem>
+             <MudItem xs="12" md="2">
+                <MudText Typo="Typo.caption" Class="fw-700 mb-2 opa-50 uppercase ml-1">TEMPORAL RANGE</MudText>
+                <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudText Typo="Typo.caption" Class="fw-700 mb-2 opa-50 uppercase ml-1">TERMINAL DATE</MudText>
+                <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" />
+            </MudItem>
+            <MudItem xs="6" md="1" Class="d-flex justify-center flex-column align-center">
+                 <MudText Typo="Typo.caption" Class="fw-700 mb-2 opa-50 uppercase">VIEW</MudText>
+                 <MudToggleIconButton @bind-Toggled="@ListView"
+                                      Icon="@Icons.Material.Filled.ViewModule" Color="@Color.Primary"
+                                      ToggledIcon="@Icons.Material.Filled.ViewList" ToggledColor="@Color.Primary" Variant="Variant.Filled" Class="rounded-lg shadow-highlight" />
+            </MudItem>
+            <MudItem xs="12" Class="d-flex justify-end mt-4">
+                <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Radar" Class="px-10 rounded-pill shadow-highlight fw-700">EXECUTE SCAN</MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div style="display: flex; justify-content: center; align-items: center; min-height: 400px; width: 100%;" class="fade-in">
+            <LoaderComponent IsFullScreen="false" ShowLogo="false" Size="medium" LoadingText="Scanning Trips..." SubText="Retrieving logistics data" />
+        </div>
+    }
+    else if (!ListView && collection.Any())
+    {
+        <div class="d-flex justify-center mt-8 fade-in mb-4">
+            <MudPagination Color="Color.Primary" Count="@_totalPages" SelectedChanged="OnPageChanged" Selected="@_currentPage" Variant="Variant.Filled" Class="premium-pagination" />
+        </div>
+        <MudGrid Class="fade-in">
+            @foreach (var item in PaginatedCollection)
+            {
+                <MudItem xs="12" xl="6" lg="6" @key="item.TripID">
+                    <div class="admin-glass-card pa-0 overflow-hidden hover-scale transition-standard">
+                        <TripDetailsCard Trip="item" IsLocked="item.IsLocked" IsMileageOverride="item.IsMileageOverride"></TripDetailsCard>
+                    </div>
+                </MudItem>
+            }
+        </MudGrid>
+        <div class="d-flex justify-center mt-8 fade-in">
+            <MudPagination Color="Color.Primary" Count="@_totalPages" SelectedChanged="OnPageChanged" Selected="@_currentPage" Variant="Variant.Filled" Class="premium-pagination" />
+        </div>
+    }
+    else if (ListView)
+    {
+        <div class="admin-glass-card pa-0 overflow-hidden fade-in">
+            <MudTable ServerData="@ServerReload" T="TripModel" Elevation="0" Class="modern-admin-table" Hover="true" @ref="_table">
+                <HeaderContent>
+                    <MudTh><span class="admin-header-text">MISSION AUTH</span></MudTh>
+                    <MudTh><span class="admin-header-text">DEPLOYMENT DATE</span></MudTh>
+                    <MudTh><span class="admin-header-text">ASSET ASSIGNED</span></MudTh>
+                    <MudTh><span class="admin-header-text">OPERATIONAL LEAD</span></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">TELEMETRY</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Trip Number">
+                        <div class="d-flex align-center gap-2">
+                            <span class="admin-td-primary fw-800">@context.TripNumberDisplay</span>
+                            @if(context.IsLocked) { <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Color="Color.Error" /> }
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Trip Date">
+                        <span class="fw-700 opa-70">@context.TripDate?.ToString("dd MMM yyyy")</span>
+                    </MudTd>
+                    <MudTd DataLabel="Truck">
+                        <div class="d-flex align-center gap-2">
+                           <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" Class="opa-40" />
+                           <span class="fw-700">@(context.TruckID.HasValue && truckNames.ContainsKey(context.TruckID.Value) ? truckNames[context.TruckID.Value] : "")</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Driver">
+                         <div class="d-flex align-center">
+                            <MudAvatar Color="Color.Primary" Variant="Variant.Text" Size="Size.Small" Class="mr-3 fw-800 border-solid border-1">@(context.DriverID.HasValue && driverNames.ContainsKey(context.DriverID.Value) && !string.IsNullOrEmpty(driverNames[context.DriverID.Value]) ? driverNames[context.DriverID.Value].Substring(0,1).ToUpper() : "")</MudAvatar>
+                            <span class="fw-600">@(context.DriverID.HasValue && driverNames.ContainsKey(context.DriverID.Value) ? driverNames[context.DriverID.Value] : "")</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <MudButton OnClick="@(()=> OpenTripCard(context))" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ChevronRight" Class="fw-700">INSPECT</MudButton>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4 border-t border-solid border-white-10">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    }
+</div>
 
 @code {
 
+    private MudTable<TripModel> _table;
     public TruckModel SelectedTruck { get; set; }
     private List<TripModel> collection = new List<TripModel>();
     private string tripnumber = string.Empty;
     public DateTime? FromDate { get; set; } = null;
     public DateTime? ToDate { get; set; } = null;
     public bool ListView { get; set; }
-    private Dictionary<long?, TripInfoModel> tripInfoDictionary = new Dictionary<long?, TripInfoModel>();
+    
+    // Pagination variables
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private int _totalItems = 0;
+    private int _totalPages => (int)Math.Ceiling((double)_totalItems / _pageSize) == 0 ? 1 : (int)Math.Ceiling((double)_totalItems / _pageSize);
+    private IEnumerable<TripModel> PaginatedCollection => collection;
+
+    // Performance optimized lookup dictionaries
+    private Dictionary<int, string> truckNames = new Dictionary<int, string>();
+    private Dictionary<int, string> driverNames = new Dictionary<int, string>();
+    
+    private bool IsLoading = false;
 
     public async Task fetch()
     {
+        if (ListView && _table != null)
+        {
+            await _table.ReloadServerData();
+            return;
+        }
+    
+        IsLoading = true;
+        _currentPage = 1; 
+        StateHasChanged();
+        await Task.Delay(100);
+        await LoadPageData();
+    }
+    
+    private async Task OnPageChanged(int page)
+    {
+        if (_currentPage != page)
+        {
+            _currentPage = page;
+            IsLoading = true;
+            StateHasChanged();
+            await Task.Delay(10);
+            await LoadPageData();
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task LoadPageData(int? customPageSize = null)
+    {
+        int pSize = customPageSize ?? _pageSize;
         collection = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int branchID = int.Parse(brancIDString);
+        truckNames = new();
+        driverNames = new();
+
+        var authprovState = await auth.GetAuthenticationStateAsync();
+        int? branchID = authprovState.User.HasClaim(c => c.Type == "BranchID") ? (int?)Convert.ToInt32(authprovState.User.Claims.First(c => c.Type == "BranchID").Value) : null;
+
         if (string.IsNullOrEmpty(tripnumber) || (tripnumber.Length >= 3))
         {
-            await foreach (var item in tripIservice.SearchTrips(SelectedTruck?.TruckID, branchID, tripnumber, FromDate, ToDate))
+            try
             {
-                collection.Add(item);
-                if (item.TripID != null)
+                await foreach (var item in tripIservice.SearchTrips(SelectedTruck?.TruckID, branchID, tripnumber, FromDate, ToDate, _currentPage, pSize))
                 {
-                    var tripInfo = tripIservice.GetTripInfo(item.TripID);
-                    tripInfoDictionary[item.TripID] = tripInfo;
+                    collection.Add(item);
+                    if (item.TotalSearchCount > _totalItems) _totalItems = item.TotalSearchCount ?? 0;
                 }
+
+                if (!collection.Any()) _totalItems = 0;
+
+                // O(1) Unique ID Extraction for exactly this visible chunk
+                var distinctTruckIds = collection.Where(x => x.TruckID.HasValue).Select(x => x.TruckID.Value).Distinct();
+                var distinctDriverIds = collection.Where(x => x.DriverID.HasValue).Select(x => x.DriverID.Value).Distinct();
+
+                // Fetch missing unique trucks
+                foreach(var tId in distinctTruckIds)
+                {
+                    var t = Itruck.SelectByID(tId);
+                    if (t != null) truckNames[tId] = t.RegNo;
+                }
+
+                // Fetch missing unique drivers
+                foreach(var dId in distinctDriverIds)
+                {
+                    var d = Idriver.SelectByID(dId);
+                    if (d != null) driverNames[dId] = d.DriverName;
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add("Error loading data: " + ex.Message, Severity.Error);
             }
         }
         else
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
-                "Warning !",
-                "There should be atleast 3 numbers in Trip Number.");
+            bool? ResultModel = await DialogService.ShowMessageBoxAsync("Warning !", "There should be atleast 3 numbers in Trip Number.");
         }
+        IsLoading = false;
+    }
+
+    private async Task<TableData<TripModel>> ServerReload(TableState state, CancellationToken token)
+    {
+        _currentPage = state.Page + 1;
+        await LoadPageData(state.PageSize);
+        return new TableData<TripModel>() { TotalItems = _totalItems, Items = collection };
     }
 
     private async void OpenTripCard(TripModel Trip)
     {
         var parameters = new DialogParameters();
         parameters.Add("Trip", Trip);
-        var result = DialogService.Show<TripDetailsCard>(Trip.TripNumberDisplay.ToString() + " Details", parameters, new DialogOptions { MaxWidth = MaxWidth.Large });
+        var result = await DialogService.ShowAsync<TripDetailsCard>(Trip.TripNumberDisplay.ToString() + " Details", parameters, new DialogOptions { MaxWidth = MaxWidth.Large });
     }
 }
+

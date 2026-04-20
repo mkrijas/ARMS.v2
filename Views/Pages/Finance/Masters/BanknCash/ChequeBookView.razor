@@ -1,4 +1,4 @@
-﻿@page "/chequebook/{ID:int}"
+@page "/chequebook/{ID:int}"
 @using System.Threading;
 @inject IChequeBookService Iservice
 @inject IBankAccountOwnService Ibankservice
@@ -10,53 +10,129 @@
 @inject SignalRService signalRService
 @inject NavigationManager NavigationManager
 
+@if (_isLoading)
+{
+    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                        ShowLogo="false" 
+                        Size="medium" 
+                        LoadingText="Loading Bank Instruments" 
+                        SubText="Please wait..." />
+    </div>
+}
+else
+{
+    <div class="fade-in">
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Bank Instrument Inventory</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Monitor and manage physical cheque book inventory for <span class="fw-700">@ownBank.BankAccountInfo.BankTitle</span>. define series, track leaf utilization, and ensure systematic reconciliation of issued instruments.</MudText>
+                </div>
+                <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Class="admin-register-btn" OnClick="@(()=> OpenDialog(0, false, false))" Disabled="@_busy">REGISTER NEW BOOK</MudButton>
+            </div>
+        </div>
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<ChequeBookModel, bool>(search)" @bind-place="model">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">@ownBank.BankAccountInfo.BankTitle | Cheque Book</MudText>
-                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(0, false, false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchPurchase" Placeholder="Search Purchase order... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.StartingChequeNo)">Cheque Book</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.CreatedDate)" InitialDirection="SortDirection.Descending">Created Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.PendingLeaves)">Pending</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.ActiveLeaves)">Active</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.CashedLeaves)">Cashed</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.CancelledLeaves)">Cancelled</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.DeletedLeaves)">Deleted</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="StartingChequeNo">@context.StartingChequeNo - @context.EndingChequeNo</MudTd>
-                <MudTd DataLabel="CreatedDate">@context.CreatedDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="PendingLeaves">@context.PendingLeaves</MudTd>
-                <MudTd DataLabel="ActiveLeaves">@context.ActiveLeaves</MudTd>
-                <MudTd DataLabel="CashedLeaves">@context.CashedLeaves</MudTd>
-                <MudTd DataLabel="CancelledLeaves">@context.CancelledLeaves</MudTd>
-                <MudTd DataLabel="DeletedLeaves">@context.DeletedLeaves</MudTd>
-                <MudTd DataLabel="">
-                    <MudIconButton OnClick="@(()=> OpenDialog(context.ChequeBookID, true, false))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelID != null)" OnClick="@(()=> OpenDialog(context.ChequeBookID, false, false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelID != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />                   
-                    @if (@context.AuthLevelID != 99)
-                    {
-                        <MudIconButton OnClick="@(()=> OpenDialog(context.ChequeBookID, true, true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-                    }
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+        <div class="admin-glass-card mb-6 pa-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+                <div style="flex-grow: 1; min-width: 300px;">
+                    <MudTextField @bind-Value="searchPurchase" Placeholder="Search by cheque number series..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Clearable="true" />
+                </div>
+                <div class="d-flex align-center gap-4 bg-glass rounded-pill px-4 py-1">
+                    <MudCheckBox T="bool" Label="Audit Ready (Approved)" ValueChanged="((bool value)=>ApprovedChanged(value))" Value="@IsApproved" Size="Size.Small" Color="Color.Primary" Class="fw-600"></MudCheckBox>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <MudTable Items="@collection" Elevation="0" Class="modern-admin-table" Hover="true" RowStyleFunc="TableRowStyle" Filter="new Func<ChequeBookModel, bool>(search)">
+                <HeaderContent>
+                    <MudTh><span class="admin-header-text">CHEQUE SERIES</span></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<ChequeBookModel, object>(x=> x.CreatedDate)" InitialDirection="SortDirection.Descending"><span class="admin-header-text">ISSUE DATE</span></MudTableSortLabel></MudTh>
+                    <MudTh><span class="admin-header-text">UTILIZATION</span></MudTh>
+                    <MudTh><span class="admin-header-text">STATUS FLOW</span></MudTh>
+                    <MudTh Style="text-align: right;"><span class="admin-header-text">ACTIONS</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Series">
+                        <div class="d-flex align-center gap-3">
+                            <div class="admin-icon-square-vibrant small accent-indigo">
+                                <MudIcon Icon="@Icons.Material.Filled.Payments" Size="Size.Small" />
+                            </div>
+                            <div class="d-flex flex-column">
+                                <span class="fw-700 admin-td-primary">#@context.StartingChequeNo - #@context.EndingChequeNo</span>
+                                <span class="small opa-50 fw-600 uppercase">Physical Book ID: @context.ChequeBookID</span>
+                            </div>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Issued">
+                        <span class="fw-600">@context.CreatedDate?.ToString("dd MMM yyyy")</span>
+                    </MudTd>
+                    <MudTd DataLabel="Utilization">
+                        <div class="d-flex align-center gap-1">
+                            <MudTooltip Text="Pending Utilization">
+                                <MudChip T="string" Color="Color.Default" Variant="Variant.Filled" Size="Size.Small" Class="fw-700 font-monospace">@context.PendingLeaves</MudChip>
+                            </MudTooltip>
+                            <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" Class="opa-20" />
+                            <MudTooltip Text="Active Leaves">
+                                <MudChip T="string" Color="Color.Info" Variant="Variant.Filled" Size="Size.Small" Class="fw-700 font-monospace">@context.ActiveLeaves</MudChip>
+                            </MudTooltip>
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="opa-20" />
+                            <MudTooltip Text="Cashed / Utilized">
+                                <MudChip T="string" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small" Class="fw-700 font-monospace">@context.CashedLeaves</MudChip>
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Waste">
+                        <div class="d-flex align-center gap-2">
+                            <div class="d-flex align-center gap-1">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error" Class="opa-40" />
+                                <span class="fw-700 opa-40">@context.CancelledLeaves</span>
+                            </div>
+                            <div class="d-flex align-center gap-1 text-error">
+                                <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Size="Size.Small" Class="opa-40" />
+                                <span class="fw-700 opa-40">@context.DeletedLeaves</span>
+                            </div>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div class="d-flex justify-end gap-1">
+                            <MudTooltip Text="Manage Leaves">
+                                <MudIconButton OnClick="@(()=> OpenDialog(context.ChequeBookID, true, false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Inventory2" Size="Size.Small" Variant="Variant.Text" />
+                            </MudTooltip>
+                            @if (context.AuthLevelID == null)
+                            {
+                                <MudTooltip Text="Edit Series">
+                                    <MudIconButton OnClick="@(()=> OpenDialog(context.ChequeBookID, false, false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                                <MudTooltip Text="Burn / Delete Series">
+                                    <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+                            @if (@context.AuthLevelID != 99)
+                            {
+                                <MudTooltip Text="Authorize Instrument">
+                                    <MudIconButton OnClick="@(()=> OpenDialog(context.ChequeBookID, true, true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Variant="Variant.Text" />
+                                </MudTooltip>
+                            }
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <div class="pa-4">
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </div>
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+}
+
 
 @code {
+
+    private bool _isLoading = true;
+    private DateTime _loadStartTime;
 
     [Parameter]
     public int ID { get; set; }
@@ -73,6 +149,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadStartTime = DateTime.Now;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasEditPermission = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasDeletePermission = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
@@ -80,6 +157,17 @@
         ownBank = Ibankservice.SelectByID(OwnBankAccountID);
         model = new();
         await GetAll(IsApproved);
+        await EnsureMinimumLoadTime();
+        _isLoading = false;
+    }
+
+    private async Task EnsureMinimumLoadTime()
+    {
+        var elapsed = (DateTime.Now - _loadStartTime).TotalMilliseconds;
+        if (elapsed < 100)
+        {
+            await Task.Delay(100 - (int)elapsed);
+        }
     }
 
     async Task ApprovedChanged(bool value)
@@ -109,7 +197,7 @@
     {
         if (HasDeletePermission)
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Warning !",
                 "Are you sure, you want to delete - " + model.StartingChequeNo + "-" + model.EndingChequeNo + " ?");
             if (result == true)
@@ -123,7 +211,7 @@
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
+            bool? result = await DialogService.ShowMessageBoxAsync(
                 "Permission denied!",
                 "You don't have any permission to delete PurchaseOrder.");
         }

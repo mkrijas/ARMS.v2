@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using FluentValidation;
 using System.Reflection;
 
@@ -135,13 +135,12 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@DriverID", DriverID),
                new SqlParameter("@Operation", "ByID"),
-            };
-            DriverModel model = new DriverModel();
+            };            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
             {
-                model = GetModel(dr);
+                return GetModel(dr);
             }
-            return model;
+           return null;
         }
 
         // Method to select driver data for Excel export

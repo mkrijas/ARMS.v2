@@ -1,62 +1,60 @@
-﻿@inject IOpTranService Itransaction
+@inject IOpTranService Itransaction
 @inject ITariffService Itariff
 
 @inject IDialogService DialogService
 
-@foreach (var item in Transactions)
-{
-    <div class="mt-4">
+<div class="d-flex flex-column gap-6">
+    @foreach (var item in Transactions)
+    {
+        <div class="admin-glass-card pa-0 overflow-hidden">
+            <div class="pa-4 d-flex align-center justify-space-between" style="background: rgba(var(--mud-palette-primary-rgb), 0.04); border-bottom: 1px solid rgba(0,0,0,0.05);">
+                <div class="d-flex align-center gap-3">
+                    <div class="pa-2 rounded-lg bg-primary-light">
+                        <MudIcon Icon="@(Trip != null ? Icons.Material.Filled.LocalShipping : Icons.Material.Filled.Build)" Color="Color.Primary" Size="Size.Small" />
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Class="admin-title mb-0" Style="font-size: 1.1rem;">
+                            @(Trip != null ? $"Expedition {Trip.TripPrefix}{Trip.TripNumber}" : $"Jobcard {Jobcard.JobcardNumber}")
+                        </MudText>
+                        <MudText Typo="Typo.caption" Class="admin-td-secondary">Transaction Date: @item.TransactionDate?.ToString("dd MMM yyyy")</MudText>
+                    </div>
+                </div>
+                <MudTooltip Text="Edit Statement">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="(()=>EditTransaction(item))" Size="Size.Small" Variant="Variant.Outlined" />
+                </MudTooltip>
+            </div>
 
-        @if (Trip != null)
-        {
-            <MudText Typo="Typo.h5">
-                TripNumber: @{
-                    @Trip.TripPrefix
-                    @Trip.TripNumber
-                }
-            </MudText>
-        }
-        else if (Jobcard != null)
-        {
-            <MudText Typo="Typo.h5">
-                Jobcard: @Jobcard.JobcardNumber
-            </MudText>
-        }
-
-        <div class="d-flex">
-            <MudText Typo="Typo.h5" Class="text-secondary">
-                Date of Entry:  @item.TransactionDate?.ToString("dd-MMM-yyyy")
-            </MudText>
-            <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="(()=>EditTransaction(item))"></MudIconButton>
-        </div>
-        <MudSimpleTable Style="overflow-x: auto;">
-            <thead>
-                <tr>
-                    <th>Head</th>
-                    <th>Qty</th>
-                    <th>As Per Norms</th>
-                    <th>Actually Incurred</th>
-                    <th>Difference</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var sub in item.Transactions)
-                {
+            <MudSimpleTable Dense="true" Hover="true" Elevation="0" Class="modern-admin-table mb-0">
+                <thead>
                     <tr>
-                        <td>@(TariffTypes.First(x => x.TariffTypeID == sub.TariffTypeID).TariffTypeName)</td>
-                        <td>@{
-
-                                @sub.Quantity @sub.Unit
-                            }</td>
-                        <td>@sub.AmountAsPerNorms?.ToString("C2")</td>
-                        <td>@((sub.Sign * sub.Amount)?.ToString("C2"))</td>
-                        <td>@(Math.Round((sub.Amount-sub.AmountAsPerNorms).Value,2))</td>
+                        <th class="admin-header-text">COST CENTER / HEAD</th>
+                        <th class="admin-header-text">QUANTITY</th>
+                        <th class="admin-header-text">NORMATIVE AMT</th>
+                        <th class="admin-header-text">ACTUAL INCURRED</th>
+                        <th class="admin-header-text text-right">VARIANCE</th>
                     </tr>
-                }
-            </tbody>
-        </MudSimpleTable>
-    </div>
-}
+                </thead>
+                <tbody>
+                    @foreach (var sub in item.Transactions)
+                    {
+                        var variance = (sub.Amount ?? 0) - (sub.AmountAsPerNorms ?? 0);
+                        <tr>
+                            <td><MudText Typo="Typo.body2" Class="admin-td-primary">@(TariffTypes.FirstOrDefault(x => x.TariffTypeID == sub.TariffTypeID)?.TariffTypeName ?? "Unknown Head")</MudText></td>
+                            <td>@sub.Quantity @sub.Unit</td>
+                            <td><MudText Typo="Typo.body2" Class="admin-td-secondary">@sub.AmountAsPerNorms?.ToString("N2")</MudText></td>
+                            <td><MudText Typo="Typo.body2" Class="admin-td-amount">@((sub.Sign * sub.Amount)?.ToString("N2"))</MudText></td>
+                            <td class="text-right">
+                                <MudText Typo="Typo.body2" Color="@(variance > 0 ? Color.Error : Color.Success)" Style="font-weight: 600;">
+                                    @(variance > 0 ? "+" : "")@variance.ToString("N2")
+                                </MudText>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </div>
+    }
+</div>
 
 @code {
 
@@ -114,10 +112,10 @@
         if(Jobcard != null)
             parameters.Add("Jobcard", Jobcard);
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-        var dialog = DialogService.Show<TransactionDialog>("Inc/Exp", parameters, maxWidth);
+        var dialog = await DialogService.ShowAsync<TransactionDialog>("Inc/Exp", parameters, maxWidth);
         var result = await dialog.Result;
         var ev = result.Data;
-        if (!result.Cancelled)
+        if (!result.Canceled)
         {
             Refresh();
         }

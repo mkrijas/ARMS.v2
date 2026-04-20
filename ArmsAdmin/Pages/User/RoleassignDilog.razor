@@ -1,4 +1,4 @@
-﻿@page "/rolesadd"
+@page "/rolesadd"
 @inject IUserService Iservice
 @inject IRoleService<RoleModel> Irole
 @inject IBranchService bsr
@@ -8,43 +8,191 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-<MudDialog>
+<MudDialog Class="admin-dialog-glass">
     <DialogContent>
-        <MudGrid>
-            <MudItem xs="12" md="12">
-                <h5>Assign new role for @UserRmodel.UserName</h5>
-                <hr />
-                <div class="d-flex flex-column" style="height:70vh; overflow-x:auto;">
-                    <MudCheckBox @bind-Checked="@selectAllBranches" Label="Set All Branches" />
-                    <MudTable Items="@collection" Elevation="0">
-                        <HeaderContent>
-                            <MudTh Style="display:none;"><MudTableSortLabel SortBy="new Func<UserBranchRoleModel, object>(x=> x.IsSelected)" InitialDirection="SortDirection.Ascending">Check</MudTableSortLabel></MudTh>
-                            <MudTh><MudTableSortLabel SortBy="new Func<UserBranchRoleModel, object>(x=> x.Branch)" InitialDirection="SortDirection.Ascending">Branch</MudTableSortLabel></MudTh>
-                            <MudTh><MudTableSortLabel SortBy="new Func<UserBranchRoleModel, object>(x=> x.Role)" InitialDirection="SortDirection.Ascending">Role</MudTableSortLabel></MudTh>
-                            <MudTh>Actions</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="Select" Style="display:none;"><MudCheckBox @bind-Checked="@context.IsSelected" Disabled="true"></MudCheckBox></MudTd>
-                            <MudTd DataLabel="Branch">@context.Branch.BranchName</MudTd>
-                                <MudTd DataLabel="RoleNo">
-                                    <MudSelect T="string" Label="Select Role" Value="@context.Role.RoleID" ValueChanged="((e)=> OnRoleIdSet(e,context))" AdornmentColor="Color.Secondary">
-                                        @foreach (var item in rolecollection)
-                                    {
-                                        <MudSelectItem Value="@item.RoleID">@item.RoleID</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudTd>
-                            <MudTd DataLabel="Delete">
-                                <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTd>
-                        </RowTemplate>
-                    </MudTable>
+        <div class="header-section mb-6">
+            <div class="d-flex align-center">
+                <div class="icon-badge primary-badge mr-4">
+                    <MudIcon Icon="@Icons.Material.Filled.AssignmentInd" Size="Size.Large" />
                 </div>
-            </MudItem>
-        </MudGrid>
-        <hr />
+                <div>
+                    <MudText Typo="Typo.h5" Class="admin-title"><b>Role Assignment</b></MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle" Style="color: #667085;">
+                        Configure branch-specific roles for <b>@UserRmodel.UserName</b>
+                    </MudText>
+                </div>
+            </div>
+            <div class="title-accent mt-4"></div>
+        </div>
+
+        <div class="admin-glass-card pa-4" style="height:65vh; overflow:hidden; display: flex; flex-direction: column;">
+            <div class="px-4 py-2 mb-2 d-flex align-center justify-space-between" style="background: rgba(54, 117, 136, 0.05); border-radius: 12px;">
+                <MudCheckBox T="bool" @bind-Checked="@selectAllBranches" Label="Apply role to all branches" Color="Color.Primary" Dense="true" />
+                <MudText Typo="Typo.caption" Style="color: #367588; font-weight: 600;">@collection.Count Branches Available</MudText>
+            </div>
+
+            <div style="flex-grow: 1; overflow-y: auto; padding-right: 4px;">
+                <MudTable Items="@collection" Elevation="0" Dense="true" Hover="true" Bordered="false" Striped="false" Class="modern-admin-table">
+                    <HeaderContent>
+                        <MudTh Style="width: 250px;">Branch Name</MudTh>
+                        <MudTh>Assigned Role</MudTh>
+                        <MudTh Style="width: 80px; text-align: center;">Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Branch">
+                            <MudText Typo="Typo.body2" Style="font-weight: 600; color: #141A46;">@context.Branch.BranchName</MudText>
+                        </MudTd>
+                        <MudTd DataLabel="Role">
+                            <MudAutocomplete T="string" Value="@context.Role.RoleID" 
+                                           ValueChanged="((e)=> OnRoleIdSet(e,context))"
+                                           SearchFunc="@SearchRoles" 
+                                           Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" 
+                                           Placeholder="Select..." Class="role-select" 
+                                           AnchorOrigin="Origin.BottomCenter" ShowProgressIndicator="true"
+                                           PopOverClass="admin-popover-glass" 
+                                           CoerceText="true" 
+                                           ResetValueOnEmptyText="true"
+                                           AdornmentIcon="@Icons.Material.Filled.ArrowDropDown"
+                                           Adornment="Adornment.End" />
+                        </MudTd>
+                        <MudTd DataLabel="Actions" Style="text-align: center;">
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" 
+                                           OnClick="@(()=> Delete(context))" Size="Size.Small" 
+                                           Class="delete-btn" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </div>
+        </div>
     </DialogContent>
 </MudDialog>
+
+<style>
+    .admin-dialog-glass {
+        background: rgba(255, 255, 255, 0.8) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border-radius: 32px !important;
+    }
+
+    /* Popover styles - removing messy layout */
+    .admin-popover-glass {
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        border: 1px solid rgba(54, 117, 136, 0.15) !important;
+        border-radius: 12px !important;
+        margin-top: 4px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+        max-height: 300px !important;
+        overflow: hidden !important;
+    }
+
+    .admin-popover-glass .mud-list {
+        padding: 4px !important;
+    }
+
+    .admin-popover-glass .mud-list-item {
+        border-radius: 8px !important;
+        margin: 2px 0 !important;
+        padding: 8px 12px !important;
+        transition: all 0.2s ease;
+    }
+
+    .admin-popover-glass .mud-list-item:hover {
+        background: rgba(54, 117, 136, 0.08) !important;
+        color: #367588 !important;
+    }
+
+    .admin-title {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        color: #141A46;
+        letter-spacing: -0.5px;
+    }
+
+    .title-accent {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, #367588 0%, rgba(54, 117, 136, 0.1) 100%);
+    }
+
+    .icon-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .primary-badge { 
+        background: rgba(54, 117, 136, 0.1); 
+        color: #367588;
+    }
+
+    .admin-glass-card {
+        background: rgba(255, 255, 255, 0.5) !important;
+        border: 1px solid rgba(54, 117, 136, 0.1) !important;
+        border-radius: 20px !important;
+    }
+
+    /* Table Styles */
+    .modern-admin-table .mud-table-head {
+        background: transparent !important;
+    }
+
+    .modern-admin-table .mud-th {
+        font-weight: 700 !important;
+        color: #64748b !important;
+        text-transform: uppercase;
+        font-size: 0.7rem !important;
+        letter-spacing: 1px;
+        border-bottom: 2px solid rgba(54, 117, 136, 0.05) !important;
+        padding: 12px 16px !important;
+    }
+
+    .modern-admin-table .mud-table-row:hover {
+        background: rgba(54, 117, 136, 0.02) !important;
+    }
+
+    .modern-admin-table .mud-td {
+        padding: 12px 16px !important; /* Increased padding */
+        border-bottom: 1px solid rgba(54, 117, 136, 0.03) !important;
+    }
+
+    .role-select {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 8px;
+        width: 100% !important;
+        min-width: 140px; /* Ensure enough width for text */
+    }
+
+    .role-select .mud-input {
+        padding-left: 8px !important;
+        font-weight: 600;
+        color: #141A46;
+    }
+
+    .delete-btn:hover {
+        background: rgba(244, 67, 54, 0.1) !important;
+    }
+
+    /* Scrollbar cleanup */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.02);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(54, 117, 136, 0.2);
+        border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(54, 117, 136, 0.4);
+    }
+</style>
 
 @code {
 
@@ -59,7 +207,7 @@
     private bool selectAllBranches;
     private UserBranchRoleModel usbr = new UserBranchRoleModel();
     private List<UserBranchRoleModel> collection = new List<UserBranchRoleModel>();
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
 
     // Method to cancel the dialog
     void Cancel()
@@ -67,8 +215,17 @@
         MudDialog.Cancel();
     }
 
+    // Method to search roles for autocomplete
+    private async Task<IEnumerable<string>> SearchRoles(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return rolecollection.Select(x => x.RoleID);
+        return rolecollection.Where(x => x.RoleID.Contains(value, StringComparison.OrdinalIgnoreCase))
+                             .Select(x => x.RoleID);
+    }
+
     // Method to set the role ID for a specific branch or all branches
-    public void OnRoleIdSet(string RoleId, UserBranchRoleModel SelectedModel)
+    public async Task OnRoleIdSet(string RoleId, UserBranchRoleModel SelectedModel)
     {
         if (selectAllBranches)
         {
@@ -77,12 +234,13 @@
             {
                 branchRoleModel.Role.RoleID = RoleId;
             }
-            OnValidSubmit(null); // Pass null or a default value to indicate "All Branches" role change
+            StateHasChanged(); // Force UI update for all rows
+            await OnValidSubmit(null); 
         }
         else if ((!String.IsNullOrWhiteSpace(RoleId)) && SelectedModel != null)
         {
             SelectedModel.Role.RoleID = RoleId;
-            OnValidSubmit(SelectedModel); // Call the submission method with the selected model
+            await OnValidSubmit(SelectedModel); 
         }
     }
 
@@ -113,21 +271,23 @@
     // Method to delete a user-branch-role assignment
     public async Task Delete(UserBranchRoleModel Context)
     {
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
                "Warning !",
-               "Are you sure, you want to delete ?");
+               "Are you sure, you want to delete ?",
+               yesText: "Delete", cancelText: "Keep it");
         if (result == true)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User.Identity.Name;
             Iservice.DeleteBranchesNRoles(Context, user); // Call the service to delete the assignment
             snackbar.Add("Deleted Successfully", Severity.Success);
-            GetAll();
+            await GetAll();
+            StateHasChanged();
         }
     }
 
     // Method to handle the submission of role assignmentso
-    private async void OnValidSubmit(UserBranchRoleModel context)
+    private async Task OnValidSubmit(UserBranchRoleModel context)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
