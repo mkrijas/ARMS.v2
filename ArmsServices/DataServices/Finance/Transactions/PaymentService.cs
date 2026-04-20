@@ -349,7 +349,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public PagedResult<PaymentMemoModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved)
+        public PagedResult<PaymentMemoModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved, bool IsInterBranch = false )
         {
             List<SqlParameter> parameters = new()
             {
@@ -359,6 +359,7 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@PageSize", pageSize),
                 new SqlParameter("@Searchterm", search ?? ""),
                 new SqlParameter("@IsApproved", _IsApproved),
+                new SqlParameter("@IsInterBranch", IsInterBranch),
             };
             List<PaymentMemoModel> list = [];
             int? countOf = 0;
@@ -373,6 +374,11 @@ namespace ArmsServices.DataServices
                 Items = list,
                 TotalRecords = countOf
             };
+        }
+
+        public PagedResult<PaymentMemoModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved)
+        {
+            throw new NotImplementedException();
         }
     }
 }

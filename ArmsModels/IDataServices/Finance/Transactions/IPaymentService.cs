@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         IEnumerable<PaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
         IEnumerable<PaymentMemoModel> SelectInitiated(int? PaymentInitiatedID);
         IEnumerable<PaymentMemoModel> SelectPending(int? BranchID, int? PartyID = null);
-        IEnumerable<BillsPaidModel> GetBills(int? PID);        
+        IEnumerable<BillsPaidModel> GetBills(int? PID);
+        public PagedResult<PaymentMemoModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved, bool IsInterBranch = false);
     }
 }
