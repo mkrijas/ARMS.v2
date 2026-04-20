@@ -11,12 +11,15 @@ namespace MobileAPI.Controllers
     {
         private readonly IPurchaseOrderService _purchaseOrderService;
         private readonly IInventoryGrnService _inventoryGrnService;
+        private readonly IInventoryItemService _InventoryItemService;
 
         public InventoryController(IPurchaseOrderService purchaseOrderService,
-                                   IInventoryGrnService inventoryGrnService)
+                                   IInventoryGrnService inventoryGrnService,
+                                   IInventoryItemService inventoryItemService)
         {
             _purchaseOrderService = purchaseOrderService;
             _inventoryGrnService = inventoryGrnService;
+            _InventoryItemService = inventoryItemService;
         }       
 
         //Pending PO Select
@@ -75,6 +78,15 @@ namespace MobileAPI.Controllers
             IEnumerable<InventoryItemEntryModel> GrnEntries;
             GrnEntries = _inventoryGrnService.GetItemEntries(GrnID).ToList();
             return GrnEntries;
+        }
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<InventoryItemStockModel> GetCurrentStock(int? StoreID, int? ItemID)
+        {
+            IEnumerable<InventoryItemStockModel> InventoryItemStockCollection;
+            InventoryItemStockCollection = _InventoryItemService.GetCurrentStock(StoreID, ItemID).ToList();
+            return InventoryItemStockCollection;
         }
     }
 }

@@ -6,7 +6,7 @@ using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
-//using newSqlDbType = ModernSql::Microsoft.Data.SqlClient.common;
+using System.Net.Http;
 
 
 
@@ -266,7 +266,7 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-
+                
         // Method to get trip information
         public TripInfoModel GetTripInfo(long? TripID)
         {
@@ -335,6 +335,90 @@ namespace ArmsServices.DataServices
                     TariffTypeName = dr.GetString("TariffTypeName"),
                 };
             }
+        }
+
+        IEnumerable<NeutralRunningEventModel> ITripService.GetNeutralRunningEvents(int? TruckID, DateTime? FromDate, DateTime? ToDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@FromDate", FromDate),
+               new SqlParameter("@ToDate", ToDate)
+            };
+
+            foreach (var reader in Iservice.GetDataReader("[usp.NeutralRunning.Select]", parameters))
+            {
+                yield return GetNeutralRunningEvents(reader);
+            }
+        }
+
+        public async Task<IEnumerable<NeutralRunningEventModel>> GetNeutralRunningEventsAsync(int? TruckID, DateTime? FromDate, DateTime? ToDate)
+        {
+            var list = ((ITripService)this).GetNeutralRunningEvents(TruckID, FromDate, ToDate).ToList();
+
+            var fetchTasks = new List<Task>();
+            foreach (var item in list)
+            {
+                fetchTasks.Add(Task.Run(async () =>
+                {
+                    item.StartLocation = await GetAddress(item.StartLat, item.StartLng);
+                    item.EndLocation = await GetAddress(item.EndLat, item.EndLng);
+                }));
+            }
+
+            await Task.WhenAll(fetchTasks);
+            return list;
+        }
+
+        private NeutralRunningEventModel GetNeutralRunningEvents(IDataRecord reader)
+        {
+            var startLat = reader.GetDouble(reader.GetOrdinal("StartLat"));
+            var startLng = reader.GetDouble(reader.GetOrdinal("StartLng"));
+            var endLat = reader.GetDouble(reader.GetOrdinal("EndLat"));
+            var endLng = reader.GetDouble(reader.GetOrdinal("EndLng"));
+
+            return new NeutralRunningEventModel
+            {
+                REGN_NUMBER = reader.GetString("REGN_NUMBER"),
+                StartTime = reader.GetDateTime("StartTime"),
+                EndTime = reader.GetDateTime("EndTime"),
+                DurationSeconds = reader.GetDecimal("DurationSeconds"),
+                DurationMinutes = reader.GetDecimal("DurationMinutes"),
+                StartLat = startLat,
+                StartLng = startLng,
+                EndLat = endLat,
+                EndLng = endLng,
+                DistanceKM = reader.GetDecimal("DistanceKM"),
+            };
+        }
+
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _locationCache = new();
+
+        public async Task<string> GetAddress(double lat, double lng)
+        {
+            var cacheKey = $"{Math.Round(lat, 3)},{Math.Round(lng, 3)}";
+            if (_locationCache.TryGetValue(cacheKey, out string cachedAddress))
+            {
+                return cachedAddress;
+            }
+
+            var apiKey = "AIzaSyCvBqso9Nzx2cIcZsnG4zb24fkgLwSHmys";
+
+            var url = $"https://maps.googleapis.com/maps/api/geocode/json?latlng={lat},{lng}&key={apiKey}";
+
+            using var client = new HttpClient();
+            var response = await client.GetStringAsync(url);
+
+            dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(response);
+
+            if (json.status == "OK")
+            {
+                var formattedAddress = (string)json.results[0].formatted_address;
+                _locationCache.TryAdd(cacheKey, formattedAddress);
+                return formattedAddress;
+            }
+
+            return "Unknown Location";
         }
 
         public IEnumerable<TripInfoModel> GetTripsByTruckID(int? TruckID, DateTime? FromDate, DateTime? ToDate)

@@ -179,4 +179,20 @@ namespace ArmsModels.BaseModels
         public long? KMReadingDiff { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
+
+    public class NeutralRunningEventModel
+    {
+        public string REGN_NUMBER { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
+        public decimal? DurationSeconds { get; set; }
+        public decimal? DurationMinutes { get; set; }
+        public double StartLat { get; set; }
+        public double StartLng { get; set; }
+        public double EndLat { get; set; }
+        public double EndLng { get; set; }
+        public decimal? DistanceKM { get; set; }
+        public string StartLocation { get; set; }
+        public string EndLocation { get; set; }
+    }
 }

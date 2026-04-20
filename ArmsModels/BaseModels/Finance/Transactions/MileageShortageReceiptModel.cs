@@ -29,7 +29,9 @@ namespace ArmsModels.BaseModels
         public int? DriverID { get; set; }
         public decimal? AllottedMileage { get; set; }
         public decimal? AllottedDistance { get; set; }
-        public decimal? FuelPrice { get; set; }        
+        public decimal? FuelPrice { get; set; }  
+        public decimal? NeutralKM { get; set; }  
+        public decimal? NeutralAmount { get; set; } = 0;
         public override decimal? TotalAmount { get; set; } = 0;
         public decimal? AllowanceAmount { get; set; } = 0;
         public int? CostCenter { get; set; }

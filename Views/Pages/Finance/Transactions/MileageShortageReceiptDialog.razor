@@ -173,6 +173,19 @@
                 model.RunningKM = info.RunKM;
                 model.Narration = string.Format("Trip : {0}; Truck : {1}; Driver : {2};", info.TripNumber, info.Truck, info.Driver);
                 model.AllottedDistance = info.SettledKm;
+
+                var tripModel = tripService.Select(model.TripID);
+                if (tripModel != null && tripModel.TruckID != null)
+                {
+                    var eventList = tripService.GetEventList(model.TripID).ToList();
+                    if (eventList.Any(x => x.EventDateTime.HasValue))
+                    {
+                        var fromDate = eventList.Where(x => x.EventDateTime.HasValue).Min(x => x.EventDateTime);
+                        var toDate = eventList.Where(x => x.EventDateTime.HasValue).Max(x => x.EventDateTime);
+                        var events = tripService.GetNeutralRunningEvents(tripModel.TruckID, fromDate, toDate).ToList();
+                        model.NeutralKM = events.Sum(x => x.DistanceKM) ?? 0;
+                    }
+                }
             }
             model.NatureOfTransaction = "Mileage Shortage";
             model.BranchID = branchID;
@@ -181,6 +194,12 @@
         {
 
         }
+
+        if (model.NeutralKM == null)
+        {
+            model.NeutralKM = 0;            
+        }
+
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
@@ -321,7 +340,7 @@
         }
         var fuelConsumed = model.AllottedMileage != 0 ? (model.AllottedDistance / model.AllottedMileage) : 0;
         var fuelDifference = model.ConsumedFuel - fuelConsumed;
-        model.TotalAmount = Math.Round(Convert.ToDecimal(fuelDifference * model.FuelPrice), 0);      
+        model.TotalAmount = Math.Round(Convert.ToDecimal(fuelDifference * model.FuelPrice), 0) + model.NeutralAmount;
         validationMessageStore.Clear();
         editContext.NotifyValidationStateChanged();
     }
