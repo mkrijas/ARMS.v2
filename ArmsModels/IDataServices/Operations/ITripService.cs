@@ -27,5 +27,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GcTariffModel> GetTariffs(long? TripID);
         IEnumerable<EventCardModel> GetEventList(long? TripID);
         IEnumerable<TripInfoModel> GetTripsByTruckID(int? TruckID, DateTime? FromDate, DateTime? ToDate);
+        IEnumerable<NeutralRunningEventModel> GetNeutralRunningEvents(int? TruckID, DateTime? FromDate, DateTime? ToDate);
+        Task<IEnumerable<NeutralRunningEventModel>> GetNeutralRunningEventsAsync(int? TruckID, DateTime? FromDate, DateTime? ToDate);
     }
 }
