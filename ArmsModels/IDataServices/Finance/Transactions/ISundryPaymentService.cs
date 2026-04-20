@@ -12,6 +12,7 @@ namespace ArmsServices.DataServices
     public interface ISundryPaymentService : IbaseInterface<SundryPaymentModel>
     {        
         IEnumerable<SundryPaymentModel> Select();       
-        IEnumerable<SundryPaymentEntryModel> GetEntries(int? SID);        
+        IEnumerable<SundryPaymentEntryModel> GetEntries(int? SID);
+        public PagedResult<SundryPaymentModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved, bool IsInterBranch = false);
     }
 }
