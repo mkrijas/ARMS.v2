@@ -29,7 +29,9 @@
         <CustomContent>
             @if (!ReadOnly && !fnames.Any())
             {
-                <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.CloudUpload">Upload Files</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" 
+                StartIcon="@Icons.Material.Filled.CloudUpload"
+                OnClick="@context.OpenFilePickerAsync">Upload Files</MudButton>
             }
         </CustomContent>
         <SelectedTemplate>
@@ -79,17 +81,29 @@
     [Parameter] public bool ReadOnly { get; set; } = false;
     private List<string> fnames = new();
 
-    [Parameter]
-    public string FilePath
+    private string _filepath
     {
-        get => _filepath;
+        get => FilePath;
         set
         {
-            if (_filepath == value) return;
-            _filepath = value;
+            if (FilePath == value) return;
+            FilePath = value;
             FilePathChanged.InvokeAsync(value);
         }
     }
+
+    [Parameter]
+    public string FilePath{get;set;}    
+
+    [Parameter]
+    public TransactionBaseModel model { get; set; }
+    [Parameter]
+    public EventCallback<string> FilePathChanged { get; set; }
+
+    
+
+    [Parameter]
+    public EventCallback<bool> OnFileRemoved { get; set; }
 
     protected override void OnInitialized()
     {
@@ -117,8 +131,7 @@
         }
     }
 
-    [Parameter]
-    public EventCallback<bool> OnFileRemoved { get; set; }
+  
 
     protected async Task Remove()
     {
@@ -158,17 +171,12 @@
         }
     }
 
-    [Parameter]
-    public TransactionBaseModel model { get; set; }
-    [Parameter]
-    public EventCallback<string> FilePathChanged { get; set; }
-
-    private string _filepath;
+  
 
     private async Task<string> UploadImage(IBrowserFile file, string filename, string physicalPath)
     {
         string DerivedFileName = null;
-        FilePath = null;
+        _filepath = null;
         if (file != null && file.Size > 0)
         {
             if (filename == "Original")
@@ -185,9 +193,9 @@
                 System.IO.Directory.CreateDirectory(physicalPath);
             }
             string filePath = Path.Combine(physicalPath, DerivedFileName);
-            if (FilePath != null)
+            if (_filepath != null)
             {
-                string oldfileName = Path.Combine(_env.WebRootPath, FilePath);
+                string oldfileName = Path.Combine(_env.WebRootPath, _filepath);
                 if (File.Exists(oldfileName))
                 {
                     File.Delete(oldfileName);
@@ -330,14 +338,14 @@
             var result = await UploadImage(file, File_Name, PhysicalPath);
             if (result != null)
             {
-                FilePath = Path.Combine(VirtualPath, result);
+                _filepath = Path.Combine(VirtualPath, result);
                 if (model.FileName == null)
                 {
-                    model.FileName = FilePath;
+                    model.FileName = _filepath;
                 }
                 else
                 {
-                    model.FileName = model.FileName + ',' + FilePath;
+                    model.FileName = model.FileName + ',' + _filepath;
                 }
             }
         }
