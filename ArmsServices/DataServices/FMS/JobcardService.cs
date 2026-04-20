@@ -11,12 +11,10 @@ namespace ArmsServices.DataServices
     public class JobcardService : IJobcardService
     {
         IDbService Iservice;
-
         public JobcardService(IDbService iservice)
         {
             Iservice = iservice;
         }
-
         // Method to add a purchase to a job card
         public int AddPurchase(int? JobCardID, int? PID, int? DocTypeID)
         {
@@ -28,7 +26,6 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.AddPurchase]", parameters);
         }
-
         // Method to delete a job card by its ID
         public int Delete(int? JobcardID, string UserID)
         {
@@ -39,7 +36,6 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.Delete]", parameters);
         }
-
         // Method to select job cards based on their ID
         public IEnumerable<JobcardModel> Select(int? JobcardID)
         {
@@ -55,7 +51,6 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-
         // Method to select job cards by branch ID
         public IEnumerable<JobcardModel> SelectByBranch(int? BranchID, bool Active = false)
         {
@@ -71,7 +66,6 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-
         // Method to select a job card by its ID
         public JobcardModel SelectByID(int? ID)
         {
@@ -88,7 +82,6 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-
         // Method to select job cards by truck ID
         public IEnumerable<JobcardModel> SelectByTruck(int? TruckID, bool Active = false)
         {
@@ -104,7 +97,6 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-
         // Method to update a job card
         public JobcardModel Update(JobcardModel model)
         {
@@ -128,7 +120,6 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-
         // Method to select job cards by branch and truck ID
         public IEnumerable<JobcardModel> SelectByBranchAndTruck(int? BranchID, int? TruckID, bool Active = false)
         {
@@ -145,7 +136,6 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-
         // Helper method to map data record to JobcardModel
         private JobcardModel GetModel(IDataRecord dr)
         {
@@ -170,14 +160,13 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-
         // Method to select job cards by job card ID
         public IEnumerable<JobcardModel> SelectByJobCardID(int? JobCardID, bool Active = false)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByJobCardID"),
-               new SqlParameter("@WorkOrderID", JobCardID),
+               new SqlParameter("@JobCardID", JobCardID),
                new SqlParameter("@Active",Active)
             };
 
@@ -186,7 +175,6 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-
         // Method to get a job list by job card ID
         public IEnumerable<JobInProgressModel> GetJobListByJobCardID(int? JobCardID)
         {
@@ -194,7 +182,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@Operation", "GetJobsByJobCardID"),
-                new SqlParameter("@WorkOrderID", JobCardID),
+                new SqlParameter("@JobCardID", JobCardID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Select]", parameters))
@@ -202,7 +190,6 @@ namespace ArmsServices.DataServices
                 yield return GetModelJob(dr);
             }
         }
-
         // Helper method to map data record to JobInProgressModelc
         private JobInProgressModel GetModelJob(IDataRecord dr)
         {
@@ -215,7 +202,6 @@ namespace ArmsServices.DataServices
                 Mechanic = dr.GetString("Mechanic")
             };
         }
-
         // Method to close a job card
         public int? CloseJobcard(int? JobcardID, string UserID)
         {
@@ -226,7 +212,6 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.Close]", parameters);
         }
-
         public IEnumerable<RepairJobHistoryModel> GetJobsDoneForTruck(int? TruckID, DateTime From, DateTime To)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
