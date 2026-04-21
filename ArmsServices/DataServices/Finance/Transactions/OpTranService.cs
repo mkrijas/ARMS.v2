@@ -218,7 +218,7 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
                 Area = dr.GetString("Area"),
-                JobCardID = dr.GetInt32("WorkOrderID"),
+                JobCardID = dr.GetInt32("JobCardID"),
                 PaymentArdCode = dr.GetString("PaymentArdCode"),
                 PaymentMode = dr.GetString("PaymentMode"),
                 TruckID = dr.GetInt32("TruckID"),
