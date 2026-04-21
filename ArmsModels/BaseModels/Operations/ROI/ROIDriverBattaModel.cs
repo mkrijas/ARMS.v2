@@ -1,4 +1,4 @@
-﻿using Core.BaseModels.Operations.ROI;
+using Core.BaseModels.Operations.ROI;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -30,6 +30,7 @@ namespace ArmsModels.BaseModels
         public decimal? LoadingMTTo { get; set; }
         [Required]
         public BranchModel Branch { get; set; } = new();
+        public int? BranchID { get; set; }
         [Required]
         public decimal? Amount { get; set; }
         [Required]

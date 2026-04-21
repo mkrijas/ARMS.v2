@@ -1,62 +1,79 @@
-@using System.Threading;
-@inject AuthenticationStateProvider auth
-@inject IGcService Iservice
-@inject IRouteService Iroute
-@inject IOrderService Iorder
-@inject IDialogService DialogService
-@inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
+@inject IGcService Iservice
+@inject AuthenticationStateProvider auth
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
 
-<DialogForm @ref="@dialogForm" Title="Consignment Selection Manifest" Subtitle="Select and authorize pending Goods Consignments for immediate vehicle deployment." Icon="@Icons.Material.Filled.Inventory" AdminStyle="true" formID="formGcSelect" model="@collection" _busy="_busy">
-    <FormContent>
-        <div class="dialog-content-wrapper">
-            <div class="d-flex align-center justify-space-between mb-4">
-                <div class="d-flex align-center gap-4">
-                    <div class="admin-badge primary px-4 py-2 rounded-pill">
+<MudDialog Class="admin-dialog-glass">
+    <TitleContent>
+        <div class="header-section mb-2 pt-4 px-4">
+            <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                    <div class="icon-badge primary-badge mr-4">
+                        <div class="admin-header-icon-badge mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Inventory" Color="Color.Secondary" Style="font-size: 3rem;" />
+                        </div>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.h5" Class="admin-title"><b>Consignment Selection Manifest</b></MudText>
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">Select and authorize pending Goods Consignments for immediate vehicle deployment.</MudText>
+                    </div>
+                </div>
+                <div class="d-flex align-center gap-3">
+                    <div class="admin-badge primary px-4 py-2 rounded-pill shadow-sm">
                         <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" Class="mr-2" />
-                        <span class="fw-600">@Truck.RegNo</span>
+                        <span class="fw-800">@Truck?.RegNo</span>
                     </div>
+                    <MudTooltip Text="Generate New Consignment">
+                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Variant="Variant.Filled" OnClick="@Add" Size="Size.Medium" Class="shadow-sm" Style="border-radius: 12px;" />
+                    </MudTooltip>
                 </div>
-                <MudTooltip Text="Generate New Consignment">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Variant="Variant.Filled" OnClick="@Add" Size="Size.Medium" Class="shadow-sm" />
-                </MudTooltip>
             </div>
-            <div class="admin-glass-card pa-6 dc">
-                <div class="d-flex align-center justify-space-between mb-6">
-                    <div class="d-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Filled.FilterList" Color="Color.Primary" Class="mr-2" />
-                        <span class="admin-section-label mb-0">Unassigned Consignments (@collection.Count)</span>
-                    </div>
-                    <div class="selection-status px-4 py-1 rounded-pill" style="background: rgba(var(--mud-palette-success-rgb), 0.1); border: 1px solid var(--mud-palette-success);">
-                        <MudText Typo="Typo.caption" Color="Color.Success" Class="fw-600">Selected: @collection.Count(x => x.Selected)</MudText>
-                    </div>
-                </div>
-                
-                <MudGrid Spacing="3">
-                    @foreach (var row in collection)
-                    {
-                        var bgClass = row.Selected ? "gc-card-selected" : "gc-card-standard";
-                        var item = row.model;
-
-                        <MudItem xs="12" md="12" lg="6" xl="4">
-                            <div @onclick="@(()=> row.Selected = !row.Selected)" @ondblclick="@(()=> dblClickHandler(item))" class="gc-card-wrapper cursor-pointer transition-all">
-                                <GcItemCard item="row.model" Class="@bgClass" OnGcDeleted="Deleted"></GcItemCard>
-                            </div>
-                        </MudItem>
-                    }
-                </MudGrid>
-            </div>
+            <div class="title-accent mt-4"></div>
         </div>
-    </FormContent>
-    <Actions>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="admin-dialog-container">
+            <div class="dialog-content-wrapper pa-4">
+                <div class="admin-glass-card pa-6 dc">
+                    <div class="d-flex align-center justify-space-between mb-6">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.FilterList" Color="Color.Primary" Class="mr-2" />
+                            <span class="admin-section-label mb-0">Unassigned Consignments (@collection.Count)</span>
+                        </div>
+                        <div class="selection-status px-4 py-1 rounded-pill" style="background: rgba(var(--mud-palette-success-rgb), 0.1); border: 1px solid rgba(var(--mud-palette-success-rgb), 0.2);">
+                            <MudText Typo="Typo.caption" Color="Color.Success" Class="fw-800">SELECTED: @collection.Count(x => x.Selected)</MudText>
+                        </div>
+                    </div>
+                    
+                    <MudGrid Spacing="3">
+                        @foreach (var row in collection)
+                        {
+                            var bgClass = row.Selected ? "gc-card-selected" : "gc-card-standard";
+                            var item = row.model;
+
+                            <MudItem xs="12" md="12" lg="6" xl="4">
+                                <div @onclick="@(()=> row.Selected = !row.Selected)" @ondblclick="@(()=> dblClickHandler(item))" class="gc-card-wrapper cursor-pointer transition-all">
+                                    <GcItemCard item="row.model" Class="@bgClass" OnGcDeleted="Deleted"></GcItemCard>
+                                </div>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </div>
+            </div>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
         @{
             SelectedCount = collection.Count(x => x.Selected == true); var disabled = SelectedCount == 0;
         }
-        <div class="d-flex gap-4">
-            <MudButton OnClick="Load" Variant="Variant.Filled" Color="Color.Success" Disabled="@disabled" StartIcon="@Icons.Material.Filled.FileDownload" Class="px-12 rounded-pill py-3 shadow-none">Commit Selection</MudButton>
+        <div class="d-flex w-100 flex-wrap pa-4 gap-3 align-center">
+            <MudSpacer />
+            <MudButton @onclick="Cancel" Variant="Variant.Outlined" Color="Color.Default" Style="border-radius: 12px; font-weight: 700; text-transform: none; border-color: rgba(0,0,0,0.15);">Discard</MudButton>
+            <MudButton OnClick="Load" Variant="Variant.Filled" Color="Color.Success" Disabled="@disabled" StartIcon="@Icons.Material.Filled.FileDownload" Style="background: var(--mud-palette-success); color: white; font-weight: 800; border-radius: 12px; text-transform: none; white-space: nowrap; padding: 8px 32px;" Class="shadow-sm">Commit Selection</MudButton>
         </div>
-    </Actions>
-</DialogForm>
+    </DialogActions>
+</MudDialog>
 
 <style>
     .gc-card-selected {
@@ -64,27 +81,42 @@
         background: rgba(var(--mud-palette-primary-rgb), 0.05) !important;
         transform: translateY(-2px);
         box-shadow: var(--mud-elevation-4);
+        border-radius: 16px;
     }
 
     .gc-card-standard {
-        border: 1px solid var(--mud-palette-divider) !important;
+        border: 1px solid rgba(0,0,0,0.08) !important;
         transition: all 0.2s ease;
+        border-radius: 16px;
     }
 
     .gc-card-standard:hover {
-        border-color: var(--mud-palette-primary-lighten) !important;
-        background: var(--mud-palette-background-grey) !important;
+        border-color: var(--mud-palette-primary) !important;
+        background: rgba(var(--mud-palette-primary-rgb), 0.02) !important;
+        transform: translateY(-2px);
     }
 
     .dc {
         min-height: 50vh;
-        max-height: 65vh;
+        max-height: 60vh;
         overflow-y: auto;
+        background: rgba(255,255,255,0.4);
+        border-radius: 20px;
+    }
+    
+    .dc::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .dc::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.1);
+        border-radius: 10px;
     }
 </style>
 
 @code {
-    DialogForm dialogForm;
+
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     private bool _busy;
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public long TripID { get; set; }
@@ -98,7 +130,7 @@
 
     private void Cancel()
     {
-        dialogForm.Cancel();
+        MudDialog.Cancel();
     }
 
     // Method called when the component is initialized
@@ -141,7 +173,7 @@
             }           
                 // Append the GcSetModel to the trip
                 Iservice.AppendToTrip(TripID, item.GcSetID, userID);
-                dialogForm.Close(DialogResult.Ok("Appended"));
+                MudDialog.Close(DialogResult.Ok("Appended"));
                 snackbar.Add("Loaded", Severity.Success, null);
             
         }
@@ -181,7 +213,7 @@
                     int result = Iservice.AppendToTrip(TripID, item.model.GcSetID, userID);
                 }
 
-                dialogForm.Close(DialogResult.Ok("Appended"));
+                MudDialog.Close(DialogResult.Ok("Appended"));
             }
             else
             {

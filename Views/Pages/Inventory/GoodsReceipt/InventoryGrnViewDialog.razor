@@ -126,9 +126,6 @@
 
     private async Task ToPurchase(InventoryGrnModel grn)
     {
-       
-
-      
         model.UserInfo.UserID = UserID;
         TaxPurchaseModel tpm = new TaxPurchaseModel()
             {
@@ -139,14 +136,14 @@
                 NonStoreInventory = false
             };
 
-        // bool Local = false, IsTaxable = false;
+            bool Local = false, IsTaxable = false;
 
-        // if (grn.PartyID != null)
-        // {           
-        //     IsTaxable = tpm.PartyInfo.GstType == "Registered" || tpm.PartyInfo.GstType == "SEZ";
-        //     Local = partyIservice.IsLocal(tpm.PartyInfo.PartyID, BranchID);
-        // }
-        // else { Local = false; }
+            if (grn.PartyID != null)
+            {           
+                IsTaxable = tpm.PartyInfo.GstType == "Registered" || tpm.PartyInfo.GstType == "SEZ";
+                Local = partyIservice.IsLocal(tpm.PartyInfo.PartyID, BranchID);
+            }
+            else { Local = false; }
 
 
         foreach (var item in Iservice.GetItemEntries(grn.GrnID.Value))
@@ -163,14 +160,13 @@
                         ItemGroupDescription = item.ItemGroupDescription,
                         ItemDescription = item.ItemDescription,     
                         PartNumber = item.PartNumber,
-                        // CGST = IsTaxable ? (Local ? (item.ItemGstVal / 2) : 0) : 0,
-                        // SGST = IsTaxable ? (Local ? (item.ItemGstVal / 2) : 0) : 0,
-                        // IGST = IsTaxable ? (Local ? 0 : (item.ItemGstVal)) : 0,
-                        IGST = item.ItemGstVal,
+                        CGST = IsTaxable ? (Local ? (item.ItemGstVal / 2) : 0) : 0,
+                        SGST = IsTaxable ? (Local ? (item.ItemGstVal / 2) : 0) : 0,
+                        IGST = IsTaxable ? (Local ? 0 : (item.ItemGstVal)) : 0,                       
                     }
             );
         }
-        tpm.TotalAmount = tpm.Items.Sum(x => x.Amount + x.IGST);
+        tpm.TotalAmount = tpm.Items.Sum(x => x.Amount + x.CGST + x.SGST + x.IGST);
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tpm.Clone());
         var dialog = await DialogService.ShowAsync<TaxPurchaseDialog>(tpm.PID == null ? "ADD" : "EDIT", parms, maxWidth);

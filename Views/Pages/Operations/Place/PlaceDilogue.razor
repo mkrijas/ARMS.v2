@@ -7,43 +7,74 @@
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
 
-<DialogForm @ref="@dialogForm" Title="Place" Subtitle="Register or update city/town information in the master list." Icon="@Icons.Material.Filled.Map" AdminStyle="true" formID="placeForm" model="@placemodel" _busy="_busy">
-    <FormContent>
-        <div class="dialog-content-wrapper pa-4">
-            <EditForm id="placeForm" Model="@placemodel" OnValidSubmit="OnValidSubmit">
-                <div class="admin-glass-card pa-6">
-                    <DataAnnotationsValidator />
-                    <MudValidationSummary />
-                    <MudGrid Spacing="3">
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="@placemodel.PlaceName" Label="Place Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => placemodel.PlaceName)" Class="modern-input"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudNumericField HideSpinButtons="true" MaxLength="6" @bind-Value="@placemodel.PinCode" Label="Pin Code" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => placemodel.PinCode)" Class="modern-input"></MudNumericField>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudAutocomplete T="DistrictModel" Label="District" @bind-Value="@placemodel.District" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.DistrictName}")"
-                                             Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Rounded.Add" OnAdornmentClick="OpenDistrictDialog" Immediate="true" Class="modern-input">
-                                <NoItemsTemplate>
-                                    Create new District
-                                </NoItemsTemplate>
-                            </MudAutocomplete>
-                        </MudItem>
-                    </MudGrid>
+<MudDialog Class="admin-dialog-glass">
+    <TitleContent>
+        <div class="header-section mb-2 pt-4 px-4">
+            <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                    <div class="icon-badge primary-badge mr-4">
+                        <div class="admin-header-icon-badge mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Map" Color="Color.Secondary" Style="font-size: 3rem;" />
+                        </div>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.h5" Class="admin-title"><b>Place Registry</b></MudText>
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">
+                            Register or update city/town information in the master list.
+                        </MudText>
+                    </div>
                 </div>
-            </EditForm>
+            </div>
+            <div class="title-accent mt-4"></div>
         </div>
-    </FormContent>
-</DialogForm>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="admin-dialog-container">
+            <div class="dialog-content-wrapper pa-4">
+                <EditForm id="placeForm" Model="@placemodel" OnValidSubmit="OnValidSubmit">
+                    <div class="admin-glass-card pa-6">
+                        <DataAnnotationsValidator />
+                        <MudValidationSummary />
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="@placemodel.PlaceName" Label="Place Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => placemodel.PlaceName)" Class="modern-input"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudNumericField HideSpinButtons="true" MaxLength="6" @bind-Value="@placemodel.PinCode" Label="Pin Code" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => placemodel.PinCode)" Class="modern-input"></MudNumericField>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudAutocomplete T="DistrictModel" Label="District" @bind-Value="@placemodel.District" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.DistrictName}")"
+                                                 Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Rounded.Add" OnAdornmentClick="OpenDistrictDialog" Immediate="true" Class="modern-input">
+                                    <NoItemsTemplate>
+                                        Create new District
+                                    </NoItemsTemplate>
+                                </MudAutocomplete>
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+                </EditForm>
+            </div>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <div class="d-flex w-100 flex-wrap pa-4 gap-3 align-center">
+            <MudSpacer />
+            <MudButton @onclick="Cancel" Variant="Variant.Outlined" Color="Color.Default" Style="border-radius: 12px; font-weight: 700; text-transform: none; border-color: rgba(0,0,0,0.15);">Discard</MudButton>
+            <MudButton Disabled="@_busy" form="placeForm" Variant="Variant.Filled" ButtonType="ButtonType.Submit" Color="Color.Success" Style="background: var(--mud-palette-success); color: white; font-weight: 800; border-radius: 12px; text-transform: none; white-space: nowrap; padding: 8px 24px;" StartIcon="@Icons.Material.Filled.DoneAll">Synchronize Place</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
 
 @code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
 
     [Parameter]
     public PlaceModel placemodel { get; set; }
     public IEnumerable<PlaceModel> places { get; set; }
     private List<DistrictModel> districts = new List<DistrictModel>();
-    DialogForm dialogForm;
     private bool _busy;
+
+    private void Cancel() => MudDialog.Cancel();
 
     public bool HasPermissionPlaceServiceEdit { get; set; } = false;
     public int DocTypeID = 44;
@@ -61,7 +92,7 @@
         return await Task.FromResult(districts.Where(x => x.DistrictName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
-    private async void OnValidSubmit(EditContext context)
+    private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
         {
@@ -97,17 +128,15 @@
                         placemodel = await Iservice.Update(placemodel);
                         placemodel = new PlaceModel();
                         snackbar.Add("Saved Successfully", Severity.Success);
-                        dialogForm.Close(placemodel);
+                        MudDialog.Close(DialogResult.Ok(placemodel));
                     }
                 }
                 else
                 {
                     placemodel = await Iservice.Update(placemodel);
                     placemodel = new PlaceModel();
-                    snackbar.Add("Saved Successfully", Severity.Success);
-                    dialogForm.Close(placemodel);
+                    MudDialog.Close(DialogResult.Ok(placemodel));
                 }
-
             }
             catch (Exception ex)
             {

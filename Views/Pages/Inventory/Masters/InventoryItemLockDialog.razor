@@ -1,38 +1,68 @@
-@inject IInventoryItemLockService Iservice
 @inject IInventoryItemService itemService
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
-@attribute [Authorize]
-@inject IDialogService DialogService
-@using System.Threading;
+@inject IInventoryItemLockService Iservice
 
-<MudDialog>
+<MudDialog Class="admin-dialog-glass">
     <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
-            Item Lock days
-        </MudText>
+        <div class="header-section mb-2 pt-4 px-4">
+            <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                    <div class="icon-badge primary-badge mr-4">
+                        <div class="admin-header-icon-badge mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.LockClock" Color="Color.Secondary" Style="font-size: 3rem;" />
+                        </div>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.h5" Class="admin-title"><b>Inventory Lock Configuration</b></MudText>
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">
+                           Configure operational lock durations for specific inventory assets to regulate transactional windows.
+                        </MudText>
+                    </div>
+                </div>
+            </div>
+            <div class="title-accent mt-4"></div>
+        </div>
     </TitleContent>
     <DialogContent>
-        <MudContainer Style="max-height: 450px">
-            <EditForm id="formlockday" Model="@model" OnValidSubmit="OnValidSubmit">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudGrid Spacing="2">
-                    <MudItem xs="6" md="6">
-                        <MudAutocomplete ReadOnly="model.LockID != null" Label="Select Item" Value="SelectedInventoryItem" ValueChanged=@((e) => OnchangeInventoryItem(e)) SearchFunc="SearchBanks" T="InventoryItemModel" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary"
-                                         ToStringFunc="@(e => (e == null) ? null : (e.InventoryItemID == null ? "" : string.Format("{0} | {1} - {2} ",e.InventoryItemCode, e.ItemGroup.ItemGroupDescription, e.ItemDescription)))"></MudAutocomplete>
-                    </MudItem>
-                    <MudItem xs="6" md="6">
-                        <MudTextField @bind-Value="model.LockDays" Label="Lock Days" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LockDays)"></MudTextField>
-                    </MudItem>
-                </MudGrid>
-            </EditForm>
+        <MudContainer Class="admin-dialog-container">
+            <div class="dialog-content-wrapper pa-4">
+                <EditForm id="formlockday" Model="@model" OnValidSubmit="OnValidSubmit">
+                    <ObjectGraphDataAnnotationsValidator />
+                    
+                    <div class="admin-glass-card pa-6 mb-6">
+                        <div class="d-flex align-center mb-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" Class="mr-2" />
+                            <span class="admin-section-label mb-0">Temporal Restriction Parameters</span>
+                        </div>
+
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12" md="8">
+                                <MudAutocomplete ReadOnly="model.LockID != null" Label="Target Inventory Asset" Value="SelectedInventoryItem" ValueChanged=@((e) => OnchangeInventoryItem(e)) SearchFunc="SearchBanks" T="InventoryItemModel" Variant="Variant.Outlined" Margin="Margin.Normal" AdornmentColor="Color.Secondary" Class="modern-input" AdornmentIcon="@Icons.Material.Filled.Inventory"
+                                                 ToStringFunc="@(e => (e == null) ? null : (e.InventoryItemID == null ? "" : string.Format("{0} | {1} - {2} ",e.InventoryItemCode, e.ItemGroup.ItemGroupDescription, e.ItemDescription)))"></MudAutocomplete>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="model.LockDays" Label="Lock Duration (Days)" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.LockDays)" Class="modern-input" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Timer" AdornmentColor="Color.Warning" HideSpinButtons="true" />
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+
+                    <div class="admin-glass-card pa-6 text-center shadow-none gray-bg" style="background: rgba(0,0,0,0.02);">
+                        <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Large" Class="mb-2 opacity-50" />
+                        <MudText Typo="Typo.body2" Class="fw-500 opacity-70">
+                            Defined lock periods prevent stale inventory data from affecting procurement and distribution audits.
+                        </MudText>
+                    </div>
+                </EditForm>
+            </div>
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Disabled="@_busy" form="formlockday" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        <div class="d-flex w-100 flex-wrap pa-4 gap-3 align-center">
+            <MudSpacer />
+            <MudButton @onclick="Cancel" Variant="Variant.Outlined" Color="Color.Default" Style="border-radius: 12px; font-weight: 700; text-transform: none; border-color: rgba(0,0,0,0.15);">Discard</MudButton>
+            <MudButton Disabled="@_busy" form="formlockday" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit" Style="background: var(--mud-palette-success); color: white; font-weight: 800; border-radius: 12px; text-transform: none; white-space: nowrap; padding: 8px 24px;" StartIcon="@Icons.Material.Filled.Lock">Apply Lock Policy</MudButton>
+        </div>
     </DialogActions>
 </MudDialog>
 
@@ -47,7 +77,7 @@
     private bool _busy;
 
     // Lifecycle method called when the component is initialized
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         items = itemService.SearchByDescription(string.Empty).ToList();
 
@@ -65,7 +95,7 @@
     }
 
     // Method to handle form submission when the form is valid
-    private async void OnValidSubmit(EditContext context)
+    private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
         {
@@ -81,7 +111,7 @@
             Iservice.Update(model);
             model = new();
             snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close();
+            MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
         {

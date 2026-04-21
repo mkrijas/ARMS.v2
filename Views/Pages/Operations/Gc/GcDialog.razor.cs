@@ -45,7 +45,6 @@ namespace Views.Pages.Operations.Gc
         private int _tabIndex = 0;
         private bool _tabAdded = false;
         private bool _busy;
-        private DialogForm dialogForm;
         string UserID;
         int BranchID;
         public bool HasPermissionGcServiceEdit { get; set; } = false;
