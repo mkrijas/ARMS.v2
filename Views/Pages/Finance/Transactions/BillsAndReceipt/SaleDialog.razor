@@ -1,7 +1,11 @@
 @using System.Threading;
+@attribute [Authorize]
+@inherits DialogFormComponentBase<SaleModel>
 
 @inject ISaleService Iservice
 @inject IPartyService partyIservice
+@* 
+
 @inject IInventoryItemService itemIservice
 @inject IGstItemService gstitemIservice
 @inject IInventoryGroupService inventoryGroupIservice
@@ -14,9 +18,9 @@
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
-@inject IJSRuntime JsRuntime
+@inject IJSRuntime JsRuntime *@
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sale" Subtitle="Record outgoing sales transactions and update inventory/ledger records." Icon="@Icons.Material.Filled.PointOfSale" AdminStyle="true" formID="saleForm" DocumentDetails="@DocumentDetails" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sale" Subtitle="Record outgoing sales transactions and update inventory/ledger records." Icon="@Icons.Material.Filled.PointOfSale" AdminStyle="true" formID="saleForm" DocumentDetails="@DocInfo" model="@_model" _busy="_busy">
     <FormContent>
         <div class="dialog-content-wrapper">
             <EditForm id="saleForm" Model="@model" OnValidSubmit="OnValidSubmit">
@@ -30,16 +34,16 @@
                     </div>
                     <MudGrid Spacing="3">
                         <MudItem xs="12" md="6">
-                            <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="Customer" BranchID="@branchID" IncludeSisterConcern Class="admin-input-group"></PartySelector>
+                            <PartySelector Value="_model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="Customer" BranchID="@BranchID" IncludeSisterConcern Class="admin-input-group"></PartySelector>
                         </MudItem>
                         <MudItem xs="12" md="6">
                             <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" MaxDate="DateTime.Now" Class="admin-input-group" />
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudTextField ReadOnly="ReadOnly" @bind-Value="model.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceNo)" Class="admin-input-group"></MudTextField>
+                            <MudTextField ReadOnly="ReadOnly" @bind-Value="_model.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceNo)" Class="admin-input-group"></MudTextField>
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)" Class="admin-input-group"></MudTextField>
+                            <MudTextField @bind-Value="_model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)" Class="admin-input-group"></MudTextField>
                         </MudItem>
                     </MudGrid>
                 </div>
@@ -51,10 +55,10 @@
                     </div>
                     <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" HeaderPosition="TabHeaderPosition.After" SliderColor="Color.Primary">
                         <MudTabPanel Text="Expenses / Particulars" Icon="@Icons.Material.Filled.ReceiptLong">
-                            <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" DocDate="@model.DocumentDate" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
+                            <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" DocDate="@model.DocumentDate" BranchID="@BranchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
                         </MudTabPanel>
                         <MudTabPanel Text="Inventory Items" Icon="@Icons.Material.Filled.Inventory2">
-                            <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" DocDate="@model.DocumentDate" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ItemList="@model.Items" ReadOnly="@ReadOnly" EditMode="@(model.SID != null)" NonInventory=true />
+                            <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" DocDate="@model.DocumentDate" BranchID="@BranchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ItemList="@model.Items" ReadOnly="@ReadOnly" EditMode="@(model.SID != null)" NonInventory=true />
                         </MudTabPanel>
                         <MudTabPanel Text="Billing Address" Icon="@Icons.Material.Filled.LocationOn">
                             <MudRadioGroup T="AddressModel" @bind-Value="selectedAddress">
@@ -83,56 +87,55 @@
         </div>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@SaleDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.SID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocType="@DocInfo.DocumentName" DocNumber="@DocNumber" DocumentID="model.SID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
 @code {
+    [Parameter]
+    public override SaleModel model {get;set;}
+    private SaleModel _model { get { return model; } set { model = value; DocInfo.DocumentID = value.SID; } }
 
-    [Parameter]
-    public SaleModel model { get; set; }
-    [Parameter]
-    public bool ReadOnly { get; set; } = false;
-    private int? branchID = null;
-    private string UserID = null;
-    private bool Local;
-    bool IsTaxable;
-    private EditContext editContext;
-    DialogForm dialogForm;
-    [Parameter]
-    public string PageToRedirectLink { get; set; }
-    public string DocNumber { get; set; }
-    public DateTime? DocDate { get; set; }
-    public string DocType { get; set; }
-    private bool _busy;
+     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 13,
+            DocumentName = "Sales"
+        };
+
+  //  [Parameter]
+   // public SaleModel model { get; set; }
+    // [Parameter]
+    // public bool ReadOnly { get; set; } = false;
+    // private int? branchID = null;
+    // private string UserID = null;
+    // private bool Local;
+    // bool IsTaxable;
+    // private EditContext editContext;
+    // DialogForm dialogForm;
+    // [Parameter]
+    // public string PageToRedirectLink { get; set; }
+    // public string DocNumber { get; set; }
+    // public DateTime? DocDate { get; set; }
+    // public string DocType { get; set; }
+    // private bool _busy;
     private AddressModel selectedAddress;
     private List<AddressModel> addresses = new List<AddressModel>();
 
+    // public DocumentInfoModel DocumentDetails { get; set; } = new();
 
-    public DocumentInfoModel DocumentDetails { get; set; } = new();
 
+    // public bool HasPermissionSaleServiceEdit { get; set; } = false;
+    // public bool HasPermissionSaleServiceApprove { get; set; } = false;
+    // public int SaleDocTypeID = 13;
 
-    public bool HasPermissionSaleServiceEdit { get; set; } = false;
-    public bool HasPermissionSaleServiceApprove { get; set; } = false;
-    public int SaleDocTypeID = 13;
-
-    public GstUsageCodeModel gstusge = new();
-    private GstModel taxModel = new GstModel();
+    // public GstUsageCodeModel gstusge = new();
+    // private GstModel taxModel = new GstModel();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     // Lifecycle method called when the component is initialized
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionSaleServiceEdit = await Irole.HasClaim(SaleDocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionSaleServiceApprove = await Irole.HasClaim(SaleDocTypeID.ToString(), "Approve", ctc.Token);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
-        UserID = user.Identity.Name;
-
-        // If a Sale ID is provided, fetch associated data
+         await base.OnInitializedAsync();   
         if (model?.SID != null)
         {
             addresses = partyIservice.GetAddress(model.PartyInfo.PartyID)?.ToList() ?? new List<AddressModel>();
@@ -140,7 +143,7 @@
 
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID); // Get party information
             var ResultParticulars = Iservice.GetParticulars(model.SID); // Get particulars
-            if (ResultParticulars != null) 
+            if (ResultParticulars != null)
             {
                 model.Particulars = ResultParticulars.ToList();
             }
@@ -152,26 +155,30 @@
         }
         else
         {
-            model.NatureOfTransaction = "Sale";
-            model.BranchID = branchID;
+            if (model.NatureOfTransaction == null)
+            {
+                model.NatureOfTransaction = "Sale";
+                model.TotalAmount = 0;
+            }
         }
-        DocNumber = model.DocumentNumber;
-        DocDate = model.DocumentDate;
-        DocType = model.NatureOfTransaction;
-
-        StateHasChanged();
     }
 
-    // Lifecycle method called when parameters are set or changed
-    protected override void OnParametersSet()
-    {
-        if (editContext == null)
+    protected override async Task<int> Update(SaleModel editModel)
+    {         
+        // Call the service to update the model
+         if (selectedAddress == null)
         {
-            editContext = new EditContext(model);
+            snackbar.Add("Please select billing address!", Severity.Warning);
+            return 0;
         }
-        DocumentDetails.DocumentTypeID = SaleDocTypeID;
-        DocumentDetails.DocumentID = model.SID;
-        SetTotal();
+
+        model.SalesType = "Item";
+        model.AddressID = selectedAddress.AddressID;
+        model.UserInfo.UserID = UserID;
+
+        var UpdatedModel = Iservice.Update(model);
+        model.SID = UpdatedModel.SID;
+        return model.SID.Value;
     }
 
     // Method to calculate the total amount from particulars and items
@@ -194,7 +201,7 @@
 
             // Determine if the party is taxable and local
             IsTaxable = party.GstType == "Registered" || party.GstType == "UnRegistered";
-            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
+            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, BranchID);
         }
         else { Local = false; }
 
@@ -214,75 +221,10 @@
         model.Items.Add(ItemModel);
         SetTotal();
     }
-
-    // Method to approve the sale
-    protected async Task Approve(DataApprovedStatus aprvd)
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        if (HasPermissionSaleServiceApprove)
-        {
-            if (aprvd.IsApprove)
-            {
-                try
-                {
-                    // Approve the sale using the service
-                    Iservice.Approve(model.SID, UserID, aprvd.Remarks);
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Permission denied!",
-                "You don't have any permission to Approve Sale.");
-        }
-    }
-
-    // Method to handle form submission when the form is valid
-    private async Task OnValidSubmit(EditContext context)
-    {
-        if (selectedAddress == null)
-        {
-            snackbar.Add("Please select billing address!", Severity.Warning);
-            return;
-        }
-
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-
-        if (HasPermissionSaleServiceEdit)
-        {
-            try
-            {
-                model.SalesType = "Item";
-                model.AddressID = selectedAddress.AddressID;
-                model.UserInfo.UserID = UserID;
-                // Update the sale using the service
-                Iservice.Update(model);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                dialogForm.Close(model);
-                model = new();
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Permission denied!",
-                "You don't have any permission to Edit Sale.");
-        }
-        await Task.Delay(200);
-        _busy = false;
-    }
+        // Call the service to approve the payment and return the result
+        int result = Iservice.Approve(model.SID, model.UserInfo.UserID, aprvd.Remarks);
+        return result;
+    }   
 }
