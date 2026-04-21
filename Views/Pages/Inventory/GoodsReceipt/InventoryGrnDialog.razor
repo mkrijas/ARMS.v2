@@ -12,131 +12,160 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Goods Receipt Note" Subtitle="Record received inventory items and update stock levels." Icon="@Icons.Material.Filled.Build" AdminStyle="true" formID="formtdsRate" model="@model" _busy="_busy">
-    <FormContent>
-        <div class="dialog-content-wrapper">
-            <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
-                <ObjectGraphDataAnnotationsValidator />
-                
-                <div class="admin-glass-card pa-6 mb-6">
-                    <div class="d-flex align-center mb-6">
-                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" Class="mr-2" />
-                        <span class="admin-section-label mb-0">General Information</span>
+<MudDialog Class="admin-dialog-glass">
+    <TitleContent>
+        <div class="header-section mb-2 pt-4 px-4">
+            <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                    <div class="icon-badge primary-badge mr-4">
+                        <div class="admin-header-icon-badge mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Secondary" Style="font-size: 3rem;" />
+                        </div>
                     </div>
-                    <MudGrid Spacing="3">
-                        <MudItem xs="12">
-                             <PartySelector For="@(() => partyinfo)" ReadOnly="ReadOnly" Value="partyinfo" ValueChanged="PartyChanged" NatureOfBusiness="Supplier" BranchID="branchID" IncludeSisterConcern Class="admin-input-group"></PartySelector>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudDatePicker ReadOnly="ReadOnly" Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EntryDate" DateFormat="dd/MM/yyyy" Class="admin-input-group" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)" Class="admin-input-group"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                             <StoreSelector For="@(() => model.Store)" IsDisabled="ReadOnly" @bind-Value="model.Store" VariantParameter="Variant.Outlined" MarginParameter="Margin.Dense" BranchID="@(branchID ?? 0)" Class="admin-input-group"></StoreSelector>
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Remarks" Label="Remarks / Description" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" For="@(() => model.Remarks)" Class="admin-input-group"></MudTextField>
-                        </MudItem>
-                    </MudGrid>
-                </div>
-
-                <div class="admin-glass-card pa-0 overflow-hidden mb-6">
-                    <div class="px-6 py-4 border-bottom-subtle d-flex align-center" style="background: rgba(255, 159, 67, 0.03); border-bottom: 1px solid rgba(255, 159, 67, 0.3);">
-                        <MudIcon Icon="@Icons.Material.Filled.Inventory" Color="Color.Warning" Class="mr-2" />
-                        <span class="admin-section-label mb-0">Items Received</span>
-                    </div>
-                    <div class="modern-admin-table">
-                        <MudSimpleTable Style="width:100%" Hover="true" FixedHeader="true" Dense="true" Elevation="0">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40%">ITEM DETAILS</th>
-                                    <th>QUANTITY</th>
-                                    <th>RATE</th>
-                                    <th>GST</th>
-                                    <th style="width: 50px"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in model.Entries)
-                                {
-                                    var itemInfo = itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID);
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex flex-column">
-                                                <MudText Typo="Typo.body2" Class="fw-bold">@itemInfo?.InventoryItemCode | @itemInfo?.ItemDescription</MudText>
-                                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@itemInfo?.ItemGroup?.ItemGroupDescription | PN: @itemInfo?.PartNumber</MudText>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            @if (!ReadOnly)
-                                            {
-                                                <div class="d-flex align-center">
-                                                    <MudNumericField Immediate=true T="decimal" Value="@item.ItemQty" ValueChanged="@(e => CalculateAndDisplay(e, @item))" 
-                                                                     Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Style="max-width: 120px" HideSpinButtons />
-                                                    <MudText Typo="Typo.caption" Class="ml-2">@item.UOM</MudText>
-                                                </div>
-                                            }
-                                            else
-                                            {
-                                                <MudText Typo="Typo.body2">@item.ItemQty <span class="mud-text-secondary">@item.UOM</span></MudText>
-                                            }
-                                        </td>
-                                        <td>@item.ItemRate?.ToString("N2")</td>
-                                        <td>@item.ItemGstVal?.ToString("N2")</td>
-                                        <td>
-                                            @if (!ReadOnly)
-                                            {
-                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(()=> Delete(@item))" />
-                                            }
-                                        </td>
-                                    </tr>
-                                }
-                                @if (!ReadOnly && model.POID == null)
-                                {
-                                    <tr style="background: rgba(54, 117, 136, 0.05);">
-                                        <td>
-                                             <InventoryItemSelector For="@(() => SelectedItem)" Value="SelectedItem" ValueChanged="@((InventoryItemModel newValue) => ItemChanged(newValue))" Class="admin-input-group" />
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-center">
-                                                <MudNumericField @bind-Value="Entrymodel.ItemQty" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Style="max-width: 120px" HideSpinButtons />
-                                                @if (!string.IsNullOrEmpty(UOM)) { <MudText Typo="Typo.caption" Class="ml-2">@UOM</MudText> }
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <MudNumericField @bind-Value="Entrymodel.ItemRate" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Style="max-width: 100px" HideSpinButtons />
-                                        </td>
-                                        <td>-</td>
-                                        <td>
-                                            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" OnClick="AddItems" />
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </MudSimpleTable>
-                    </div>
-                    <div class="px-6 py-4 d-flex justify-end" style="background: rgba(0,0,0,0.02);">
-                        <MudText Typo="Typo.h6" Class="fw-bold">TOTAL: <span class="mud-text-primary">@(model.TotalValue?.ToString("C") ?? "₹0.00")</span></MudText>
+                    <div>
+                        <MudText Typo="Typo.h5" Class="admin-title"><b>Goods Receipt Note</b></MudText>
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">Record received inventory items and update stock levels.</MudText>
                     </div>
                 </div>
-            </EditForm>
+            </div>
+            <div class="title-accent mt-4"></div>
         </div>
-    </FormContent>
-    <VerificationStatus>
-        @if ((ReadOnly) && (!IsView))
-        {
-            <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="16" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.GrnID" OnApprove="IsApproveData"></AutherizationStatusComponent>
-        }
-    </VerificationStatus>
-    <Actions>
-        @if (!ReadOnly && model.POID != null && model.GrnID == null)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="CancelOrder" Class="rounded-lg shadow-none mr-2">Cancel PO</MudButton>
-        }
-    </Actions>
-</DialogForm>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="admin-dialog-container">
+            <div class="dialog-content-wrapper pa-4">
+                <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
+                    <ObjectGraphDataAnnotationsValidator />
+                    
+                    <div class="admin-glass-card pa-6 mb-6">
+                        <div class="d-flex align-center mb-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" Class="mr-2" />
+                            <span class="admin-section-label mb-0">General Information</span>
+                        </div>
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12">
+                                 <PartySelector For="@(() => partyinfo)" ReadOnly="ReadOnly" Value="partyinfo" ValueChanged="PartyChanged" NatureOfBusiness="Supplier" BranchID="branchID" IncludeSisterConcern Class="admin-input-group"></PartySelector>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker ReadOnly="ReadOnly" Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EntryDate" DateFormat="dd/MM/yyyy" Class="admin-input-group" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)" Class="admin-input-group"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                 <StoreSelector For="@(() => model.Store)" IsDisabled="ReadOnly" @bind-Value="model.Store" VariantParameter="Variant.Outlined" MarginParameter="Margin.Dense" BranchID="@(branchID ?? 0)" Class="admin-input-group"></StoreSelector>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Remarks" Label="Remarks / Description" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" For="@(() => model.Remarks)" Class="admin-input-group"></MudTextField>
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+
+                    <div class="admin-glass-card pa-0 overflow-hidden mb-6">
+                        <div class="px-6 py-4 border-bottom-subtle d-flex align-center" style="background: rgba(255, 159, 67, 0.03); border-bottom: 1px solid rgba(255, 159, 67, 0.3);">
+                            <MudIcon Icon="@Icons.Material.Filled.Inventory" Color="Color.Warning" Class="mr-2" />
+                            <span class="admin-section-label mb-0">Items Received</span>
+                        </div>
+                        <div class="modern-admin-table">
+                            <MudSimpleTable Style="width:100%" Hover="true" FixedHeader="true" Dense="true" Elevation="0">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40%">ITEM DETAILS</th>
+                                        <th>QUANTITY</th>
+                                        <th>RATE</th>
+                                        <th>GST</th>
+                                        <th style="width: 50px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in model.Entries)
+                                    {
+                                        var itemInfo = itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID);
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex flex-column">
+                                                    <MudText Typo="Typo.body2" Class="fw-bold">@itemInfo?.InventoryItemCode | @itemInfo?.ItemDescription</MudText>
+                                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@itemInfo?.ItemGroup?.ItemGroupDescription | PN: @itemInfo?.PartNumber</MudText>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (!ReadOnly)
+                                                {
+                                                    <div class="d-flex align-center">
+                                                        <MudNumericField Immediate=true T="decimal" Value="@item.ItemQty" ValueChanged="@(e => CalculateAndDisplay(e, @item))" 
+                                                                         Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Style="max-width: 120px" HideSpinButtons />
+                                                        <MudText Typo="Typo.caption" Class="ml-2">@item.UOM</MudText>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <MudText Typo="Typo.body2">@item.ItemQty <span class="mud-text-secondary">@item.UOM</span></MudText>
+                                                }
+                                            </td>
+                                            <td>@item.ItemRate?.ToString("N2")</td>
+                                            <td>@item.ItemGstVal?.ToString("N2")</td>
+                                            <td>
+                                                @if (!ReadOnly)
+                                                {
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(()=> Delete(@item))" />
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                    @if (!ReadOnly && model.POID == null)
+                                    {
+                                        <tr style="background: rgba(54, 117, 136, 0.05);">
+                                            <td>
+                                                 <InventoryItemSelector For="@(() => SelectedItem)" Value="SelectedItem" ValueChanged="@((InventoryItemModel newValue) => ItemChanged(newValue))" Class="admin-input-group" />
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-center">
+                                                    <MudNumericField @bind-Value="Entrymodel.ItemQty" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Style="max-width: 120px" HideSpinButtons />
+                                                    @if (!string.IsNullOrEmpty(UOM)) { <MudText Typo="Typo.caption" Class="ml-2">@UOM</MudText> }
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <MudNumericField @bind-Value="Entrymodel.ItemRate" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Style="max-width: 100px" HideSpinButtons />
+                                            </td>
+                                            <td>-</td>
+                                            <td>
+                                                <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" OnClick="AddItems" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        </div>
+                        <div class="px-6 py-4 d-flex justify-end" style="background: rgba(0,0,0,0.02);">
+                            <MudText Typo="Typo.h6" Class="fw-bold">TOTAL: <span class="mud-text-primary">@(model.TotalValue?.ToString("C") ?? "0.00")</span></MudText>
+                        </div>
+                    </div>
+
+                    @if ((ReadOnly) && (!IsView))
+                    {
+                        <div class="admin-glass-card pa-6 mt-6">
+                            <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="16" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.GrnID" OnApprove="IsApproveData"></AutherizationStatusComponent>
+                        </div>
+                    }
+                </EditForm>
+            </div>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <div class="d-flex w-100 flex-wrap pa-4 gap-3 align-center">
+            @if (!ReadOnly && model.POID != null && model.GrnID == null)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="CancelOrder" Class="rounded-lg shadow-none mr-2">Cancel PO</MudButton>
+            }
+            <MudSpacer />
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="Cancel" Style="border-radius: 12px; font-weight: 700; text-transform: none; border-color: rgba(0,0,0,0.15);">Discard</MudButton>
+            @if (!ReadOnly)
+            {
+                <MudButton Disabled="@_busy" form="formtdsRate" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Style="background: var(--mud-palette-primary); color: white; font-weight: 800; border-radius: 12px; text-transform: none; white-space: nowrap; padding: 8px 32px;" StartIcon="@Icons.Material.Filled.Save">Authorize Receipt</MudButton>
+            }
+        </div>
+    </DialogActions>
+</MudDialog>
 
 @code {
     private DialogForm dialogForm;
@@ -174,7 +203,7 @@
     decimal ItemGSTValue = 0;
     decimal TotalValue = 0;
 
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance MudDialogInstance { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -256,7 +285,7 @@
                     Iservice.Update(model);
                     model = new();
                     snackbar.Add("Saved Successfully", Severity.Success);
-                    MudDialog.Close(model);     
+                    MudDialogInstance.Close(model);     
                     model = new InventoryGrnModel();
                 }
                 catch (Exception ex)
@@ -306,7 +335,7 @@
 
     private void Cancel()
     {
-        MudDialog.Cancel();
+        MudDialogInstance.Cancel();
     }
 
     private async Task CancelOrder()
@@ -321,7 +350,7 @@
                 if (result.Value)
                 {
                     pIservice.CancelOrder(model.POID.Value, UserID, string.Empty);
-                    MudDialog.Close(model);
+                    MudDialogInstance.Close(model);
                 }
             }
         }

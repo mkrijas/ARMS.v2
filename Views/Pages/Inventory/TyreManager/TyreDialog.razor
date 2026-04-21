@@ -10,142 +10,169 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<DialogForm @ref="@dialogForm" Title="@(model.TyreID == null || model.TyreID == 0 ? "Register New Asset" : "Update Asset Specifications")" Subtitle="Manage lifecycle parameters and technical specifications for fleet assets." Icon="@Icons.Material.Filled.Inventory" AdminStyle="true" formID="formTyre" model="@model" _busy="_busy">
-    <FormContent>
-        <div class="dialog-content-wrapper fade-in">
-            <EditForm id="formTyre" Model="@model" OnValidSubmit="Submit">
-                <ObjectGraphDataAnnotationsValidator />
-                
-                <div class="admin-glass-card pa-6 mb-6">
-                    <div class="d-flex align-center mb-6">
-                        <div class="icon-badge primary-badge-soft mr-3">
-                            <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Small" />
+<MudDialog Class="admin-dialog-glass">
+    <TitleContent>
+        <div class="header-section mb-2 pt-4 px-4">
+            <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                    <div class="icon-badge primary-badge mr-4">
+                        <div class="admin-header-icon-badge mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Inventory" Color="Color.Secondary" Style="font-size: 3rem;" />
                         </div>
-                        <span class="admin-section-label mb-0">Asset Classification</span>
                     </div>
-
-                    <MudRadioGroup T="string" Value="ItemType" ValueChanged="ItemTypeChanged" Class="d-flex flex-wrap gap-4 bg-light-surface pa-3 rounded-lg border-subtle">
-                        <MudRadio Value="@("Tyre")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Tyre</MudRadio>
-                        <MudRadio Value="@("Battery")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Battery</MudRadio>
-                        <MudRadio Value="@("Jack")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Jack</MudRadio>
-                        <MudRadio Value="@("Tarpaulin")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Tarpaulin</MudRadio>
-                        <MudRadio Value="@("Tool")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Tool</MudRadio>
-                    </MudRadioGroup>
+                    <div>
+                        <MudText Typo="Typo.h5" Class="admin-title"><b>@(model.TyreID == null || model.TyreID == 0 ? "Register New Asset" : "Update Asset Specifications")</b></MudText>
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">
+                            Manage lifecycle parameters and technical specifications for fleet assets.
+                        </MudText>
+                    </div>
                 </div>
-
-                @if (!string.IsNullOrEmpty(model.ItemType))
-                {
+            </div>
+            <div class="title-accent mt-4"></div>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="admin-dialog-container">
+            <div class="dialog-content-wrapper fade-in">
+                <EditForm id="formTyre" Model="@model" OnValidSubmit="Submit">
+                    <ObjectGraphDataAnnotationsValidator />
+                    
                     <div class="admin-glass-card pa-6 mb-6">
                         <div class="d-flex align-center mb-6">
-                            <div class="icon-badge secondary-badge-soft mr-3">
-                                <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Small" />
+                            <div class="icon-badge primary-badge-soft mr-3">
+                                <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Small" />
                             </div>
-                            <span class="admin-section-label mb-0">Technical Data</span>
+                            <span class="admin-section-label mb-0">Asset Classification</span>
                         </div>
 
-                        <MudGrid Spacing="3">
-                            <MudItem xs="12" md="6">
-                                <MudTextField Disabled="@(model.TyreID != null && model.TyreID != 0)" @bind-Value="model.TyreSerialNumber" Label="Serial Number" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Unique ID" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.QrCode" Class="modern-input" For="@(() => model.TyreSerialNumber)" />
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                @if (model.ItemType == "Tyre" || model.ItemType == "Battery")
-                                {
-                                    <MudSelect For="@(() => model.Make)" Disabled="@model.IsMounted" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Make/Manufacturer" @bind-Value="@model.Make" AdornmentIcon="@Icons.Material.Filled.BrandingWatermark" Class="modern-input">
-                                        @foreach (var make in Makes)
-                                        {
-                                            <MudSelectItem Value="@make">@make</MudSelectItem>
-                                        }
-                                    </MudSelect>
-                                }
-                                else
-                                {
-                                    <MudTextField Disabled="@model.IsMounted" @bind-Value="model.Make" Label="Make/Manufacturer" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Brand" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.BrandingWatermark" Class="modern-input" For="@(() => model.Make)" />
-                                }
-                            </MudItem>
-
-                            <MudItem xs="12" md="6">
-                                 <InventoryItemSelector For="@(() => SelectedInvetoryItem)" ReadOnly="@model.IsMounted" Value="SelectedInvetoryItem" LabelName="Linked Inventory Item" Class="modern-selector" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" ItemGroup="@ItemGroup" />
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudSelect For="@(() => SelectedBatch)" Disabled="@model.IsMounted" T="LinkableBatchModel" Label="Procurement Batch" ToStringFunc="@converter" Value="@SelectedBatch" ValueChanged="((e)=>SetBatch(e))" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" AdornmentIcon="@Icons.Material.Filled.BatchPrediction" Class="modern-input">
-                                    @foreach (var Batch in BatchList)
-                                    {
-                                        <MudSelectItem Value="@Batch">@Batch.GrnNo</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudItem>
-
-                            @if (model.ItemType == "Tyre")
-                            {
-                                <MudItem xs="12" md="6">
-                                    <MudSelect For="@(() => model.TyreType)" Disabled="@model.IsMounted" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Axial Position Filter" @bind-Value="@model.TyreType" Class="modern-input">
-                                        @foreach (var TyreType in TyreTypeList)
-                                        {
-                                            <MudSelectItem Value="@TyreType">@TyreType</MudSelectItem>
-                                        }
-                                    </MudSelect>
-                                </MudItem>
-                                <MudItem xs="12" md="6">
-                                    <MudSelect For="@(() => model.TyreSize)" Disabled="@model.IsMounted" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Dimensional Size" @bind-Value="@model.TyreSize" Class="modern-input">
-                                        @foreach (var size in TyreSize)
-                                        {
-                                            <MudSelectItem Value="@size">@size</MudSelectItem>
-                                        }
-                                    </MudSelect>
-                                </MudItem>
-                                <MudItem xs="12" md="6">
-                                    <MudSelect For="@(() => model.TyreStatus)" T="int?" Disabled="@model.IsMounted" @bind-Value="@model.TyreStatus" Label="Operational Status" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input">
-                                        <MudSelectItem T="int?" Value="@(0)">Factory New</MudSelectItem>
-                                        <MudSelectItem T="int?" Value="@(1)">1st Resole (Retread)</MudSelectItem>
-                                        <MudSelectItem T="int?" Value="@(2)">2nd Resole (Retread)</MudSelectItem>
-                                        <MudSelectItem T="int?" Value="@(3)">3rd Resole (Retread)</MudSelectItem>
-                                        <MudSelectItem T="int?" Value="@(99)">Decommissioned/Scrap</MudSelectItem>
-                                    </MudSelect>
-                                </MudItem>
-                                <MudItem xs="12" md="6">
-                                    <MudNumericField HideSpinButtons="true" Disabled="@model.IsMounted" @bind-Value="model.TotalExpectedLife" Label="Target Service Life" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="KM" Class="modern-input" Adornment="Adornment.End" AdornmentText="KM" For="@(() => model.TotalExpectedLife)" />
-                                </MudItem>
-                                <MudItem xs="12">
-                                    <div class="d-flex align-center gap-2">
-                                        <MudCheckBox T="bool" Disabled="@model.IsMounted" @bind-Checked="@model.Tubeless" Label="Tubeless Configuration" Color="Color.Primary" Dense="true" />
-                                        <MudText Typo="Typo.caption" Class="opacity-60 ml-4">(Advanced safety and weight optimized tires)</MudText>
-                                    </div>
-                                </MudItem>
-                            }
-                        </MudGrid>
-                    </div>
-                }
-
-                <div class="admin-glass-card pa-6">
-                    <div class="d-flex align-center justify-space-between mb-4">
-                        <div class="d-flex align-center">
-                            <div class="icon-badge info-badge-soft mr-3">
-                                <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />
-                            </div>
-                            <span class="admin-section-label mb-0">Documents & Warranty</span>
-                        </div>
-                        <MyFileUpload FolderName="WarrantyCard" FileName="@Guid.NewGuid().ToString()" Label="Upload Warranty" @bind-FilePath="model.WarrantyCard"></MyFileUpload>
+                        <MudRadioGroup T="string" Value="ItemType" ValueChanged="ItemTypeChanged" Class="d-flex flex-wrap gap-4 bg-light-surface pa-3 rounded-lg border-subtle">
+                            <MudRadio Value="@("Tyre")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Tyre</MudRadio>
+                            <MudRadio Value="@("Battery")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Battery</MudRadio>
+                            <MudRadio Value="@("Jack")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Jack</MudRadio>
+                            <MudRadio Value="@("Tarpaulin")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Tarpaulin</MudRadio>
+                            <MudRadio Value="@("Tool")" Color="Color.Primary" UnCheckedColor="Color.Default" Class="fw-600">Tool</MudRadio>
+                        </MudRadioGroup>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(model.WarrantyCard))
+                    @if (!string.IsNullOrEmpty(model.ItemType))
                     {
-                        <div class="d-flex align-center justify-space-between pa-3 rounded-lg bg-light-info border-subtle-info mt-2">
-                            <div class="d-flex align-center">
-                                <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Info" Class="mr-2" />
-                                <MudText Typo="Typo.body2" Class="fw-600 text-info">Warranty Card Document Linked</MudText>
+                        <div class="admin-glass-card pa-6 mb-6">
+                            <div class="d-flex align-center mb-6">
+                                <div class="icon-badge secondary-badge-soft mr-3">
+                                    <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Small" />
+                                </div>
+                                <span class="admin-section-label mb-0">Technical Data</span>
                             </div>
-                            <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Info" Size="Size.Small" Href="@model.WarrantyCard" Target="_blank" />
+
+                            <MudGrid Spacing="3">
+                                <MudItem xs="12" md="6">
+                                    <MudTextField Disabled="@(model.TyreID != null && model.TyreID != 0)" @bind-Value="model.TyreSerialNumber" Label="Serial Number" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Unique ID" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.QrCode" Class="modern-input" For="@(() => model.TyreSerialNumber)" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    @if (model.ItemType == "Tyre" || model.ItemType == "Battery")
+                                    {
+                                        <MudSelect For="@(() => model.Make)" Disabled="@model.IsMounted" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Make/Manufacturer" @bind-Value="@model.Make" AdornmentIcon="@Icons.Material.Filled.BrandingWatermark" Class="modern-input">
+                                            @foreach (var make in Makes)
+                                            {
+                                                <MudSelectItem Value="@make">@make</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    }
+                                    else
+                                    {
+                                        <MudTextField Disabled="@model.IsMounted" @bind-Value="model.Make" Label="Make/Manufacturer" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Brand" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.BrandingWatermark" Class="modern-input" For="@(() => model.Make)" />
+                                    }
+                                </MudItem>
+
+                                <MudItem xs="12" md="6">
+                                     <InventoryItemSelector For="@(() => SelectedInvetoryItem)" ReadOnly="@model.IsMounted" Value="SelectedInvetoryItem" LabelName="Linked Inventory Item" Class="modern-selector" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" ItemGroup="@ItemGroup" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudSelect For="@(() => SelectedBatch)" Disabled="@model.IsMounted" T="LinkableBatchModel" Label="Procurement Batch" ToStringFunc="@converter" Value="@SelectedBatch" ValueChanged="((e)=>SetBatch(e))" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" AdornmentIcon="@Icons.Material.Filled.BatchPrediction" Class="modern-input">
+                                        @foreach (var Batch in BatchList)
+                                        {
+                                            <MudSelectItem Value="@Batch">@Batch.GrnNo</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+
+                                @if (model.ItemType == "Tyre")
+                                {
+                                    <MudItem xs="12" md="6">
+                                        <MudSelect For="@(() => model.TyreType)" Disabled="@model.IsMounted" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Axial Position Filter" @bind-Value="@model.TyreType" Class="modern-input">
+                                            @foreach (var TyreType in TyreTypeList)
+                                            {
+                                                <MudSelectItem Value="@TyreType">@TyreType</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudSelect For="@(() => model.TyreSize)" Disabled="@model.IsMounted" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Dimensional Size" @bind-Value="@model.TyreSize" Class="modern-input">
+                                            @foreach (var size in TyreSize)
+                                            {
+                                                <MudSelectItem Value="@size">@size</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudSelect For="@(() => model.TyreStatus)" T="int?" Disabled="@model.IsMounted" @bind-Value="@model.TyreStatus" Label="Operational Status" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input">
+                                            <MudSelectItem T="int?" Value="@(0)">Factory New</MudSelectItem>
+                                            <MudSelectItem T="int?" Value="@(1)">1st Resole (Retread)</MudSelectItem>
+                                            <MudSelectItem T="int?" Value="@(2)">2nd Resole (Retread)</MudSelectItem>
+                                            <MudSelectItem T="int?" Value="@(3)">3rd Resole (Retread)</MudSelectItem>
+                                            <MudSelectItem T="int?" Value="@(99)">Decommissioned/Scrap</MudSelectItem>
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudNumericField HideSpinButtons="true" Disabled="@model.IsMounted" @bind-Value="model.TotalExpectedLife" Label="Target Service Life" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="KM" Class="modern-input" Adornment="Adornment.End" AdornmentText="KM" For="@(() => model.TotalExpectedLife)" />
+                                    </MudItem>
+                                    <MudItem xs="12">
+                                        <div class="d-flex align-center gap-2">
+                                            <MudCheckBox T="bool" Disabled="@model.IsMounted" @bind-Checked="@model.Tubeless" Label="Tubeless Configuration" Color="Color.Primary" Dense="true" />
+                                            <MudText Typo="Typo.caption" Class="opacity-60 ml-4">(Advanced safety and weight optimized tires)</MudText>
+                                        </div>
+                                    </MudItem>
+                                }
+                            </MudGrid>
                         </div>
                     }
-                </div>
-            </EditForm>
+
+                    <div class="admin-glass-card pa-6">
+                        <div class="d-flex align-center justify-space-between mb-4">
+                            <div class="d-flex align-center">
+                                <div class="icon-badge info-badge-soft mr-3">
+                                    <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />
+                                </div>
+                                <span class="admin-section-label mb-0">Documents & Warranty</span>
+                            </div>
+                            <MyFileUpload FolderName="WarrantyCard" FileName="@Guid.NewGuid().ToString()" Label="Upload Warranty" @bind-FilePath="model.WarrantyCard"></MyFileUpload>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(model.WarrantyCard))
+                        {
+                            <div class="d-flex align-center justify-space-between pa-3 rounded-lg bg-light-info border-subtle-info mt-2">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Info" Class="mr-2" />
+                                    <MudText Typo="Typo.body2" Class="fw-600 text-info">Warranty Card Document Linked</MudText>
+                                </div>
+                                <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Info" Size="Size.Small" Href="@model.WarrantyCard" Target="_blank" />
+                            </div>
+                        }
+                    </div>
+                </EditForm>
+            </div>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <div class="d-flex w-100 px-4 pb-4 align-center gap-3">
+            <MudSpacer></MudSpacer>
+            <MudButton @onclick="Cancel" Variant="Variant.Outlined" Color="Color.Default" Style="border-radius: 12px; font-weight: 700; text-transform: none; border-color: rgba(0,0,0,0.15);">Cancel</MudButton>
+            <MudButton Disabled="@_busy" form="formTyre" Variant="Variant.Filled" ButtonType="ButtonType.Submit" Color="Color.Success" Style="background: var(--mud-palette-success); color: white; font-weight: 800; border-radius: 12px; text-transform: none; white-space: nowrap; padding: 8px 24px;" StartIcon="@Icons.Material.Filled.DoneAll">Submit</MudButton>
         </div>
-    </FormContent>
-</DialogForm>
+    </DialogActions>
+</MudDialog>
 
 @code {
-
-    private DialogForm dialogForm;
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     [Parameter]
     public TyreModel model { get; set; } = new();

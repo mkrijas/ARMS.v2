@@ -1,4 +1,4 @@
-﻿@inject IOpTranService Iservice
+@inject IOpTranService Iservice
 @inject ITariffService Itariff
 
 @inject MudBlazor.ISnackbar snackbar
@@ -7,100 +7,113 @@
 
 @using System.ComponentModel.DataAnnotations
 
-<DialogForm @ref="@dialogForm" Title="Income and Expenses" Subtitle="Track trip-related financial transactions with precision." Icon="@Icons.Material.Filled.Create" AdminStyle="true" formID="form_trans" model="@model" _busy="_busy" DocumentNumber="@(trip != null ? trip.TripPrefix + trip.TripNumber : gc != null ? gc.SetGcNumber : jobcard != null ? jobcard.JobcardNumber : null)" Amount="@(TotalAmount ?? 0)">
-    <FormContent>
-        <div class="dialog-content-wrapper">
-            <div @ref="testRef" tabindex="0" @onkeydown="HandleKeyDown">
-                <EditForm id="form_trans" Model="@model" OnValidSubmit="OnValidSubmit">
-                    <ObjectGraphDataAnnotationsValidator />
-                    <ValidationSummary />
-                    <MudGrid Spacing="4">
-@if (_isLoading)
-{
-    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
-        <LoaderComponent IsFullScreen="false" 
-                        ShowLogo="false" 
-                        Size="medium" 
-                        LoadingText="Loading Transaction" 
-                        SubText="Please wait..." />
-    </div>
-}
-else
-{
-    <MudItem xs="12" Class="d-flex flex-row" @key="@("content")">
-        @if (trip != null)
-        {
-            <MudText>Trip : @(trip.TripPrefix + trip.TripNumber)  </MudText>
-        }
-        else @if (gc != null)
-        {
-            <MudText Class="px-3">Consignments : @gc.SetGcNumber  </MudText>
-        }
-        else @if (jobcard != null)
-        {
-            <MudText Class="px-3">Jobcard : @jobcard.JobcardNumber  </MudText>
-        }
-
-
-        <MudText Typo="Typo.h4">@(TotalAmount?.ToString("C2"))</MudText>
-    </MudItem>
-
-    <MudItem xs="12" @key="@("transactions")">
-        @foreach (var item in model.Transactions)
-        {
-            var adText = item.Sign == -1 ? "EXPENSE" : "INCOME";
-            var adIcon = item.Sign == -1 ? Icons.Filled.East : Icons.Filled.West;
-            <div class="admin-glass-card pa-4 mb-4" style="border: 1px solid rgba(54, 117, 136, 0.3);">
-                <MudGrid Spacing="2" Class="align-center">
-                <MudItem xs="3">
-                    <MudSelect For="@(() => item.TariffTypeID)" Label="Tariff Type" T="short?" Value="@item.TariffTypeID" ValueChanged="@((e)=>TariffChanged(e,item))" Variant="Variant.Outlined" OffsetY="true" AdornmentColor="Color.Secondary">
-                        @foreach (var tariffType in TariffTypes)
-                        {
-                            <MudSelectItem Value="@tariffType.TariffTypeID">@tariffType.TariffTypeName</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="2">
-                    <MudTextField T="decimal?" Value="@item.Amount" ValueChanged="((e)=>AmountChanged(e,item))" Label="@adText" Variant="Variant.Outlined" InputType="InputType.Text" For="@(() => item.Amount)" Adornment="Adornment.End" AdornmentIcon="@adIcon" OnAdornmentClick="(()=> SignClick(item))" AdornmentColor="Color.Primary" />
-                </MudItem>
-                <MudItem xs="2">
-                    <MudTextField @bind-Value="@item.Quantity" Label="Qty" Variant="Variant.Outlined" For="@(() => item.Quantity)" Adornment="Adornment.End" AdornmentText="@item.Unit" AdornmentColor="Color.Secondary"></MudTextField>
-                </MudItem>
-                <MudItem xs="2">
-                    <MudDatePicker @bind-Date="@item.BillDate" Label="Bill Date" Variant="Variant.Outlined" For="@(() => item.BillDate)"></MudDatePicker>
-                </MudItem>
-                <MudItem xs="2">
-                    <MudTextField @bind-Value="@item.Reference" Label="reference" Variant="Variant.Outlined" For="@(() => item.Reference)"></MudTextField>
-                </MudItem>
-                <MudItem xs="1">
-                    <div class="pa-3">
-                        <MudIconButton Variant="Variant.Filled" Icon="@Icons.Filled.Close" Color="Color.Error" OnClick="(()=> RemoveItem(item))"></MudIconButton>
+<MudDialog Class="admin-dialog-glass">
+    <TitleContent>
+        <div class="header-section mb-2 pt-4 px-4">
+            <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                    <div class="icon-badge primary-badge mr-4">
+                        <div class="admin-header-icon-badge mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Create" Color="Color.Secondary" Style="font-size: 3rem;" />
+                        </div>
                     </div>
-                </MudItem>
-                </MudGrid>
+                    <div>
+                        <div class="d-flex align-center gap-2">
+                            <MudText Typo="Typo.h5" Class="admin-title"><b>Income and Expenses</b></MudText>
+                            <MudChip Color="Color.Primary" Variant="Variant.Text" Size="Size.Small" Class="ml-2"><b>@(trip != null ? trip.TripPrefix + trip.TripNumber : gc != null ? gc.SetGcNumber : jobcard != null ? jobcard.JobcardNumber : "")</b></MudChip>
+                        </div>
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">
+                            Track trip-related financial transactions with precision.
+                        </MudText>
+                    </div>
+                </div>
+                <div class="d-flex flex-column align-end">
+                    <MudText Typo="Typo.caption" Class="admin-subtitle">TOTAL VALUE</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Primary"><b>@(TotalAmount?.ToString("C2") ?? "₹0.00")</b></MudText>
+                </div>
             </div>
-        }
-    </MudItem>
-}
-                </EditForm>
-            </div>
+            <div class="title-accent mt-4"></div>
         </div>
-    </FormContent>
-    <Actions>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="admin-dialog-container">
+            <div class="dialog-content-wrapper">
+                <div @ref="testRef" tabindex="0" @onkeydown="HandleKeyDown">
+                    <EditForm id="form_trans" Model="@model" OnValidSubmit="OnValidSubmit">
+                        <ObjectGraphDataAnnotationsValidator />
+                        <ValidationSummary />
+                        <MudGrid Spacing="4">
+                            @if (_isLoading)
+                            {
+                                <MudItem xs="12">
+                                    <div @key="@("loader")" style="display: flex; justify-content: center; align-items: center; min-height: 200px;">
+                                        <LoaderComponent IsFullScreen="false" 
+                                                        ShowLogo="false" 
+                                                        Size="medium" 
+                                                        LoadingText="Loading Transaction" 
+                                                        SubText="Please wait..." />
+                                    </div>
+                                </MudItem>
+                            }
+                            else
+                            {
+                                <MudItem xs="12" @key="@("transactions")">
+                                    @foreach (var item in model.Transactions)
+                                    {
+                                        var adText = item.Sign == -1 ? "EXPENSE" : "INCOME";
+                                        var adIcon = item.Sign == -1 ? Icons.Filled.East : Icons.Filled.West;
+                                        <div class="admin-glass-card pa-4 mb-4" style="border: 1px solid rgba(54, 117, 136, 0.3);">
+                                            <MudGrid Spacing="2" Class="align-center">
+                                                <MudItem xs="3">
+                                                    <MudSelect For="@(() => item.TariffTypeID)" Label="Tariff Type" T="short?" Value="@item.TariffTypeID" ValueChanged="@((e)=>TariffChanged(e,item))" Variant="Variant.Outlined" OffsetY="true" AdornmentColor="Color.Secondary" Class="modern-input">
+                                                        @foreach (var tariffType in TariffTypes)
+                                                        {
+                                                            <MudSelectItem Value="@tariffType.TariffTypeID">@tariffType.TariffTypeName</MudSelectItem>
+                                                        }
+                                                    </MudSelect>
+                                                </MudItem>
+                                                <MudItem xs="2">
+                                                    <MudTextField T="decimal?" Value="@item.Amount" ValueChanged="((e)=>AmountChanged(e,item))" Label="@adText" Variant="Variant.Outlined" InputType="InputType.Text" For="@(() => item.Amount)" Adornment="Adornment.End" AdornmentIcon="@adIcon" OnAdornmentClick="(()=> SignClick(item))" AdornmentColor="Color.Primary" Class="modern-input" />
+                                                </MudItem>
+                                                <MudItem xs="2">
+                                                    <MudTextField @bind-Value="@item.Quantity" Label="Qty" Variant="Variant.Outlined" For="@(() => item.Quantity)" Adornment="Adornment.End" AdornmentText="@item.Unit" AdornmentColor="Color.Secondary" Class="modern-input"></MudTextField>
+                                                </MudItem>
+                                                <MudItem xs="2">
+                                                    <MudDatePicker @bind-Date="@item.BillDate" Label="Bill Date" Variant="Variant.Outlined" For="@(() => item.BillDate)" Class="modern-input"></MudDatePicker>
+                                                </MudItem>
+                                                <MudItem xs="2">
+                                                    <MudTextField @bind-Value="@item.Reference" Label="Reference" Variant="Variant.Outlined" For="@(() => item.Reference)" Class="modern-input"></MudTextField>
+                                                </MudItem>
+                                                <MudItem xs="1">
+                                                    <div class="pa-1">
+                                                        <MudIconButton Variant="Variant.Filled" Icon="@Icons.Filled.Close" Color="Color.Error" OnClick="(()=> RemoveItem(item))" Size="Size.Small" Class="rounded-lg"></MudIconButton>
+                                                    </div>
+                                                </MudItem>
+                                            </MudGrid>
+                                        </div>
+                                    }
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </EditForm>
+                </div>
+            </div>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
         <div class="d-flex pa-4 gap-4 w-100 align-center">
-            <MudButton Variant="Variant.Filled" Style="background: #141A46; color: white;" StartIcon="@Icons.Material.Outlined.Add" OnClick="AddMoreRows">Add More Rows</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Add" OnClick="AddMoreRows" Class="rounded-pill px-6">Add More Rows</MudButton>
             <MudSpacer />
-            <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
-            <MudButton form="form_trans" Variant="Variant.Filled" Style="background: #367588; color: white;" ButtonType="ButtonType.Submit" Class="action-btn-primary px-8">Save Entries</MudButton>
+            <MudButton OnClick="Cancel" Variant="Variant.Text" Class="px-6">Discard</MudButton>
+            <MudButton form="form_trans" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="action-btn-primary px-10 rounded-pill" Style="background: var(--mud-palette-primary) !important; color: white !important;">Save Entries</MudButton>
         </div>
-    </Actions>
-</DialogForm>
+    </DialogActions>
+</MudDialog>
 
-
-<link href="~/style.css" />
 @code {
-    private DialogForm dialogForm;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     private bool _busy = false;
+    private bool _isLoading = false;
 
     private ElementReference testRef;
 
@@ -121,7 +134,6 @@ else
         }
     }
 
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     [Parameter] public TripModel trip { get; set; }
     [Parameter] public GcSetModel gc { get; set; }
     [Parameter] public JobcardModel jobcard { get; set; }

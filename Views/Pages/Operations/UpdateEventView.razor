@@ -1,4 +1,3 @@
-@using System.Threading;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject SignalRService signalRService
@@ -11,127 +10,154 @@
 @inject ITruckService Itruck
 @inject IDialogService DialogService
 @inject IBranchSettingsService branchSettingsService
-@inject IConfigTable configTable;
+@inject IConfigTable configTable
 @inject MudBlazor.ISnackbar snackbar
 @inject IPushNotificationService IpushNotificationService
 @inject IRoleService<RoleModel> Irole
 
-<DialogForm @ref="@dialogForm" Title="Trip Event Management" Subtitle="Track and update vehicle events throughout the logistics lifecycle." Icon="@Icons.Material.Filled.Timeline" AdminStyle="true" formID="formEvent" model="@model" _busy="_busy">
-    <FormContent>
-        @if (IsLoading)
-        {
-            <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
-                <LoaderComponent IsFullScreen="false" ShowLogo="false" Size="medium" LoadingText="Syncing Events..." SubText="Updating logistics trail" />
-            </div>
-        }
-        else
-        {
-            <div class="dialog-content-wrapper">
-                <EditForm id="formEvent" Model="@model" OnValidSubmit="OnValidSubmit">
-                    <FluentValidationValidator />
-                    <DataAnnotationsValidator />
-                    
-                    <!-- Trip Context Header -->
-                    <div class="admin-glass-card pa-6 mb-6" style="background: linear-gradient(135.47deg, rgba(54, 117, 136, 0.05) 0%, rgba(54, 117, 136, 0.02) 100%);">
-                        <MudGrid Spacing="2">
-                            <MudItem xs="12" md="4" Class="d-flex align-center">
-                                <div class="premium-icon-box mr-3">
-                                    <MudIcon Icon="@Icons.Material.Filled.Transform" Size="Size.Small" />
-                                </div>
-                                <div>
-                                    <MudText Typo="Typo.caption" Class="color-muted d-block uppercase ls-1">Trip Number</MudText>
-                                    <MudText Typo="Typo.body1" Class="fw-bold">@CurrentTrip.TripNumberDisplay</MudText>
-                                </div>
-                            </MudItem>
-                            <MudItem xs="12" md="4" Class="d-flex align-center">
-                                <div class="premium-icon-box mr-3" style="background: rgba(255, 159, 67, 0.1); color: #ff9f43;">
-                                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
-                                </div>
-                                <div>
-                                    <MudText Typo="Typo.caption" Class="color-muted d-block uppercase ls-1">Vehicle</MudText>
-                                    <MudText Typo="Typo.body1" Class="fw-bold">@Truck.RegNo</MudText>
-                                </div>
-                            </MudItem>
-                            <MudItem xs="12" md="4" Class="d-flex align-center">
-                                <div class="premium-icon-box mr-3" style="background: rgba(40, 199, 111, 0.1); color: #28c76f;">
-                                    <MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Size="Size.Small" />
-                                </div>
-                                <div>
-                                    <MudText Typo="Typo.caption" Class="color-muted d-block uppercase ls-1">Assigned Driver</MudText>
-                                    @if (AssignedDriver == null)
-                                    {
-                                        <MudText Typo="Typo.body1" Color="Color.Warning" Class="fw-bold">UNASSIGNED</MudText>
-                                    }
-                                    else
-                                    {
-                                        <MudText Typo="Typo.body1" Color="Color.Primary" Class="fw-bold">@AssignedDriver.DriverName</MudText>
-                                    }
-                                </div>
-                            </MudItem>
-                        </MudGrid>
-                    </div>
-
-                    <div class="admin-glass-card pa-6">
-                        <div class="d-flex align-center mb-6">
-                            <MudIcon Icon="@Icons.Material.Filled.EditLocationAlt" Color="Color.Primary" Class="mr-2" />
-                            <span class="admin-section-label mb-0">Event Configuration</span>
+<MudDialog Class="admin-dialog-glass">
+    <TitleContent>
+        <div class="header-section mb-2 pt-4 px-4">
+            <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                    <div class="icon-badge primary-badge mr-4">
+                        <div class="admin-header-icon-badge mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Timeline" Color="Color.Secondary" Style="font-size: 3rem;" />
                         </div>
-                        
-                        <MudGrid Spacing="3">
-                            <MudItem xs="12" md="6">
-                                <MudSelect For="@(() => model.EventTypeID)" Label="Select Action" T="byte?" Value="model.EventTypeID" Variant="Variant.Outlined" Margin="Margin.Normal" ValueChanged="EventSelected" Disabled="@(IsDisableSelectAction)" Class="modern-input" Placeholder="Choose event type...">
-                                    @foreach (var item in EventTypes)
-                                    {
-                                        <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label=@(SelectedEvent.IsStationary?"Point of Interest":"Origin Branch") Value="@OriginPlace" ValueChanged="@((e)=> {OriginPlace = e; model.OriginID = e.PlaceID;model.DestinationID = SelectedEvent.IsStationary ? model.OriginID : model.DestinationID;})" ResetValueOnEmptyText="true" Clearable="true" Margin="Margin.Normal"
-                                                 SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true" MaxItems="50" Class="modern-input"></MudAutocomplete>
-                            </MudItem>
-                            
-                            <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
-                                <MudSelect For="@(() => model.NextEventTypeID)" Label="Predicted Progression" T="byte?" @bind-Value="model.NextEventTypeID" Variant="Variant.Outlined" Margin="Margin.Normal" Class="modern-input">
-                                    @foreach (var item in DestinationEventTypes)
-                                    {
-                                        <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudItem>
-
-                            <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
-                                <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="Destination Terminal" Value="Destination" ValueChanged="((e)=> {Destination =e ; model.DestinationID =e?.PlaceID??null;})" ResetValueOnEmptyText="true" Clearable="true" Margin="Margin.Normal"
-                                                 SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" MaxItems="50" Class="modern-input"></MudAutocomplete>
-                            </MudItem>
-
-                            <MudItem xs="12" md="6" hidden="@(SelectedEvent.EventTypeID != 4)">
-                                <MudSelect Variant="Variant.Outlined" Label="Select Consignments to Unload" MultiSelection="true" MultiSelectionTextFunc="@(new Func<IReadOnlyList<string>, string>(GetMultiSelectionText))" Margin="Margin.Normal"
-                                           T="GcSetModel" @bind-SelectedValues="SelectedGCs" Class="modern-input">
-                                    @foreach (var item in GCsToUnload)
-                                    {
-                                        <MudSelectItem T="GcSetModel" Value="@item">@item.SetGcNumber</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudItem>
-
-                            <MudItem xs="12" md="6">
-                                <MudNumericField HideSpinButtons @bind-Value="model.EventReading" Label="Odometer Metric" Variant="Variant.Outlined" Margin="Margin.Normal" HelperText="@($"Previous: {PreEvent?.EventReading?.ToString() ?? "N/A"}")" Class="modern-input" Adornment="Adornment.End" AdornmentText="KM"></MudNumericField>
-                                 <ValidationMessage For="@(() => model.EventReading)" />
-                             </MudItem>
-                             <MudItem xs="12" md="6">
-                                <MudTextField Label="Chronological Timestamp" Format="s" Variant="Variant.Outlined" Margin="Margin.Normal" @bind-Value="@model.EventTime" InputType="InputType.DateTimeLocal" Max="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" Min="2024-04-01T00:00" Class="modern-input" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Event"></MudTextField>
-                             </MudItem>
-                         </MudGrid>
                     </div>
-                </EditForm>
+                    <div>
+                        <MudText Typo="Typo.h5" Class="admin-title"><b>Trip Event Management</b></MudText>
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">Track and update vehicle events throughout the logistics lifecycle.</MudText>
+                    </div>
+                </div>
             </div>
-        }
-    </FormContent>
-</DialogForm>
+            <div class="title-accent mt-4"></div>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="admin-dialog-container">
+            @if (IsLoading)
+            {
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                    <LoaderComponent IsFullScreen="false" ShowLogo="false" Size="medium" LoadingText="Syncing Events..." SubText="Updating logistics trail" />
+                </div>
+            }
+            else
+            {
+                <div class="dialog-content-wrapper pa-4">
+                    <EditForm id="formEvent" Model="@model" OnValidSubmit="OnValidSubmit">
+                        <FluentValidationValidator />
+                        <DataAnnotationsValidator />
+                        
+                        <!-- Trip Context Header -->
+                        <div class="admin-glass-card pa-6 mb-6" style="background: linear-gradient(135.47deg, rgba(54, 117, 136, 0.05) 0%, rgba(54, 117, 136, 0.02) 100%);">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="12" md="4" Class="d-flex align-center">
+                                    <div class="premium-icon-box mr-3">
+                                        <MudIcon Icon="@Icons.Material.Filled.Transform" Size="Size.Small" />
+                                    </div>
+                                    <div>
+                                        <MudText Typo="Typo.caption" Class="color-muted d-block uppercase ls-1">Trip Number</MudText>
+                                        <MudText Typo="Typo.body1" Class="fw-bold">@CurrentTrip.TripNumberDisplay</MudText>
+                                    </div>
+                                </MudItem>
+                                <MudItem xs="12" md="4" Class="d-flex align-center">
+                                    <div class="premium-icon-box mr-3" style="background: rgba(255, 159, 67, 0.1); color: #ff9f43;">
+                                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
+                                    </div>
+                                    <div>
+                                        <MudText Typo="Typo.caption" Class="color-muted d-block uppercase ls-1">Vehicle</MudText>
+                                        <MudText Typo="Typo.body1" Class="fw-bold">@Truck.RegNo</MudText>
+                                    </div>
+                                </MudItem>
+                                <MudItem xs="12" md="4" Class="d-flex align-center">
+                                    <div class="premium-icon-box mr-3" style="background: rgba(40, 199, 111, 0.1); color: #28c76f;">
+                                        <MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Size="Size.Small" />
+                                    </div>
+                                    <div>
+                                        <MudText Typo="Typo.caption" Class="color-muted d-block uppercase ls-1">Assigned Driver</MudText>
+                                        @if (AssignedDriver == null)
+                                        {
+                                            <MudText Typo="Typo.body1" Color="Color.Warning" Class="fw-bold">UNASSIGNED</MudText>
+                                        }
+                                        else
+                                        {
+                                            <MudText Typo="Typo.body1" Color="Color.Primary" Class="fw-bold">@AssignedDriver.DriverName</MudText>
+                                        }
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+                        </div>
+
+                        <div class="admin-glass-card pa-6">
+                            <div class="d-flex align-center mb-6">
+                                <MudIcon Icon="@Icons.Material.Filled.EditLocationAlt" Color="Color.Primary" Class="mr-2" />
+                                <span class="admin-section-label mb-0">Event Configuration</span>
+                            </div>
+                            
+                            <MudGrid Spacing="3">
+                                <MudItem xs="12" md="6">
+                                    <MudSelect For="@(() => model.EventTypeID)" Label="Select Action" T="byte?" Value="model.EventTypeID" Variant="Variant.Outlined" Margin="Margin.Normal" ValueChanged="EventSelected" Disabled="@(IsDisableSelectAction)" Class="modern-input" Placeholder="Choose event type...">
+                                        @foreach (var item in EventTypes)
+                                        {
+                                            <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="@(SelectedEvent.IsStationary ? "Point of Interest" : "Origin Branch")" Value="@OriginPlace" ValueChanged="@((e)=> {OriginPlace = e; model.OriginID = e.PlaceID;model.DestinationID = SelectedEvent.IsStationary ? model.OriginID : model.DestinationID;})" ResetValueOnEmptyText="true" Clearable="true" Margin="Margin.Normal"
+                                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e?.PlaceName)" Disabled="true" MaxItems="50" Class="modern-input"></MudAutocomplete>
+                                </MudItem>
+                                
+                                <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
+                                    <MudSelect For="@(() => model.NextEventTypeID)" Label="Predicted Progression" T="byte?" @bind-Value="model.NextEventTypeID" Variant="Variant.Outlined" Margin="Margin.Normal" Class="modern-input">
+                                        @foreach (var item in DestinationEventTypes)
+                                        {
+                                            <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+
+                                <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
+                                    <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="Destination Terminal" Value="Destination" ValueChanged="@((e)=> {Destination =e ; model.DestinationID =e?.PlaceID??null;})" ResetValueOnEmptyText="true" Clearable="true" Margin="Margin.Normal"
+                                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" MaxItems="50" Class="modern-input"></MudAutocomplete>
+                                </MudItem>
+
+                                <MudItem xs="12" md="6" hidden="@(SelectedEvent.EventTypeID != 4)">
+                                    <MudSelect Variant="Variant.Outlined" Label="Select Consignments to Unload" MultiSelection="true" MultiSelectionTextFunc="GetMultiSelectionText" Margin="Margin.Normal"
+                                               T="GcSetModel" @bind-SelectedValues="SelectedGCs" Class="modern-input">
+                                        @foreach (var item in GCsToUnload)
+                                        {
+                                            <MudSelectItem T="GcSetModel" Value="@item">@item.SetGcNumber</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+
+                                <MudItem xs="12" md="6">
+                                    <MudNumericField HideSpinButtons @bind-Value="model.EventReading" Label="Odometer Metric" Variant="Variant.Outlined" Margin="Margin.Normal" HelperText='@($"Previous: {PreEvent?.EventReading?.ToString() ?? "N/A"}")' Class="modern-input" Adornment="Adornment.End" AdornmentText="KM"></MudNumericField>
+                                     <ValidationMessage For="@(() => model.EventReading)" />
+                                 </MudItem>
+                                 <MudItem xs="12" md="6">
+                                    <MudTextField Label="Chronological Timestamp" Format="s" Variant="Variant.Outlined" Margin="Margin.Normal" @bind-Value="@model.EventTime" InputType="InputType.DateTimeLocal" Max='@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")' Min="2024-04-01T00:00" Class="modern-input" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Event"></MudTextField>
+                                 </MudItem>
+                             </MudGrid>
+                        </div>
+                    </EditForm>
+                </div>
+            }
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <div class="d-flex w-100 flex-wrap pa-4 gap-3 align-center">
+            <MudSpacer />
+            <MudButton @onclick="Cancel" Variant="Variant.Outlined" Color="Color.Default" Style="border-radius: 12px; font-weight: 700; text-transform: none; border-color: rgba(0,0,0,0.15);">Discard</MudButton>
+            <MudButton Disabled="@_busy" form="formEvent" Variant="Variant.Filled" ButtonType="ButtonType.Submit" Color="Color.Success" Style="background: var(--mud-palette-success); color: white; font-weight: 800; border-radius: 12px; text-transform: none; white-space: nowrap; padding: 8px 24px;" StartIcon="@Icons.Material.Filled.DoneAll">Submit</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
 
 @code {
-    DialogForm dialogForm;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public DriverModel AssignedDriver { get; set; }
     [Parameter] public TripModel CurrentTrip { get; set; }
@@ -157,7 +183,7 @@
 
     private void Cancel()
     {
-        dialogForm.Cancel();
+        MudDialog.Cancel();
     }
 
     public string UserID { get; set; }
@@ -204,12 +230,12 @@
             SelectedEvent = Ievent.GetEventType(model.EventTypeID);
         }
         var authprov = await auth.GetAuthenticationStateAsync();
-        if (!int.TryParse(authprov.User.Claims.First(c => c.Type == "BranchID")?.Value, out int BranchID))
+        if (!int.TryParse(authprov.User.Claims.First(c => c.Type == "BranchID")?.Value, out int branchIdLocal))
         {
             snackbar.Add("Branch is Not Selected", Severity.Warning);
             return;
         }
-        model.BranchID = BranchID;
+        model.BranchID = branchIdLocal;
         model.UserInfo.UserID = authprov.User.Identity.Name;
         OriginPlace = OriginID == null ? null : await Iplace.SelectByID(OriginID.Value);
         model.OriginID = OriginID;
@@ -371,7 +397,7 @@
                             Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);                           
                         }
                     }
-                    dialogForm.Close(model);
+                    MudDialog.Close(DialogResult.Ok(model));
                 }
                 catch (Exception ex)
                 {
@@ -445,7 +471,7 @@
                 return false;
             }
         }
-        else if (PreEventType?.LimitPostEvent is not null & CurrentTrip.UserInfo.RecordStatus == 3 & PreEventType.LimitPostEvent !=   model.EventTypeID)
+        else if (PreEventType?.LimitPostEvent is not null && CurrentTrip?.UserInfo?.RecordStatus == 3 && PreEventType.LimitPostEvent !=   model.EventTypeID)
         {
             snackbar.Add("Due to previous event this Event is restricted!", Severity.Warning);
             return false;

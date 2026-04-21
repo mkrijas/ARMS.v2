@@ -1,45 +1,70 @@
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
-@using System.Threading;
 @inject IContentService Iservice
 @inject MudBlazor.ISnackbar snackbar
-@inject IDialogService DialogService
+@inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
-<DialogForm @ref="@dialogForm" Title="Content Property" Subtitle="Configure material types and unit measurement properties." Icon="@Icons.Material.Filled.Build" AdminStyle="true" formID="contentForm" model="@model" _busy="_busy">
-    <FormContent>
-        <div class="dialog-content-wrapper pa-4">
-            <EditForm id="contentForm" Model="@model" OnValidSubmit="OnValidSubmit">
-                <div class="admin-glass-card pa-6">
+<MudDialog Class="admin-dialog-glass">
+    <TitleContent>
+        <div class="header-section mb-2 pt-4 px-4">
+            <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                    <div class="icon-badge primary-badge mr-4">
+                        <div class="admin-header-icon-badge mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Secondary" Style="font-size: 3rem;" />
+                        </div>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.h5" Class="admin-title"><b>Content Property</b></MudText>
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">Configure material types and unit measurement properties.</MudText>
+                    </div>
+                </div>
+            </div>
+            <div class="title-accent mt-4"></div>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="admin-dialog-container">
+            <div class="dialog-content-wrapper pa-4">
+                <EditForm id="contentForm" Model="@model" OnValidSubmit="OnValidSubmit">
                     <ObjectGraphDataAnnotationsValidator />
                     <MudValidationSummary />
-                    <MudGrid Spacing="3">
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="model.ContentName" Label="Content Name" Variant="Variant.Outlined" For="@(() => model.ContentName)" Class="modern-input"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="model.PrimaryUnit" Label="Primary Unit" Variant="Variant.Outlined" For="@(() => model.PrimaryUnit)" Class="modern-input"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="model.SecondaryUnit" Label="Secondary Unit" Variant="Variant.Outlined" For="@(() => model.SecondaryUnit)" Class="modern-input"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudNumericField HideSpinButtons @bind-Value="model.UnitRatio" Label="Unit Conversion Ratio" Variant="Variant.Outlined" For="@(() => model.UnitRatio)" Class="modern-input"></MudNumericField>
-                        </MudItem>
-                    </MudGrid>
-                </div>
-            </EditForm>
+                    <div class="admin-glass-card pa-6">
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="model.ContentName" Label="Content Name" Variant="Variant.Outlined" For="@(() => model.ContentName)" Class="modern-input"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.PrimaryUnit" Label="Primary Unit" Variant="Variant.Outlined" For="@(() => model.PrimaryUnit)" Class="modern-input"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.SecondaryUnit" Label="Secondary Unit" Variant="Variant.Outlined" For="@(() => model.SecondaryUnit)" Class="modern-input"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudNumericField HideSpinButtons @bind-Value="model.UnitRatio" Label="Unit Conversion Ratio" Variant="Variant.Outlined" For="@(() => model.UnitRatio)" Class="modern-input"></MudNumericField>
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+                </EditForm>
+            </div>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <div class="d-flex w-100 flex-wrap pa-4 gap-3 align-center">
+            <MudSpacer />
+            <MudButton @onclick="Cancel" Variant="Variant.Outlined" Color="Color.Default" Style="border-radius: 12px; font-weight: 700; text-transform: none; border-color: rgba(0,0,0,0.15);">Discard</MudButton>
+            <MudButton Disabled="@_busy" form="contentForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit" Style="background: var(--mud-palette-success); color: white; font-weight: 800; border-radius: 12px; text-transform: none; white-space: nowrap; padding: 8px 32px;" StartIcon="@Icons.Material.Filled.Save">Commit Property</MudButton>
         </div>
-    </FormContent>
-</DialogForm>
+    </DialogActions>
+</MudDialog>
 
 @code {
 
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     [Parameter]
     public ContentModel model { get; set; }
     private List<ContentModel> collection = new List<ContentModel>();
     public List<DistrictModel> districts = new List<DistrictModel>();
-    DialogForm dialogForm;
     private bool _busy;
 
     public bool HasPermissionContentServiceEdit { get; set; } = false;
@@ -75,14 +100,14 @@
             var user = authprov.User;
             model.UserInfo.UserID = user.Identity.Name;
             model.ContentName = FontStyle.ConvertToCamelCase(model.ContentName);
-            model.PrimaryUnit = model.PrimaryUnit.ToUpper();
-            model.SecondaryUnit = model.SecondaryUnit.ToUpper();
+            model.PrimaryUnit = model.PrimaryUnit?.ToUpper();
+            model.SecondaryUnit = model.SecondaryUnit?.ToUpper();
             try
             {
                 // Update the content model
                 model = await Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
-                dialogForm.Close(model);
+                MudDialog.Close(DialogResult.Ok(model));
             }
             catch (Exception ex)
             {
@@ -97,5 +122,10 @@
         }
         await Task.Delay(200);
         _busy = false;
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
     }
 }
