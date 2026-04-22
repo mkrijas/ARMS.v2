@@ -176,7 +176,7 @@ namespace DAL.DataServices.Finance.Transactions
                 MileageShortageReceiptID = dr.GetInt32("MileageShortageReceiptID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 ReceiptMode = dr.GetString("ReceiptMode"),
-                TripID = (long)dr.GetInt64("TripID"),
+                TripID = dr.GetInt64("TripID"),
                 TripNo = dr.GetString("TripNo"),
                 AssetTransferID = dr.GetInt32("AssetTransferID"),
                 RequestApprovalHistoryID = dr.GetInt32("RequestApprovalHistoryID"),
