@@ -258,9 +258,23 @@
         OperationPostingList = IOpsArd.Select().ToList(); // Load operation posting groups
 
         // Get total advance for the trip
-        Advance = advanceService.GetTotal(model.TripID);
-        AdvanceBalance = Advance.Amount; 
-        displayBalance = AdvanceBalance.ToString();
+        Advance = advanceService.GetTotal(model.TripID) ?? new TripAdvanceModel();
+        
+        if (model.OpTranID != null)
+        {
+            var advanceLine = model.Transactions.FirstOrDefault(x => x.Reference == "Advance Reimbursed");
+            decimal advanceDeducted = advanceLine != null ? Math.Abs(advanceLine.Amount ?? 0) : 0;
+            Advance.Amount = (Advance.Amount ?? 0) + advanceDeducted;
+            
+            var grossExpenses = model.Transactions.Where(x => x.Reference != "Advance Reimbursed").Sum(x => x.Amount);
+            AdvanceBalance = Advance.Amount - grossExpenses;
+            displayBalance = Math.Abs(AdvanceBalance ?? 0).ToString();
+        }
+        else
+        {
+            AdvanceBalance = Advance.Amount; 
+            displayBalance = AdvanceBalance.ToString();
+        }
 
         if (!string.IsNullOrEmpty(model.PaymentMode))
         {
