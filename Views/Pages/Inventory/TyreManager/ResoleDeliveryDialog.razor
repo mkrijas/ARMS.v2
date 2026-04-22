@@ -92,17 +92,17 @@
                                                 <MudTextField @bind-Value="@item.Tyre.TyreSerialNumber" Label="Asset ID" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled Class="modern-input font-mono" />
                                             </MudItem>
                                             <MudItem xs="12" md="2">
-                                                <MudSelect For="@(() => item.Status)" Label="Inspection Status" @bind-Value="@item.Status" SelectedValuesChanged="@(() => OnChangeStatus(item.Status,item.TyreID))" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input">
+                                                <MudSelect For="@(() => item.Status)" Label="Inspection Status" Value="@item.Status" ValueChanged="@(() => OnChangeStatus(item.Status,item))" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input">
                                                     <MudSelectItem T="int?" Value="1">Resoled Success</MudSelectItem>
                                                     <MudSelectItem T="int?" Value="0">Pending/Review</MudSelectItem>
                                                     <MudSelectItem T="int?" Value="99">Scrapped/Defective</MudSelectItem>
                                                 </MudSelect>
                                             </MudItem>
                                             <MudItem xs="12" md="2">
-                                                <MudNumericField HideSpinButtons="true" Disabled="@(item.Status != 1)" @bind-Value="@item.Amount" Label="Service Charge" Variant="Variant.Outlined" Margin="Margin.Dense" TextChanged="(()=> OnChangeAmount(item.Status,item.TyreID))" Class="modern-input" />
-                                            </MudItem>
+                                                <MudNumericField HideSpinButtons="true" Disabled="@(item.Status != 1)" Value="@item.Amount" T="decimal?" ValueChanged="@((e) => OnChangeAmount(e, item))" Label="Service Charge" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" />
+                                            </MudItem>  
                                             <MudItem xs="12" md="2">
-                                                <MudNumericField HideSpinButtons="true" Disabled="@(item.Status != 1)" @bind-Value="@item.Tax" Label="Applicable Tax" Variant="Variant.Outlined" Margin="Margin.Dense" TextChanged="(()=>OnChangeTax(item.Status,item.TyreID))" Class="modern-input" />
+                                                <MudNumericField HideSpinButtons="true" Disabled="@(item.Status != 1)" Value="@item.Tax" T="decimal?" ValueChanged="@((e)=> OnChangeAmount(e,item))" Label="Applicable Tax" Variant="Variant.Outlined" Margin="Margin.Dense"  Class="modern-input" />
                                             </MudItem>
                                             <MudItem xs="12" md="2">
                                                 <MudNumericField HideSpinButtons="true" Disabled="@(item.Status != 1)" @bind-Value="@item.TDS" Label="TDS Deduction" Variant="Variant.Outlined" Margin="Margin.Dense" Class="modern-input" />
@@ -193,58 +193,60 @@
         }
     }
 
-    public void OnChangeStatus(int? status, int? tyreId)
+    public void OnChangeStatus(int? _status, ResoleDeliveryTyreModel _alteredItem)
     {
-        if (status != 1)
+        _alteredItem.Status = _status;        
+        if (_status != 1)
         {
-            foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList.Where(s => s.TyreID == tyreId))
-            {
-                item.Amount = 0;
-                item.Tax = 0;
-                item.TotalAmount = 0;
-            }
+            _alteredItem.Amount = 0;
+            _alteredItem.Tax = 0;
+            _alteredItem.TotalAmount = 0;
+            int index = model.ResoleDeliveryTyreList.FindIndex(s => s.TyreID == _alteredItem.TyreID);
+            model.ResoleDeliveryTyreList[index] = _alteredItem;  
         }
         ValidationMessage = null;
     }
 
-    public void OnChangeAmount(int? status, int? tyreId)
-    {
-        if (status == 1)
+    public void OnChangeAmount(decimal? _amount, ResoleDeliveryTyreModel _alteredItem)
+    {                
+        if (_alteredItem.Status == 1)       
         {
-            foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList.Where(s => s.TyreID == tyreId))
-            {
-                if (model.TaxIncluded)
-                {
-                    item.Tax = (CurrentUsageCode.TaxRate != -100) ? (item.Amount - (item.Amount * (100 / (CurrentUsageCode.TaxRate + 100)))) : 0;
-                    item.TotalAmount = item.Amount;
-                }
-                else
-                {
-                    item.Tax = (item.Amount * (CurrentUsageCode.TaxRate / 100));
-                    item.TotalAmount = item.Amount + item.Tax;
-                }
-                decimal tdsRate = tdsService.GetTdsRate(model.Party.PartyID, CurrentUsageCode.CoaID); // Get TDS rate
-                item.TDS = Math.Round((item.Amount.Value * tdsRate) / 100, MidpointRounding.AwayFromZero);
+            _alteredItem .Amount = _amount;            
+            if (model.TaxIncluded)
+            {               
+                _alteredItem.Tax = (CurrentUsageCode.TaxRate != -100) ? (_alteredItem.Amount - (_alteredItem.Amount * (100 / (CurrentUsageCode.TaxRate + 100)))) : 0;
+                _alteredItem.TotalAmount = _alteredItem.Amount;
             }
+            else
+            {
+                _alteredItem.Tax = (_alteredItem.Amount * (CurrentUsageCode.TaxRate / 100));
+                _alteredItem.TotalAmount = _alteredItem.Amount + _alteredItem.Tax;
+            }
+            decimal tdsRate = tdsService.GetTdsRate(model.Party.PartyID, CurrentUsageCode.CoaID); // Get TDS rate
+            _alteredItem.TDS = Math.Round((_alteredItem.Amount.Value * tdsRate) / 100, MidpointRounding.AwayFromZero);
+            
+            int index = model.ResoleDeliveryTyreList.FindIndex(s => s.TyreID == _alteredItem.TyreID);   
+            model.ResoleDeliveryTyreList[index] = _alteredItem;
         }
         ValidationMessage = null;
     }
 
-    public void OnChangeTax(int? status, int? tyreId)
+    public void OnChangeTax(decimal? _tax, ResoleDeliveryTyreModel _alteredItem)
     {
-        if (status == 1)
+       if (_alteredItem.Status == 1)       
         {
-            foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList.Where(s => s.TyreID == tyreId))
-            {
-                if (model.TaxIncluded)
-                {
-                    item.TotalAmount = item.Amount;
-                }
-                else
-                {
-                    item.TotalAmount = item.Amount + item.Tax;
-                }
+            _alteredItem .Tax = _tax;            
+            if (model.TaxIncluded)
+            {               
+                _alteredItem.TotalAmount = _alteredItem.Amount;
             }
+            else
+            {
+                _alteredItem.TotalAmount = _alteredItem.Amount + _alteredItem.Tax;
+            }
+          
+            int index = model.ResoleDeliveryTyreList.FindIndex(s => s.TyreID == _alteredItem.TyreID);   
+            model.ResoleDeliveryTyreList[index] = _alteredItem;
         }
         ValidationMessage = null;
     }

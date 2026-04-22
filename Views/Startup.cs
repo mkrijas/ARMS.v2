@@ -141,6 +141,7 @@ namespace Views
             // -------- Authorization----------- //
             services.AddAuthorization(config =>
             {
+                config.AddPolicy("AdminRole", policy => policy.RequireRole("Admin"));
                 config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));
                 config.AddPolicy("Limited_To_HO", policy => policy.RequireClaim("BranchID", "7"));
             });
