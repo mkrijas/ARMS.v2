@@ -4,7 +4,18 @@
 @inject IPaymentService Iservice
 
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Payment Memo" Subtitle="Manage and settle outstanding invoices with centralized party balance tracking." Icon="@Icons.Material.Filled.Payments" AdminStyle="true" formID="PaymentMemoForm" DocumentDetails="DocInfo" model="@_model" _busy="_busy">
+<DialogForm @key="@(_model?.TotalAmount ?? 0)" 
+            @ref="@dialogForm" 
+            ReadOnly="@ReadOnly" 
+            Title="Payment Memo" 
+            Subtitle="Manage and settle outstanding invoices with centralized party balance tracking." 
+            Icon="@Icons.Material.Filled.Payments" 
+            AdminStyle="true" 
+            formID="PaymentMemoForm" 
+            DocumentDetails="DocInfo" 
+            model="@_model" 
+            TotalAmount="@(_model?.TotalAmount ?? 0)"
+            _busy="_busy" >
     <FormContent>
         <div class="dialog-content-wrapper">
             <EditForm id="PaymentMemoForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
@@ -71,7 +82,7 @@
                                 <MudItem xs="3"><span class="admin-header-text">PAY AMOUNT</span></MudItem>
                             </MudGrid>
 
-                            @foreach (var item in _model.Bills)
+                            @foreach (var (item, index) in _model.Bills.Select((value, i) => (value, i)))
                             {
                                 <MudGrid Class="px-6 py-3 border-bottom-subtle align-center">
                                     <MudItem xs="4">
@@ -85,7 +96,7 @@
                                         <MudText Typo="Typo.body2" Style="color: #141A46;">₹ @item.OutstandingAmount</MudText>
                                     </MudItem>
                                     <MudItem xs="3">
-                                        <MudNumericField T="decimal?" ReadOnly="@ReadOnly" @bind-Value="item.PayAmount" TextChanged="SetTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons Class="admin-input-group" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.CurrencyRupee" AdornmentColor="Color.Primary" />
+                                        <MudNumericField T="decimal?" ReadOnly="@ReadOnly" Value="item.PayAmount" ValueChanged="@((a) => PayAmountChanged(a,index))" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons Class="admin-input-group" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.CurrencyRupee" AdornmentColor="Color.Primary" />
                                     </MudItem>
                                 </MudGrid>
                             }
@@ -121,8 +132,9 @@
 @code {
 
     [Parameter]
-    public override PaymentMemoModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.PaymentMemoID; } }
-    private PaymentMemoModel _model;
+    public override PaymentMemoModel model {get;set;}
+
+    private PaymentMemoModel _model{ get { return model; } set { model = value; DocInfo.DocumentID = value.PaymentMemoID; } }
     string UserIDTemp;
 
     string[] natureOfBusinessGroup = new string[] { };
@@ -141,44 +153,50 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        if (model.PaymentMemoID != null)
+        if (_model.PaymentMemoID != null)
         {
-            UserIDTemp = model.UserInfo.UserID;
-            model.Bills = Iservice.GetBills(model.PaymentMemoID.Value).ToList(); // Fetch bills related to the payment memo
+            UserIDTemp = _model.UserInfo.UserID;
+            _model.Bills = Iservice.GetBills(_model.PaymentMemoID.Value).ToList(); // Fetch bills related to the payment memo
         }
         else
         {
-            model.BranchID = BranchID;
-            model.BusinessNature = "Supplier";
+            _model.BranchID = BranchID;
+            _model.BusinessNature = "Supplier";
         }
-        SetNTransaction(model.BusinessNature);
+        SetNTransaction(_model.BusinessNature);
     }
 
     // Method to update the payment memo
     protected override async Task<int> Update(PaymentMemoModel editModel)
     {
-        model = Iservice.Update(model); // Update the model using the service
-        return model.PaymentMemoID.Value;
+        _model = Iservice.Update(_model); // Update the model using the service
+        return _model.PaymentMemoID.Value;
     }
 
     // Method to approve the payment memo
     protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        int result = Iservice.Approve(model.PaymentMemoID, model.UserInfo.UserID, aprvd.Remarks); // Call the service to approve
-        model.UserInfo.UserID = UserIDTemp;
+        int result = Iservice.Approve(_model.PaymentMemoID, _model.UserInfo.UserID, aprvd.Remarks); // Call the service to approve
+        _model.UserInfo.UserID = UserIDTemp;
         return result;
     }
 
     // Method to set the total amount based on bills
+
+    private void PayAmountChanged(decimal? _payAmt, int index)
+    {
+        _model.Bills[index].PayAmount = _payAmt;
+        SetTotalAmt();
+    }
     private void SetTotalAmt()
     {
-        model.TotalAmount = (model.Bills.Sum(x => x.PayAmount) ?? 0);
+        _model.TotalAmount = (_model.Bills.Sum(x => x.PayAmount) ?? 0);
     }
 
     // Method to handle changes in business nature
     async Task nbusinesschanged(string val)
     {
-        model.BusinessNature = val;
+        _model.BusinessNature = val;
         SetNTransaction(val);
         await PartyChanged(null);
     }
@@ -211,24 +229,24 @@
     // Method to handle changes in the selected party
     async Task PartyChanged(PartyModel party)
     {
-        model.PartyInfo = party;
+        _model.PartyInfo = party;
         await nTransactionChanged(null);
     }
 
     // Method to handle changes in the nature of transaction
     private async Task nTransactionChanged(string nt)
     {
-        model.NatureOfTransaction = nt;
-        if (model.NatureOfTransaction is not null)
+        _model.NatureOfTransaction = nt;
+        if (_model.NatureOfTransaction is not null)
         {
             // Get the COA ID for the selected party and transaction type
-            model.PartyCoaID = partyService.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
-            if (model.PartyCoaID == null)
+            _model.PartyCoaID = partyService.GetPartyCoaID(_model.PartyInfo.PartyID, _model.BusinessNature, _model.NatureOfTransaction);
+            if (_model.PartyCoaID == null)
             {
                 bool? result = await dialogService.ShowMessageBoxAsync(
                     "Account Not Mapped!",
-                    "Party Account is not mapped for " + model.NatureOfTransaction + "!");
-                model.NatureOfTransaction = null;
+                    "Party Account is not mapped for " + _model.NatureOfTransaction + "!");
+                _model.NatureOfTransaction = null;
             }
         }
 
@@ -238,7 +256,7 @@
         }
         else
         {
-            model.Bills.Clear();
+            _model.Bills.Clear();
         }
     }
 
@@ -247,7 +265,7 @@
     {
         DialogOptions Doptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
-        parms.Add("PartyID", model.PartyInfo.PartyID);
+        parms.Add("PartyID", _model.PartyInfo.PartyID);
         parms.Add("BranchID", BranchID);
         var dialog = await dialogService.ShowAsync<OutstandingBillView>("Outstanding Bill", parms, Doptions);
         var result = await dialog.Result;
@@ -255,10 +273,10 @@
         {
             List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
             SelectedItems = (List<OutstandingBillsModel>)result.Data;
-            model.Bills.Clear();
+            _model.Bills.Clear();
             foreach (var item in SelectedItems)
             {
-                model.Bills.Add(new BillsPaidModel()
+                _model.Bills.Add(new BillsPaidModel()
                     {
                         MID = item.MID,
                         BranchName = item.BranchName,
@@ -275,9 +293,9 @@
             }
             //model.Reference = string.Join(",", SelectedItems.Select(x => x.ReferenceDocNo));
         }
-        if (!model.Bills.Any())
+        if (!_model.Bills.Any())
         {
-            model.NatureOfTransaction = null;
+            _model.NatureOfTransaction = null;
         }
     }
 }
