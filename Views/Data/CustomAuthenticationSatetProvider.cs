@@ -64,10 +64,15 @@ namespace Views.Data
                             {
                                 claims.Add(new System.Security.Claims.Claim(ClaimTypes.Role, currentRole.Role.RoleID));
                                 var claimsFromRole = await _role.GetClaimsAsync(currentRole.Role);
-                                foreach (var claim in claimsFromRole)
-                                {
-                                    claims.Add(claim);
-                                }
+                                claims.AddRange(claimsFromRole);
+                            }
+
+                            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<UserModel>>();
+                            var userAccount = await userManager.FindByIdAsync(userID);
+                            if (userAccount != null)
+                            {
+                                var userClaims = await userManager.GetClaimsAsync(userAccount);
+                                claims.AddRange(userClaims);
                             }
                         }
                         identity = new ClaimsIdentity(claims, "apiauth_type");
@@ -87,39 +92,54 @@ namespace Views.Data
 
         public async Task AuthenticateUser(string userID)
         {
-            List<Claim> claims = new List<Claim>
+            // 1. Start with basic identity claims
+            var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, userID)
+                new Claim(ClaimTypes.Name, userID),
+                new Claim(ClaimTypes.NameIdentifier, userID) // Good practice for Identity
             };
 
             using (var scope = _serviceProvider.CreateScope())
             {
-                var _role = scope.ServiceProvider.GetRequiredService<RoleManager<RoleModel>>();
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<RoleModel>>();
                 var currentRole = _userService.GetCurrentBranchRole(userID);
-                if (currentRole != null && currentRole.Branch != null)
+                if (currentRole?.Branch != null)
                 {
                     claims.Add(new Claim("BranchID", currentRole.Branch.BranchID.ToString()));
+
                     if (!string.IsNullOrEmpty(currentRole.Branch.BranchName))
-                    {
                         claims.Add(new Claim("BranchName", currentRole.Branch.BranchName));
-                    }
-                    if (currentRole.Role != null && !string.IsNullOrEmpty(currentRole.Role.RoleID))
+
+                    if (currentRole.Role != null)
                     {
+                        // Add the role name claim
                         claims.Add(new Claim(ClaimTypes.Role, currentRole.Role.RoleID));
-                        // Fetch permission claims from DB — same as GetAuthenticationStateAsync
-                        var claimsFromRole = await _role.GetClaimsAsync(currentRole.Role);
-                        foreach (var claim in claimsFromRole)
-                        {
-                            claims.Add(claim);
-                        }
+
+                        // 2. Fetch specific permission claims assigned to that role
+                        var roleClaims = await roleManager.GetClaimsAsync(currentRole.Role);
+                        claims.AddRange(roleClaims);
+                    }
+
+                    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<UserModel>>();
+                    var userAccount = await userManager.FindByIdAsync(userID);
+                    if (userAccount != null)
+                    {
+                        var userClaims = await userManager.GetClaimsAsync(userAccount);
+                        claims.AddRange(userClaims);
                     }
                 }
             }
 
+            // 3. Create the Principal
             var identity = new ClaimsIdentity(claims, "apiauth_type");
             var user = new ClaimsPrincipal(identity);
+
+            // 4. Update the cached state and notify the UI
             _cachedState = new AuthenticationState(user);
             NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
+
+            // TIP: Save userID to LocalStorage here so GetAuthenticationStateAsync 
+            // can rebuild this identity when the app restarts.
         }
 
         public async Task Logout()
