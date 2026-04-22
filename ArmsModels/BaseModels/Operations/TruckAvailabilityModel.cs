@@ -29,9 +29,9 @@ namespace Core.BaseModels.Operations
         public UserInfoModel RequestedUserInfo { get; set; } = new();
         public int? RespondedBranchID { get; set; }
         [Required]
-        public int? OpeningKM { get; set; }
+        public int? OpeningKM { get; set; } = 0;
         [Required]
-        public int? ClosingKM { get; set; }
+        public int? ClosingKM { get; set; } = 0;
         public BranchModel RespondedBranch { get; set; }
         public DateTime? RespondedDate { get; set; }
         public UserInfoModel RespondedUserInfo { get; set; } = new();
