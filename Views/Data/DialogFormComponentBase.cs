@@ -177,15 +177,17 @@ namespace Views.Data
                     {
                         model.UserInfo.UserID = UserID;
                         UpdateApproval(aprvd);
+                        await OnApproved.InvokeAsync();
                         notiService.AcknowledgeAuthNotification(99, DocInfo.DocumentTypeID.Value, DocInfo.DocumentID.Value, UserID);
                         snackbar.Add("Approved Successfully", Severity.Success);
-                        await OnApproved.InvokeAsync();
+                        
                     }
                     catch (Exception ex)
                     {
                         snackbar.Add(ex.Message, Severity.Error);
                     }
                 }
+                
             }
             else
             {
@@ -195,6 +197,11 @@ namespace Views.Data
             }
         }
 
+
+        protected async Task Verified(DataApprovedStatus obj)
+        {
+            await OnApproved.InvokeAsync();
+        }
         public async Task RemoveFileChange(bool val)
         {
             if (val)
