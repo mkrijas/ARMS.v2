@@ -157,17 +157,22 @@ namespace ArmsModels.BaseModels
         public int? ID { get; set; }
         public int? DeliveryID { get; set; }
         public int? TyreID { get; set; }
-        public virtual bool TaxIncluded { get; set; }
+        public virtual bool TaxIncluded { get; set; } = false;
         public virtual TyreModel Tyre { get; set; } // Tyre information associated with the delivery (optional
-        public int? Status { get; set; } 
+        public int? Status { get; set; }
         [RequiredIf("Status", " 1")]
-        public decimal? Amount { get; set; }
+        public decimal? Amount { get; set; } = 0;
         [RequiredIf("TaxIncluded", " true")]
 
-        public decimal? Tax { get; set; }
-        public decimal? TDS { get; set; }
+        public decimal? Tax { get; set; } = 0;
+        public decimal? TDS { get; set; } = 0;
         public virtual decimal? GstRate { get; set; }
-        public virtual decimal? TotalAmount { get; set; }
+        public virtual decimal? TotalAmount { 
+            get { 
+                if (TaxIncluded) return Amount - TDS; 
+                else return Amount + Tax - TDS; 
+            }
+        }
     }
 
     // Represents a delivery associated with a tyre resole request

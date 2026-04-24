@@ -371,5 +371,33 @@ namespace ArmsServices.DataServices
                 TotalRecords = countOf
             };
         }
+
+
+        public PagedResult<SaleModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved, string SaleType)
+        {
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@PageSize", pageSize),
+                new SqlParameter("@Searchterm", search ?? ""),
+                new SqlParameter("@IsApproved", _IsApproved),
+                new SqlParameter("@Type", SaleType)
+            };
+            List<SaleModel> list = [];
+            int? countOf = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
+            {
+                list.Add(GetModel(dr));
+                if (countOf == 0)
+                    countOf = dr.GetInt32("CountOf");
+            }
+            return new PagedResult<SaleModel>
+            {
+                Items = list,
+                TotalRecords = countOf
+            };
+        }
     }
 }

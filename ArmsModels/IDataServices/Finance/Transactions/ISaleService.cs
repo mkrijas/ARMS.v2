@@ -11,10 +11,7 @@ using ArmsModels.BaseModels;
 namespace ArmsServices.DataServices
 {
     public interface ISaleService : IbaseInterface<SaleModel>
-    {
-        SaleModel Update(SaleModel model);  //Edit
-        SaleModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);  //Delete
+    {       
         IEnumerable<SaleModel> Select();
         IEnumerable<SaleModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type);
         IEnumerable<SaleModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type);
@@ -22,8 +19,9 @@ namespace ArmsServices.DataServices
         IEnumerable<SaleModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetParticulars(int? SID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
-        IEnumerable<AssetSaleModel> GetAssets(int? PID);
-        int Approve(int? SID, string UserID, string Remarks);  //Approve
+        IEnumerable<AssetSaleModel> GetAssets(int? PID);        
         int Reverse(int? SID, string UserID);  //Reverse
+        PagedResult<SaleModel> SelectAll(int? BranchID, int page, int pageSize, string search, bool _IsApproved, string SaleType);
+
     }
 }
