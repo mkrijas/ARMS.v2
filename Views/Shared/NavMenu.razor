@@ -1,38 +1,44 @@
 
 <div class="nav-menu-container pa-2">
     <div class="search-container px-4 py-2">
-        <MudTextField @bind-Value="@FilterText" 
-                      Placeholder="Search Menu..." 
-                      Variant="Variant.Outlined" 
-                      Margin="Margin.Dense" 
+        <MudTextField @bind-Value="FilterText"
+                      Immediate="true"
+                      Placeholder="Search Menu..."
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
                       Adornment="Adornment.Start"
                       AdornmentIcon="@Icons.Material.Filled.Search"
                       Class="menu-search-field"
-                      @ref="@tf" />
+                      @ref="tf" />
     </div>
 
     <div class="menu-items scroll-container mt-2">
-        @if (string.IsNullOrEmpty(FilterText))
+        @foreach (var item in CurrentMenuItems)
         {
-            @foreach (var item in GetAll())
-            {
-                <NavMenuGroup @key="item.ID" MenuItem="@item" />
-            }
-        }
-        else
-        {
-            @foreach (var item in Filter(FilterText, navlist))
-            {
-                <NavMenuGroup @key="item.ID" MenuItem="@item" />
-            }
+            <NavMenuGroup @key="item.ID" MenuItem="@item" />
         }
     </div>
 </div>
 
 @code {
-    string FilterText;
+    string FilterText
+    {
+        get => _filterText;
+        set
+        {
+            _filterText = value;
 
-    MudTextField<string> tf;
+            if (string.IsNullOrWhiteSpace(_filterText))
+            {
+                ResetExpanded(navlist);
+                CurrentMenuItems = navlist;
+            }
+            else
+            {
+                CurrentMenuItems = Filter(_filterText, navlist).ToList();
+            }
+        }
+    }
 
     [Parameter]
     public bool IsOpen { get; set; } = false;
@@ -43,6 +49,7 @@
     {
         base.OnInitialized();
         Reset();
+        CurrentMenuItems = navlist;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -59,14 +66,33 @@
         }
     }
 
+    private void ResetExpanded(List<NavMenuModel> items)
+    {
+        foreach (var item in items)
+        {
+            item.Expanded = false;
+
+            if (item.navItems != null && item.navItems.Any())
+            {
+                ResetExpanded(item.navItems);
+            }
+        }
+    }
+
+    private string _filterText = string.Empty;
+
+    private List<NavMenuModel> CurrentMenuItems = new();
+
+    MudTextField<string> tf;
+
     private IEnumerable<NavMenuModel> Filter(string txt, List<NavMenuModel> items)
     {
         if (string.IsNullOrWhiteSpace(txt))
         {
             foreach (var item in items)
             {
-                    item.Expanded = false;
-                    yield return item;
+                item.Expanded = false;
+                yield return item;
             }
             yield break;
         }
@@ -77,7 +103,7 @@
             // but for simple expand/collapse behavior on the existing model (which is bound),
             // ensure we don't return partial trees that confuse Blazor.
             
-            // Note: If we really want to filter safely, we should probably yield deeply cloned items 
+            // Note: If we really want to filter safely, we should probably yield deeply cloned items
             // OR just rely on visibility. But for now, fixing the structure:
 
             var filteredChildren = Filter(txt, item.navItems ?? new List<NavMenuModel>()).ToList();
@@ -87,28 +113,28 @@
 
             if (isMatching || hasMatchingChildren)
             {
-                // We usually shouldn't modify state inside a projection (Filter), 
+                // We usually shouldn't modify state inside a projection (Filter),
                 // but if we are just setting Expanded it might be okay IF we don't mess up the render tree keys.
-                // The fatal error usually comes from the iterator changing the collection or removing items 
+                // The fatal error usually comes from the iterator changing the collection or removing items
                 // that Blazor is tracking.
-                item.Expanded = true; 
+                item.Expanded = true;
                 // item.navItems = filteredChildren; // <--- THIS IS THE CULPRIT. Modifying the list properties in place.
                 
-                // Instead of modifying item.navItems, we should return a new model or just the item itself 
-                // and let the recursive call handle it. 
+                // Instead of modifying item.navItems, we should return a new model or just the item itself
+                // and let the recursive call handle it.
                 // However, the UI iterates children. If we don't modify children, the UI shows all children.
 
                 // SAFE FIX: Return a NEW NavMenuModel (shallow copy) with filtered children
-                var newItem = new NavMenuModel 
+                var newItem = new NavMenuModel
                 {
-                     ID = item.ID,
-                     Title = item.Title,
-                     Icon = item.Icon,
-                     IconColor = item.IconColor,
-                     href = item.href,
-                     IsGroup = item.IsGroup,
-                     Expanded = true,
-                     navItems = filteredChildren // Use the new filtered list
+                    ID = item.ID,
+                    Title = item.Title,
+                    Icon = item.Icon,
+                    IconColor = item.IconColor,
+                    href = item.href,
+                    IsGroup = item.IsGroup,
+                    Expanded = true,
+                    navItems = filteredChildren // Use the new filtered list
                 };
                 yield return newItem;
             }
@@ -121,7 +147,7 @@
         {
             new NavMenuModel(){ID = 1, IsGroup = true, Title = "Operations",Icon = Icons.Material.Outlined.StackedBarChart,IconColor = Color.Inherit, Expanded = false,
             navItems = new()
-            {          
+            {
             new NavMenuModel(){ID = 102,  Title = "Activity Screen",  href = "/operations" ,Icon = Icons.Material.Filled.Monitor,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 103,  Title = "Manage Contracts",  href = "/order" ,Icon = Icons.Material.Outlined.Hvac,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 104,  Title = "UnAssigned GCs",  href = "/gc" ,Icon = Icons.Material.Filled.Today,IconColor = Color.Inherit  },
@@ -233,7 +259,7 @@
             new NavMenuModel(){ID = 20225,  Title = "Reversed Transactions",  href = "/ReverseEntryView" ,Icon = Icons.Material.Filled.SettingsBackupRestore,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 20226,  Title = "General Ledger Transfer",  href = "/GeneralLedgerTransfer" ,Icon = Icons.Material.Filled.Input,IconColor = Color.Inherit  },
             new NavMenuModel(){ID = 20227,  Title = "Damage Compensation",  href = "/ShortageDamageCompensationView" ,Icon = Icons.Material.Filled.BuildCircle,IconColor = Color.Inherit  },
-            new NavMenuModel(){ID = 20228,  Title = "Driver Salary Payable",  href = "/DriverSalaryPayableView" ,Icon = Icons.Material.Filled.PriceCheck,IconColor = Color.Inherit  },            
+            new NavMenuModel(){ID = 20228,  Title = "Driver Salary Payable",  href = "/DriverSalaryPayableView" ,Icon = Icons.Material.Filled.PriceCheck,IconColor = Color.Inherit  },
               }},
                 
               new NavMenuModel(){ID = 203, IsGroup = true, Title = "InterBranch Transactions",Icon = Icons.Material.Filled.Group,IconColor = Color.Inherit, Expanded = false,
@@ -345,7 +371,7 @@
                 new NavMenuModel(){ID = 404,  Title = "Inventory Release",  href = "/InventoryReleaseView" ,Icon = Icons.Material.Filled.Launch,IconColor = Color.Inherit  },
                 new NavMenuModel(){ID = 405,  Title = "Bulk Inventory Release",  href = "/OpInventoryReleaseView" ,Icon = Icons.Material.Filled.DynamicFeed,IconColor = Color.Inherit  },
                 new NavMenuModel(){ID = 406,  Title = "Tyre Resole",  href = "/TyreResoleView" ,Icon = Icons.Material.Filled.Cached,IconColor = Color.Inherit  },
-                new NavMenuModel(){ID = 407,  Title = "Resole Delivery",  href = "/ResoleDeliveryView" ,Icon = Icons.Material.Filled.LocalShipping,IconColor = Color.Inherit  },                
+                new NavMenuModel(){ID = 407,  Title = "Resole Delivery",  href = "/ResoleDeliveryView" ,Icon = Icons.Material.Filled.LocalShipping,IconColor = Color.Inherit  },
              new NavMenuModel(){ID = 409, IsGroup = true, Title = "Masters",Icon = Icons.Material.Filled.Devices,IconColor = Color.Inherit, Expanded = false,
             navItems = new()
             {
