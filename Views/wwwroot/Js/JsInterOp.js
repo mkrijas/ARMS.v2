@@ -87,7 +87,7 @@ function runReportWithCallback(iframeId, url, dotNetRef) {
             console.warn("[runReportWithCallback] Load timeout reached for " + url);
             iframe.onload();
         }
-    }, 12000);
+    }, 120000);
 
     // Set src to start the load
     iframe.src = url;

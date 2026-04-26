@@ -188,6 +188,7 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public TyreResoleModel Resole { get; set; } // Resole information associated with the delivery (optional)
         public PartyModel Party { get; set; } // Information about the party receiving the delivery (optional)
+        public int? AssetCount { get; set; }
         public string InvoiceNo { get; set; }
         public DateTime? InvoiceDate { get; set; }
         public DateTime? RequestedDate { get; set; }
