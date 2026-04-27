@@ -73,6 +73,12 @@
                             <MudItem xs="12" md="4">
                                 <MudNumericField HideSpinButtons @bind-Value="model.FuelPrice" Label="Fuel Price" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.FuelPrice)" Class="admin-input-group"></MudNumericField>
                             </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField ReadOnly="true" @bind-Value="model.NeutralKM" Label="Neutral Running KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.NeutralKM)" Disabled Class="admin-input-group"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudNumericField HideSpinButtons @bind-Value="model.NeutralAmount" Label="Neutral Collection Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.NeutralAmount)" Class="admin-input-group"></MudNumericField>
+                            </MudItem>
                             <MudItem xs="12" md="4" Class="d-flex align-center">
                                 <MudButton OnClick="CalculateTotalAmountToDeduct" Variant="Variant.Filled" Color="Color.Primary" Class="rounded-lg py-2 shadow-none" FullWidth>Calculate Amount</MudButton>
                             </MudItem>
@@ -174,18 +180,18 @@
                 model.Narration = string.Format("Trip : {0}; Truck : {1}; Driver : {2};", info.TripNumber, info.Truck, info.Driver);
                 model.AllottedDistance = info.SettledKm;
 
-                // var tripModel = tripService.Select(model.TripID);
-                // if (tripModel != null && tripModel.TruckID != null)
-                // {
-                //     var eventList = tripService.GetEventList(model.TripID).ToList();
-                //     if (eventList.Any(x => x.EventDateTime.HasValue))
-                //     {
-                //         var fromDate = eventList.Where(x => x.EventDateTime.HasValue).Min(x => x.EventDateTime);
-                //         var toDate = eventList.Where(x => x.EventDateTime.HasValue).Max(x => x.EventDateTime);
-                //         // var events = tripService.GetNeutralRunningEvents(tripModel.TruckID, fromDate, toDate).ToList();
-                //         // model.NeutralKM = events.Sum(x => x.DistanceKM) ?? 0;
-                //     }
-                // }
+                var tripModel = tripService.Select(model.TripID);
+                if (tripModel != null && tripModel.TruckID != null)
+                {
+                    var eventList = tripService.GetEventList(model.TripID).ToList();
+                    if (eventList.Any(x => x.EventDateTime.HasValue))
+                    {
+                        var fromDate = eventList.Where(x => x.EventDateTime.HasValue).Min(x => x.EventDateTime);
+                        var toDate = eventList.Where(x => x.EventDateTime.HasValue).Max(x => x.EventDateTime);
+                        var events = tripService.GetNeutralRunningEvents(tripModel.TruckID, fromDate, toDate).ToList();
+                        model.NeutralKM = events.Sum(x => x.DistanceKM) ?? 0;
+                    }
+                }
             }
             model.NatureOfTransaction = "Mileage Shortage";
             model.BranchID = branchID;
@@ -195,10 +201,10 @@
 
         }
 
-        // if (model.NeutralKM == null)
-        // {
-        //     model.NeutralKM = 0;            
-        // }
+        if (model.NeutralKM == null)
+        {
+            model.NeutralKM = 0;            
+        }
 
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
@@ -341,6 +347,10 @@
         var fuelConsumed = model.AllottedMileage != 0 ? (model.AllottedDistance / model.AllottedMileage) : 0;
         var fuelDifference = model.ConsumedFuel - fuelConsumed;
         model.TotalAmount = Math.Round(Convert.ToDecimal(fuelDifference * model.FuelPrice), 0);
+        if (model.NeutralAmount.HasValue)
+        {
+            model.TotalAmount += model.NeutralAmount.Value;
+        }
         validationMessageStore.Clear();
         editContext.NotifyValidationStateChanged();
     }
