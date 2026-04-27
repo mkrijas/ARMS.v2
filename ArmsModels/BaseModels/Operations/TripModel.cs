@@ -185,7 +185,7 @@ namespace ArmsModels.BaseModels
         public string REGN_NUMBER { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
-        public decimal? DurationSeconds { get; set; }
+        public int? DurationSeconds { get; set; }
         public decimal? DurationMinutes { get; set; }
         public double StartLat { get; set; }
         public double StartLng { get; set; }

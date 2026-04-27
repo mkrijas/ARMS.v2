@@ -382,7 +382,7 @@ namespace ArmsServices.DataServices
                 REGN_NUMBER = reader.GetString("REGN_NUMBER"),
                 StartTime = reader.GetDateTime("StartTime"),
                 EndTime = reader.GetDateTime("EndTime"),
-                DurationSeconds = reader.GetDecimal("DurationSeconds"),
+                DurationSeconds = reader.GetInt32("DurationSeconds"),
                 DurationMinutes = reader.GetDecimal("DurationMinutes"),
                 StartLat = startLat,
                 StartLng = startLng,
