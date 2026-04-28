@@ -1,0 +1,107 @@
+@using ArmsServices
+@using Core.BaseModels.Finance.Transactions
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IOrderService Iorder
+@inject AuthenticationStateProvider auth
+@inject MudBlazor.ISnackbar snackbar
+
+<MudDialog DisableSidePadding="true">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> @BranchName Orders
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="height: 300px; overflow-y: auto">
+            @if (BranchID != 0)
+            {
+                <MudTable Items="@AssignedOrders">
+                    <RowTemplate>
+                        <MudTd DataLabel="Order Name">
+                            <MudText Typo="Typo.h6">
+                                @context.OrderName
+                                <MudFab Class="float-right" @onclick="@(() => removeOrder(context.OrderID))" Color="Color.Dark" StartIcon="@Icons.Material.Filled.Remove" Size="Size.Small" />
+                            </MudText>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+                <MudItem>
+                    <MudAutocomplete T="OrderModel" Label="Order" Value="OrderAssigned" ResetValueOnEmptyText="true" SearchFunc="@(async (string s, CancellationToken t) => await SearchOrders(s, t))" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")" ValueChanged="addOrder"></MudAutocomplete>
+                </MudItem>
+            }
+        </MudContainer>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public int? BranchID { get; set; }
+    [Parameter] public string BranchName { get; set; }
+    [Parameter] public bool HasPermissionOrderServiceAddRemoveOrder { get; set; }
+
+    private List<OrderModel> AssignedOrders = new List<OrderModel>();
+    private List<OrderModel> Orders = new List<OrderModel>();
+    private OrderModel OrderAssigned { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await refreshOrders();
+    }
+
+    private async Task refreshOrders()
+    {
+        AssignedOrders = new List<OrderModel>();
+        Orders = new List<OrderModel>();
+        await foreach (var item in Iorder.SelectByBranch(BranchID))
+        {
+            AssignedOrders.Add(item);
+        }
+        await foreach (var item in Iorder.Select(0))
+        {
+            if (!AssignedOrders.Contains(item))
+            {
+                Orders.Add(item);
+            }
+        }
+    }
+
+    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString, CancellationToken token)
+    {
+        return await Task.FromResult(
+            Orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase))
+             .Where(x => AssignedOrders.All(y => y.OrderID != x.OrderID)));
+    }
+
+    private async Task addOrder(OrderModel obj)
+    {
+        if (HasPermissionOrderServiceAddRemoveOrder)
+        {
+            OrderAssigned = obj;
+            if (OrderAssigned?.OrderID > 0)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                int result = await Iorder.BranchOrderUpdate(BranchID, OrderAssigned.OrderID, authprov.User.Identity.Name, "Update");
+                await refreshOrders();
+                OrderAssigned = new OrderModel();
+            }
+        }
+        else
+        {
+            snackbar.Add("Permission denied! You don't have any permission to Add/Remove Order.", Severity.Warning);
+        }
+    }
+
+    private async Task removeOrder(int? OrderID)
+    {
+        if (HasPermissionOrderServiceAddRemoveOrder)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            int result = await Iorder.BranchOrderUpdate(BranchID, OrderID, authprov.User.Identity.Name, "Delete");
+            await refreshOrders();
+        }
+        else
+        {
+            snackbar.Add("Permission denied! You don't have any permission to Add/Remove Order.", Severity.Warning);
+        }
+    }
+}
