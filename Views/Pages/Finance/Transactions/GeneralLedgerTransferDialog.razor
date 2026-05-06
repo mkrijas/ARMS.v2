@@ -1,6 +1,5 @@
-﻿@inherits DialogFormComponentBase<GeneralLedgerTransferModel>
+@inherits DialogFormComponentBase<GeneralLedgerTransferModel>
 
-@inject IBranchService branchService
 @inject IGeneralLedgerTransferService Iservice
 @inject IInterBranchMappingService intermappingIservice
 
@@ -36,12 +35,12 @@
                         <div class="admin-glass-card pa-6 h-100" style="border-left: 4px solid #141A46;">
                             <span class="admin-section-label">Destination (Target Branch)</span>
                             <MudStack Spacing="3">
-                                <MudSelect For="@(() => _model.OtherBranchID)" ReadOnly="ReadOnly" Label="Select Target Branch" Value="_model.OtherBranchID" T="int?" ValueChanged="OtherBranchChanged" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-input-group" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.LocationOn" AdornmentColor="Color.Secondary">
-                                    @foreach (var ditem in branches)
-                                    {
-                                        <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
-                                    }
-                                </MudSelect>
+                                <BranchSelector LabelName="Select Target Branch"
+                                                Value="selectedBranch"
+                                                ValueChanged="OtherBranchChanged"
+                                                IsDisabled="ReadOnly"
+                                                Except="BranchID"
+                                                Class="admin-input-group" />
                                 <UsageCodeSelector @bind-Value="@_model.OtherUsageCode" LabelName="Target Account / Usage Code" Class="admin-input-group" />
                             </MudStack>
                         </div>
@@ -90,10 +89,10 @@
     [Parameter]
     public override GeneralLedgerTransferModel model { get; set; }
     private GeneralLedgerTransferModel _model { get { return model; } set { model = value; DocInfo.DocumentID = value.LedgerTransferID; } }
-    private List<BranchModel> branches = new();
     private List<InterBranchTransactionTypeModel> transactionTypeList = new();
     private string hmbarnchName;
     private int? BranchID = null;
+    private BranchModel selectedBranch = null;
     private string UserID = null;
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
@@ -115,14 +114,14 @@
         _model = (GeneralLedgerTransferModel)model.Clone();
         _model.BranchID = BranchID;
         _model.NatureOfTransaction = "Ledger Transfer";
-        branches = branchService.Select().ToList(); // Get the list of branches
         transactionTypeList = intermappingIservice.GetTypes().ToList(); // Get the list of transaction types
     }
 
-    // Method to handle changes in the other branch selection
-    public void OtherBranchChanged(int? otherBranchID)
+    // Method to handle changes in the target branch selection
+    public void OtherBranchChanged(BranchModel branch)
     {
-        _model.OtherBranchID = otherBranchID;
+        selectedBranch = branch;
+        _model.OtherBranchID = branch?.BranchID;
         _model.IsInterBranch = _model.BranchID != _model.OtherBranchID;
         StateHasChanged();
     }
