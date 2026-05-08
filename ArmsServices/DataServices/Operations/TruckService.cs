@@ -464,6 +464,7 @@ namespace ArmsServices.DataServices
                     HomeBranchID = dr.GetInt32("HomeBranchID"),
                     HomeBranchName = dr.GetString("HomeBranchName"),
                     OperatingBranchName = dr.GetString("OperatingBranchName"),
+                    PhysicalBranchName = dr.GetString("PhysicalBranchName"),
                     TruckTypeID = dr.GetInt16("TruckTypeID"),
                     TruckType = dr.GetString("TruckType"),
                     BSType = dr.GetString("BSType"),
@@ -654,6 +655,45 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public TruckPhysicalModel GetPhysicalInfo(int? TruckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Truck.Physical.Select]", parameters))
+            {
+                return new TruckPhysicalModel()
+                {
+                    ID = dr.GetInt32("ID"),
+                    TruckID = (int)dr.GetInt32("TruckID"),
+                    BranchName = dr.GetString("BranchName"),
+                };
+            }
+            return null;
+        }
+
+        public int UpdatePhysicalInfo(int? TruckID, string BranchName, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@BranchName", BranchName),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Operation.Truck.Physical.Update]", parameters);
+        }
+
+        public int DeletePhysicalInfo(int? TruckID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Operation.Truck.Physical.Delete]", parameters);
+        }
     }
 
 

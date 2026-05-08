@@ -36,8 +36,10 @@ namespace ArmsServices.DataServices
         IEnumerable<TruckModel> SelectAllByBranch(bool IsChecked, int? BranchID = null, string Filer = "All", string HomeOrOperation = "AllOperation");
         IEnumerable<TruckStatusModel> GetTruckStatusByEvent(int? BranchID, string SelectedValue);
         IEnumerable<NoDriverTruckModel> GetNoDriverTruck(int? BranchID);
-        TruckModel GetInfo(int? TruckID, string HomeOrOperation = "Operation");       
-
+        TruckModel GetInfo(int? TruckID, string HomeOrOperation = "Operation");
+        TruckPhysicalModel GetPhysicalInfo(int? TruckID);
+        int UpdatePhysicalInfo(int? TruckID, string BranchName, string UserID);
+        int DeletePhysicalInfo(int? TruckID, string UserID);
     }
 
     public interface ITelemetryService

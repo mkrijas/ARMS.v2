@@ -39,6 +39,7 @@ namespace Core.BaseModels.Operations
         public List<string> Uploads { get; set; }
         public string Remarks { get; set; }
         public string SOBranchName { get; set; }
+        public virtual string PhysicalBranchName { get; set; }
         public List<AssetSettingsModel> CheckList { get; set; } // List of asset settings associated with the transfer
         // Property to get the status text based on the request status
         public string StatusText

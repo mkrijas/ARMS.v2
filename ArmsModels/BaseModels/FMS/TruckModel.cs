@@ -31,6 +31,7 @@ namespace ArmsModels.BaseModels
         public string OperatingBranchName { get; set; }
         public int? CurrentBranchID { get; set; }
         [Required]
+        public virtual string PhysicalBranchName { get; set; }
         public short? TruckTypeID { get; set; }
         public string TruckType { get; set; }
         public string BSType { get; set; }
@@ -120,5 +121,12 @@ namespace ArmsModels.BaseModels
         public string RegNo { get; set; }
         public DateTime? AssignedTime { get; set; }
         public string EventType { get; set; }
+    }
+
+    public class TruckPhysicalModel
+    {
+        public int? ID { get; set; }
+        public int TruckID { get; set; }
+        public string BranchName { get; set; }
     }
 }

@@ -1,0 +1,226 @@
+@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject ITruckService Iservice
+@inject IBranchService BrService
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog Class="admin-dialog-glass">
+    <TitleContent>
+        <div class="header-section mb-2 pt-4 px-4">
+            <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                    <div class="icon-badge primary-badge mr-4">
+                        <div class="admin-header-icon-badge mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.LocationCity" Color="Color.Secondary" Style="font-size: 3rem;" />
+                        </div>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.h5" Class="admin-title"><b>Physical Branch Assignment</b></MudText>
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">Set the physical branch for the vehicle.</MudText>
+                    </div>
+                </div>
+            </div>
+            <div class="title-accent mt-4"></div>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="admin-dialog-container">
+            <div class="dialog-content-wrapper pa-4">
+                <EditForm id="formPhysicalBranch" Model="@PhysicalModel" OnValidSubmit="UpdatePhysicalBranch">
+                    <div class="admin-glass-card pa-6 mb-6">
+                        <MudGrid Spacing="4">
+                            <MudItem xs="12" md="6">
+                                <div class="pa-4 rounded-lg d-flex align-center" style="background: rgba(54, 117, 136, 0.05); border: 1px solid rgba(54, 117, 136, 0.1);">
+                                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Primary" Size="Size.Large" Class="mr-4" />
+                                    <div>
+                                        <MudText Typo="Typo.caption" Class="admin-subtitle">Vehicle Registry</MudText>
+                                        <MudText Typo="Typo.h5"><b>@TruckRegNo</b></MudText>
+                                    </div>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <div class="pa-4 rounded-lg d-flex align-center" style="background: @(string.IsNullOrEmpty(PhysicalModel?.BranchName) ? "rgba(255, 152, 0, 0.05)" : "rgba(76, 175, 80, 0.05)"); border: 1px solid @(string.IsNullOrEmpty(PhysicalModel?.BranchName) ? "rgba(255, 152, 0, 0.2)" : "rgba(76, 175, 80, 0.2)");">
+                                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="@(string.IsNullOrEmpty(PhysicalModel?.BranchName) ? Color.Warning : Color.Success)" Size="Size.Large" Class="mr-4" />
+                                    <div>
+                                        <MudText Typo="Typo.caption" Class="admin-subtitle">Currently Assigned</MudText>
+                                        <MudText Typo="Typo.h5" Color="@(string.IsNullOrEmpty(PhysicalModel?.BranchName) ? Color.Warning : Color.Success)">
+                                            <b>@(string.IsNullOrEmpty(PhysicalModel?.BranchName) ? "UNASSIGNED" : PhysicalModel.BranchName)</b>
+                                        </MudText>
+                                    </div>
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+
+                    <div class="admin-glass-card pa-6">
+                        <MudGrid>
+                            <MudItem xs="12">
+                                <div class="d-flex align-center mb-4">
+                                    <MudIcon Icon="@Icons.Material.Filled.DomainAdd" Color="Color.Primary" Class="mr-2" />
+                                    <MudText Typo="Typo.subtitle1"><b>Deployment Dispatch</b></MudText>
+                                </div>
+                                <MudAutocomplete T="BranchModel"
+                                                 Label="Select Branch"
+                                                 @bind-Value="SelectedBranch"
+                                                 SearchFunc="SearchBranches"
+                                                 ToStringFunc="@(e => e == null ? null : (e.BranchName == "Others" ? "Others" : string.Format("{0} | {1}", e.BranchAbbrev, e.BranchName)))"
+                                                 Variant="Variant.Outlined"
+                                                 Margin="Margin.Dense"
+                                                 ResetValueOnEmptyText="true"
+                                                 Clearable="true"
+                                                 Class="modern-input" />
+                                
+                                @if (SelectedBranch?.BranchName == "Others")
+                                {
+                                    <MudTextField @bind-Value="ManualBranchName" Label="Enter Branch Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3 modern-input" />
+                                }
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+                </EditForm>
+            </div>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <div class="d-flex w-100 flex-wrap pa-4 gap-3 align-center">
+            @if (PhysicalModel != null && !string.IsNullOrEmpty(PhysicalModel.BranchName))
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="DeletePhysicalBranch" Class="rounded-xl px-6" Style="background: rgba(244, 67, 54, 0.05) !important;">
+                    Decommission Branch
+                </MudButton>
+            }
+            <MudSpacer />
+            <MudButton @onclick="Cancel" Variant="Variant.Outlined" Color="Color.Default" Style="border-radius: 12px; font-weight: 700; text-transform: none; border-color: rgba(0,0,0,0.15);">Discard</MudButton>
+            <MudButton form="formPhysicalBranch" Variant="Variant.Filled" ButtonType="ButtonType.Submit" Color="Color.Success" Style="background: var(--mud-palette-success); color: white; font-weight: 800; border-radius: 12px; text-transform: none; white-space: nowrap; padding: 8px 32px;" StartIcon="@Icons.Material.Filled.Save">Update Branch</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public int TruckID { get; set; }
+    [Parameter] public string TruckRegNo { get; set; }
+
+    private TruckPhysicalModel PhysicalModel = new();
+    private BranchModel SelectedBranch = null;
+    private string ManualBranchName = "";
+    private List<BranchModel> BranchList = new();
+
+    public bool HasPermissionITruckServicePhysicalBranchEdit { get; set; } = false;
+    public bool HasPermissionITruckServicePhysicalBranchDelete { get; set; } = false;
+    public int DocTypeID = 149;
+
+    string UserID;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionITruckServicePhysicalBranchEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionITruckServicePhysicalBranchDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+
+        BranchList = BrService.Select().ToList();
+
+        PhysicalModel = Iservice.GetPhysicalInfo(TruckID);
+        if (PhysicalModel == null)
+        {
+            PhysicalModel = new TruckPhysicalModel { TruckID = TruckID };
+        }
+        else if (!string.IsNullOrEmpty(PhysicalModel.BranchName))
+        {
+            var existing = BranchList.FirstOrDefault(b => b.BranchName.Equals(PhysicalModel.BranchName, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                SelectedBranch = existing;
+            }
+            else
+            {
+                SelectedBranch = new BranchModel { BranchName = "Others", BranchAbbrev = "" };
+                ManualBranchName = PhysicalModel.BranchName;
+            }
+        }
+    }
+
+    private async Task<IEnumerable<BranchModel>> SearchBranches(string searchString, CancellationToken token)
+    {
+        await Task.Delay(3, token);
+        var searchList = new List<BranchModel>(BranchList);
+        searchList.Add(new BranchModel { BranchName = "Others", BranchAbbrev = "" });
+        
+        return searchList.Where(x => (x.BranchAbbrev + " " + x.BranchName)
+            .Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private async Task UpdatePhysicalBranch(EditContext context = null)
+    {
+        if (HasPermissionITruckServicePhysicalBranchEdit)
+        {
+            try
+            {
+                if (SelectedBranch == null || string.IsNullOrWhiteSpace(SelectedBranch.BranchName))
+                {
+                    snackbar.Add("Please Select a Branch", Severity.Warning);
+                    return;
+                }
+
+                string branchToSave = SelectedBranch.BranchName;
+                if (branchToSave == "Others")
+                {
+                    if (string.IsNullOrWhiteSpace(ManualBranchName))
+                    {
+                        snackbar.Add("Please enter a Branch Name", Severity.Warning);
+                        return;
+                    }
+                    branchToSave = ManualBranchName;
+                }
+
+                int result = Iservice.UpdatePhysicalInfo(TruckID, branchToSave, UserID);
+                snackbar.Add("Physical Branch Updated Successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBoxAsync(
+                "Permission denied!",
+                "You don't have any permission to Upfdate physical branch.");
+        }
+    }
+
+    private async Task DeletePhysicalBranch()
+    {
+        if (HasPermissionITruckServicePhysicalBranchDelete)
+        {
+            try
+            {
+                int result = Iservice.DeletePhysicalInfo(TruckID, UserID);
+                snackbar.Add("Physical Branch Removed Successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBoxAsync(
+                "Permission denied!",
+                "You don't have any permission to Delete physical branch.");
+        }
+    }
+}

@@ -54,6 +54,27 @@
                             <MudItem xs="6">
                                 <MudNumericField HideSpinButtons="true" @bind-Value="Odometer" Label="Current Odometer (KM)" Variant="Variant.Outlined" Margin="Margin.Normal" Class="modern-input"></MudNumericField>
                             </MudItem>
+                            @if (model.RequestStatus == 1 && model.RequestedBranch?.BranchName?.Contains("SO", StringComparison.OrdinalIgnoreCase) == true)
+                            {
+                                <MudItem xs="6">
+                                    <MudAutocomplete T="BranchModel"
+                                                     Label="Physical Branch"
+                                                     @bind-Value="SelectedPhysicalBranch"
+                                                     SearchFunc="SearchBranches"
+                                                     ToStringFunc="@(e => e == null ? null : (e.BranchName == "Others" ? "Others" : string.Format("{0} | {1}", e.BranchAbbrev, e.BranchName)))"
+                                                     Variant="Variant.Outlined"
+                                                     Margin="Margin.Normal"
+                                                     ResetValueOnEmptyText="true"
+                                                     Clearable="true"
+                                                     Class="modern-input" />
+                                </MudItem>
+                                @if (SelectedPhysicalBranch?.BranchName == "Others")
+                                {
+                                    <MudItem xs="6">
+                                        <MudTextField @bind-Value="ManualPhysicalBranchName" Label="Enter Physical Branch Name" Variant="Variant.Outlined" Margin="Margin.Normal" Class="modern-input" />
+                                    </MudItem>
+                                }
+                            }
                             <MudItem xs="12">
                                 <MudTextField @bind-Value="model.Remarks" Label="Operational Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Remarks)" Class="modern-input" Lines="2"></MudTextField>
                             </MudItem>
@@ -163,6 +184,10 @@
     public bool HasPermissionTruckAvailabilityServiceEdit { get; set; } = false;
     public int TruckAvailabilityDocTypeID = 139;
 
+    private BranchModel SelectedPhysicalBranch = null;
+    private string ManualPhysicalBranchName = "";
+    private List<BranchModel> BranchList = new();
+
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -173,6 +198,8 @@
         BranchID = int.Parse(brancIDString);
         model.RespondedBranchID = BranchID;
         branchID = model?.RespondedBranch?.BranchID ?? 0;
+
+        BranchList = Ibranchservice.Select().ToList();
 
         model.CheckList = Iservice.GetCheckList(model.RequestApprovalHistoryID).ToList();
 
@@ -202,6 +229,16 @@
     private async Task DeleteImage(string imagePath)
     {
         model.Uploads.Remove(imagePath);
+    }
+
+    private async Task<IEnumerable<BranchModel>> SearchBranches(string searchString, CancellationToken token)
+    {
+        await Task.Delay(3, token);
+        var searchList = new List<BranchModel>(BranchList);
+        searchList.Add(new BranchModel { BranchName = "Others", BranchAbbrev = "" });
+        
+        return searchList.Where(x => (x.BranchAbbrev + " " + x.BranchName)
+            .Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
     }
 
     public async Task Approve()
@@ -273,6 +310,28 @@
                 "Please, Select truck.", yesText: "OK");
             return;
         }
+
+        if (model.RequestStatus == 1 && model.RequestedBranch?.BranchName?.Contains("SO", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            if (SelectedPhysicalBranch == null || string.IsNullOrWhiteSpace(SelectedPhysicalBranch.BranchName))
+            {
+                Snackbar.Add("Please Select a Physical Branch", Severity.Warning);
+                return;
+            }
+
+            string branchToSave = SelectedPhysicalBranch.BranchName;
+            if (branchToSave == "Others")
+            {
+                if (string.IsNullOrWhiteSpace(ManualPhysicalBranchName))
+                {
+                    Snackbar.Add("Please enter a Physical Branch Name", Severity.Warning);
+                    return;
+                }
+                branchToSave = ManualPhysicalBranchName;
+            }
+            model.PhysicalBranchName = branchToSave;
+        }
+
         if (model != null)
         {            
             List<int?> RecievedList = context.Where(s => s.IsRecieved == true).Select(d => d.CheckListID).ToList();

@@ -163,6 +163,7 @@ namespace DAL.DataServices.Operations
                 new SqlParameter("@RequestStatus", model.RequestStatus),
                 new SqlParameter("@RecordStatus", 3),
                 new SqlParameter("@Remarks", model.Remarks),
+                new SqlParameter("@PhysicalBranchName", model.PhysicalBranchName),
                 new SqlParameter("@ReceivedList", dataTable),
             };
 
