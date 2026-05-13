@@ -27,11 +27,13 @@
 
         <div class="admin-glass-card pa-4" style="height:65vh; overflow:hidden; display: flex; flex-direction: column;">
             <div class="px-4 py-2 mb-2 d-flex align-center justify-space-between" style="background: rgba(54, 117, 136, 0.05); border-radius: 12px;">
-                <MudCheckBox T="bool" @bind-Checked="@selectAllBranches" Label="Apply role to all branches" Color="Color.Primary" Dense="true" />
+                <MudCheckBox T="bool" @bind-Value="@selectAllBranches" Label="Apply role to all branches" Color="Color.Primary" Dense="true" />
                 <MudText Typo="Typo.caption" Style="color: #367588; font-weight: 600;">@collection.Count Branches Available</MudText>
             </div>
 
             <div style="flex-grow: 1; overflow-y: auto; padding-right: 4px;">
+                @if (!_isApplyingAll)
+                {
                 <MudTable Items="@collection" Elevation="0" Dense="true" Hover="true" Bordered="false" Striped="false" Class="modern-admin-table">
                     <HeaderContent>
                         <MudTh Style="width: 250px;">Branch Name</MudTh>
@@ -43,14 +45,14 @@
                             <MudText Typo="Typo.body2" Style="font-weight: 600; color: #141A46;">@context.Branch.BranchName</MudText>
                         </MudTd>
                         <MudTd DataLabel="Role">
-                            <MudAutocomplete T="string" Value="@context.Role.RoleID" 
+                            <MudAutocomplete T="string" Value="@context.Role.RoleID"
                                            ValueChanged="((e)=> OnRoleIdSet(e,context))"
-                                           SearchFunc="@SearchRoles" 
-                                           Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" 
-                                           Placeholder="Select..." Class="role-select" 
+                                           SearchFunc="@SearchRoles"
+                                           Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                                           Placeholder="Select..." Class="role-select"
                                            AnchorOrigin="Origin.BottomCenter" ShowProgressIndicator="true"
-                                           PopOverClass="admin-popover-glass" 
-                                           CoerceText="true" 
+                                           PopOverClass="admin-popover-glass"
+                                           CoerceText="true"
                                            ResetValueOnEmptyText="true"
                                            AdornmentIcon="@Icons.Material.Filled.ArrowDropDown"
                                            Adornment="Adornment.End" />
@@ -62,6 +64,13 @@
                         </MudTd>
                     </RowTemplate>
                 </MudTable>
+                }
+                else
+                {
+                    <div class="d-flex justify-center align-center" style="height:100%;">
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                    </div>
+                }
             </div>
         </div>
     </DialogContent>
@@ -205,6 +214,8 @@
 
     private string searchUser = "";
     private bool selectAllBranches;
+    private bool _isApplyingAll = false;
+    private int _applyAllRenderKey = 0;
     private UserBranchRoleModel usbr = new UserBranchRoleModel();
     private List<UserBranchRoleModel> collection = new List<UserBranchRoleModel>();
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
@@ -232,15 +243,15 @@
             // Set the role for all branches
             foreach (var branchRoleModel in collection)
             {
+                if (branchRoleModel.Role == null) branchRoleModel.Role = new RoleModel();
                 branchRoleModel.Role.RoleID = RoleId;
             }
-            StateHasChanged(); // Force UI update for all rows
-            await OnValidSubmit(null); 
+            await OnValidSubmit(null);
         }
         else if ((!String.IsNullOrWhiteSpace(RoleId)) && SelectedModel != null)
         {
             SelectedModel.Role.RoleID = RoleId;
-            await OnValidSubmit(SelectedModel); 
+            await OnValidSubmit(SelectedModel);
         }
     }
 
@@ -286,7 +297,7 @@
         }
     }
 
-    // Method to handle the submission of role assignmentso
+    // Method to handle the submission of role assignments
     private async Task OnValidSubmit(UserBranchRoleModel context)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -295,20 +306,25 @@
         {
             if (selectAllBranches)
             {
-                // If "Set All Branches" is checked, set roles for all branches
-                Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null).ToList(), user.Identity.Name); // Call the service to set roles
+                var toSave = collection.Where(s => s.Role != null).ToList();
+                Iservice.SetBranchesNRoles(toSave, user.Identity.Name);
                 snackbar.Add("Saved Successfully", Severity.Success);
+                _isApplyingAll = true;
+                StateHasChanged();
+                await Task.Delay(50);
+                await GetAll();
+                _isApplyingAll = false;
+                StateHasChanged();
             }
             else if (collection != null && collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty && context != null && context.Role != null && s.Role.RoleID == context.Role.RoleID) != null && collection.Where(s => s.Role != null).Count() != 0)
             {
-                // If specific roles are assigned, set roles for those branches
-                Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty).ToList(), user.Identity.Name); // Call the service to set roles
+                Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty).ToList(), user.Identity.Name);
                 snackbar.Add("Saved Successfully", Severity.Success);
             }
         }
         catch (Exception ex)
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            snackbar.Add($"[ERROR] {ex.Message}", Severity.Error);
         }
     }
 }
