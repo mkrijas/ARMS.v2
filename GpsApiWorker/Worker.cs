@@ -51,7 +51,8 @@ namespace GpsApiWorker
                                 SELECT t.ChassisNumber, r.RegNo 
                                 FROM [dbo].[Truck.Trucks] t (NOLOCK)
                                 LEFT JOIN [dbo].[Truck.Registration] r (NOLOCK) ON t.TruckID = r.TruckID
-                                WHERE t.ChassisNumber IS NOT NULL AND r.RegNo IS NOT NULL", new List<SqlParameter>());
+                                LEFT JOIN [dbo].[Truck.Types] tp (NOLOCK) ON t.TruckTypeID = tp.TruckTypeID
+                                WHERE t.ChassisNumber IS NOT NULL AND r.RegNo IS NOT NULL AND tp.TruckType LIKE '%TATA%'", new List<SqlParameter>());
 
                             foreach (var dr in records)
                             {
