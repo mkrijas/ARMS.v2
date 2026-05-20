@@ -44,13 +44,13 @@ namespace GpsApiWorker
         public double? gpsLongitude { get; set; }
 
         [JsonPropertyName("gpsAltitude")]
-        public int? gpsAltitude { get; set; }
+        public double? gpsAltitude { get; set; }
 
-        [JsonPropertyName("gpsCourseInDeg")]
-        public int? gpsCourseInDeg { get; set; }
+        [JsonPropertyName("gpsCourseInDegrees")]
+        public double? gpsCourseInDeg { get; set; }
 
         [JsonPropertyName("gpsSignalQuality")]
-        public int? gpsSignalQuality { get; set; }
+        public double? gpsSignalQuality { get; set; }
 
         [JsonPropertyName("gpsFix")]
         public bool? gpsFix { get; set; }
@@ -62,28 +62,28 @@ namespace GpsApiWorker
         public bool? crankOn { get; set; }
 
         [JsonPropertyName("speed")]
-        public int? speed { get; set; }
+        public double? speed { get; set; }
 
         [JsonPropertyName("odometer")]
-        public int? odometer { get; set; }
+        public double? odometer { get; set; }
 
         [JsonPropertyName("noOfFuelTanks")]
-        public int? noOfFuelTanks { get; set; }
+        public double? noOfFuelTanks { get; set; }
 
-        [JsonPropertyName("PrimaryFuelLevel")]
-        public int? PrimaryFuelLevel { get; set; }
+        [JsonPropertyName("primaryFuelLevel")]
+        public double? PrimaryFuelLevel { get; set; }
 
         [JsonPropertyName("primaryFuelTankCapacity")]
-        public int? primaryFuelTankCapacity { get; set; }
+        public double? primaryFuelTankCapacity { get; set; }
 
-        [JsonPropertyName("SecondaryFuelLevel1")]
-        public int? SecondaryFuelLevel1 { get; set; }
+        [JsonPropertyName("secondaryFuelLevel1")]
+        public double? SecondaryFuelLevel1 { get; set; }
 
         [JsonPropertyName("secondaryFuelTankCapacity1")]
-        public int? secondaryFuelTankCapacity1 { get; set; }
+        public double? secondaryFuelTankCapacity1 { get; set; }
 
         [JsonPropertyName("defLevel")]
-        public int? defLevel { get; set; }
+        public double? defLevel { get; set; }
 
         [JsonPropertyName("backupBatteryVoltage")]
         public double? backupBatteryVoltage { get; set; }
@@ -158,7 +158,7 @@ namespace GpsApiWorker
         public string vehicleNumber { get; set; } = string.Empty;
 
         [JsonPropertyName("code")]
-        public string code { get; set; } = string.Empty;
+        public object? code { get; set; }
 
         [JsonPropertyName("message")]
         public string message { get; set; } = string.Empty;
@@ -197,6 +197,25 @@ namespace GpsApiWorker
                 }
             }
 
+            if (eventTime.HasValue)
+            {
+                // Force parsed time to UTC so that conversion to IST is accurate
+                var utcTime = eventTime.Value.Kind == DateTimeKind.Utc 
+                    ? eventTime.Value 
+                    : DateTime.SpecifyKind(eventTime.Value, DateTimeKind.Utc);
+                
+                try
+                {
+                    var istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+                    eventTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istZone);
+                }
+                catch
+                {
+                    // Fallback to manual offset if timezone lookup fails (IST = UTC + 5:30)
+                    eventTime = utcTime.AddHours(5).AddMinutes(30);
+                }
+            }
+
             return new TelemetryModel
             {
                 REGN_NUMBER = vt.registrationNumber,
@@ -206,7 +225,9 @@ namespace GpsApiWorker
                 ALTITUDE = vt.gpsAltitude,
                 SPEED = vt.speed.HasValue ? (decimal)vt.speed.Value : null,
                 GEAR_NUM = vt.currentGear.HasValue ? (decimal)vt.currentGear.Value : null,
-                FUEL_LEVEL = vt.fuelLevelPercent.HasValue ? (decimal)vt.fuelLevelPercent.Value : null,
+                FUEL_LEVEL = vt.PrimaryFuelLevel.HasValue && vt.primaryFuelTankCapacity.HasValue && vt.primaryFuelTankCapacity.Value > 0
+                    ? (decimal)Math.Min(100.0, Math.Max(0.0, vt.PrimaryFuelLevel.Value / vt.primaryFuelTankCapacity.Value * 100.0))
+                    : null,
                 DEF_LEVEL = vt.defLevel.HasValue ? (decimal)vt.defLevel.Value : null,
                 VEHICLE_ODO = vt.odometer.HasValue ? (decimal)vt.odometer.Value : null,
                 ENGINE_SPEED = null,

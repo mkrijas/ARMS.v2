@@ -104,7 +104,7 @@ namespace GpsApiWorker
             
             var allVehicles = new List<VehicleTelemetry>();
             int currentPage = 0;
-            int pageSize = 100;
+            int pageSize = 50;
             int totalPages = 1;
 
             do
@@ -148,6 +148,10 @@ namespace GpsApiWorker
                 }
 
                 currentPage++;
+                if (currentPage < totalPages)
+                {
+                    await Task.Delay(2500, cancellationToken);
+                }
             } while (currentPage < totalPages);
 
             return allVehicles;
