@@ -25,6 +25,9 @@ namespace GpsApiWorker
                 client.BaseAddress = new Uri("https://api.example.com"); // Set the base address of your API                
             });
 
+            builder.Services.Configure<OnethorApiSettings>(builder.Configuration.GetSection("OnethorApi"));
+            builder.Services.AddHttpClient<OnethorApiClient>();
+
             builder.Services.AddHostedService<ApiPollingService>();
             builder.Services.AddSingleton<IDbService,DbService>();
             builder.Services.AddSingleton<ITelemetryService, TelemetryService>();
