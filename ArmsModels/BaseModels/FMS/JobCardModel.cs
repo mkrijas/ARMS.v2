@@ -1,4 +1,4 @@
-﻿using ArmsModels.SharedModels;
+using ArmsModels.SharedModels;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -31,9 +31,9 @@ namespace ArmsModels.BaseModels
         public string BranchName { get; set; }
         public int? BreakdownID { get; set; }
         public string BreakdownType { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Primary Workshop Facility is required.")]
         public string workshop { get; set; }
-        [Required]
+        [Required(ErrorMessage = "At least one repair job must be added and specified.")]
         public string job { get; set; }       
         public string mechanic { get; set; }
         public List<JobcardWorkshopModel> Workshops { get; set; } // List of workshops associated with the job card
