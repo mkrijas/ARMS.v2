@@ -30,7 +30,6 @@ namespace ArmsModels.BaseModels
         public string HomeBranchName { get; set; }
         public string OperatingBranchName { get; set; }
         public int? CurrentBranchID { get; set; }
-        [Required]
         public virtual string PhysicalBranchName { get; set; }
         public short? TruckTypeID { get; set; }
         public string TruckType { get; set; }
