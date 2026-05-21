@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -517,6 +517,7 @@ namespace ArmsServices.DataServices
                 Status = dr.GetInt32("Status"),
                 Amount = dr.GetDecimal("Amount"),
                 Tax = dr.GetDecimal("Tax"),
+                TDS = dr.GetDecimal("TDS"),
             };
         }
 

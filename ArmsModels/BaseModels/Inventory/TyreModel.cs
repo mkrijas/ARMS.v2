@@ -1,4 +1,4 @@
-﻿using ArmsModels.SharedModels;
+using ArmsModels.SharedModels;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
@@ -169,8 +169,8 @@ namespace ArmsModels.BaseModels
         public virtual decimal? GstRate { get; set; }
         public virtual decimal? TotalAmount { 
             get { 
-                if (TaxIncluded) return Amount - TDS; 
-                else return Amount + Tax - TDS; 
+                if (TaxIncluded) return Amount + TDS; 
+                else return Amount + Tax + TDS; 
             }
         }
     }
