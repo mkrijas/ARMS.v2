@@ -104,7 +104,7 @@ namespace GpsApiWorker
             
             var allVehicles = new List<VehicleTelemetry>();
             int currentPage = 0;
-            int pageSize = 200;
+            int pageSize = 50;
             int totalPages = 1;
 
             do
@@ -120,8 +120,8 @@ namespace GpsApiWorker
                 if (!response.IsSuccessStatusCode)
                 {
                     var errContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogError("Failed to fetch vehicle snapshots on page {Page}. Status: {StatusCode}, Error: {Error}", currentPage, response.StatusCode, errContent);
-                    response.EnsureSuccessStatusCode();
+                    _logger.LogWarning("Page {Page} failed ({StatusCode}). Returning {Count} vehicles fetched so far.", currentPage, response.StatusCode, allVehicles.Count);
+                    break;
                 }
 
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -150,7 +150,7 @@ namespace GpsApiWorker
                 currentPage++;
                 if (currentPage < totalPages)
                 {
-                    await Task.Delay(2500, cancellationToken);
+                    await Task.Delay(15000, cancellationToken);
                 }
             } while (currentPage < totalPages);
 
