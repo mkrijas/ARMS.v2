@@ -104,7 +104,7 @@ namespace GpsApiWorker
             
             var allVehicles = new List<VehicleTelemetry>();
             int currentPage = 0;
-            int pageSize = 50;
+            int pageSize = 200;
             int totalPages = 1;
 
             do
