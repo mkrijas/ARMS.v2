@@ -1,0 +1,385 @@
+@page "/truck-image-upload"
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject ITruckService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@using System.Threading
+@using ArmsModels.BaseModels
+@using ArmsModels.SharedModels
+
+@if (_isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+        <LoaderComponent IsFullScreen="true" 
+                         ShowLogo="false" 
+                         Size="medium" 
+                         LoadingText="Initializing Upload Console" 
+                         SubText="Loading trucks..." />
+    </div>
+}
+else
+{
+    <div class="admin-page-container">
+        <!-- Tiered Header -->
+        <div class="admin-header-tiered mb-6">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">Vehicle Photo & Document Registry</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-subtitle">Upload and manage visual records, compliance documents, and inspections for the fleet.</MudText>
+                </div>
+            </div>
+        </div>
+
+        <MudGrid Spacing="4">
+            <!-- Master: Truck List -->
+            <MudItem xs="12" md="4">
+                <div class="admin-glass-card pa-4">
+                    <MudText Typo="Typo.h6" Class="mb-3" Color="Color.Primary">Select Fleet Vehicle</MudText>
+                    <MudTextField @bind-Value="searchString" 
+                                  Placeholder="Search Reg No..." 
+                                  Adornment="Adornment.Start" 
+                                  AdornmentIcon="@Icons.Material.Filled.Search" 
+                                  Variant="Variant.Outlined" 
+                                  Margin="Margin.Dense" 
+                                  Class="admin-input-group mb-4" 
+                                  Clearable="true" />
+                    
+                    <div style="max-height: 500px; overflow-y: auto;">
+                        <MudTable Items="@FilteredTrucks" 
+                                  Hover="true" 
+                                  Dense="true" 
+                                  Elevation="0"
+                                  RowClassFunc="@GetRowClass"
+                                  OnRowClick="@((TableRowClickEventArgs<TruckModel> e) => SelectTruck(e.Item))"
+                                  T="TruckModel"
+                                  Class="modern-admin-table">
+                            <HeaderContent>
+                                <MudTh><span class="admin-header-text">VEHICLE NO</span></MudTh>
+                                <MudTh><span class="admin-header-text">TYPE</span></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Reg No">
+                                    <div class="d-flex align-center gap-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" Color="Color.Secondary" />
+                                        <MudText Typo="Typo.body2" Class="fw-700">@context.RegNo</MudText>
+                                    </div>
+                                </MudTd>
+                                <MudTd DataLabel="Type">
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@context.TruckType</MudChip>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </div>
+                </div>
+            </MudItem>
+
+            <!-- Detail: Image Upload and View -->
+            <MudItem xs="12" md="8">
+                @if (selectedTruck == null)
+                {
+                    <div class="admin-glass-card pa-12 d-flex flex-column align-center justify-center text-center" style="min-height: 400px; border: 2px dashed rgba(54, 117, 136, 0.2);">
+                        <MudIcon Icon="@Icons.Material.Outlined.LocalShipping" Style="font-size: 5rem;" Color="Color.Primary" Class="mb-4" />
+                        <MudText Typo="Typo.h5" Class="admin-title">No Vehicle Selected</MudText>
+                        <MudText Typo="Typo.body2" Class="admin-subtitle">Please select a truck from the list to manage its image registry.</MudText>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-6">
+                        <!-- Vehicle Summary Info Card -->
+                        <div class="admin-glass-card pa-4" style="background: linear-gradient(135deg, rgba(54, 117, 136, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);">
+                            <div class="d-flex align-center justify-space-between flex-wrap gap-4">
+                                <div class="d-flex align-center gap-4">
+                                    <div class="icon-badge primary-badge pa-2" style="background: rgba(54, 117, 136, 0.15); border-radius: 12px;">
+                                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Primary" Style="font-size: 2.5rem;" />
+                                    </div>
+                                    <div>
+                                        <MudText Typo="Typo.h5" Class="admin-title"><b>@selectedTruck.RegNo</b></MudText>
+                                        <MudText Typo="Typo.caption" Class="admin-subtitle">
+                                            Type: @selectedTruck.TruckType | Wheels: @selectedTruck.wheels | Fuel: @selectedTruck.FuelType
+                                        </MudText>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">@selectedTruck.HomeBranchName</MudChip>
+                                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">@selectedTruck.BSType</MudChip>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload Panel -->
+                        @if (branchID != 7)
+                        {
+                            <div class="admin-glass-card pa-6">
+                                <MudText Typo="Typo.h6" Class="mb-4" Color="Color.Primary"><b>Upload Visual Record</b></MudText>
+                                
+                                <MudGrid Spacing="3">
+                                    <MudItem xs="12" sm="6">
+                                        <MudSelect T="string" @bind-Value="newImage.ImageCategory" Label="Image Category" Variant="Variant.Outlined" Class="mb-4">
+                                            <MudSelectItem Value="@("Front View")" />
+                                            <MudSelectItem Value="@("Back View")" />
+                                            <MudSelectItem Value="@("Left Side View")" />
+                                            <MudSelectItem Value="@("Right Side View")" />
+                                            <MudSelectItem Value="@("Odometer / Dashboard")" />
+                                            <MudSelectItem Value="@("Chassis Number")" />
+                                            <MudSelectItem Value="@("Engine Number")" />
+                                            <MudSelectItem Value="@("RC Book")" />
+                                            <MudSelectItem Value="@("Permit / Fitness")" />
+                                            <MudSelectItem Value="@("Others")" />
+                                        </MudSelect>
+
+                                        <MudTextField @bind-Value="newImage.Remarks" Label="Remarks / Notes" Variant="Variant.Outlined" Lines="3" Class="mb-4" />
+                                    </MudItem>
+                                    
+                                    <MudItem xs="12" sm="6" Class="d-flex flex-column justify-center align-center">
+                                        @if (!string.IsNullOrEmpty(newImage.ImagePath))
+                                        {
+                                            <div class="pa-2 rounded-xl mb-4" style="background: rgba(54, 117, 136, 0.05); border: 2px dashed rgba(54, 117, 136, 0.3); width: 100%; max-width: 250px; display: flex; flex-direction: column; align-items: center;">
+                                                <MudImage Fluid ObjectFit="ObjectFit.Cover" Src="@newImage.ImagePath" Class="rounded-lg shadow-sm mb-2" Style="max-height: 150px; width: 100%;" />
+                                                <MudButton Color="Color.Error" Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Delete" OnClick="ClearUpload">Remove Photo</MudButton>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-xl pa-8 mb-4 d-flex flex-column align-center justify-center" style="border: 2px dashed rgba(54, 117, 136, 0.3); background: rgba(54, 117, 136, 0.02); width: 100%; max-width: 250px; min-height: 150px;">
+                                                <MudIcon Icon="@Icons.Material.Outlined.PhotoCamera" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+                                                <MyFileUpload FolderName="Trucks/Images" FileName="@Guid.NewGuid().ToString()" Label="Take/Select Photo" @bind-FilePath="newImage.ImagePath" Size="Size.Small" Color="Color.Primary" />
+                                            </div>
+                                        }
+                                    </MudItem>
+                                </MudGrid>
+
+                                <div class="d-flex justify-end mt-4">
+                                    <MudButton OnClick="SaveImage" 
+                                               Variant="Variant.Filled" 
+                                               Color="Color.Primary" 
+                                               Disabled="@(isUploading || string.IsNullOrEmpty(newImage.ImagePath) || string.IsNullOrEmpty(newImage.ImageCategory))" 
+                                               StartIcon="@Icons.Material.Filled.CloudUpload" 
+                                               Class="action-btn-primary px-8">
+                                        @((isUploading) ? "Uploading..." : "Save Image Details")
+                                    </MudButton>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Gallery View -->
+                        <div class="admin-glass-card pa-6">
+                            <MudText Typo="Typo.h6" Class="mb-4" Color="Color.Primary"><b>Visual History Gallery</b></MudText>
+                            
+                            @if (!truckImages.Any())
+                            {
+                                <div class="d-flex flex-column align-center justify-center py-12 text-center" style="background: rgba(54, 117, 136, 0.01); border-radius: 12px;">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Collections" Style="font-size: 3rem;" Color="Color.Secondary" Class="mb-2" />
+                                    <MudText Typo="Typo.body1" Class="fw-700">No Images Registered</MudText>
+                                    <MudText Typo="Typo.body2" Class="admin-subtitle">No files found for this vehicle. Uploaded photos will show up here.</MudText>
+                                </div>
+                            }
+                            else
+                            {
+                                <MudGrid Spacing="3">
+                                    @foreach (var img in truckImages)
+                                    {
+                                        <MudItem xs="12" sm="6" md="4">
+                                            <div class="image-gallery-card pa-2 rounded-xl" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(54, 117, 136, 0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.2s; height: 100%; display: flex; flex-direction: column;">
+                                                <div style="position: relative; cursor: pointer; overflow: hidden; border-radius: 8px;" @onclick="@(() => OpenPreview(img.ImagePath))">
+                                                    <MudImage ObjectFit="ObjectFit.Cover" Src="@img.ImagePath" Style="height: 160px; width: 100%; border-radius: 8px;" />
+                                                    <div class="image-category-overlay" style="position: absolute; top: 8px; left: 8px; background: rgba(54, 117, 136, 0.85); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+                                                        @img.ImageCategory
+                                                    </div>
+                                                </div>
+                                                <div class="pa-2 d-flex flex-column" style="flex-grow: 1;">
+                                                    <MudText Typo="Typo.body2" Class="fw-700 text-truncate" style="flex-grow: 1;">
+                                                        @(string.IsNullOrEmpty(img.Remarks) ? "No remarks" : img.Remarks)
+                                                    </MudText>
+                                                    
+                                                    <div class="d-flex align-center justify-space-between mt-3 pt-2" style="border-top: 1px solid rgba(54, 117, 136, 0.1);">
+                                                        <div>
+                                                            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.7rem; display: block;">By: @img.UserInfo?.UserID @(string.IsNullOrEmpty(img.BranchName) ? "" : $"({img.BranchName})")</MudText>
+                                                            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.7rem; display: block;">@img.UserInfo?.TimeStampField?.ToString("dd MMM yyyy")</MudText>
+                                                        </div>
+                                                        <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" 
+                                                                       Color="Color.Error" 
+                                                                       Size="Size.Small" 
+                                                                       OnClick="@(() => DeleteImage(img))" 
+                                                                       Disabled="@(branchID != img.BranchID || img.UserInfo?.TimeStampField?.Date != DateTime.Today)" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                            }
+                        </div>
+                    </div>
+                }
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    <!-- Lightbox/Preview Dialog Overlay -->
+    @if (isPreviewOpen)
+    {
+        <div class="preview-overlay-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 9999;" @onclick="ClosePreview">
+            <div style="position: relative; max-width: 90vw; max-height: 90vh;">
+                <MudImage Src="@previewImagePath" Style="max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);" />
+                <MudFab Icon="@Icons.Material.Filled.Close" Color="Color.Secondary" Size="Size.Small" Style="position: absolute; top: -15px; right: -15px;" OnClick="ClosePreview" />
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private bool _isLoading = true;
+    private List<TruckModel> trucks = new();
+    private List<TruckImageModel> truckImages = new();
+    private TruckModel selectedTruck;
+    private TruckImageModel newImage = new();
+    private string searchString = "";
+    private int branchID;
+    private string userID;
+    private bool isUploading;
+    private string previewImagePath;
+    private bool isPreviewOpen;
+
+    private IEnumerable<TruckModel> FilteredTrucks => 
+        trucks.Where(t => string.IsNullOrEmpty(searchString) || 
+                          t.RegNo.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            branchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value ?? "0");
+            userID = user.Identity?.Name ?? "System";
+
+            // Load trucks for the user's branch
+            trucks = Iservice.SelectByBranch(branchID, "All", "Operation").ToList();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Initialization failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void SelectTruck(TruckModel truck)
+    {
+        selectedTruck = truck;
+        newImage = new TruckImageModel();
+        GetImages();
+    }
+
+    private string GetRowClass(TruckModel truck, int index)
+    {
+        return selectedTruck?.TruckID == truck.TruckID ? "selected-row-highlight" : "";
+    }
+
+    private void ClearUpload()
+    {
+        newImage.ImagePath = string.Empty;
+    }
+
+    private void GetImages()
+    {
+        if (selectedTruck != null)
+        {
+            truckImages = Iservice.GetTruckImages(selectedTruck.TruckID).ToList();
+        }
+    }
+
+    private async Task SaveImage()
+    {
+        if (selectedTruck == null)
+        {
+            snackbar.Add("Please select a truck first.", Severity.Warning);
+            return;
+        }
+        if (string.IsNullOrEmpty(newImage.ImagePath))
+        {
+            snackbar.Add("Please select an image file to upload.", Severity.Warning);
+            return;
+        }
+        if (string.IsNullOrEmpty(newImage.ImageCategory))
+        {
+            snackbar.Add("Please select an image category.", Severity.Warning);
+            return;
+        }
+
+        isUploading = true;
+        try
+        {
+            newImage.TruckID = selectedTruck.TruckID.Value;
+            newImage.BranchID = branchID;
+            newImage.UserInfo.UserID = userID;
+            newImage.UserInfo.RecordStatus = 1;
+
+            int result = Iservice.SaveTruckImage(newImage);
+            if (result != 0)
+            {
+                snackbar.Add("Truck image details saved successfully!", Severity.Success);
+                newImage = new TruckImageModel();
+                GetImages();
+            }
+            else
+            {
+                snackbar.Add("Failed to save truck image to database.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Error saving image details: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private async Task DeleteImage(TruckImageModel img)
+    {
+        bool? confirm = await DialogService.ShowMessageBoxAsync(
+            "Confirm Delete",
+            $"Are you sure you want to delete the image category '{img.ImageCategory}'?",
+            yesText: "Delete", cancelText: "Cancel"
+        );
+
+        if (confirm == true)
+        {
+            try
+            {
+                int result = Iservice.DeleteTruckImage(img.ImageID.Value, userID);
+                if (result != 0)
+                {
+                    snackbar.Add("Image deleted successfully.", Severity.Success);
+                    GetImages();
+                }
+                else
+                {
+                    snackbar.Add("Failed to delete image.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private void OpenPreview(string path)
+    {
+        previewImagePath = path;
+        isPreviewOpen = true;
+    }
+
+    private void ClosePreview()
+    {
+        isPreviewOpen = false;
+        previewImagePath = null;
+    }
+}

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -693,6 +693,61 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Operation.Truck.Physical.Delete]", parameters);
+        }
+
+        public int SaveTruckImage(TruckImageModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@ImageID", model.ImageID),
+                new SqlParameter("@TruckID", model.TruckID),
+                new SqlParameter("@BranchID", model.BranchID),
+                new SqlParameter("@ImagePath", model.ImagePath),
+                new SqlParameter("@ImageCategory", model.ImageCategory),
+                new SqlParameter("@Remarks", model.Remarks),
+                new SqlParameter("@UserID", model.UserInfo.UserID)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Truck.Image.Update]", parameters);
+        }
+
+        public IEnumerable<TruckImageModel> GetTruckImages(int? truckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@TruckID", truckID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Image.Select]", parameters))
+            {
+                var uploadedBy = dr.HasColumn("UploadedBy") ? dr.GetString("UploadedBy") : (dr.HasColumn("UserID") ? dr.GetString("UserID") : string.Empty);
+                var uploadedDate = dr.HasColumn("UploadedDate") ? dr.GetDateTime("UploadedDate") : (dr.HasColumn("TimeStamp") ? dr.GetDateTime("TimeStamp") : DateTime.Now);
+                
+                yield return new TruckImageModel
+                {
+                    ImageID = dr.GetInt32("ImageID"),
+                    TruckID = dr.GetInt32("TruckID") ?? 0,
+                    BranchID = dr.HasColumn("BranchID") ? dr.GetInt32("BranchID") : null,
+                    ImagePath = dr.GetString("ImagePath"),
+                    ImageCategory = dr.GetString("ImageCategory"),
+                    Remarks = dr.GetString("Remarks"),
+                    BranchName = dr.HasColumn("BranchName") ? dr.GetString("BranchName") : string.Empty,
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.HasColumn("RecordStatus") ? dr.GetByte("RecordStatus") : (byte)1,
+                        TimeStampField = uploadedDate,
+                        UserID = uploadedBy
+                    }
+                };
+            }
+        }
+
+        public int DeleteTruckImage(int imageID, string userID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@ImageID", imageID),
+                new SqlParameter("@UserID", userID)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Truck.Image.Delete]", parameters);
         }
     }
 

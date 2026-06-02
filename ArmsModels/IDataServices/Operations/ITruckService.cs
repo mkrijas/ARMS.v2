@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -40,6 +40,9 @@ namespace ArmsServices.DataServices
         TruckPhysicalModel GetPhysicalInfo(int? TruckID);
         int UpdatePhysicalInfo(int? TruckID, string BranchName, string UserID);
         int DeletePhysicalInfo(int? TruckID, string UserID);
+        int SaveTruckImage(TruckImageModel model);
+        IEnumerable<TruckImageModel> GetTruckImages(int? truckID);
+        int DeleteTruckImage(int imageID, string userID);
     }
 
     public interface ITelemetryService

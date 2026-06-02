@@ -472,6 +472,31 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: rgba(0,0,0,0.2);
     }
+
+    .image-gallery-card {
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .image-gallery-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 28px rgba(54, 117, 136, 0.18) !important;
+        border-color: rgba(54, 117, 136, 0.4) !important;
+    }
+
+    .preview-overlay-modal {
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            background: rgba(0, 0, 0, 0);
+            opacity: 0;
+        }
+        to {
+            background: rgba(0, 0, 0, 0.85);
+            opacity: 1;
+        }
+    }
 </style>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4"> 
@@ -1344,10 +1369,60 @@
                 </MudGrid>
             </MudTabPanel>
 
+            <MudTabPanel Text="Photos" Icon="@Icons.Material.Filled.PhotoLibrary">
+                @if (!truckImages.Any())
+                {
+                    <div class="d-flex flex-column align-center justify-center py-12 text-center" style="background: rgba(54, 117, 136, 0.01); border-radius: 12px; border: 2px dashed rgba(54, 117, 136, 0.2);">
+                        <MudIcon Icon="@Icons.Material.Outlined.Collections" Style="font-size: 3rem;" Color="Color.Secondary" Class="mb-2" />
+                        <MudText Typo="Typo.body1" Class="fw-700">No Images Registered</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No files found for this vehicle. Uploaded photos will show up here.</MudText>
+                    </div>
+                }
+                else
+                {
+                    <MudGrid Spacing="3">
+                        @foreach (var img in truckImages)
+                        {
+                            <MudItem xs="12" sm="6" md="4">
+                                <div class="image-gallery-card pa-2 rounded-xl" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(54, 117, 136, 0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.2s; height: 100%; display: flex; flex-direction: column;">
+                                    <div style="position: relative; cursor: pointer; overflow: hidden; border-radius: 8px;" @onclick="@(() => OpenPreview(img.ImagePath))">
+                                        <MudImage ObjectFit="ObjectFit.Cover" Src="@img.ImagePath" Style="height: 160px; width: 100%; border-radius: 8px;" />
+                                        <div class="image-category-overlay" style="position: absolute; top: 8px; left: 8px; background: rgba(54, 117, 136, 0.85); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+                                            @img.ImageCategory
+                                        </div>
+                                    </div>
+                                    <div class="pa-2 d-flex flex-column" style="flex-grow: 1;">
+                                        <MudText Typo="Typo.body2" Class="fw-700 text-truncate" style="flex-grow: 1;">
+                                            @(string.IsNullOrEmpty(img.Remarks) ? "No remarks" : img.Remarks)
+                                        </MudText>
+                                        
+                                        <div class="d-flex align-center justify-space-between mt-3 pt-2" style="border-top: 1px solid rgba(54, 117, 136, 0.1);">
+                                            <div>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.7rem; display: block;">By: @img.UserInfo?.UserID @(string.IsNullOrEmpty(img.BranchName) ? "" : $"({img.BranchName})")</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.7rem; display: block;">@img.UserInfo?.TimeStampField?.ToString("dd MMM yyyy")</MudText>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                }
+            </MudTabPanel>
 
         </MudTabs>
     }
 </MudContainer>
+
+    @if (isPreviewOpen)
+    {
+        <div class="preview-overlay-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 9999;" @onclick="ClosePreview">
+            <div style="position: relative; max-width: 90vw; max-height: 90vh;" @onclick:stopPropagation>
+                <MudImage Src="@previewImagePath" Style="max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);" />
+                <MudFab Icon="@Icons.Material.Filled.Close" Color="Color.Secondary" Size="Size.Small" Style="position: absolute; top: -15px; right: -15px;" OnClick="ClosePreview" />
+            </div>
+        </div>
+    }
 
     @code {
     
@@ -1389,6 +1464,9 @@
 
     private IEnumerable<TruckModel> AllTrucks = new List<TruckModel>();
     private bool isLoading = false;
+    private List<TruckImageModel> truckImages = new();
+    private string previewImagePath;
+    private bool isPreviewOpen;
 
     #region mock // --- Mock Data Properties ---
     private long? _Odometer;
@@ -1547,6 +1625,7 @@
 
             if (detailedTruck != null)
             {
+                truckImages = TruckService.GetTruckImages(truckId.Value).ToList();
                 var registration = detailedTruck?.CurrentRegistration;                 
 
                 // Initialize Mock values for specific truck
@@ -1591,6 +1670,19 @@
     private void ClearSelection()
     {
         _selectedTruck = null;
+        truckImages.Clear();
+    }
+
+    private void OpenPreview(string path)
+    {
+        previewImagePath = path;
+        isPreviewOpen = true;
+    }
+
+    private void ClosePreview()
+    {
+        isPreviewOpen = false;
+        previewImagePath = null;
     }
 
     private void ProcessTyreLayout()
