@@ -450,9 +450,14 @@
     }
 
     [JSInvokable]
-    public async Task OnIframeLoadComplete()
+    public async Task OnIframeLoadComplete(string currentUrl = null)
     {
-        Console.WriteLine($"[ReportViewer] Load complete for {ReportName}");
+        Console.WriteLine($"[ReportViewer] Load complete for {ReportName}, URL: {currentUrl}");
+        
+        if (!string.IsNullOrEmpty(currentUrl))
+        {
+            _reportUrl = currentUrl;
+        }
         
         try
         {
@@ -524,20 +529,39 @@
     }
 
 
+    private string GetExportUrl(string format)
+    {
+        if (string.IsNullOrEmpty(_reportUrl)) return "";
+        
+        string exportUrl = _reportUrl;
+        var regex = new System.Text.RegularExpressions.Regex(@"rs:Format=[^&]*", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (regex.IsMatch(exportUrl))
+        {
+            exportUrl = regex.Replace(exportUrl, $"rs:Format={format}");
+        }
+        else
+        {
+            string separator = exportUrl.Contains("?") ? "&" : "?";
+            exportUrl = $"{exportUrl}{separator}rs:Format={format}";
+        }
+        
+        return exportUrl;
+    }
+
     string exportFormat = "";
     private async Task OnExportChanged(ChangeEventArgs e)
     {
         exportFormat = e.Value?.ToString();
         if (string.IsNullOrEmpty(exportFormat)) return;
         
-        var exportUrl = _reportUrl.Replace("rs:Format=HTML5", $"rs:Format={exportFormat}");
+        var exportUrl = GetExportUrl(exportFormat);
         await JSRuntime.InvokeVoidAsync("open", exportUrl, "_blank");
     }
 
     private async Task Export()
     {
         if (string.IsNullOrEmpty(exportFormat)) return;
-        var exportUrl = _reportUrl.Replace("rs:Format=HTML5", $"rs:Format={exportFormat}");
+        var exportUrl = GetExportUrl(exportFormat);
         await JSRuntime.InvokeVoidAsync("open", exportUrl, "_blank");
     }
 

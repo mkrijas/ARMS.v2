@@ -74,9 +74,16 @@ function runReportWithCallback(iframeId, url, dotNetRef) {
     // Register load handler BEFORE setting src
     iframe.onload = function () {
         if (window._ssrsLoadTimeout) clearTimeout(window._ssrsLoadTimeout);
-        iframe.onload = null;
+        let currentUrl = "";
+        try {
+            if (iframe.contentWindow && iframe.contentWindow.location) {
+                currentUrl = iframe.contentWindow.location.href;
+            }
+        } catch (ex) {
+            console.warn("[runReportWithCallback] could not read iframe location:", ex);
+        }
         if (dotNetRef) {
-            dotNetRef.invokeMethodAsync("OnIframeLoadComplete")
+            dotNetRef.invokeMethodAsync("OnIframeLoadComplete", currentUrl)
                      .catch(function (e) { console.warn("[runReportWithCallback] callback error:", e); });
         }
     };
