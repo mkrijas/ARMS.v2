@@ -144,6 +144,11 @@ namespace Views.Controllers
             try
             {
                 using var client = new HttpClient(clientHandler);
+                
+                // SSRS reports can take a long time to render. Default to 10 minutes (600 seconds) if not configured.
+                var timeoutSeconds = _configuration.GetValue<int>("SSRS:TimeoutSeconds", 600);
+                client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+
                 var request = new HttpRequestMessage(new HttpMethod(Request.Method), fullUrl);
 
                 // Header Proxying
