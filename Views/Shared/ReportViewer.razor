@@ -526,11 +526,22 @@
     }
 
 
-    private string GetExportUrl(string format)
+    private async Task<string> GetExportUrl(string format)
     {
-        if (string.IsNullOrEmpty(_reportUrl)) return "";
+        string currentUrl = "";
+        try
+        {
+            currentUrl = await JSRuntime.InvokeAsync<string>("getIframeUrl", _iframeId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ReportViewer] Error getting current iframe URL: {ex.Message}");
+        }
+
+        string baseRawUrl = !string.IsNullOrEmpty(currentUrl) ? currentUrl : _reportUrl;
+        if (string.IsNullOrEmpty(baseRawUrl)) return "";
         
-        string exportUrl = _reportUrl;
+        string exportUrl = baseRawUrl;
         var regex = new System.Text.RegularExpressions.Regex(@"rs:Format=[^&]*", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         if (regex.IsMatch(exportUrl))
         {
@@ -551,14 +562,14 @@
         exportFormat = e.Value?.ToString();
         if (string.IsNullOrEmpty(exportFormat)) return;
         
-        var exportUrl = GetExportUrl(exportFormat);
+        var exportUrl = await GetExportUrl(exportFormat);
         await JSRuntime.InvokeVoidAsync("open", exportUrl, "_blank");
     }
 
     private async Task Export()
     {
         if (string.IsNullOrEmpty(exportFormat)) return;
-        var exportUrl = GetExportUrl(exportFormat);
+        var exportUrl = await GetExportUrl(exportFormat);
         await JSRuntime.InvokeVoidAsync("open", exportUrl, "_blank");
     }
 

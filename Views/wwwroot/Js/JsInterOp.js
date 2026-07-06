@@ -95,6 +95,19 @@ function runReportWithCallback(iframeId, url, dotNetRef) {
     return true;
 }
 
+function getIframeUrl(iframeId) {
+    const iframe = document.getElementById(iframeId);
+    if (iframe && iframe.contentWindow) {
+        try {
+            return iframe.contentWindow.location.pathname + iframe.contentWindow.location.search;
+        } catch (e) {
+            console.warn("[getIframeUrl] Error reading contentWindow location:", e);
+        }
+    }
+    return "";
+}
+
+
 function focusElement(id) {
     const element = document.getElementById(id);
     if (element) {
