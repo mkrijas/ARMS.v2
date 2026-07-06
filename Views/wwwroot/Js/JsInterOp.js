@@ -72,19 +72,13 @@ function runReportWithCallback(iframeId, url, dotNetRef) {
     if (window._ssrsLoadTimeout) clearTimeout(window._ssrsLoadTimeout);
     
     // Register load handler BEFORE setting src
+    // Register load handler BEFORE setting src
     iframe.onload = function () {
         if (window._ssrsLoadTimeout) clearTimeout(window._ssrsLoadTimeout);
-        let currentUrl = "";
-        try {
-            if (iframe.contentWindow && iframe.contentWindow.location) {
-                currentUrl = iframe.contentWindow.location.href;
-            }
-        } catch (ex) {
-            console.warn("[runReportWithCallback] could not read iframe location:", ex);
-        }
+        iframe.onload = null;
         if (dotNetRef) {
-            dotNetRef.invokeMethodAsync("OnIframeLoadComplete", currentUrl)
-                     .catch(function (e) { console.warn("[runReportWithCallback] callback error:", e); });
+            dotNetRef.invokeMethodAsync("OnIframeLoadComplete")
+                .catch(function (e) { console.warn("[runReportWithCallback] callback error:", e); });
         }
     };
 
