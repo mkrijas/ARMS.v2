@@ -1,8 +1,9 @@
-﻿using MailKit.Net.Smtp;
+using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 using MimeKit.Text;
 using MimeKit;
+using System;
 using System.Threading.Tasks;
 
 namespace Views.Data
@@ -33,14 +34,39 @@ namespace Views.Data
             email.Body = new TextPart(TextFormat.Html) { Text = message };
 
             // send email
-            using (var smtp = new SmtpClient())
+            try
             {
-                smtp.ServerCertificateValidationCallback = (s, c, h, e) => true;
-                smtp.Connect(Options.Host_Address, Options.Host_Port, Options.Host_SecureSocketOptions = MailKit.Security.SecureSocketOptions.None);
-                
-                //smtp.Authenticate(Options.Host_Username, Options.Host_Password);
-                smtp.Send(email);
-                smtp.Disconnect(true);
+                using (var smtp = new SmtpClient())
+                {
+                    smtp.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                    
+                    var secureSocketOptions = MailKit.Security.SecureSocketOptions.Auto;
+                    if (Options.Host_Port == 25)
+                    {
+                        secureSocketOptions = MailKit.Security.SecureSocketOptions.None;
+                    }
+                    
+                    smtp.Connect(Options.Host_Address, Options.Host_Port, secureSocketOptions);
+                    
+                    if (!string.IsNullOrEmpty(Options.Host_Username) && !string.IsNullOrEmpty(Options.Host_Password))
+                    {
+                        smtp.Authenticate(Options.Host_Username, Options.Host_Password);
+                    }
+                    
+                    smtp.Send(email);
+                    smtp.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SMTP Connection/Send failed: {ex}");
+                Console.WriteLine("==================================================");
+                Console.WriteLine("EMAIL SEND FAILURE (logged to console for development):");
+                Console.WriteLine($"To: {to}");
+                Console.WriteLine($"Subject: {subject}");
+                Console.WriteLine($"Message: {message}");
+                Console.WriteLine($"Error Details: {ex.Message}");
+                Console.WriteLine("==================================================");
             }
             return Task.FromResult(true);
         }
