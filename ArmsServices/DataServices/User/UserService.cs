@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.SqlClient;
@@ -60,7 +60,6 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@UserID", model.UserID),
-               new SqlParameter("@UpdatedBy", model.UpdatedBy),
             };
             await Iservice.ExecuteNonQueryAsync("[usp.user.UserDelete]", parameters);
 
